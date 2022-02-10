@@ -3,9 +3,13 @@ import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import { TOKEN_PROGRAM_ID, Token, ASSOCIATED_TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import { PublicKey, Keypair } from "@solana/web3.js";
+import { createMint } from "./utils/utils";
 import fs from "fs";
+import os from "os";
 
-const PYTH_MINT = new PublicKey("3ye7E2aTDUsFyCt6oQF8pRaWxN1hbhCtBgWLg9G6vZgJ");
+
+
+
 
 
 
@@ -15,11 +19,9 @@ describe("staking", async () => {
   const program = anchor.workspace.Staking as Program<Staking>;
   const provider = anchor.Provider.local();
 
-  const loaded = Keypair.fromSecretKey(
-    new Uint8Array(JSON.parse(fs.readFileSync('./pytY8XLyKgEV13L8r8WvtqYJG2zEXdciqs3qeNt5MhY.json').toString()))
-  );
 
-  console.log(loaded.publicKey.toBase58())
+
+  // initialize mint if necessary 
 
   const stake_account_secret = new Keypair();
 
@@ -41,11 +43,19 @@ describe("staking", async () => {
     program.programId
   );
 
+  const my_wallet = Keypair.fromSecretKey(
+    new Uint8Array(JSON.parse(fs.readFileSync(os.homedir + '/.config/solana/id.json').toString()))
+  );
+
+  const PYTH_MINT_KEYPAIR = Keypair.fromSecretKey(
+    new Uint8Array(JSON.parse(fs.readFileSync('./pytY8XLyKgEV13L8r8WvtqYJG2zEXdciqs3qeNt5MhY.json').toString()))
+  );
 
 
   it("creates staking account", async () => {
-    
-    
+
+    await createMint(provider, my_wallet, PYTH_MINT_KEYPAIR, provider.wallet.publicKey, null, 1, TOKEN_PROGRAM_ID)
+
     const owner = provider.wallet.publicKey;
     const tx = await program.rpc.createStakeAccount(
       owner,
@@ -57,7 +67,7 @@ describe("staking", async () => {
           stakeAccount: stake_account_secret.publicKey,
           stakeAccountCustody: _stake_account_custody,
           custodyAuthority : _custody_authority,
-          mint: PYTH_MINT,
+          mint: PYTH_MINT_KEYPAIR.publicKey,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: anchor.web3.SystemProgram.programId,
@@ -71,7 +81,9 @@ describe("staking", async () => {
 
   it("deposits tokens", async () => {
 
-    const from_account = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, PYTH_MINT, provider.wallet.publicKey);
+    //TODO Mint token
+    //TODO Create ATA
+    const from_account = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, provider.wallet.publicKey);
     const to_account = _stake_account_custody;
     console.log(from_account.toBase58());
     console.log(to_account.toBase58());

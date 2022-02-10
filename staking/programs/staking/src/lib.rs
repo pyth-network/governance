@@ -6,7 +6,7 @@ mod constants;
 mod context;
 mod state;
 
-declare_id!("E2QSDnMYDVVg8LeKXcDWXJGiUvG3C7aE4fwuEhTULru1");
+declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
