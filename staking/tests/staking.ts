@@ -50,12 +50,12 @@ describe("staking", async () => {
   const PYTH_MINT_KEYPAIR = Keypair.fromSecretKey(
     new Uint8Array(JSON.parse(fs.readFileSync('./pytY8XLyKgEV13L8r8WvtqYJG2zEXdciqs3qeNt5MhY.json').toString()))
   );
-  const pyth_mint_authority = provider.wallet.publicKey;
+  const pyth_mint_authority = new Keypair();
 
 
   it("creates staking account", async () => {
 
-    await createMint(provider, my_wallet, PYTH_MINT_KEYPAIR, pyth_mint_authority, null, 0, TOKEN_PROGRAM_ID);
+    await createMint(provider, my_wallet, PYTH_MINT_KEYPAIR, pyth_mint_authority.publicKey, null, 0, TOKEN_PROGRAM_ID);
 
     const owner = provider.wallet.publicKey;
     const tx = await program.rpc.createStakeAccount(
@@ -87,12 +87,13 @@ describe("staking", async () => {
     const create_ata_ix = Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, from_account, provider.wallet.publicKey, provider.wallet.publicKey);
     transaction.add(create_ata_ix);
 
-    const mint_ix = Token.createMintToInstruction(TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, from_account, pyth_mint_authority, [], 8);
+    // Mint 8 tokens. We'll send 6 to the custody wallet and save 2 for later.
+    const mint_ix = Token.createMintToInstruction(TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, from_account, pyth_mint_authority.publicKey, [], 8);
     transaction.add(mint_ix);
 
     const to_account = _stake_account_custody;
-    console.log(from_account.toBase58());
-    console.log(to_account.toBase58());
+    //console.log(from_account.toBase58());
+    //console.log(to_account.toBase58());
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
       from_account,
@@ -102,6 +103,6 @@ describe("staking", async () => {
       6
     );
     transaction.add(ix);
-    await provider.send(transaction, [my_wallet], {skipPreflight: true});
+    await provider.send(transaction, [my_wallet, pyth_mint_authority], {skipPreflight: true});
   });
 });
