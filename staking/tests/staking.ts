@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import { TOKEN_PROGRAM_ID, Token, ASSOCIATED_TOKEN_PROGRAM_ID} from "@solana/spl-token";
-import { PublicKey, Keypair } from "@solana/web3.js";
+import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { createMint } from "./utils/utils";
 import fs from "fs";
 import os from "os";
@@ -50,11 +50,12 @@ describe("staking", async () => {
   const PYTH_MINT_KEYPAIR = Keypair.fromSecretKey(
     new Uint8Array(JSON.parse(fs.readFileSync('./pytY8XLyKgEV13L8r8WvtqYJG2zEXdciqs3qeNt5MhY.json').toString()))
   );
+  const pyth_mint_authority = provider.wallet.publicKey;
 
 
   it("creates staking account", async () => {
 
-    await createMint(provider, my_wallet, PYTH_MINT_KEYPAIR, provider.wallet.publicKey, null, 1, TOKEN_PROGRAM_ID)
+    await createMint(provider, my_wallet, PYTH_MINT_KEYPAIR, pyth_mint_authority, null, 0, TOKEN_PROGRAM_ID);
 
     const owner = provider.wallet.publicKey;
     const tx = await program.rpc.createStakeAccount(
@@ -81,9 +82,14 @@ describe("staking", async () => {
 
   it("deposits tokens", async () => {
 
-    //TODO Mint token
-    //TODO Create ATA
+    const transaction = new Transaction();
     const from_account = await Token.getAssociatedTokenAddress(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, provider.wallet.publicKey);
+    const create_ata_ix = Token.createAssociatedTokenAccountInstruction(ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, from_account, provider.wallet.publicKey, provider.wallet.publicKey);
+    transaction.add(create_ata_ix);
+
+    const mint_ix = Token.createMintToInstruction(TOKEN_PROGRAM_ID, PYTH_MINT_KEYPAIR.publicKey, from_account, pyth_mint_authority, [], 8);
+    transaction.add(mint_ix);
+
     const to_account = _stake_account_custody;
     console.log(from_account.toBase58());
     console.log(to_account.toBase58());
@@ -93,8 +99,9 @@ describe("staking", async () => {
       to_account,
       provider.wallet.publicKey,
       [],
-      1
-    )
-    await provider.send(new anchor.web3.Transaction().add(ix))
+      6
+    );
+    transaction.add(ix);
+    await provider.send(transaction, [my_wallet], {skipPreflight: true});
   });
 });
