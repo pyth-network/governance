@@ -52,11 +52,14 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await sendAndConfirmTransaction(provider.connection, transaction, [
-    payer, mintAccount
-  ], {skipPreflight : true});
+  const tx = await sendAndConfirmTransaction(
+    provider.connection,
+    transaction,
+    [payer, mintAccount],
+    { skipPreflight: true }
+  );
 
-  console.log(tx);
+  console.log("Mint transaction signature", tx);
 
   return token;
 }
