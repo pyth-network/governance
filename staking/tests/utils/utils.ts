@@ -7,6 +7,9 @@ import {
 } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
 
+/**
+* Creates new spl-token at a random keypair
+*/
 export async function createMint(
   provider: anchor.Provider,
   mintAccount: Keypair,
