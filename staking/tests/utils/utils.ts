@@ -4,26 +4,17 @@ import {
   Keypair,
   Transaction,
   SystemProgram,
-  sendAndConfirmTransaction,
-  Signer,
 } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
 
 export async function createMint(
   provider: anchor.Provider,
-  payer: Signer,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
   decimals: number,
   programId: PublicKey
-): Promise<Token> {
-  const token = new Token(
-    provider.connection,
-    mintAccount.publicKey,
-    programId,
-    payer
-  );
+): Promise<void> {
 
   // Allocate memory for the account
   const balanceNeeded = await Token.getMinBalanceRentForExemptMint(
@@ -33,7 +24,7 @@ export async function createMint(
   const transaction = new Transaction();
   transaction.add(
     SystemProgram.createAccount({
-      fromPubkey: payer.publicKey,
+      fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: mintAccount.publicKey,
       lamports: balanceNeeded,
       space: MintLayout.span,
@@ -52,14 +43,11 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await sendAndConfirmTransaction(
-    provider.connection,
+  const tx = await provider.send(
     transaction,
-    [payer, mintAccount],
+    [mintAccount],
     { skipPreflight: true }
   );
 
   console.log("Mint transaction signature", tx);
-
-  return token;
 }
