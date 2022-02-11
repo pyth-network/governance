@@ -68,25 +68,17 @@ describe("staking", async () => {
     );
 
     const owner = provider.wallet.publicKey;
-    const tx = await program.rpc.createStakeAccount(
-      owner,
-      { vested: {} },
-      _custody_authority_bump,
-      {
-        accounts: {
-          payer: provider.wallet.publicKey,
-          stakeAccount: stake_account_secret.publicKey,
-          stakeAccountCustody: _stake_account_custody,
-          custodyAuthority: _custody_authority,
-          mint: PYTH_MINT_KEYPAIR.publicKey,
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        },
-        signers: [stake_account_secret],
-      }
-    );
-    console.log("Your transaction signature", tx);
+
+    await program.methods
+      .createStakeAccount(owner, { vested: {} }, _custody_authority_bump)
+      .accounts({
+        stakeAccount: stake_account_secret.publicKey,
+        stakeAccountCustody: _stake_account_custody,
+        custodyAuthority: _custody_authority,
+        mint: PYTH_MINT_KEYPAIR.publicKey,
+      })
+      .signers([stake_account_secret])
+      .rpc();
   });
 
   it("deposits tokens", async () => {
