@@ -3,9 +3,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     token::{TokenAccount, Token, Mint}
 };
-use std::{str::FromStr};
 use crate::state::*;
-use crate::constants::PYTH_TOKEN;
 
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
