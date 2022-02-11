@@ -1,4 +1,3 @@
-use crate::constants::UNBONDING_DURATION;
 use anchor_lang::prelude::*;
 
 pub const CUSTODY_SEED: &[u8] = b"custody";
@@ -31,48 +30,36 @@ impl Default for VestingState {
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
 pub struct StakeAccountPosition {
-    pub position_transition: PositionTransition,
+    pub activation_epoch: u64,
+    pub unbonding_start: Option<u64>,
     pub product: Pubkey,
     pub publisher: Pubkey,
     pub amount: u64,
 }
 
-#[repr(u8)]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
-pub enum PositionTransition {
-    UnbondedToBonded {
-        activation_epoch: u64,
-    },
-    BondedToUnbonded {
-        activation_epoch: u64,
-        unbonding_start: u64,
-    }
-}
-
 impl StakeAccountPosition {
-    pub fn get_current_position(&self, current_epoch: u64) -> Result<PositionState, ProgramError> {
-        match self.position_transition {
-            PositionTransition::UnbondedToBonded { activation_epoch } => {
-                if current_epoch < activation_epoch {
+    pub fn get_current_position(&self, current_epoch: u64, unbonding_duration: u64) -> Result<PositionState, ProgramError> {
+        match self.unbonding_start {
+            Some(unbonding_start) => {
+                if current_epoch < self.activation_epoch {
                     Ok(PositionState::BONDING)
-                } else {
-                    Ok(PositionState::BONDED)
-                }
-            }
-            PositionTransition::BondedToUnbonded {
-                activation_epoch,
-                unbonding_start,
-            } => {
-                if current_epoch < activation_epoch {
-                    Ok(PositionState::BONDING)
-                } else if (activation_epoch <= current_epoch) && (current_epoch < unbonding_start) {
+                } else if (self.activation_epoch <= current_epoch)
+                    && (current_epoch < unbonding_start)
+                {
                     Ok(PositionState::BONDED)
                 } else if (unbonding_start <= current_epoch)
-                    && (current_epoch < unbonding_start + UNBONDING_DURATION)
+                    && (current_epoch < unbonding_start + unbonding_duration)
                 {
                     Ok(PositionState::UNBONDING)
                 } else {
                     Ok(PositionState::UNBONDED)
+                }
+            }
+            None => {
+                if current_epoch < self.activation_epoch {
+                    Ok(PositionState::BONDING)
+                } else {
+                    Ok(PositionState::BONDED)
                 }
             }
         }

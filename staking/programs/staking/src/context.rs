@@ -3,12 +3,25 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     token::{TokenAccount, Token, Mint}
 };
-use std::{str::FromStr};
 use crate::state::*;
-use crate::constants::PYTH_TOKEN;
 
 #[derive(Accounts)]
-#[instruction(owner : Pubkey, lock : stake_account::VestingState, _bump_auth : u8)]
+#[instruction(config_data : global_config::GlobalConfig)]
+pub struct InitConfig<'info>{
+    pub payer : Signer<'info>,
+    #[account(
+        init,
+        seeds = [global_config::CONFIG_SEED],
+        bump,
+        payer = payer,
+    )]
+    pub config_account : Account<'info, global_config::GlobalConfig>,
+    pub rent: Sysvar<'info, Rent>,
+    pub system_program : Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(owner : Pubkey, lock : stake_account::VestingState, _bump_auth : u8, _bump_config : u8)]
 pub struct CreateStakeAccount<'info>{
     pub payer : Signer<'info>,
     #[account(init, payer = payer)]
@@ -24,7 +37,9 @@ pub struct CreateStakeAccount<'info>{
     pub stake_account_custody : Account<'info, TokenAccount>,
     #[account(seeds = [stake_account::AUTHORITY_SEED, stake_account.key().as_ref()], bump = _bump_auth)]
     pub custody_authority : AccountInfo<'info>,
-    #[account(address = Pubkey::from_str(PYTH_TOKEN).unwrap())]
+    #[account(seeds = [global_config::CONFIG_SEED], bump = _bump_config)]
+    pub config : Account<'info, global_config::GlobalConfig>,
+    #[account(address = config.pyth_token_mint)]
     pub mint: Account<'info, Mint>, 
     pub rent: Sysvar<'info, Rent>,
     pub token_program : Program<'info, Token>,
