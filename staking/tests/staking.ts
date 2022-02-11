@@ -43,7 +43,7 @@ describe("staking", async () => {
     const owner = provider.wallet.publicKey;
 
     await program.methods
-      .createStakeAccount(owner, { vested: {} })
+      .createStakeAccount(owner, {fullyVested:{}})
       .accounts({
         stakeAccount: stake_account_secret.publicKey,
         mint: pyth_mint_account.publicKey,

@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use crate::state::vesting::VestingSchedule;
 
 /// This is the main account for each staker
 /// There's also an implicitly connected token account that's a PDA
@@ -10,26 +11,11 @@ pub struct StakeAccountData {
     pub custody_bump: u8,
     pub authority_bump: u8,
     pub owner: Pubkey,
-    pub lock: VestingState,
+    pub lock: VestingSchedule,
     pub positions: Vec<StakeAccountPosition>,
 }
 
-#[repr(u8)]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
-pub enum VestingState {
-    VESTED,
-    VESTING {
-        initial_balance: u64,
-        cliff_date: u64,
-        vesting_duration: u64,
-    },
-}
 
-impl Default for VestingState {
-    fn default() -> Self {
-        VestingState::VESTED
-    }
-}
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
@@ -86,35 +72,6 @@ pub enum PositionState {
     LOCKING,
     LOCKED,
     UNLOCKING,
-}
-
-impl StakeAccountData {
-    pub fn get_vested_balance(
-        &self,
-        current_time: u64,
-        account_balance: u64,
-    ) -> Result<u64, ProgramError> {
-        match self.lock {
-            VestingState::VESTED => Ok(account_balance),
-            VestingState::VESTING {
-                initial_balance,
-                cliff_date,
-                vesting_duration,
-            } => {
-                if current_time < cliff_date {
-                    Ok(account_balance
-                        .checked_sub(account_balance - initial_balance)
-                        .unwrap())
-                } else {
-                    let time_passed = current_time.checked_sub(cliff_date).unwrap();
-                    let completion = (time_passed as f64 / vesting_duration as f64).min(1f64);
-
-                    let locked_amount = (initial_balance as f64 * (1f64 - completion)) as u64;
-                    Ok(account_balance.checked_sub(locked_amount).unwrap())
-                }
-            }
-        }
-    }
 }
 
     // pub fn cleanup()?

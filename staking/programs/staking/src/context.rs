@@ -25,7 +25,7 @@ pub struct InitConfig<'info>{
 }
 
 #[derive(Accounts)]
-#[instruction(owner : Pubkey, lock : stake_account::VestingState)]
+#[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info>{
     pub payer : Signer<'info>,
     #[account(init, payer = payer)]

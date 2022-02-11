@@ -1,10 +1,11 @@
 use anchor_lang::prelude::*;
 use context::*;
-use state::{global_config::GlobalConfig, stake_account::VestingState};
+use state::{global_config::GlobalConfig, vesting::VestingSchedule};
 
 mod constants;
 mod context;
 mod state;
+
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
@@ -20,7 +21,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_stake_account(ctx: Context<CreateStakeAccount>, owner : Pubkey, lock : VestingState) -> ProgramResult {
+    pub fn create_stake_account(ctx: Context<CreateStakeAccount>, owner : Pubkey, lock : VestingSchedule) -> ProgramResult {
         let stake_account = &mut ctx.accounts.stake_account;
         stake_account.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
