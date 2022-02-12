@@ -33,7 +33,7 @@ pub struct StakeAccountPosition {
     pub activation_epoch: u64,
     pub unbonding_start: Option<u64>,
     pub product: Pubkey,
-    pub publisher: Pubkey,
+    pub publisher: Option<Pubkey>,
     pub amount: u64,
 }
 
@@ -67,7 +67,7 @@ impl StakeAccountPosition {
 }
 
 #[repr(u8)]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
     UNBONDED,
     BONDING,
@@ -102,4 +102,23 @@ impl StakeAccountData {
             }
         }
     }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::state::stake_account::{StakeAccountPosition, PositionState};
+    use anchor_lang::prelude::*;
+
+    #[test]
+    fn test_unbonded() {
+        let p = StakeAccountPosition{
+            activation_epoch : 8,
+            unbonding_start : Some(12),
+            product: Pubkey::new_unique(),
+            publisher : None,
+            amount : 10
+        };
+        assert_eq!(PositionState::BONDING, p.get_current_position(0, 2).unwrap())
+    }
+
 }
