@@ -13,7 +13,6 @@ pub mod staking {
     use super::*;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config : GlobalConfig) -> ProgramResult {
-        msg!("{}", global_config.governance_authority);
         *ctx.accounts.config_account = global_config;
         Ok(())
     }
@@ -23,8 +22,6 @@ pub mod staking {
         stake_account.owner = owner;
         stake_account.lock = lock;
 
-        msg!("{}", ctx.accounts.config.pyth_token_mint);
-        msg!("{}", ctx.accounts.mint.key());
         Ok(())
     }
 }
