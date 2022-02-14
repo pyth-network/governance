@@ -7,8 +7,8 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct StakeAccountData {
-    pub custody_bump : u8,
-    pub authority_bump : u8,
+    pub custody_bump: u8,
+    pub authority_bump: u8,
     pub owner: Pubkey,
     pub lock: VestingState,
     pub positions: Vec<StakeAccountPosition>,
@@ -48,29 +48,33 @@ impl StakeAccountPosition {
     /// but many of the state transitions take effect later, e.g. at the next epoch boundary.
     /// In order to get the actual current state, we need the current epoch. This encapsulates that logic
     /// so that other parts of the code can use the actual state.
-    pub fn get_current_position(&self, current_epoch: u64, unbonding_duration: u64) -> Result<PositionState, ProgramError> {
-        match self.unbonding_start {
-            Some(unbonding_start) => {
-                if current_epoch < self.activation_epoch {
-                    Ok(PositionState::BONDING)
-                } else if (self.activation_epoch <= current_epoch)
-                    && (current_epoch < unbonding_start)
-                {
-                    Ok(PositionState::BONDED)
-                } else if (unbonding_start <= current_epoch)
-                    && (current_epoch < unbonding_start + unbonding_duration)
-                {
-                    Ok(PositionState::UNBONDING)
-                } else {
-                    Ok(PositionState::UNBONDED)
+    pub fn get_current_position(
+        &self,
+        current_epoch: u64,
+        unbonding_duration: u64,
+    ) -> Result<PositionState, ProgramError> {
+        if current_epoch < self.activation_epoch - 1 {
+            Ok(PositionState::ILLEGAL)
+        } else if current_epoch < self.activation_epoch {
+            Ok(PositionState::BONDING)
+        } else {
+            match self.unbonding_start {
+                Some(unbonding_start) => {
+                    if current_epoch < unbonding_start - 1 {
+                        Ok(PositionState::ILLEGAL)
+                    } else if (self.activation_epoch <= current_epoch)
+                        && (current_epoch < unbonding_start)
+                    {
+                        Ok(PositionState::BONDED)
+                    } else if (unbonding_start <= current_epoch)
+                        && (current_epoch < unbonding_start + unbonding_duration)
+                    {
+                        Ok(PositionState::UNBONDING)
+                    } else {
+                        Ok(PositionState::UNBONDED)
+                    }
                 }
-            }
-            None => {
-                if current_epoch < self.activation_epoch {
-                    Ok(PositionState::BONDING)
-                } else {
-                    Ok(PositionState::BONDED)
-                }
+                None => Ok(PositionState::BONDED),
             }
         }
     }
@@ -80,6 +84,7 @@ impl StakeAccountPosition {
 #[repr(u8)]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
+    ILLEGAL,
     UNBONDED,
     BONDING,
     BONDED,
@@ -117,19 +122,72 @@ impl StakeAccountData {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::stake_account::{StakeAccountPosition, PositionState};
+    use crate::state::stake_account::{PositionState, StakeAccountPosition};
     use anchor_lang::prelude::*;
 
     #[test]
-    fn test_unbonded() {
-        let p = StakeAccountPosition{
-            activation_epoch : 8,
-            unbonding_start : Some(12),
+    fn lifecycle_bond_unbond() {
+        let p = StakeAccountPosition {
+            activation_epoch: 8,
+            unbonding_start: Some(12),
             product: Pubkey::new_unique(),
-            publisher : None,
-            amount : 10
+            publisher: None,
+            amount: 10,
         };
-        assert_eq!(PositionState::BONDING, p.get_current_position(0, 2).unwrap())
+        assert_eq!(
+            PositionState::ILLEGAL,
+            p.get_current_position(0, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDING,
+            p.get_current_position(7, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::ILLEGAL,
+            p.get_current_position(8, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDED,
+            p.get_current_position(11, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::UNBONDING,
+            p.get_current_position(13, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::UNBONDED,
+            p.get_current_position(14, 2).unwrap()
+        );
     }
 
+    #[test]
+    fn lifecycle_bond() {
+        let p = StakeAccountPosition {
+            activation_epoch: 8,
+            unbonding_start: None,
+            product: Pubkey::new_unique(),
+            publisher: None,
+            amount: 10,
+        };
+        assert_eq!(
+            PositionState::ILLEGAL,
+            p.get_current_position(0, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDING,
+            p.get_current_position(7, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDED,
+            p.get_current_position(8, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDED,
+            p.get_current_position(11, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::BONDED,
+            p.get_current_position(300, 2).unwrap()
+        );
+    }
 }
