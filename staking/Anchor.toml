@@ -1,3 +1,6 @@
+[features]
+seeds = true
+
 [programs.localnet]
 staking = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 

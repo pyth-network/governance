@@ -8,8 +8,6 @@ import {
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { createMint } from "./utils/utils";
-import fs from "fs";
-import os from "os";
 
 describe("staking", async () => {
   anchor.setProvider(anchor.Provider.env());
@@ -19,26 +17,11 @@ describe("staking", async () => {
 
   //PDAs
   const stake_account_secret = new Keypair();
-
-  const [_config_account, _config_account_bump] =
-    await PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode("config")],
-      program.programId
-    );
-
+  
   const [_stake_account_custody, _stake_account_custody_bump] =
     await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode("custody"),
-        stake_account_secret.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
-
-  const [_custody_authority, _custody_authority_bump] =
-    await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode("authority"),
         stake_account_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -63,9 +46,6 @@ describe("staking", async () => {
         pythTokenMint: pyth_mint_account.publicKey,
         unbondingDuration: 2,
       })
-      .accounts({
-        configAccount: _config_account,
-      })
       .rpc();
   });
 
@@ -76,14 +56,9 @@ describe("staking", async () => {
       .createStakeAccount(
         owner,
         { vested: {} },
-        _custody_authority_bump,
-        _config_account_bump
       )
       .accounts({
         stakeAccount: stake_account_secret.publicKey,
-        stakeAccountCustody: _stake_account_custody,
-        config: _config_account,
-        custodyAuthority: _custody_authority,
         mint: pyth_mint_account.publicKey,
       })
       .signers([stake_account_secret])
