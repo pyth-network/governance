@@ -3,6 +3,10 @@ use anchor_lang::prelude::*;
 pub const CUSTODY_SEED: &[u8] = b"custody";
 pub const AUTHORITY_SEED: &[u8] = b"authority";
 
+/// This is the main account for each staker
+/// There's also an implicitly connected token account that's a PDA
+/// We don't store the token balance here so that we don't have to keep
+/// the two numbers in sync.
 #[account]
 #[derive(Default)]
 pub struct StakeAccountData {
