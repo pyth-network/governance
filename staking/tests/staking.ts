@@ -8,6 +8,7 @@ import {
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { createMint } from "./utils/utils";
+import { publicKey } from "@project-serum/anchor/dist/cjs/utils";
 
 describe("staking", async () => {
   anchor.setProvider(anchor.Provider.env());
@@ -15,18 +16,7 @@ describe("staking", async () => {
 
   const provider = anchor.Provider.local();
 
-  //PDAs
   const stake_account_secret = new Keypair();
-  
-  const [_stake_account_custody, _stake_account_custody_bump] =
-    await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode("custody"),
-        stake_account_secret.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
-
   const pyth_mint_account = new Keypair();
   const pyth_mint_authority = new Keypair();
 
@@ -53,10 +43,7 @@ describe("staking", async () => {
     const owner = provider.wallet.publicKey;
 
     await program.methods
-      .createStakeAccount(
-        owner,
-        { vested: {} },
-      )
+      .createStakeAccount(owner, { vested: {} })
       .accounts({
         stakeAccount: stake_account_secret.publicKey,
         mint: pyth_mint_account.publicKey,
@@ -94,7 +81,20 @@ describe("staking", async () => {
     );
     transaction.add(mint_ix);
 
-    const to_account = _stake_account_custody;
+    const custody_bump = (
+      await program.account.stakeAccountData.fetch(
+        stake_account_secret.publicKey
+      )
+    ).custodyBump;
+
+    const to_account = await PublicKey.createProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode("custody"),
+        stake_account_secret.publicKey.toBuffer(),
+        Buffer.from([custody_bump]),
+      ],
+      program.programId
+    );
 
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
