@@ -28,6 +28,8 @@ impl Default for VestingState {
     }
 }
 
+/// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
+/// This is one of the core pieces of our staking design, and stores all of the state related to a position
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
 pub struct StakeAccountPosition {
     pub activation_epoch: u64,
@@ -35,9 +37,14 @@ pub struct StakeAccountPosition {
     pub product: Pubkey,
     pub publisher: Option<Pubkey>,
     pub amount: u64,
+    // TODO: Decide if we want to reserve some space here for reward tracking state
 }
 
 impl StakeAccountPosition {
+    /// Managing the state of a position is tricky because we can only update the data when a user makes a transaction
+    /// but many of the state transitions take effect later, e.g. at the next epoch boundary.
+    /// In order to get the actual current state, we need the current epoch. This encapsulates that logic
+    /// so that other parts of the code can use the actual state.
     pub fn get_current_position(&self, current_epoch: u64, unbonding_duration: u64) -> Result<PositionState, ProgramError> {
         match self.unbonding_start {
             Some(unbonding_start) => {
@@ -66,6 +73,7 @@ impl StakeAccountPosition {
     }
 }
 
+/// The core states that a position can be in
 #[repr(u8)]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
