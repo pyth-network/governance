@@ -2,8 +2,10 @@ use std::convert::TryInto;
 
 use anchor_lang::prelude::*;
 
-// Anchor does not allow this...
+// We would like to say:
 // type UnixTimestamp = i64;
+// as in solana_program::clock::UnixTimestamp
+// But Anchor does not allow it
 
 /// Represents how a given initial balance vests over time
 /// It is unit-less, but units must be consistent
@@ -38,7 +40,11 @@ impl Default for VestingSchedule {
     }
 }
 
+/// Computes  Ceiling(numerator / denominator), i.e. division rounding up. Requires that denominator > 0.
+/// Returns the quotient as a u64. For some numerator and denominator choices,
+/// the quotient might not fit in a u64, but we aren't interested in those cases.
 fn div_round_up(numerator: u128, denominator: u64) -> u64 {
+    // Common C-esque trick: (n + d-1)/d computes ceil(n/d)
     ((numerator + ((denominator - 1) as u128)) / (denominator as u128))
         .try_into()
         .unwrap()
@@ -145,7 +151,6 @@ pub mod tests {
             start_date: 5,
         };
         for t in 0..14 {
-            println!("{}", t);
             if t <= 5 {
                 assert_eq!(v.get_unvested_balance(t).unwrap(), 20);
             } else {
