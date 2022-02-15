@@ -16,7 +16,7 @@ pub mod staking {
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
-        config_account.unbonding_duration = global_config.unbonding_duration;
+        config_account.unlocking_duration = global_config.unlocking_duration;
         Ok(())
     }
 
@@ -29,4 +29,12 @@ pub mod staking {
 
         Ok(())
     }
+
+    // pub fn create_position
+
+    // pub fn split_position
+
+    // pub fn close_position 
+
+
 }

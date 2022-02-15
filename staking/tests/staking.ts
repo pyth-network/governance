@@ -34,7 +34,7 @@ describe("staking", async () => {
       .initConfig({
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
-        unbondingDuration: 2,
+        unlockingDuration: 2,
       })
       .rpc();
   });
