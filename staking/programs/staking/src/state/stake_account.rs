@@ -60,10 +60,7 @@ impl StakeAccountPosition {
         } else {
             match self.unbonding_start {
                 Some(unbonding_start) => {
-                    if current_epoch < unbonding_start - 1 {
-                        Ok(PositionState::ILLEGAL)
-                    } else if (self.activation_epoch <= current_epoch)
-                        && (current_epoch < unbonding_start)
+                    if (self.activation_epoch <= current_epoch) && (current_epoch < unbonding_start)
                     {
                         Ok(PositionState::BONDED)
                     } else if (unbonding_start <= current_epoch)
@@ -143,7 +140,7 @@ pub mod tests {
             p.get_current_position(7, 2).unwrap()
         );
         assert_eq!(
-            PositionState::ILLEGAL,
+            PositionState::BONDED,
             p.get_current_position(8, 2).unwrap()
         );
         assert_eq!(
@@ -177,10 +174,7 @@ pub mod tests {
             PositionState::BONDING,
             p.get_current_position(7, 2).unwrap()
         );
-        assert_eq!(
-            PositionState::BONDED,
-            p.get_current_position(8, 2).unwrap()
-        );
+        assert_eq!(PositionState::BONDED, p.get_current_position(8, 2).unwrap());
         assert_eq!(
             PositionState::BONDED,
             p.get_current_position(11, 2).unwrap()
