@@ -36,7 +36,7 @@ impl Default for VestingState {
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
 pub struct StakeAccountPosition {
     pub activation_epoch: u64,
-    pub unbonding_start: Option<u64>,
+    pub unlocking_start: Option<u64>,
     pub product: Pubkey,
     pub publisher: Option<Pubkey>,
     pub amount: u64,
@@ -51,27 +51,27 @@ impl StakeAccountPosition {
     pub fn get_current_position(
         &self,
         current_epoch: u64,
-        unbonding_duration: u64,
+        unlocking_duration: u64,
     ) -> Result<PositionState, ProgramError> {
         if current_epoch < self.activation_epoch - 1 {
             Ok(PositionState::ILLEGAL)
         } else if current_epoch < self.activation_epoch {
-            Ok(PositionState::BONDING)
+            Ok(PositionState::LOCKING)
         } else {
-            match self.unbonding_start {
-                Some(unbonding_start) => {
-                    if (self.activation_epoch <= current_epoch) && (current_epoch < unbonding_start)
+            match self.unlocking_start {
+                Some(unlocking_start) => {
+                    if (self.activation_epoch <= current_epoch) && (current_epoch < unlocking_start)
                     {
-                        Ok(PositionState::BONDED)
-                    } else if (unbonding_start <= current_epoch)
-                        && (current_epoch < unbonding_start + unbonding_duration)
+                        Ok(PositionState::LOCKED)
+                    } else if (unlocking_start <= current_epoch)
+                        && (current_epoch < unlocking_start + unlocking_duration)
                     {
-                        Ok(PositionState::UNBONDING)
+                        Ok(PositionState::UNLOCKING)
                     } else {
-                        Ok(PositionState::UNBONDED)
+                        Ok(PositionState::UNLOCKED)
                     }
                 }
-                None => Ok(PositionState::BONDED),
+                None => Ok(PositionState::LOCKED),
             }
         }
     }
@@ -82,10 +82,10 @@ impl StakeAccountPosition {
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
     ILLEGAL,
-    UNBONDED,
-    BONDING,
-    BONDED,
-    UNBONDING,
+    UNLOCKED,
+    LOCKING,
+    LOCKED,
+    UNLOCKING,
 }
 
 impl StakeAccountData {
@@ -117,16 +117,22 @@ impl StakeAccountData {
     }
 }
 
+    // pub fn cleanup()?
+
+    // pub fn get_unlocked()
+
+    // pub fn get_locked()
+
 #[cfg(test)]
 pub mod tests {
     use crate::state::stake_account::{PositionState, StakeAccountPosition};
     use anchor_lang::prelude::*;
 
     #[test]
-    fn lifecycle_bond_unbond() {
+    fn lifecycle_lock_unlock() {
         let p = StakeAccountPosition {
             activation_epoch: 8,
-            unbonding_start: Some(12),
+            unlocking_start: Some(12),
             product: Pubkey::new_unique(),
             publisher: None,
             amount: 10,
@@ -136,32 +142,32 @@ pub mod tests {
             p.get_current_position(0, 2).unwrap()
         );
         assert_eq!(
-            PositionState::BONDING,
+            PositionState::LOCKING,
             p.get_current_position(7, 2).unwrap()
         );
         assert_eq!(
-            PositionState::BONDED,
+            PositionState::LOCKED,
             p.get_current_position(8, 2).unwrap()
         );
         assert_eq!(
-            PositionState::BONDED,
+            PositionState::LOCKED,
             p.get_current_position(11, 2).unwrap()
         );
         assert_eq!(
-            PositionState::UNBONDING,
+            PositionState::UNLOCKING,
             p.get_current_position(13, 2).unwrap()
         );
         assert_eq!(
-            PositionState::UNBONDED,
+            PositionState::UNLOCKED,
             p.get_current_position(14, 2).unwrap()
         );
     }
 
     #[test]
-    fn lifecycle_bond() {
+    fn lifecycle_lock() {
         let p = StakeAccountPosition {
             activation_epoch: 8,
-            unbonding_start: None,
+            unlocking_start: None,
             product: Pubkey::new_unique(),
             publisher: None,
             amount: 10,
@@ -171,16 +177,16 @@ pub mod tests {
             p.get_current_position(0, 2).unwrap()
         );
         assert_eq!(
-            PositionState::BONDING,
+            PositionState::LOCKING,
             p.get_current_position(7, 2).unwrap()
         );
-        assert_eq!(PositionState::BONDED, p.get_current_position(8, 2).unwrap());
+        assert_eq!(PositionState::LOCKED, p.get_current_position(8, 2).unwrap());
         assert_eq!(
-            PositionState::BONDED,
+            PositionState::LOCKED,
             p.get_current_position(11, 2).unwrap()
         );
         assert_eq!(
-            PositionState::BONDED,
+            PositionState::LOCKED,
             p.get_current_position(300, 2).unwrap()
         );
     }
