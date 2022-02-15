@@ -5,6 +5,7 @@ use state::{global_config::GlobalConfig, vesting::VestingSchedule};
 mod constants;
 mod context;
 mod state;
+mod error;
 
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -31,11 +32,21 @@ pub mod staking {
         Ok(())
     }
 
-    // pub fn create_position
+    pub fn create_position(ctx: Context<CreatePostion>) -> ProgramResult{
+        Ok(())
+    }
 
-    // pub fn split_position
+    pub fn split_position(ctx: Context<SplitPosition>) -> ProgramResult{
+        Ok(())
+    }
 
-    // pub fn close_position 
+    pub fn close_position (ctx: Context<ClosePosition>) -> ProgramResult{
+        Ok(())
+    }
+
+    pub fn cleanup_positions (ctx : Context<CleanupPostions>) -> ProgramResult{
+        Ok(())
+    }
 
 
 }

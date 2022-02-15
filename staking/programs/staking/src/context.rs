@@ -49,3 +49,24 @@ pub struct CreateStakeAccount<'info>{
     pub token_program : Program<'info, Token>,
     pub system_program : Program<'info, System>,
 }
+
+#[derive(Accounts)]
+pub struct CreatePostion<'info>{
+    pub payer : Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct SplitPosition<'info>{
+    pub payer : Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct ClosePosition<'info>{
+    pub payer : Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct CleanupPostions<'info>{
+    pub payer : Signer<'info>,
+}
+

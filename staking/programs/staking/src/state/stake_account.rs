@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::state::vesting::VestingSchedule;
+use crate::error::ErrorCode;
 
 /// This is the main account for each staker
 /// There's also an implicitly connected token account that's a PDA
@@ -61,6 +62,30 @@ impl StakeAccountPosition {
             }
         }
     }
+
+    pub fn get_unlocked(
+        &self,
+        current_epoch : u64
+    ) -> Result<u64, ProgramError>
+    {
+        Err(ErrorCode::NotImplemented.into())
+    }
+    pub fn get_locked(
+        &self,
+        current_epoch : u64
+    ) -> Result<u64, ProgramError>
+    {
+        Err(ErrorCode::NotImplemented.into())
+    }
+
+    pub fn get_current_exposure_to_product(
+        &self,
+        current_epoch : u64,
+        product : Pubkey
+    ) -> Result<u64, ProgramError>
+    {
+        Err(ErrorCode::NotImplemented.into())
+    }
 }
 
 /// The core states that a position can be in
@@ -73,12 +98,6 @@ pub enum PositionState {
     LOCKED,
     UNLOCKING,
 }
-
-    // pub fn cleanup()?
-
-    // pub fn get_unlocked()
-
-    // pub fn get_locked()
 
 #[cfg(test)]
 pub mod tests {
