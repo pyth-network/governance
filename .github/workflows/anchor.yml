@@ -18,9 +18,11 @@ jobs:
       with:
         node-version: '16.13'
     - name: Install yarn
-      run: npm install yarn
+      run: corepack enable
     - name: Yarn install everything else
       run: yarn install
+    - name: Did Yarn install do anything?
+      run: yarn list
     - name: Anchor test
       run: anchor test
 
