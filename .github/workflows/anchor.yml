@@ -22,9 +22,11 @@ jobs:
     - name: Yarn install everything else
       working-directory: ./staking
       run: yarn install
-    - name: Did Yarn install do anything?
+    - name: Install Solana
+      run: sh -c "$(curl -sSfL https://release.solana.com/v1.9.1/install)"
+    - name: Install Anchor
       working-directory: ./staking
-      run: yarn list
+      run: npm i -g @project-serum/anchor-cli
     - name: Anchor test
       working-directory: ./staking
       run: anchor test
