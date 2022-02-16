@@ -7,6 +7,7 @@ use crate::state::*;
 
 pub const AUTHORITY_SEED: &str = "authority";
 pub const CUSTODY_SEED: &str = "custody";
+pub const STAKE_ACCOUNT_METADATA_SEED : &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 
 #[derive(Accounts)]
@@ -28,18 +29,20 @@ pub struct InitConfig<'info>{
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info>{
     pub payer : Signer<'info>,
-    #[account(init, payer = payer)]
-    pub stake_account : Box<Account<'info, stake_account::StakeAccountData>>,
+    #[account(zero)]
+    pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
     #[account(
         init,
-        seeds = [CUSTODY_SEED.as_bytes(), stake_account.key().as_ref()],
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump,
         payer = payer,
         token::mint = mint,
         token::authority = custody_authority,
     )]
     pub stake_account_custody : Account<'info, TokenAccount>,
-    #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account.key().as_ref()], bump)]
+    #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority : AccountInfo<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config : Account<'info, global_config::GlobalConfig>,
@@ -53,13 +56,15 @@ pub struct CreateStakeAccount<'info>{
 #[derive(Accounts)]
 #[instruction(product : Pubkey, publisher : Pubkey, amount : u64)]
 pub struct CreatePostion<'info>{
-    #[account( address = stake_account.owner)]
+    #[account( address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
     #[account(mut)]
-    pub stake_account : Box<Account<'info, stake_account::StakeAccountData>>,
+    pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
     #[account(
-        seeds = [CUSTODY_SEED.as_bytes(), stake_account.key().as_ref()],
-        bump = stake_account.custody_bump,
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.custody_bump,
     )]
     pub stake_account_custody : Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]

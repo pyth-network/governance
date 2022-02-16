@@ -6,7 +6,12 @@ import {
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  Transaction,
+  SystemProgram,
+} from "@solana/web3.js";
 import { createMint } from "./utils/utils";
 import BN from "bn.js";
 
@@ -16,7 +21,7 @@ describe("staking", async () => {
 
   const provider = anchor.Provider.local();
 
-  const stake_account_secret = new Keypair();
+  const stake_account_positions_secret = new Keypair();
   const pyth_mint_account = new Keypair();
   const pyth_mint_authority = new Keypair();
   const zero_pubkey = new PublicKey(0);
@@ -43,14 +48,27 @@ describe("staking", async () => {
 
   it("creates staking account", async () => {
     const owner = provider.wallet.publicKey;
+    const SIZE = 10000;
 
     await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
+      .preInstructions([
+        SystemProgram.createAccount({
+          /** The account that will transfer lamports to the created account */
+          fromPubkey: provider.wallet.publicKey,
+          newAccountPubkey: stake_account_positions_secret.publicKey,
+          lamports: await provider.connection.getMinimumBalanceForRentExemption(
+            SIZE
+          ),
+          space: SIZE,
+          programId: program.programId,
+        }),
+      ])
       .accounts({
-        stakeAccount: stake_account_secret.publicKey,
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
         mint: pyth_mint_account.publicKey,
       })
-      .signers([stake_account_secret])
+      .signers([stake_account_positions_secret])
       .rpc({
         skipPreflight: true,
       });
@@ -85,20 +103,17 @@ describe("staking", async () => {
     );
     transaction.add(mint_ix);
 
-    const custody_bump = (
-      await program.account.stakeAccountData.fetch(
-        stake_account_secret.publicKey
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("custody"),
+          stake_account_positions_secret.publicKey.toBuffer(),
+        ],
+        program.programId
       )
-    ).custodyBump;
+    )[0];
 
-    const to_account = await PublicKey.createProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode("custody"),
-        stake_account_secret.publicKey.toBuffer(),
-        Buffer.from([custody_bump]),
-      ],
-      program.programId
-    );
+    console.log(to_account.toBase58());
 
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
@@ -117,13 +132,9 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     const tx = await program.methods
-      .createPosition(
-        zero_pubkey,
-        zero_pubkey,
-        new BN(1)
-      )
+      .createPosition(zero_pubkey, zero_pubkey, new BN(1))
       .accounts({
-        stakeAccount: stake_account_secret.publicKey,
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
       .rpc({
         skipPreflight: true,
