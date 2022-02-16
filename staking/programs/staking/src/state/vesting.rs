@@ -61,13 +61,13 @@ impl VestingSchedule {
                 initial_balance,
                 vesting_duration,
                 start_date,
-            } => VestingSchedule::periodic_vesting_helper(
+            } => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
                 initial_balance,
                 start_date,
                 1,
                 vesting_duration,
-            ),
+            )),
             VestingSchedule::CliffVesting {
                 initial_balance,
                 cliff_date,
@@ -83,13 +83,13 @@ impl VestingSchedule {
                 start_date,
                 period_duration,
                 num_periods,
-            } => VestingSchedule::periodic_vesting_helper(
+            } => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
                 initial_balance,
                 start_date,
                 period_duration,
                 num_periods,
-            ),
+            )),
         }
     }
 
@@ -101,24 +101,24 @@ impl VestingSchedule {
         start_date: i64,
         period_duration: u64,
         num_periods: u64,
-    ) -> Result<u64, ProgramError> {
+    ) -> u64 {
         if current_time < start_date {
-            Ok(initial_balance)
+            initial_balance
         } else {
             let time_passed = current_time.checked_sub(start_date).unwrap() as u64;
             let periods_passed = time_passed / period_duration; // Definitely round this one down
 
             if periods_passed >= num_periods {
-                Ok(0)
+                0
             } else {
                 // Amount that vests per period is (initial_balance / num_periods),
                 // but again, we need to do the math in 128 bit precision and make sure
                 // we round the unvested balance up
                 let periods_remaining = num_periods.checked_sub(periods_passed).unwrap();
-                Ok(div_round_up(
+                div_round_up(
                     (periods_remaining as u128) * (initial_balance as u128),
                     num_periods,
-                ))
+                )
             }
         }
     }
@@ -133,8 +133,8 @@ pub mod tests {
         assert_eq!(div_round_up(8, 2), 4);
         assert_eq!(div_round_up(9, 2), 5);
         assert_eq!(
-            div_round_up(85070591730234615865843651857942052864, 9223372036854775264),
-            9223372036854776353
+            div_round_up(u128::MAX / 4, u64::MAX / 2 - 500),
+            u64::MAX / 2 + 503 // I checked this with WolframAlpha using arbitrary precision arithmetic
         );
     }
     #[test]
