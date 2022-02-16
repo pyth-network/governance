@@ -20,9 +20,12 @@ jobs:
     - name: Install yarn
       run: corepack enable
     - name: Yarn install everything else
+      working-directory: ./staking
       run: yarn install
     - name: Did Yarn install do anything?
+      working-directory: ./staking
       run: yarn list
     - name: Anchor test
+      working-directory: ./staking
       run: anchor test
 
