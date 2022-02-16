@@ -29,7 +29,7 @@ pub struct InitConfig<'info>{
 pub struct CreateStakeAccount<'info>{
     pub payer : Signer<'info>,
     #[account(init, payer = payer)]
-    pub stake_account : Account<'info, stake_account::StakeAccountData>,
+    pub stake_account : Box<Account<'info, stake_account::StakeAccountData>>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account.key().as_ref()],
@@ -51,8 +51,19 @@ pub struct CreateStakeAccount<'info>{
 }
 
 #[derive(Accounts)]
+#[instruction(product : Pubkey, publisher : Pubkey, amount : u64)]
 pub struct CreatePostion<'info>{
+    #[account( address = stake_account.owner)]
     pub payer : Signer<'info>,
+    #[account(mut)]
+    pub stake_account : Box<Account<'info, stake_account::StakeAccountData>>,
+    #[account(
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account.key().as_ref()],
+        bump = stake_account.custody_bump,
+    )]
+    pub stake_account_custody : Account<'info, TokenAccount>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config : Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]

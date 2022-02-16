@@ -8,7 +8,7 @@ import {
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { createMint } from "./utils/utils";
-import { publicKey } from "@project-serum/anchor/dist/cjs/utils";
+import BN from "bn.js";
 
 describe("staking", async () => {
   anchor.setProvider(anchor.Provider.env());
@@ -19,6 +19,7 @@ describe("staking", async () => {
   const stake_account_secret = new Keypair();
   const pyth_mint_account = new Keypair();
   const pyth_mint_authority = new Keypair();
+  const zero_pubkey = new PublicKey(0);
 
   it("initializes config", async () => {
     await createMint(
@@ -35,6 +36,7 @@ describe("staking", async () => {
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
         unlockingDuration: 2,
+        epochDuration: new BN(3600),
       })
       .rpc();
   });
@@ -43,13 +45,15 @@ describe("staking", async () => {
     const owner = provider.wallet.publicKey;
 
     await program.methods
-      .createStakeAccount(owner, {fullyVested:{}})
+      .createStakeAccount(owner, { fullyVested: {} })
       .accounts({
         stakeAccount: stake_account_secret.publicKey,
         mint: pyth_mint_account.publicKey,
       })
       .signers([stake_account_secret])
-      .rpc();
+      .rpc({
+        skipPreflight: true,
+      });
   });
 
   it("deposits tokens", async () => {
@@ -108,6 +112,23 @@ describe("staking", async () => {
     const tx = await provider.send(transaction, [pyth_mint_authority], {
       skipPreflight: true,
     });
+    console.log("Your transaction signature", tx);
+  });
+
+  it("creates a position", async () => {
+    const tx = await program.methods
+      .createPosition(
+        zero_pubkey,
+        zero_pubkey,
+        new BN(1)
+      )
+      .accounts({
+        stakeAccount: stake_account_secret.publicKey,
+      })
+      .rpc({
+        skipPreflight: true,
+      });
+
     console.log("Your transaction signature", tx);
   });
 });

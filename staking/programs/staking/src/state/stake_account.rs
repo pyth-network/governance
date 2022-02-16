@@ -13,20 +13,21 @@ pub struct StakeAccountData {
     pub authority_bump: u8,
     pub owner: Pubkey,
     pub lock: VestingSchedule,
-    pub positions: Vec<StakeAccountPosition>,
+    pub positions: [StakeAccountPosition; 10],
 }
+
 
 
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Default)]
 pub struct StakeAccountPosition {
-    pub activation_epoch: u64,
-    pub unlocking_start: Option<u64>,
-    pub product: Pubkey,
-    pub publisher: Option<Pubkey>,
     pub amount: u64,
+    pub product: Pubkey,
+    pub publisher: Pubkey,
+    pub activation_epoch: u64,
+    pub unlocking_start: u64,
     // TODO: Decide if we want to reserve some space here for reward tracking state
 }
 
@@ -46,19 +47,20 @@ impl StakeAccountPosition {
             Ok(PositionState::LOCKING)
         } else {
             match self.unlocking_start {
-                Some(unlocking_start) => {
-                    if (self.activation_epoch <= current_epoch) && (current_epoch < unlocking_start)
+                u64::MAX => Ok(PositionState::LOCKED),
+                _ => {
+                    if (self.activation_epoch <= current_epoch) && (current_epoch < self.unlocking_start)
                     {
                         Ok(PositionState::LOCKED)
-                    } else if (unlocking_start <= current_epoch)
-                        && (current_epoch < unlocking_start + unlocking_duration)
+                    } else if (self.unlocking_start <= current_epoch)
+                        && (current_epoch < self.unlocking_start + unlocking_duration)
                     {
                         Ok(PositionState::UNLOCKING)
                     } else {
                         Ok(PositionState::UNLOCKED)
                     }
                 }
-                None => Ok(PositionState::LOCKED),
+                
             }
         }
     }
@@ -108,9 +110,9 @@ pub mod tests {
     fn lifecycle_lock_unlock() {
         let p = StakeAccountPosition {
             activation_epoch: 8,
-            unlocking_start: Some(12),
-            product: Pubkey::new_unique(),
-            publisher: None,
+            unlocking_start: 12,
+            product: Pubkey::default(),
+            publisher: Pubkey::default(),
             amount: 10,
         };
         assert_eq!(
@@ -143,9 +145,9 @@ pub mod tests {
     fn lifecycle_lock() {
         let p = StakeAccountPosition {
             activation_epoch: 8,
-            unlocking_start: None,
-            product: Pubkey::new_unique(),
-            publisher: None,
+            unlocking_start: u64::MAX,
+            product: Pubkey::default(),
+            publisher: Pubkey::default(),
             amount: 10,
         };
         assert_eq!(
