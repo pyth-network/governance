@@ -25,29 +25,6 @@ impl PositionData{
         Err(ErrorCode::NotImplemented.into())
     }
 
-    pub fn get_current_exposure_to_product(
-        &self,
-        current_epoch : u64,
-        unlocking_duration : u8,
-        product : Pubkey
-    ) -> Result<u64, ProgramError>
-    {   
-        let mut counter : u64 = 0;
-        for i in 0..MAX_POSITIONS {
-            if self.positions[i].product == product {
-                match self.positions[i].get_current_position(current_epoch, unlocking_duration).unwrap(){
-                    PositionState::LOCKED | PositionState::UNLOCKING => {
-                        counter += self.positions[i].amount;
-                    }
-                    _ => {}
-
-                }
-                
-            }
-        }
-        Ok(counter)
-    }
-
     pub fn get_unused_index(
         &self
     ) -> Result<usize, ProgramError> {
