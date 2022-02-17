@@ -6,6 +6,8 @@ pub enum ErrorCode {
     InsufficientBalanceCreatePosition,
     #[msg("Number of position limit reached")]
     TooManyPositions,
+    #[msg("Position not in use")]
+    PositionNotInUse,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Other")]

@@ -45,7 +45,18 @@ impl PositionData{
                 
             }
         }
-        Ok((counter))
+        Ok(counter)
+    }
+
+    pub fn get_unused_index(
+        &self
+    ) -> Result<usize, ProgramError> {
+        for i in 0..MAX_POSITIONS {
+            if !self.positions[i].in_use {
+                return Ok(i);
+            }
+        }
+        return Err(ErrorCode::TooManyPositions.into());
     }
 }
 
@@ -53,6 +64,7 @@ impl PositionData{
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Default)]
 pub struct StakeAccountPosition {
+    pub in_use: bool,
     pub amount: u64,
     pub product: Pubkey,
     pub publisher: Pubkey,
@@ -71,6 +83,9 @@ impl StakeAccountPosition {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> Result<PositionState, ProgramError> {
+        if !self.in_use {
+            return Err(ErrorCode::PositionNotInUse.into());
+        }
         if self.activation_epoch == 0 {
             Ok(PositionState::UNLOCKED) 
         }
@@ -119,6 +134,7 @@ pub mod tests {
     #[test]
     fn lifecycle_lock_unlock() {
         let p = StakeAccountPosition {
+            in_use: true,
             activation_epoch: 8,
             unlocking_start: 12,
             product: Pubkey::default(),
@@ -154,6 +170,7 @@ pub mod tests {
     #[test]
     fn lifecycle_lock() {
         let p = StakeAccountPosition {
+            in_use: true,
             activation_epoch: 8,
             unlocking_start: u64::MAX,
             product: Pubkey::default(),

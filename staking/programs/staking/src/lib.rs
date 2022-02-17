@@ -18,6 +18,10 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
+    use std::convert::TryInto;
+
+    use state::stake_account;
+
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> ProgramResult {
         let config_account = &mut ctx.accounts.config_account;
@@ -54,45 +58,34 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
-        let current_exposure = PositionData::get_current_exposure_to_product(
-            stake_account_positions,
+
+        match PositionData::get_unused_index(stake_account_positions) {
+            Err(x) => return Err(x),
+            Ok(i) => {
+                stake_account_positions.positions[i] = StakeAccountPosition {
+                    in_use: true,
+                    amount: amount,
+                    product: product,
+                    publisher: publisher,
+                    activation_epoch: get_current_epoch(ctx.accounts.config.epoch_duration)
+                        .unwrap(),
+                    unlocking_start: u64::MAX,
+                };
+            }
+        }
+        let unvested_balance = ctx
+            .accounts
+            .stake_account_metadata
+            .lock
+            .get_unvested_balance(current_epoch.try_into().unwrap()).unwrap();
+        
+        utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
             current_epoch,
             config.unlocking_duration,
-            product,
         )
-        .unwrap();
-
-        if current_exposure.checked_add(amount).unwrap() > stake_account_custody.amount {
-            return Err(ErrorCode::InsufficientBalanceCreatePosition.into());
-        }
-
-        msg!("{}", current_exposure);
-        msg!("{}", current_epoch);
-        msg!("{:?}", stake_account_positions.positions[0]
-        .get_current_position(current_epoch, config.unlocking_duration)
-        .unwrap());
-        let mut i = 0;
-        while i < MAX_POSITIONS
-            && stake_account_positions.positions[i]
-                .get_current_position(current_epoch, config.unlocking_duration)
-                .unwrap()
-                != PositionState::UNLOCKED
-        {
-            i += 1;
-        }
-
-        if i == MAX_POSITIONS {
-            return Err(ErrorCode::InsufficientBalanceCreatePosition.into());
-        } else {
-            stake_account_positions.positions[i] = StakeAccountPosition {
-                amount: amount,
-                product: product,
-                publisher: publisher,
-                activation_epoch: get_current_epoch(ctx.accounts.config.epoch_duration).unwrap(),
-                unlocking_start: u64::MAX,
-            };
-            Ok(())
-        }
     }
 
     pub fn split_position(ctx: Context<SplitPosition>) -> ProgramResult {
