@@ -4,6 +4,8 @@ use std::collections::BTreeMap;
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
 use crate::ErrorCode::InsufficientBalanceCreatePosition;
 
+/// Validates that a proposed set of positions meets all risk requirements
+/// stake_account_positions is untrusted, while everything else is trusted
 pub fn validate(
     stake_account_positions: &PositionData,
     total_balance: u64,
@@ -229,5 +231,9 @@ pub mod tests {
         );
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
+    }
+    #[test]
+    fn test_fail() {
+        assert_eq!(true, false);
     }
 }
