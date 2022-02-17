@@ -63,10 +63,7 @@ impl StakeAccountPosition {
         if !self.in_use {
             return Err(ErrorCode::PositionNotInUse.into());
         }
-        if self.activation_epoch == 0 {
-            Ok(PositionState::UNLOCKED) 
-        }
-        else if current_epoch < self.activation_epoch - 1 {
+        else if current_epoch + 1 < self.activation_epoch {
             Ok(PositionState::ILLEGAL)
         } else if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
