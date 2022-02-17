@@ -1,9 +1,52 @@
 use anchor_lang::prelude::*;
 use crate::error::ErrorCode;
 
+pub const MAX_POSITIONS : usize = 100;
+
 #[account(zero_copy)]
 pub struct PositionData{
-    pub positions: [StakeAccountPosition; 100],
+    pub positions: [StakeAccountPosition; MAX_POSITIONS],
+}
+
+impl PositionData{
+
+    pub fn get_unlocked(
+        &self,
+        current_epoch : u64
+    ) -> Result<u64, ProgramError>
+    {
+        Err(ErrorCode::NotImplemented.into())
+    }
+    pub fn get_locked(
+        &self,
+        current_epoch : u64
+    ) -> Result<u64, ProgramError>
+    {
+        Err(ErrorCode::NotImplemented.into())
+    }
+
+    pub fn get_current_exposure_to_product(
+        &self,
+        current_epoch : u64,
+        unlocking_duration : u8,
+        product : Pubkey
+    ) -> Result<u64, ProgramError>
+    {   
+        let mut counter : u64 = 0;
+        for i in 0..MAX_POSITIONS {
+            if self.positions[i].product == product {
+                match self.positions[i].get_current_position(current_epoch, unlocking_duration).unwrap(){
+                    PositionState::LOCKED | PositionState::UNLOCKING => {
+                        counter += self.positions[i].amount;
+                    }
+                    _ => {}
+
+                }
+                
+            }
+        }
+        Ok((counter))
+    }
 }
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
@@ -26,9 +69,12 @@ impl StakeAccountPosition {
     pub fn get_current_position(
         &self,
         current_epoch: u64,
-        unlocking_duration: u64,
+        unlocking_duration: u8,
     ) -> Result<PositionState, ProgramError> {
-        if current_epoch < self.activation_epoch - 1 {
+        if self.activation_epoch == 0 {
+            Ok(PositionState::UNLOCKED) 
+        }
+        else if current_epoch < self.activation_epoch - 1 {
             Ok(PositionState::ILLEGAL)
         } else if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
@@ -40,7 +86,7 @@ impl StakeAccountPosition {
                     {
                         Ok(PositionState::LOCKED)
                     } else if (self.unlocking_start <= current_epoch)
-                        && (current_epoch < self.unlocking_start + unlocking_duration)
+                        && (current_epoch < self.unlocking_start + unlocking_duration as u64)
                     {
                         Ok(PositionState::UNLOCKING)
                     } else {
@@ -52,29 +98,6 @@ impl StakeAccountPosition {
         }
     }
 
-    pub fn get_unlocked(
-        &self,
-        current_epoch : u64
-    ) -> Result<u64, ProgramError>
-    {
-        Err(ErrorCode::NotImplemented.into())
-    }
-    pub fn get_locked(
-        &self,
-        current_epoch : u64
-    ) -> Result<u64, ProgramError>
-    {
-        Err(ErrorCode::NotImplemented.into())
-    }
-
-    pub fn get_current_exposure_to_product(
-        &self,
-        current_epoch : u64,
-        product : Pubkey
-    ) -> Result<u64, ProgramError>
-    {
-        Err(ErrorCode::NotImplemented.into())
-    }
 }
 
 /// The core states that a position can be in

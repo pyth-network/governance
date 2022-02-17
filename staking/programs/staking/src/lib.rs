@@ -1,7 +1,10 @@
+use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use context::*;
 use state::{
-    global_config::GlobalConfig, positions::StakeAccountPosition, vesting::VestingSchedule,
+    global_config::GlobalConfig,
+    positions::{PositionData, PositionState, StakeAccountPosition, MAX_POSITIONS},
+    vesting::VestingSchedule,
 };
 use utils::clock::get_current_epoch;
 
@@ -48,8 +51,39 @@ pub mod staking {
         amount: u64,
     ) -> ProgramResult {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+        let current_exposure = PositionData::get_current_exposure_to_product(
+            stake_account_positions,
+            current_epoch,
+            config.unlocking_duration,
+            product,
+        )
+        .unwrap();
 
-        for i in 0..100 {
+        if current_exposure.checked_add(amount).unwrap() > stake_account_custody.amount {
+            return Err(ErrorCode::InsufficientBalanceCreatePosition.into());
+        }
+
+        msg!("{}", current_exposure);
+        msg!("{}", current_epoch);
+        msg!("{:?}", stake_account_positions.positions[0]
+        .get_current_position(current_epoch, config.unlocking_duration)
+        .unwrap());
+        let mut i = 0;
+        while i < MAX_POSITIONS
+            && stake_account_positions.positions[i]
+                .get_current_position(current_epoch, config.unlocking_duration)
+                .unwrap()
+                != PositionState::UNLOCKED
+        {
+            i += 1;
+        }
+
+        if i == MAX_POSITIONS {
+            return Err(ErrorCode::InsufficientBalanceCreatePosition.into());
+        } else {
             stake_account_positions.positions[i] = StakeAccountPosition {
                 amount: amount,
                 product: product,
@@ -57,22 +91,8 @@ pub mod staking {
                 activation_epoch: get_current_epoch(ctx.accounts.config.epoch_duration).unwrap(),
                 unlocking_start: u64::MAX,
             };
-            // stake_account.positions[9] = StakeAccountPosition{
-            //     amount : amount,
-            //     product : product,
-            //     publisher : publisher,
-            //     activation_epoch : get_current_epoch(ctx.accounts.config.epoch_duration).unwrap(),
-            //     unlocking_start : u64::MAX
+            Ok(())
         }
-
-        // stake_account.positions[1] = StakeAccountPosition{
-        //     amount : 2,
-        //     product : product,
-        //     publisher : publisher,
-        //     activation_epoch : get_current_epoch(ctx.accounts.config.epoch_duration).unwrap(),
-        //     unlocking_start : u64::MAX
-        // };
-        Ok(())
     }
 
     pub fn split_position(ctx: Context<SplitPosition>) -> ProgramResult {
