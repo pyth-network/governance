@@ -3,6 +3,7 @@ use crate::error::ErrorCode;
 
 pub const MAX_POSITIONS : usize = 100;
 
+/// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
 #[account(zero_copy)]
 pub struct PositionData{
     pub positions: [StakeAccountPosition; MAX_POSITIONS],
@@ -25,6 +26,7 @@ impl PositionData{
         Err(ErrorCode::NotImplemented.into())
     }
 
+    /// Finds first index available for a new position
     pub fn get_unused_index(
         &self
     ) -> Result<usize, ProgramError> {

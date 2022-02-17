@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { parseIdlErrors, Program, ProgramError } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -12,12 +12,29 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint } from "./utils/utils";
+import { createMint, parseErrorMessage } from "./utils/utils";
 import BN from "bn.js";
+import assert from "assert";
 
 describe("staking", async () => {
   anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.Staking as Program<Staking>;
+  const DISCRIMINANT_SIZE = 8;
+  const POSITION_SIZE = 96;
+  const MAX_POSITIONS = 100;
+
+  const CONFIG_SEED = "config";
+  const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
+  const CUSTODY_SEED = "custody";
+  const AUTHORITY_SEED = "authority";
+
+  const [config_account, bump] = await PublicKey.findProgramAddress(
+    [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+    program.programId
+  );
+
+  const positions_account_size =
+    POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE;
 
   const provider = anchor.Provider.local();
 
@@ -44,23 +61,61 @@ describe("staking", async () => {
         epochDuration: new BN(3600),
       })
       .rpc();
+
+    const config_account_data = await program.account.globalConfig.fetch(
+      config_account
+    );
+
+    assert.equal(
+      JSON.stringify(config_account_data),
+      JSON.stringify({
+        bump,
+        governanceAuthority: provider.wallet.publicKey,
+        pythTokenMint: pyth_mint_account.publicKey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+      })
+    );
   });
 
-  it("creates staking account", async () => {
+  it("creates vested staking account", async () => {
     const owner = provider.wallet.publicKey;
-    const SIZE = 10000;
 
-    await program.methods
+    const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(CUSTODY_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
+    const [authorityAccount, authorityBump] =
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(AUTHORITY_SEED),
+          stake_account_positions_secret.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
+
+    const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
         SystemProgram.createAccount({
-          /** The account that will transfer lamports to the created account */
           fromPubkey: provider.wallet.publicKey,
           newAccountPubkey: stake_account_positions_secret.publicKey,
           lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            SIZE
+            positions_account_size
           ),
-          space: SIZE,
+          space: positions_account_size,
           programId: program.programId,
         }),
       ])
@@ -72,6 +127,20 @@ describe("staking", async () => {
       .rpc({
         skipPreflight: true,
       });
+
+    const stake_account_metadata_data =
+      await program.account.stakeAccountMetadata.fetch(metadataAccount);
+
+    assert.equal(
+      JSON.stringify(stake_account_metadata_data),
+      JSON.stringify({
+        custodyBump,
+        authorityBump,
+        metadataBump,
+        owner,
+        lock: { fullyVested: {} },
+      })
+    );
   });
 
   it("deposits tokens", async () => {
@@ -92,14 +161,14 @@ describe("staking", async () => {
     );
     transaction.add(create_ata_ix);
 
-    // Mint 8 tokens. We'll send 6 to the custody wallet and save 2 for later.
+    // Mint 1000 tokens. We'll send 100 to the custody wallet and save 900 for later.
     const mint_ix = Token.createMintToInstruction(
       TOKEN_PROGRAM_ID,
       pyth_mint_account.publicKey,
       from_account,
       pyth_mint_authority.publicKey,
       [],
-      8
+      1000
     );
     transaction.add(mint_ix);
 
@@ -113,21 +182,36 @@ describe("staking", async () => {
       )
     )[0];
 
-    console.log(to_account.toBase58());
-
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
       from_account,
       to_account,
       provider.wallet.publicKey,
       [],
-      6
+      100
     );
     transaction.add(ix);
     const tx = await provider.send(transaction, [pyth_mint_authority], {
       skipPreflight: true,
     });
-    console.log("Your transaction signature", tx);
+  });
+
+  it("creates a position that's too big", async () => {
+    try {
+      await program.methods
+        .createPosition(zero_pubkey, zero_pubkey, new BN(102))
+        .accounts({
+          stakeAccountPositions: stake_account_positions_secret.publicKey,
+        })
+        .rpc({
+          skipPreflight: true,
+        });
+    } catch (err) {
+      assert.equal(
+        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        "Insufficient balance to take on a new position"
+      );
+    }
   });
 
   it("creates a position", async () => {
@@ -139,7 +223,53 @@ describe("staking", async () => {
       .rpc({
         skipPreflight: true,
       });
+  });
 
-    console.log("Your transaction signature", tx);
+  it("creates position with 0 principal", async () => {
+    try{
+      const tx = await program.methods
+        .createPosition(zero_pubkey, zero_pubkey, new BN(0))
+        .accounts({
+          stakeAccountPositions: stake_account_positions_secret.publicKey,
+        })
+        .rpc({
+          skipPreflight: true,
+        });
+    }
+    catch(err){
+      assert.equal(
+        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        "New position needs to have positive balance"
+      );
+    }
+  });
+
+  it("creates too many positions", async () => {
+    for (let i = 0; i < 99; i++) {
+      const tx = await program.methods
+        .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+        .accounts({
+          stakeAccountPositions: stake_account_positions_secret.publicKey,
+        })
+        .rpc({
+          skipPreflight: true,
+        });
+    }
+
+    try {
+      const tx = await program.methods
+        .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+        .accounts({
+          stakeAccountPositions: stake_account_positions_secret.publicKey,
+        })
+        .rpc({
+          skipPreflight: true,
+        });
+    } catch (err) {
+      assert.equal(
+        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        "Number of position limit reached"
+      );
+    }
   });
 });

@@ -2,7 +2,7 @@ use anchor_lang::prelude::{ProgramResult, Pubkey};
 use std::collections::BTreeMap;
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
-use crate::ErrorCode::InsufficientBalanceCreatePosition;
+use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -50,17 +50,8 @@ pub fn validate(
     // TODO: Actually define how risk works and make this not a constant
     const RISK_THRESH: u64 = 5;
     if total_exposure > RISK_THRESH * vested_balance {
-        return Err(InsufficientBalanceCreatePosition.into());
+        return Err(RiskLimitExceeded.into());
     }
-
-    /*msg!("{:#?}", current_exposures);
-    msg!("{}", current_epoch);
-    msg!(
-        "{:?}",
-        stake_account_positions.positions[0]
-            .get_current_position(current_epoch, unlocking_duration)
-            .unwrap()
-    );*/
 
     return Ok(());
 }

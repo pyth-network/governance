@@ -20,8 +20,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod staking {
     use std::convert::TryInto;
 
-    use state::stake_account;
-
+    /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> ProgramResult {
         let config_account = &mut ctx.accounts.config_account;
@@ -33,12 +32,13 @@ pub mod staking {
         Ok(())
     }
 
+    /// Trustless instruction that creates a stake account for a user
+    /// The main account i.e. the position accounts needs to be initialized outside of the program otherwise we run into stack limits
     pub fn create_stake_account(
         ctx: Context<CreateStakeAccount>,
         owner: Pubkey,
         lock: VestingSchedule,
     ) -> ProgramResult {
-        // let stake_account = &mut ctx.accounts.stake_account.load_init()?;
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
@@ -48,12 +48,19 @@ pub mod staking {
         Ok(())
     }
 
+    /// Creates a position 
+    /// Looks for the first available place in the array, fails if array is full
+    /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
         ctx: Context<CreatePostion>,
         product: Pubkey,
         publisher: Pubkey,
         amount: u64,
     ) -> ProgramResult {
+        if amount == 0 {
+            return Err(ErrorCode::CreatePositionWithZero.into());
+        }
+
         // TODO: Should we check that product and publisher are legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake product
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
@@ -75,6 +82,8 @@ pub mod staking {
                 };
             }
         }
+
+        
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata

@@ -2,10 +2,9 @@ use anchor_lang::prelude::*;
 use crate::state::vesting::VestingSchedule;
 use crate::error::ErrorCode;
 
-/// This is the main account for each staker
-/// There's also an implicitly connected token account that's a PDA
-/// We don't store the token balance here so that we don't have to keep
-/// the two numbers in sync.
+/// This is the metadata account for each staker
+/// It is derived from the positions account with seeds "stake_metadata" and the positions account pubkey
+/// It stores some PDA bumps, the owner of the account and the vesting schedule
 
 #[account]
 #[derive(Default)]
