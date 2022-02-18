@@ -6,7 +6,7 @@ use state::{
     positions::{PositionData, PositionState, Position, MAX_POSITIONS},
     vesting::VestingSchedule,
 };
-use utils::clock::get_current_epoch;
+use utils::clock::{get_current_epoch, EpochNum};
 
 mod constants;
 mod context;
@@ -77,7 +77,7 @@ pub mod staking {
                     product: product,
                     publisher: publisher,
                     activation_epoch: current_epoch,
-                    unlocking_start: u64::MAX,
+                    unlocking_start: EpochNum::MAX,
                 };
             }
         }
