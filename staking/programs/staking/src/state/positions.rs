@@ -3,6 +3,7 @@ use crate::error::ErrorCode;
 use crate::utils::clock::EpochNum;
 
 pub const MAX_POSITIONS : usize = 100;
+pub const VOTING_POSITION: Pubkey = Pubkey::new_from_array([0; 32]);
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
 /// We mostly fill it front to back, but indicies don't mean much. 

@@ -1,7 +1,7 @@
 use anchor_lang::prelude::{ProgramResult, Pubkey};
 use std::collections::BTreeMap;
 
-use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
+use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS, VOTING_POSITION};
 use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
 use crate::utils::clock::EpochNum;
 
@@ -35,7 +35,7 @@ pub fn validate(
     let vested_balance = total_balance - unvested_balance;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
-        if *product == Pubkey::default() {
+        if *product == VOTING_POSITION {
             // This is the special voting position that ignores vesting
             if *exposure > total_balance {
                 return Err(InsufficientBalanceCreatePosition.into());
@@ -61,7 +61,7 @@ pub fn validate(
 pub mod tests {
     use anchor_lang::prelude::Pubkey;
 
-    use crate::state::positions::PositionState;
+    use crate::state::positions::{PositionState, VOTING_POSITION};
     use crate::ErrorCode::{InsufficientBalanceCreatePosition,RiskLimitExceeded};
     use crate::{
         state::positions::{PositionData, Position},
@@ -127,8 +127,8 @@ pub mod tests {
             in_use: true,
             activation_epoch: 1,
             amount: 7,
-            product: Pubkey::default(),
-            publisher: Pubkey::default(),
+            product: VOTING_POSITION,
+            publisher: VOTING_POSITION,
             unlocking_start: EpochNum::MAX,
         };
         pd.positions[4] = Position {
@@ -165,7 +165,7 @@ pub mod tests {
             activation_epoch: 1,
             amount: 7,
             product: product,
-            publisher: Pubkey::default(),
+            publisher: Pubkey::new_unique(),
             unlocking_start: EpochNum::MAX,
         };
         pd.positions[3] = Position {
