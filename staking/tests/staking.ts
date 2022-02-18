@@ -266,7 +266,6 @@ describe("staking", async () => {
           skipPreflight: true,
         });
     } catch (err) {
-      assert.ok(false);
       assert.equal(
         parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
         "Number of position limit reached"

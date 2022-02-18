@@ -61,7 +61,7 @@ pub mod tests {
     use anchor_lang::prelude::Pubkey;
 
     use crate::state::positions::PositionState;
-    use crate::ErrorCode::InsufficientBalanceCreatePosition;
+    use crate::ErrorCode::{InsufficientBalanceCreatePosition,RiskLimitExceeded};
     use crate::{
         state::positions::{PositionData, StakeAccountPosition},
         utils::risk::validate,
@@ -218,7 +218,7 @@ pub mod tests {
         };
         assert_eq!(
             validate(&pd, 10, 0, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
+            Err(RiskLimitExceeded.into())
         );
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
