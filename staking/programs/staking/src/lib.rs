@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use context::*;
 use state::{
     global_config::GlobalConfig,
-    positions::{PositionData, PositionState, StakeAccountPosition, MAX_POSITIONS},
+    positions::{PositionData, PositionState, Position, MAX_POSITIONS},
     vesting::VestingSchedule,
 };
 use utils::clock::get_current_epoch;
@@ -71,7 +71,7 @@ pub mod staking {
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = StakeAccountPosition {
+                stake_account_positions.positions[i] = Position {
                     in_use: true,
                     amount: amount,
                     product: product,

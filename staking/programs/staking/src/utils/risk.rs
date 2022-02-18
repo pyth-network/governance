@@ -63,17 +63,17 @@ pub mod tests {
     use crate::state::positions::PositionState;
     use crate::ErrorCode::{InsufficientBalanceCreatePosition,RiskLimitExceeded};
     use crate::{
-        state::positions::{PositionData, StakeAccountPosition},
+        state::positions::{PositionData, Position},
         utils::risk::validate,
     };
 
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
-            positions: [StakeAccountPosition::default(); 100],
+            positions: [Position::default(); 100],
         };
         // We need at least 7 vested tokens to support these positions
-        pd.positions[0] = StakeAccountPosition {
+        pd.positions[0] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 7,
@@ -81,7 +81,7 @@ pub mod tests {
             publisher: Pubkey::new_unique(),
             unlocking_start: 50,
         };
-        pd.positions[1] = StakeAccountPosition {
+        pd.positions[1] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 3,
@@ -118,10 +118,10 @@ pub mod tests {
     #[test]
     fn test_voting() {
         let mut pd = PositionData {
-            positions: [StakeAccountPosition::default(); 100],
+            positions: [Position::default(); 100],
         };
         // We need at least 3 vested, 7 total
-        pd.positions[0] = StakeAccountPosition {
+        pd.positions[0] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 7,
@@ -129,7 +129,7 @@ pub mod tests {
             publisher: Pubkey::default(),
             unlocking_start: u64::MAX,
         };
-        pd.positions[4] = StakeAccountPosition {
+        pd.positions[4] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 3,
@@ -154,11 +154,11 @@ pub mod tests {
     #[test]
     fn test_double_product() {
         let mut pd = PositionData {
-            positions: [StakeAccountPosition::default(); 100],
+            positions: [Position::default(); 100],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
-        pd.positions[0] = StakeAccountPosition {
+        pd.positions[0] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 7,
@@ -166,7 +166,7 @@ pub mod tests {
             publisher: Pubkey::default(),
             unlocking_start: u64::MAX,
         };
-        pd.positions[3] = StakeAccountPosition {
+        pd.positions[3] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 3,
@@ -193,10 +193,10 @@ pub mod tests {
     #[test]
     fn test_risk() {
         let mut pd = PositionData {
-            positions: [StakeAccountPosition::default(); 100],
+            positions: [Position::default(); 100],
         };
         for i in 0..5 {
-            pd.positions[i] = StakeAccountPosition {
+            pd.positions[i] = Position {
                 in_use: true,
                 activation_epoch: 1,
                 amount: 10,
@@ -208,7 +208,7 @@ pub mod tests {
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
         // Now we have 6 products, so 10 tokens is not enough
-        pd.positions[7] = StakeAccountPosition {
+        pd.positions[7] = Position {
             in_use: true,
             activation_epoch: 1,
             amount: 10,

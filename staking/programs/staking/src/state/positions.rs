@@ -6,7 +6,7 @@ pub const MAX_POSITIONS : usize = 100;
 /// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
 #[account(zero_copy)]
 pub struct PositionData{
-    pub positions: [StakeAccountPosition; MAX_POSITIONS],
+    pub positions: [Position; MAX_POSITIONS],
 }
 
 impl PositionData{
@@ -42,7 +42,7 @@ impl PositionData{
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Default)]
-pub struct StakeAccountPosition {
+pub struct Position {
     pub in_use: bool,
     pub amount: u64,
     pub product: Pubkey,
@@ -52,7 +52,7 @@ pub struct StakeAccountPosition {
     // TODO: Decide if we want to reserve some space here for reward tracking state
 }
 
-impl StakeAccountPosition {
+impl Position {
     /// Managing the state of a position is tricky because we can only update the data when a user makes a transaction
     /// but many of the state transitions take effect later, e.g. at the next epoch boundary.
     /// In order to get the actual current state, we need the current epoch. This encapsulates that logic
@@ -104,12 +104,12 @@ pub enum PositionState {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{PositionState, StakeAccountPosition};
+    use crate::state::positions::{PositionState, Position};
     use anchor_lang::prelude::*;
 
     #[test]
     fn lifecycle_lock_unlock() {
-        let p = StakeAccountPosition {
+        let p = Position {
             in_use: true,
             activation_epoch: 8,
             unlocking_start: 12,
@@ -145,7 +145,7 @@ pub mod tests {
 
     #[test]
     fn lifecycle_lock() {
-        let p = StakeAccountPosition {
+        let p = Position {
             in_use: true,
             activation_epoch: 8,
             unlocking_start: u64::MAX,

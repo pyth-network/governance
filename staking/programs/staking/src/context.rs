@@ -13,6 +13,7 @@ pub const CONFIG_SEED: &str = "config";
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
 pub struct InitConfig<'info>{
+    // Native payer
     pub payer : Signer<'info>,
     #[account(
         init,
@@ -20,7 +21,9 @@ pub struct InitConfig<'info>{
         bump,
         payer = payer,
     )]
+    // Stake program accounts:
     pub config_account : Account<'info, global_config::GlobalConfig>,
+    // Primitive accounts:
     pub rent: Sysvar<'info, Rent>,
     pub system_program : Program<'info, System>,
 }
@@ -28,7 +31,9 @@ pub struct InitConfig<'info>{
 #[derive(Accounts)]
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info>{
+    // Native payer:
     pub payer : Signer<'info>,
+    // Stake program accounts:
     #[account(zero)]
     pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
     #[account(
@@ -46,8 +51,10 @@ pub struct CreateStakeAccount<'info>{
     pub custody_authority : AccountInfo<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config : Account<'info, global_config::GlobalConfig>,
+    // Pyth token mint:
     #[account(address = config.pyth_token_mint)]
-    pub mint: Account<'info, Mint>, 
+    pub mint: Account<'info, Mint>,
+    // Primitive accounts :
     pub rent: Sysvar<'info, Rent>,
     pub token_program : Program<'info, Token>,
     pub system_program : Program<'info, System>,
@@ -56,8 +63,10 @@ pub struct CreateStakeAccount<'info>{
 #[derive(Accounts)]
 #[instruction(product : Pubkey, publisher : Pubkey, amount : u64)]
 pub struct CreatePostion<'info>{
+    // Native payer:
     #[account( address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
+    // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
