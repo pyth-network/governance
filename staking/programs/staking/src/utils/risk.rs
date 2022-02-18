@@ -223,8 +223,4 @@ pub mod tests {
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
     }
-    #[test]
-    fn test_fail() {
-        assert_eq!(true, false);
-    }
 }
