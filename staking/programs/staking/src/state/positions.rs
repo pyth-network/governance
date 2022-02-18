@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use crate::error::ErrorCode;
+use crate::utils::clock::EpochNum;
 
 pub const MAX_POSITIONS : usize = 100;
 
@@ -17,14 +18,14 @@ impl PositionData{
 
     pub fn get_unlocked(
         &self,
-        current_epoch : u64
+        current_epoch : EpochNum
     ) -> Result<u64, ProgramError>
     {
         Err(ErrorCode::NotImplemented.into())
     }
     pub fn get_locked(
         &self,
-        current_epoch : u64
+        current_epoch : EpochNum
     ) -> Result<u64, ProgramError>
     {
         Err(ErrorCode::NotImplemented.into())
@@ -51,8 +52,8 @@ pub struct Position {
     pub amount: u64,
     pub product: Pubkey,
     pub publisher: Pubkey,
-    pub activation_epoch: u64,
-    pub unlocking_start: u64,
+    pub activation_epoch: EpochNum,
+    pub unlocking_start: EpochNum,
     // TODO: Decide if we want to reserve some space here for reward tracking state
 }
 
@@ -63,25 +64,22 @@ impl Position {
     /// so that other parts of the code can use the actual state.
     pub fn get_current_position(
         &self,
-        current_epoch: u64,
+        current_epoch: EpochNum,
         unlocking_duration: u8,
     ) -> Result<PositionState, ProgramError> {
         if !self.in_use {
             return Err(ErrorCode::PositionNotInUse.into());
-        }
-        else if current_epoch + 1 < self.activation_epoch {
-            Ok(PositionState::ILLEGAL)
         } else if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
         } else {
             match self.unlocking_start {
-                u64::MAX => Ok(PositionState::LOCKED),
+                EpochNum::MAX => Ok(PositionState::LOCKED),
                 _ => {
                     if (self.activation_epoch <= current_epoch) && (current_epoch < self.unlocking_start)
                     {
                         Ok(PositionState::LOCKED)
                     } else if (self.unlocking_start <= current_epoch)
-                        && (current_epoch < self.unlocking_start + unlocking_duration as u64)
+                        && (current_epoch < self.unlocking_start + unlocking_duration as EpochNum)
                     {
                         Ok(PositionState::UNLOCKING)
                     } else {
@@ -99,7 +97,6 @@ impl Position {
 #[repr(u8)]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
-    ILLEGAL,
     UNLOCKED,
     LOCKING,
     LOCKED,
@@ -109,6 +106,7 @@ pub enum PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{PositionState, Position};
+    use crate::utils::clock::EpochNum;
     use anchor_lang::prelude::*;
 
     #[test]
@@ -122,7 +120,7 @@ pub mod tests {
             amount: 10,
         };
         assert_eq!(
-            PositionState::ILLEGAL,
+            PositionState::LOCKING,
             p.get_current_position(0, 2).unwrap()
         );
         assert_eq!(
@@ -152,13 +150,13 @@ pub mod tests {
         let p = Position {
             in_use: true,
             activation_epoch: 8,
-            unlocking_start: u64::MAX,
+            unlocking_start: EpochNum::MAX,
             product: Pubkey::default(),
             publisher: Pubkey::default(),
             amount: 10,
         };
         assert_eq!(
-            PositionState::ILLEGAL,
+            PositionState::LOCKING,
             p.get_current_position(0, 2).unwrap()
         );
         assert_eq!(
