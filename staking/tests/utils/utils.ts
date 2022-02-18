@@ -58,5 +58,6 @@ export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
     return err.msg;
   if (err.code)
     return idlErrors[err.code];
+  // E.g. Raw transaction 4c5uRCyQMVfqEuyBceA6wQknB4NpJh9A5sggU7wufHaZD9UztHMvaBwz4oBXYxCBT98cXmGeuoPitjr6nYm3opFk failed ({"err":{"InstructionError":[0,{"Custom":6002}]}})
   return idlErrors.get(parseInt(err.toString().split("{")[3].split("}")[0].split(":")[1]));
 }
