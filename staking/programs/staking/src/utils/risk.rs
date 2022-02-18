@@ -225,4 +225,46 @@ pub mod tests {
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
     }
+
+    #[should_panic]
+    #[test]
+    fn test_overflow_total() {
+        let mut pd = PositionData {
+            positions: [Position::default(); 100],
+        };
+        for i in 0..5 {
+            pd.positions[i] = Position {
+                in_use: true,
+                activation_epoch: 1,
+                amount: u64::MAX / 3,
+                product: Pubkey::new_unique(),
+                publisher: Pubkey::new_unique(),
+                unlocking_start: EpochNum::MAX,
+            };
+        }
+        let current_epoch = 44;
+        // Overflows in the total exposure computation
+        assert!(validate(&pd, u64::MAX, 0, current_epoch, 1).is_err());
+    }
+    #[should_panic]
+    #[test]
+    fn test_overflow_aggregation() {
+        let mut pd = PositionData {
+            positions: [Position::default(); 100],
+        };
+        let product = Pubkey::new_unique();
+        for i in 0..5 {
+            pd.positions[i] = Position {
+                in_use: true,
+                activation_epoch: 1,
+                amount: u64::MAX / 3,
+                product: product,
+                publisher: Pubkey::new_unique(),
+                unlocking_start: EpochNum::MAX,
+            };
+        }
+        let current_epoch = 44;
+        // Overflows in the aggregation computation
+        assert!(validate(&pd, u64::MAX, 0, current_epoch, 1).is_err());
+    }
 }

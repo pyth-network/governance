@@ -47,6 +47,7 @@ impl PositionData{
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
+/// The voting position is a position where the product is VOTING_POSITION.
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Default)]
 pub struct Position {
     pub in_use: bool,
