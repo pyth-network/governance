@@ -76,8 +76,7 @@ pub mod staking {
                     amount: amount,
                     product: product,
                     publisher: publisher,
-                    activation_epoch: get_current_epoch(ctx.accounts.config.epoch_duration)
-                        .unwrap(),
+                    activation_epoch: current_epoch,
                     unlocking_start: u64::MAX,
                 };
             }

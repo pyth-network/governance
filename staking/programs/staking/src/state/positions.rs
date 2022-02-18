@@ -4,6 +4,10 @@ use crate::error::ErrorCode;
 pub const MAX_POSITIONS : usize = 100;
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
+/// We mostly fill it front to back, but indicies don't mean much. 
+/// Because users can close positions, it might get fragmented.
+/// If a position has in_use==false (they all start that way), it is free and can be overwritten.
+/// We should not read anything from positions where in_use == false.
 #[account(zero_copy)]
 pub struct PositionData{
     pub positions: [Position; MAX_POSITIONS],
