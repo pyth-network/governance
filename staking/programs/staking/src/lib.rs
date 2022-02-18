@@ -20,6 +20,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod staking {
     use std::convert::TryInto;
 
+    use anchor_lang::solana_program::clock::UnixTimestamp;
+
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> ProgramResult {
@@ -82,12 +84,11 @@ pub mod staking {
             }
         }
 
-        
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(current_epoch.try_into().unwrap()).unwrap();
+            .get_unvested_balance(utils::clock::get_current_time()).unwrap();
         
         utils::risk::validate(
             &stake_account_positions,
