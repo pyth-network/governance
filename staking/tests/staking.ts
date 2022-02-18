@@ -16,9 +16,16 @@ import { createMint, parseErrorMessage } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 
+// When DEBUG is turned on, we turn preflight transaction checking off
+// That way failed transactions show up in the explorer, which makes them
+// easier to debug.
+const DEBUG = false;
+let errMap: Map<number, string>;
+
 describe("staking", async () => {
   anchor.setProvider(anchor.Provider.env());
   const program = anchor.workspace.Staking as Program<Staking>;
+  errMap = anchor.parseIdlErrors(program.idl);
   const DISCRIMINANT_SIZE = 8;
   const POSITION_SIZE = 96;
   const MAX_POSITIONS = 100;
@@ -192,7 +199,7 @@ describe("staking", async () => {
     );
     transaction.add(ix);
     const tx = await provider.send(transaction, [pyth_mint_authority], {
-      skipPreflight: true,
+      skipPreflight: DEBUG,
     });
   });
 
@@ -204,11 +211,12 @@ describe("staking", async () => {
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         })
         .rpc({
-          skipPreflight: true,
+          skipPreflight: false,
         });
+      assert(false, "Transaction should fail");
     } catch (err) {
       assert.equal(
-        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        parseErrorMessage(err, errMap),
         "Insufficient balance to take on a new position"
       );
     }
@@ -221,41 +229,65 @@ describe("staking", async () => {
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
       .rpc({
-        skipPreflight: true,
+        skipPreflight: DEBUG,
       });
   });
 
   it("creates position with 0 principal", async () => {
-    try{
+    try {
       const tx = await program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(0))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         })
         .rpc({
-          skipPreflight: true,
+          skipPreflight: false,
         });
-    }
-    catch(err){
+      assert(false, "Transaction should fail");
+    } catch (err) {
       assert.equal(
-        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        parseErrorMessage(err, errMap),
         "New position needs to have positive balance"
       );
     }
   });
 
   it("creates too many positions", async () => {
-    for (let i = 0; i < 99; i++) {
-      const tx = await program.methods
-        .createPosition(zero_pubkey, zero_pubkey, new BN(1))
-        .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: true,
-        });
-    }
+    let createPosIx = await program.methods
+    .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+    .accounts({
+      stakeAccountPositions: stake_account_positions_secret.publicKey,
+    }).instruction();
 
+    // We are starting with 1 position and want to create 99 more
+    let budgetRemaining = 200_000;
+    let ixCost = 15000;
+    let maxInstructions = 10; // Based on txn size
+    let deltaCost = 250; // adding more positions increases the cost
+
+    let transaction = new Transaction();
+    for (let numPositions = 0; numPositions < 99; numPositions++) {
+      if (
+        budgetRemaining < ixCost ||
+        transaction.instructions.length == maxInstructions
+      ) {
+        let txHash = await provider.send(transaction, [], {
+          skipPreflight: DEBUG,
+        });
+        console.log(numPositions, txHash);
+        transaction = new Transaction();
+        budgetRemaining = 200_000;
+      }
+      transaction.instructions.push(createPosIx);
+      budgetRemaining -= ixCost;
+      ixCost += deltaCost;
+    }
+    await provider.send(transaction, [], {
+      skipPreflight: DEBUG,
+    });
+    
+    
+    // Now create 101, which is supposed to fail
     try {
       const tx = await program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(1))
@@ -263,11 +295,12 @@ describe("staking", async () => {
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         })
         .rpc({
-          skipPreflight: true,
+          skipPreflight: false,
         });
+      assert(false, "Transaction should fail");
     } catch (err) {
       assert.equal(
-        parseErrorMessage(err, anchor.parseIdlErrors(program.idl)),
+        parseErrorMessage(err, errMap),
         "Number of position limit reached"
       );
     }

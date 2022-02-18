@@ -54,6 +54,9 @@ export async function createMint(
  * Parses an error message from solana into a human-readable message
  */
 export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
-
+  if (err.msg)
+    return err.msg;
+  if (err.code)
+    return idlErrors[err.code];
   return idlErrors.get(parseInt(err.toString().split("{")[3].split("}")[0].split(":")[1]));
 }
