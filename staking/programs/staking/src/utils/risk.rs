@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS, VOTING_POSITION};
 use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
-use crate::utils::clock::EpochNum;
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -11,7 +10,7 @@ pub fn validate(
     stake_account_positions: &PositionData,
     total_balance: u64,
     unvested_balance: u64,
-    current_epoch: EpochNum,
+    current_epoch: u64,
     unlocking_duration: u8,
 ) -> ProgramResult {
     let mut current_exposures: BTreeMap<Pubkey, u64> = BTreeMap::new();
@@ -67,7 +66,7 @@ pub mod tests {
         state::positions::{PositionData, Position},
         utils::risk::validate,
     };
-    use crate::utils::clock::EpochNum;
+    use crate::utils::clock::u64;
 
     #[test]
     fn test_disjoint() {
@@ -129,7 +128,7 @@ pub mod tests {
             amount: 7,
             product: VOTING_POSITION,
             publisher: VOTING_POSITION,
-            unlocking_start: EpochNum::MAX,
+            unlocking_start: u64::MAX,
         };
         pd.positions[4] = Position {
             in_use: true,
@@ -137,7 +136,7 @@ pub mod tests {
             amount: 3,
             product: Pubkey::new_unique(),
             publisher: Pubkey::new_unique(),
-            unlocking_start: EpochNum::MAX,
+            unlocking_start: u64::MAX,
         };
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
@@ -166,7 +165,7 @@ pub mod tests {
             amount: 7,
             product: product,
             publisher: Pubkey::new_unique(),
-            unlocking_start: EpochNum::MAX,
+            unlocking_start: u64::MAX,
         };
         pd.positions[3] = Position {
             in_use: true,
@@ -174,7 +173,7 @@ pub mod tests {
             amount: 3,
             product: product,
             publisher: Pubkey::new_unique(),
-            unlocking_start: EpochNum::MAX,
+            unlocking_start: u64::MAX,
         };
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
@@ -204,7 +203,7 @@ pub mod tests {
                 amount: 10,
                 product: Pubkey::new_unique(),
                 publisher: Pubkey::new_unique(),
-                unlocking_start: EpochNum::MAX,
+                unlocking_start: u64::MAX,
             };
         }
         let current_epoch = 44;
@@ -216,7 +215,7 @@ pub mod tests {
             amount: 10,
             product: Pubkey::new_unique(),
             publisher: Pubkey::new_unique(),
-            unlocking_start: EpochNum::MAX,
+            unlocking_start: u64::MAX,
         };
         assert_eq!(
             validate(&pd, 10, 0, current_epoch, 1),
@@ -239,7 +238,7 @@ pub mod tests {
                 amount: u64::MAX / 3,
                 product: Pubkey::new_unique(),
                 publisher: Pubkey::new_unique(),
-                unlocking_start: EpochNum::MAX,
+                unlocking_start: u64::MAX,
             };
         }
         let current_epoch = 44;
@@ -260,7 +259,7 @@ pub mod tests {
                 amount: u64::MAX / 3,
                 product: product,
                 publisher: Pubkey::new_unique(),
-                unlocking_start: EpochNum::MAX,
+                unlocking_start: u64::MAX,
             };
         }
         let current_epoch = 44;

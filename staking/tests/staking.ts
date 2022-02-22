@@ -20,12 +20,16 @@ import assert from "assert";
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
 const DEBUG = false;
-let errMap: Map<number, string>;
+
 
 describe("staking", async () => {
-  anchor.setProvider(anchor.Provider.env());
-  const program = anchor.workspace.Staking as Program<Staking>;
-  errMap = anchor.parseIdlErrors(program.idl);
+
+  let program : Program<Staking>; 
+
+  let config_account : PublicKey;
+  let bump : number;
+  let errMap: Map<number, string>;
+
   const DISCRIMINANT_SIZE = 8;
   const POSITION_SIZE = 96;
   const MAX_POSITIONS = 100;
@@ -34,11 +38,6 @@ describe("staking", async () => {
   const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
   const CUSTODY_SEED = "custody";
   const AUTHORITY_SEED = "authority";
-
-  const [config_account, bump] = await PublicKey.findProgramAddress(
-    [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
-    program.programId
-  );
 
   const positions_account_size =
     POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE;
@@ -50,6 +49,20 @@ describe("staking", async () => {
   const pyth_mint_authority = new Keypair();
   const zero_pubkey = new PublicKey(0);
 
+
+  before(async ()=>{
+    anchor.setProvider(anchor.Provider.env());
+    program = anchor.workspace.Staking as Program<Staking>;
+
+    [config_account, bump] = await PublicKey.findProgramAddress(
+      [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+      program.programId
+    );
+
+    errMap = anchor.parseIdlErrors(program.idl);
+
+  })
+  
   it("initializes config", async () => {
     await createMint(
       provider,
