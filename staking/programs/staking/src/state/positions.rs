@@ -1,43 +1,33 @@
-use anchor_lang::prelude::*;
 use crate::error::ErrorCode;
+use anchor_lang::prelude::*;
 
-pub const MAX_POSITIONS : usize = 100;
+pub const MAX_POSITIONS: usize = 100;
 pub const VOTING_POSITION: Pubkey = Pubkey::new_from_array([0; 32]);
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
-/// We mostly fill it front to back, but indicies don't mean much. 
+/// We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
 /// If a position has in_use==false (they all start that way), it is free and can be overwritten.
 /// We should not read anything from positions where in_use == false.
 #[account(zero_copy)]
-pub struct PositionData{
-    pub positions: [Position; MAX_POSITIONS],
+pub struct PositionData {
+    pub positions: [Option<Position>; MAX_POSITIONS],
 }
 
-impl PositionData{
-
-    pub fn get_unlocked(
-        &self,
-        current_epoch : u64
-    ) -> Result<u64, ProgramError>
-    {
+impl PositionData {
+    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64, ProgramError> {
         Err(ErrorCode::NotImplemented.into())
     }
-    pub fn get_locked(
-        &self,
-        current_epoch : u64
-    ) -> Result<u64, ProgramError>
-    {
+    pub fn get_locked(&self, current_epoch: u64) -> Result<u64, ProgramError> {
         Err(ErrorCode::NotImplemented.into())
     }
 
     /// Finds first index available for a new position
-    pub fn get_unused_index(
-        &self
-    ) -> Result<usize, ProgramError> {
+    pub fn get_unused_index(&self) -> Result<usize, ProgramError> {
         for i in 0..MAX_POSITIONS {
-            if !self.positions[i].in_use {
-                return Ok(i);
+            match self.positions[i] {
+                None => return Ok(i),
+                _ => {}
             }
         }
         return Err(ErrorCode::TooManyPositions.into());
@@ -47,16 +37,14 @@ impl PositionData{
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
 /// The voting position is a position where the product is VOTING_POSITION.
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Default)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
 pub struct Position {
-    pub in_use: bool,
     pub amount: u64,
-    pub product: Pubkey,
-    pub publisher: Pubkey,
     pub activation_epoch: u64,
-    pub unlocking_start: u64,
-    // TODO: Decide if we want to reserve some space here for reward tracking state
-}
+    pub unlocking_start: Option<u64>,
+    pub product: Option<Pubkey>,
+    pub publisher: Option<Pubkey>,
+} // TODO: Decide if we want to reserve some space here for reward tracking state
 
 impl Position {
     /// Managing the state of a position is tricky because we can only update the data when a user makes a transaction
@@ -68,30 +56,26 @@ impl Position {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> Result<PositionState, ProgramError> {
-        if !self.in_use {
-            return Err(ErrorCode::PositionNotInUse.into());
-        } else if current_epoch < self.activation_epoch {
+        if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
         } else {
             match self.unlocking_start {
-                u64::MAX => Ok(PositionState::LOCKED),
-                _ => {
-                    if (self.activation_epoch <= current_epoch) && (current_epoch < self.unlocking_start)
+                None => Ok(PositionState::LOCKED),
+                Some(unlocking_start) => {
+                    if (self.activation_epoch <= current_epoch) && (current_epoch < unlocking_start)
                     {
                         Ok(PositionState::LOCKED)
-                    } else if (self.unlocking_start <= current_epoch)
-                        && (current_epoch < self.unlocking_start + unlocking_duration as u64)
+                    } else if (unlocking_start <= current_epoch)
+                        && (current_epoch < unlocking_start + unlocking_duration as u64)
                     {
                         Ok(PositionState::UNLOCKING)
                     } else {
                         Ok(PositionState::UNLOCKED)
                     }
                 }
-                
             }
         }
     }
-
 }
 
 /// The core states that a position can be in
@@ -106,7 +90,7 @@ pub enum PositionState {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{PositionState, Position};
+    use crate::state::positions::{Position, PositionState};
     use crate::utils::clock::u64;
     use anchor_lang::prelude::*;
 
@@ -128,10 +112,7 @@ pub mod tests {
             PositionState::LOCKING,
             p.get_current_position(7, 2).unwrap()
         );
-        assert_eq!(
-            PositionState::LOCKED,
-            p.get_current_position(8, 2).unwrap()
-        );
+        assert_eq!(PositionState::LOCKED, p.get_current_position(8, 2).unwrap());
         assert_eq!(
             PositionState::LOCKED,
             p.get_current_position(11, 2).unwrap()

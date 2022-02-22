@@ -16,15 +16,17 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Pubkey, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if stake_account_positions.positions[i].in_use {
+        if stake_account_positions.positions[i].is_some() {
             match stake_account_positions.positions[i]
+                .unwrap()
                 .get_current_position(current_epoch, unlocking_duration)
                 .unwrap()
             {
                 PositionState::LOCKED | PositionState::UNLOCKING | PositionState::LOCKING => {
-                    let this_position = &stake_account_positions.positions[i];
-                    let prod_exposure: &mut u64 =
-                        current_exposures.entry(this_position.product).or_default();
+                    let this_position = stake_account_positions.positions[i].unwrap();
+                    let prod_exposure: &mut u64 = current_exposures
+                        .entry(this_position.product.unwrap_or(VOTING_POSITION))
+                        .or_default();
                     *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
                 }
                 _ => {}
@@ -61,12 +63,12 @@ pub mod tests {
     use anchor_lang::prelude::Pubkey;
 
     use crate::state::positions::{PositionState, VOTING_POSITION};
-    use crate::ErrorCode::{InsufficientBalanceCreatePosition,RiskLimitExceeded};
+    use crate::utils::clock::u64;
+    use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
     use crate::{
-        state::positions::{PositionData, Position},
+        state::positions::{Position, PositionData},
         utils::risk::validate,
     };
-    use crate::utils::clock::u64;
 
     #[test]
     fn test_disjoint() {

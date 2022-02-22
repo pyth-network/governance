@@ -47,6 +47,9 @@ pub mod staking {
         stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.owner = owner;
         stake_account_metadata.lock = lock;
+
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
+        stake_account_positions.positions = [None ; MAX_POSITIONS];
         Ok(())
     }
 
@@ -73,16 +76,37 @@ pub mod staking {
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = Position {
-                    in_use: true,
+                stake_account_positions.positions[i] = Some(Position{
                     amount: amount,
-                    product: product,
-                    publisher: publisher,
+                    product: Some(product),
+                    publisher: Some(publisher),
                     activation_epoch: current_epoch,
-                    unlocking_start: u64::MAX,
-                };
+                    unlocking_start: None,
+                });
             }
         }
+
+        // stake_account_positions.positions[1] = PositionHolder::Position {
+        //     amount: amount,
+        //     product: Some(product),
+        //     publisher: Some(publisher),
+        //     activation_epoch: current_epoch,
+        //     unlocking_start: Some(current_epoch),
+        // };
+        // stake_account_positions.positions[2] = PositionHolder::Position {
+        //     amount: amount,
+        //     product: None,
+        //     publisher: Some(publisher),
+        //     activation_epoch: current_epoch,
+        //     unlocking_start: None,
+        // };
+        // stake_account_positions.positions[3] = PositionHolder::Position {
+        //     amount: amount,
+        //     product: Some(product),
+        //     publisher: None,
+        //     activation_epoch: current_epoch,
+        //     unlocking_start: None,
+        // };
 
         let unvested_balance = ctx
             .accounts

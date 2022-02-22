@@ -21,17 +21,15 @@ import assert from "assert";
 // easier to debug.
 const DEBUG = false;
 
-
 describe("staking", async () => {
+  let program: Program<Staking>;
 
-  let program : Program<Staking>; 
-
-  let config_account : PublicKey;
-  let bump : number;
+  let config_account: PublicKey;
+  let bump: number;
   let errMap: Map<number, string>;
 
   const DISCRIMINANT_SIZE = 8;
-  const POSITION_SIZE = 96;
+  const POSITION_SIZE = 104;
   const MAX_POSITIONS = 100;
 
   const CONFIG_SEED = "config";
@@ -49,8 +47,7 @@ describe("staking", async () => {
   const pyth_mint_authority = new Keypair();
   const zero_pubkey = new PublicKey(0);
 
-
-  before(async ()=>{
+  before(async () => {
     anchor.setProvider(anchor.Provider.env());
     program = anchor.workspace.Staking as Program<Staking>;
 
@@ -60,9 +57,8 @@ describe("staking", async () => {
     );
 
     errMap = anchor.parseIdlErrors(program.idl);
+  });
 
-  })
-  
   it("initializes config", async () => {
     await createMint(
       provider,
@@ -228,10 +224,14 @@ describe("staking", async () => {
         });
       assert(false, "Transaction should fail");
     } catch (err) {
-      assert.equal(
-        parseErrorMessage(err, errMap),
-        "Insufficient balance to take on a new position"
-      );
+      if (err instanceof ProgramError) {
+        assert.equal(
+          parseErrorMessage(err, errMap),
+          "Insufficient balance to take on a new position"
+        );
+      } else {
+        throw err;
+      }
     }
   });
 
@@ -258,19 +258,24 @@ describe("staking", async () => {
         });
       assert(false, "Transaction should fail");
     } catch (err) {
-      assert.equal(
-        parseErrorMessage(err, errMap),
-        "New position needs to have positive balance"
-      );
+      if (err instanceof ProgramError) {
+        assert.equal(
+          parseErrorMessage(err, errMap),
+          "New position needs to have positive balance"
+        );
+      } else {
+        throw err;
+      }
     }
   });
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-    .createPosition(zero_pubkey, zero_pubkey, new BN(1))
-    .accounts({
-      stakeAccountPositions: stake_account_positions_secret.publicKey,
-    }).instruction();
+      .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .instruction();
 
     // We are starting with 1 position and want to create 99 more
     let budgetRemaining = 200_000;
@@ -298,8 +303,7 @@ describe("staking", async () => {
     await provider.send(transaction, [], {
       skipPreflight: DEBUG,
     });
-    
-    
+
     // Now create 101, which is supposed to fail
     try {
       const tx = await program.methods
@@ -312,10 +316,14 @@ describe("staking", async () => {
         });
       assert(false, "Transaction should fail");
     } catch (err) {
-      assert.equal(
-        parseErrorMessage(err, errMap),
-        "Number of position limit reached"
-      );
+      if (err instanceof ProgramError) {
+        assert.equal(
+          parseErrorMessage(err, errMap),
+          "Number of position limit reached"
+        );
+      } else {
+        throw err;
+      }
     }
   });
 });
