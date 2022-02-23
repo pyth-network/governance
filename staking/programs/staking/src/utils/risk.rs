@@ -1,4 +1,4 @@
-use anchor_lang::prelude::{ProgramResult, Pubkey};
+use anchor_lang::prelude::*;
 use std::collections::BTreeMap;
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS, VOTING_POSITION};
@@ -12,7 +12,7 @@ pub fn validate(
     unvested_balance: u64,
     current_epoch: u64,
     unlocking_duration: u8,
-) -> ProgramResult {
+) -> Result<()> {
     let mut current_exposures: BTreeMap<Pubkey, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
@@ -39,12 +39,12 @@ pub fn validate(
         if *product == VOTING_POSITION {
             // This is the special voting position that ignores vesting
             if *exposure > total_balance {
-                return Err(InsufficientBalanceCreatePosition.into());
+                return Err(error!(InsufficientBalanceCreatePosition));
             }
         } else {
             // A normal position
             if *exposure > vested_balance {
-                return Err(InsufficientBalanceCreatePosition.into());
+                return Err(error!(InsufficientBalanceCreatePosition));
             }
             total_exposure = total_exposure.checked_add(*exposure).unwrap();
         }
@@ -52,7 +52,7 @@ pub fn validate(
     // TODO: Actually define how risk works and make this not a constant
     const RISK_THRESH: u64 = 5;
     if total_exposure > RISK_THRESH * vested_balance {
-        return Err(RiskLimitExceeded.into());
+        return Err(error!(RiskLimitExceeded));
     }
 
     return Ok(());
@@ -60,38 +60,35 @@ pub fn validate(
 
 #[cfg(test)]
 pub mod tests {
-    use anchor_lang::prelude::Pubkey;
+    use anchor_lang::prelude::{error, Pubkey};
 
     use crate::state::positions::{PositionState, VOTING_POSITION};
-    use crate::utils::clock::u64;
     use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
     use crate::{
-        state::positions::{Position, PositionData},
+        state::positions::{Position, PositionData, MAX_POSITIONS},
         utils::risk::validate,
     };
 
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
-        pd.positions[0] = Position {
-            in_use: true,
+        pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount: 7,
-            product: Pubkey::new_unique(),
-            publisher: Pubkey::new_unique(),
-            unlocking_start: 50,
-        };
-        pd.positions[1] = Position {
-            in_use: true,
+            product: Some(Pubkey::new_unique()),
+            publisher: Some(Pubkey::new_unique()),
+            unlocking_start: Some(50),
+        });
+        pd.positions[1] = Some(Position {
             activation_epoch: 1,
             amount: 3,
-            product: Pubkey::new_unique(),
-            publisher: Pubkey::new_unique(),
-            unlocking_start: 50,
-        };
+            product: Some(Pubkey::new_unique()),
+            publisher: Some(Pubkey::new_unique()),
+            unlocking_start: Some(50),
+        });
         let tests = [
             (0, PositionState::LOCKING),
             (44, PositionState::LOCKED),
@@ -100,148 +97,118 @@ pub mod tests {
         for (current_epoch, desired_state) in tests {
             assert_eq!(
                 pd.positions[0]
+                    .unwrap()
                     .get_current_position(current_epoch, 1)
                     .unwrap(),
                 desired_state
             );
-            assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(())); // 10 vested
-            assert_eq!(validate(&pd, 7, 0, current_epoch, 1), Ok(())); // 7 vested, the limit
-            assert_eq!(validate(&pd, 10, 3, current_epoch, 1), Ok(())); // 7 vested
-            assert_eq!(
-                validate(&pd, 6, 0, current_epoch, 1),
-                Err(InsufficientBalanceCreatePosition.into())
-            );
-            assert_eq!(
-                validate(&pd, 10, 6, current_epoch, 1),
-                Err(InsufficientBalanceCreatePosition.into())
-            );
+            assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok()); // 10 vested
+            assert!(validate(&pd, 7, 0, current_epoch, 1).is_ok()); // 7 vested, the limit
+            assert!(validate(&pd, 10, 3, current_epoch, 1).is_ok()); // 7 vested
+            assert!(validate(&pd, 6, 0, current_epoch, 1).is_err());
+            assert!(validate(&pd, 10, 6, current_epoch, 1).is_err());
         }
     }
 
     #[test]
     fn test_voting() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
-        pd.positions[0] = Position {
-            in_use: true,
+        pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount: 7,
-            product: VOTING_POSITION,
-            publisher: VOTING_POSITION,
-            unlocking_start: u64::MAX,
-        };
-        pd.positions[4] = Position {
-            in_use: true,
+            product: None,
+            publisher: None,
+            unlocking_start: None,
+        });
+        pd.positions[4] = Some(Position {
             activation_epoch: 1,
             amount: 3,
-            product: Pubkey::new_unique(),
-            publisher: Pubkey::new_unique(),
-            unlocking_start: u64::MAX,
-        };
+            product: Some(Pubkey::new_unique()),
+            publisher: Some(Pubkey::new_unique()),
+            unlocking_start: None,
+        });
         let current_epoch = 44;
-        assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
-        assert_eq!(validate(&pd, 7, 0, current_epoch, 1), Ok(()));
-        assert_eq!(validate(&pd, 7, 4, current_epoch, 1), Ok(()));
-        assert_eq!(
-            validate(&pd, 6, 0, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
-        );
+        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
+        assert!(validate(&pd, 7, 0, current_epoch, 1).is_ok());
+        assert!(validate(&pd, 7, 4, current_epoch, 1).is_ok());
+        assert!(validate(&pd, 6, 0, current_epoch, 1).is_err());
         // only 2 vested:
-        assert_eq!(
-            validate(&pd, 10, 8, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
-        );
+        assert!(validate(&pd, 10, 8, current_epoch, 1).is_err());
     }
     #[test]
     fn test_double_product() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
-        pd.positions[0] = Position {
-            in_use: true,
+        pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount: 7,
-            product: product,
-            publisher: Pubkey::new_unique(),
-            unlocking_start: u64::MAX,
-        };
-        pd.positions[3] = Position {
-            in_use: true,
+            product: Some(product),
+            publisher: None,
+            unlocking_start: None,
+        });
+        pd.positions[3] = Some(Position {
             activation_epoch: 1,
             amount: 3,
-            product: product,
-            publisher: Pubkey::new_unique(),
-            unlocking_start: u64::MAX,
-        };
+            product: Some(product),
+            publisher: None,
+            unlocking_start: None,
+        });
         let current_epoch = 44;
-        assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
-        assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
-        assert_eq!(
-            validate(&pd, 12, 4, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
-        );
-        assert_eq!(
-            validate(&pd, 9, 0, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
-        );
-        assert_eq!(
-            validate(&pd, 20, 11, current_epoch, 1),
-            Err(InsufficientBalanceCreatePosition.into())
-        );
+        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
+        assert!(validate(&pd, 12, 0, current_epoch, 1).is_ok());
+        assert!(validate(&pd, 12, 4, current_epoch, 1).is_err());
+        assert!(validate(&pd, 9, 0, current_epoch, 1).is_err());
+        assert!(validate(&pd, 20, 11, current_epoch, 1).is_err());
     }
     #[test]
     fn test_risk() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
-            pd.positions[i] = Position {
-                in_use: true,
+            pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount: 10,
-                product: Pubkey::new_unique(),
-                publisher: Pubkey::new_unique(),
-                unlocking_start: u64::MAX,
-            };
+                product: Some(Pubkey::new_unique()),
+                publisher: Some(Pubkey::new_unique()),
+                unlocking_start: None,
+            });
         }
         let current_epoch = 44;
-        assert_eq!(validate(&pd, 10, 0, current_epoch, 1), Ok(()));
+        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
         // Now we have 6 products, so 10 tokens is not enough
-        pd.positions[7] = Position {
-            in_use: true,
+        pd.positions[7] = Some(Position {
             activation_epoch: 1,
             amount: 10,
-            product: Pubkey::new_unique(),
-            publisher: Pubkey::new_unique(),
-            unlocking_start: u64::MAX,
-        };
-        assert_eq!(
-            validate(&pd, 10, 0, current_epoch, 1),
-            Err(RiskLimitExceeded.into())
-        );
+            product: Some(Pubkey::new_unique()),
+            publisher: Some(Pubkey::new_unique()),
+            unlocking_start: None,
+        });
+        assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
-        assert_eq!(validate(&pd, 12, 0, current_epoch, 1), Ok(()));
+        assert!(validate(&pd, 12, 0, current_epoch, 1).is_ok());
     }
 
     #[should_panic]
     #[test]
     fn test_overflow_total() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
-            pd.positions[i] = Position {
-                in_use: true,
+            pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount: u64::MAX / 3,
-                product: Pubkey::new_unique(),
-                publisher: Pubkey::new_unique(),
-                unlocking_start: u64::MAX,
-            };
+                product: None,
+                publisher: None,
+                unlocking_start: None,
+            });
         }
         let current_epoch = 44;
         // Overflows in the total exposure computation
@@ -251,18 +218,17 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
-            positions: [Position::default(); 100],
+            positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {
-            pd.positions[i] = Position {
-                in_use: true,
+            pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount: u64::MAX / 3,
-                product: product,
-                publisher: Pubkey::new_unique(),
-                unlocking_start: u64::MAX,
-            };
+                product: Some(product),
+                publisher: Some(Pubkey::new_unique()),
+                unlocking_start: None,
+            });
         }
         let current_epoch = 44;
         // Overflows in the aggregation computation

@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 
-#[error]
+#[error_code]
+#[derive(PartialEq)]
 pub enum ErrorCode {
     #[msg("Insufficient balance to take on a new position")]
     InsufficientBalanceCreatePosition,

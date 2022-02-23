@@ -14,6 +14,7 @@ pub const CONFIG_SEED: &str = "config";
 #[instruction(config_data : global_config::GlobalConfig)]
 pub struct InitConfig<'info>{
     // Native payer
+    #[account(mut)]
     pub payer : Signer<'info>,
     #[account(
         init,
@@ -32,6 +33,7 @@ pub struct InitConfig<'info>{
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info>{
     // Native payer:
+    #[account(mut)]
     pub payer : Signer<'info>,
     // Stake program accounts:
     #[account(zero)]
@@ -47,6 +49,7 @@ pub struct CreateStakeAccount<'info>{
     pub stake_account_custody : Account<'info, TokenAccount>,
     #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority : AccountInfo<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]

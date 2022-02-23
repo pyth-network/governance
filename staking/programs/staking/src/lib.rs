@@ -24,7 +24,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> ProgramResult {
+    pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
         config_account.governance_authority = global_config.governance_authority;
@@ -40,7 +40,7 @@ pub mod staking {
         ctx: Context<CreateStakeAccount>,
         owner: Pubkey,
         lock: VestingSchedule,
-    ) -> ProgramResult {
+    ) -> Result<()> {
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
@@ -61,9 +61,9 @@ pub mod staking {
         product: Pubkey,
         publisher: Pubkey,
         amount: u64,
-    ) -> ProgramResult {
+    ) -> Result<()> {
         if amount == 0 {
-            return Err(ErrorCode::CreatePositionWithZero.into());
+            return Err(error!(ErrorCode::CreatePositionWithZero));
         }
 
         // TODO: Should we check that product and publisher are legitimate?
@@ -86,28 +86,6 @@ pub mod staking {
             }
         }
 
-        // stake_account_positions.positions[1] = PositionHolder::Position {
-        //     amount: amount,
-        //     product: Some(product),
-        //     publisher: Some(publisher),
-        //     activation_epoch: current_epoch,
-        //     unlocking_start: Some(current_epoch),
-        // };
-        // stake_account_positions.positions[2] = PositionHolder::Position {
-        //     amount: amount,
-        //     product: None,
-        //     publisher: Some(publisher),
-        //     activation_epoch: current_epoch,
-        //     unlocking_start: None,
-        // };
-        // stake_account_positions.positions[3] = PositionHolder::Position {
-        //     amount: amount,
-        //     product: Some(product),
-        //     publisher: None,
-        //     activation_epoch: current_epoch,
-        //     unlocking_start: None,
-        // };
-
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata
@@ -123,15 +101,15 @@ pub mod staking {
         )
     }
 
-    pub fn split_position(ctx: Context<SplitPosition>) -> ProgramResult {
+    pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>) -> ProgramResult {
+    pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
         Ok(())
     }
 
-    pub fn cleanup_positions(ctx: Context<CleanupPostions>) -> ProgramResult {
+    pub fn cleanup_positions(ctx: Context<CleanupPostions>) -> Result<()> {
         Ok(())
     }
 }

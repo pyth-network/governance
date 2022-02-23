@@ -7,36 +7,34 @@ pub const VOTING_POSITION: Pubkey = Pubkey::new_from_array([0; 32]);
 /// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
 /// We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
-/// If a position has in_use==false (they all start that way), it is free and can be overwritten.
-/// We should not read anything from positions where in_use == false.
 #[account(zero_copy)]
 pub struct PositionData {
     pub positions: [Option<Position>; MAX_POSITIONS],
 }
 
 impl PositionData {
-    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64, ProgramError> {
-        Err(ErrorCode::NotImplemented.into())
+    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64> {
+        Err(error!(ErrorCode::NotImplemented))
     }
-    pub fn get_locked(&self, current_epoch: u64) -> Result<u64, ProgramError> {
-        Err(ErrorCode::NotImplemented.into())
+    pub fn get_locked(&self, current_epoch: u64) -> Result<u64> {
+        Err(error!(ErrorCode::NotImplemented))
     }
 
     /// Finds first index available for a new position
-    pub fn get_unused_index(&self) -> Result<usize, ProgramError> {
+    pub fn get_unused_index(&self) -> Result<usize> {
         for i in 0..MAX_POSITIONS {
             match self.positions[i] {
                 None => return Ok(i),
                 _ => {}
             }
         }
-        return Err(ErrorCode::TooManyPositions.into());
+        return Err(error!(ErrorCode::TooManyPositions));
     }
 }
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
-/// The voting position is a position where the product is VOTING_POSITION.
+/// The voting position is a position where the product is None
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
 pub struct Position {
     pub amount: u64,
@@ -55,7 +53,7 @@ impl Position {
         &self,
         current_epoch: u64,
         unlocking_duration: u8,
-    ) -> Result<PositionState, ProgramError> {
+    ) -> Result<PositionState> {
         if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
         } else {
@@ -91,17 +89,15 @@ pub enum PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{Position, PositionState};
-    use crate::utils::clock::u64;
     use anchor_lang::prelude::*;
 
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
-            in_use: true,
             activation_epoch: 8,
-            unlocking_start: 12,
-            product: Pubkey::default(),
-            publisher: Pubkey::default(),
+            unlocking_start: Some(12),
+            product: None,
+            publisher: None,
             amount: 10,
         };
         assert_eq!(
@@ -130,11 +126,10 @@ pub mod tests {
     #[test]
     fn lifecycle_lock() {
         let p = Position {
-            in_use: true,
             activation_epoch: 8,
-            unlocking_start: u64::MAX,
-            product: Pubkey::default(),
-            publisher: Pubkey::default(),
+            unlocking_start: None,
+            product: None,
+            publisher: None,
             amount: 10,
         };
         assert_eq!(
