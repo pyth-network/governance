@@ -63,6 +63,41 @@ pub struct CreateStakeAccount<'info>{
     pub system_program : Program<'info, System>,
 }
 
+// #[derive(Accounts)]
+// #[instruction(amount : u64)]
+// pub struct WithdrawStake<'info>{
+//         // Native payer:
+//     #[account(mut)]
+//     pub payer : Signer<'info>,
+//     // Stake program accounts:
+//     #[account(zero)]
+//     pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
+//     #[account(
+//         init,
+//         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+//         bump,
+//         payer = payer,
+//         token::mint = mint,
+//         token::authority = custody_authority,
+//     )]
+//     pub stake_account_custody : Account<'info, TokenAccount>,
+//     #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+//     pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
+//     /// CHECK : This AccountInfo is safe because it's a checked PDA
+//     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+//     pub custody_authority : AccountInfo<'info>,
+//     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+//     pub config : Account<'info, global_config::GlobalConfig>,
+//     // Pyth token mint:
+//     #[account(address = config.pyth_token_mint)]
+//     pub mint: Account<'info, Mint>,
+//     // Primitive accounts :
+//     pub rent: Sysvar<'info, Rent>,
+//     pub token_program : Program<'info, Token>,
+//     pub system_program : Program<'info, System>,
+// }
+
+
 #[derive(Accounts)]
 #[instruction(product : Pubkey, publisher : Pubkey, amount : u64)]
 pub struct CreatePostion<'info>{
@@ -82,6 +117,7 @@ pub struct CreatePostion<'info>{
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config : Account<'info, global_config::GlobalConfig>,
 }
+
 
 #[derive(Accounts)]
 pub struct SplitPosition<'info>{

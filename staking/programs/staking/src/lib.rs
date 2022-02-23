@@ -103,7 +103,9 @@ pub mod staking {
             unvested_balance,
             current_epoch,
             config.unlocking_duration,
-        )
+        )?;
+
+        Ok(())
     }
 
     pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use std::collections::BTreeMap;
+use std::{cmp, collections::BTreeMap};
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
 use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
@@ -12,7 +12,7 @@ pub fn validate(
     unvested_balance: u64,
     current_epoch: u64,
     unlocking_duration: u8,
-) -> Result<()> {
+) -> Result<(u64)> {
     let mut current_exposures: BTreeMap<Option<Pubkey>, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
@@ -32,32 +32,53 @@ pub fn validate(
             }
         }
     }
+
     let vested_balance = total_balance - unvested_balance;
+    let mut withdrawable_balance: u64 = vested_balance;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
-        match *product {
-            None => {
-                // This is the special voting position that ignores vesting
-                if *exposure > total_balance {
+        if !(*product).is_some() {
+            // This is the special voting position that ignores vesting
+            match total_balance.checked_sub(*exposure) {
+                Some(amount) => {
+                    withdrawable_balance = cmp::min(withdrawable_balance, amount);
+                }
+                _ => {
                     return Err(error!(InsufficientBalanceCreatePosition));
                 }
             }
-            Some(_) => {
-                // A normal position
-                if *exposure > vested_balance {
+        } else {
+            // A normal position
+            match vested_balance.checked_sub(*exposure) {
+                Some(amount) => {
+                    withdrawable_balance = cmp::min(withdrawable_balance, amount);
+                    total_exposure = total_exposure.checked_add(*exposure).unwrap();
+                }
+                _ => {
                     return Err(error!(InsufficientBalanceCreatePosition));
                 }
-                total_exposure = total_exposure.checked_add(*exposure).unwrap();
             }
         }
     }
     // TODO: Actually define how risk works and make this not a constant
     const RISK_THRESH: u64 = 5;
-    if total_exposure > RISK_THRESH * vested_balance {
-        return Err(error!(RiskLimitExceeded));
+    match (vested_balance
+        .checked_mul(RISK_THRESH)
+        .unwrap()
+        .checked_sub(total_exposure))
+    {
+        Some(amount) => {
+            withdrawable_balance = cmp::min(
+                withdrawable_balance,
+                amount.checked_div(RISK_THRESH).unwrap(),
+            );
+        }
+        _ => {
+            return Err(error!(RiskLimitExceeded));
+        }
     }
 
-    return Ok(());
+    return Ok(withdrawable_balance);
 }
 
 #[cfg(test)]
@@ -104,9 +125,9 @@ pub mod tests {
                     .unwrap(),
                 desired_state
             );
-            assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok()); // 10 vested
-            assert!(validate(&pd, 7, 0, current_epoch, 1).is_ok()); // 7 vested, the limit
-            assert!(validate(&pd, 10, 3, current_epoch, 1).is_ok()); // 7 vested
+            assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3); // 10 vested
+            assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0); // 7 vested, the limit
+            assert_eq!(validate(&pd, 10, 3, current_epoch, 1).unwrap(), 0); // 7 vested
             assert!(validate(&pd, 6, 0, current_epoch, 1).is_err());
             assert!(validate(&pd, 10, 6, current_epoch, 1).is_err());
         }
@@ -133,9 +154,9 @@ pub mod tests {
             unlocking_start: None,
         });
         let current_epoch = 44;
-        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
-        assert!(validate(&pd, 7, 0, current_epoch, 1).is_ok());
-        assert!(validate(&pd, 7, 4, current_epoch, 1).is_ok());
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
+        assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 7, 4, current_epoch, 1).unwrap(), 0);
         assert!(validate(&pd, 6, 0, current_epoch, 1).is_err());
         // only 2 vested:
         assert!(validate(&pd, 10, 8, current_epoch, 1).is_err());
@@ -162,8 +183,8 @@ pub mod tests {
             unlocking_start: None,
         });
         let current_epoch = 44;
-        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
-        assert!(validate(&pd, 12, 0, current_epoch, 1).is_ok());
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 2);
         assert!(validate(&pd, 12, 4, current_epoch, 1).is_err());
         assert!(validate(&pd, 9, 0, current_epoch, 1).is_err());
         assert!(validate(&pd, 20, 11, current_epoch, 1).is_err());
@@ -183,7 +204,7 @@ pub mod tests {
             });
         }
         let current_epoch = 44;
-        assert!(validate(&pd, 10, 0, current_epoch, 1).is_ok());
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         // Now we have 6 products, so 10 tokens is not enough
         pd.positions[7] = Some(Position {
             activation_epoch: 1,
@@ -194,7 +215,7 @@ pub mod tests {
         });
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
-        assert!(validate(&pd, 12, 0, current_epoch, 1).is_ok());
+        assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);
     }
 
     #[should_panic]
