@@ -1,12 +1,13 @@
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use anchor_spl::token::transfer;
 use context::*;
 use state::{
     global_config::GlobalConfig,
-    positions::{PositionData, PositionState, Position, MAX_POSITIONS},
+    positions::{Position, PositionData, PositionState, MAX_POSITIONS},
     vesting::VestingSchedule,
 };
-use utils::clock::{get_current_epoch};
+use utils::clock::get_current_epoch;
 
 mod constants;
 mod context;
@@ -54,11 +55,11 @@ pub mod staking {
         stake_account_metadata.lock = lock;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.positions = [None ; MAX_POSITIONS];
+        stake_account_positions.positions = [None; MAX_POSITIONS];
         Ok(())
     }
 
-    /// Creates a position 
+    /// Creates a position
     /// Looks for the first available place in the array, fails if array is full
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
@@ -81,7 +82,7 @@ pub mod staking {
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = Some(Position{
+                stake_account_positions.positions[i] = Some(Position {
                     amount: amount,
                     product: Some(product),
                     publisher: Some(publisher),
@@ -95,8 +96,8 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time()).unwrap();
-        
+            .get_unvested_balance(utils::clock::get_current_time())
+            .unwrap();
         utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
@@ -108,6 +109,49 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load()?;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let stake_account_metadata = &ctx.accounts.stake_account_metadata;
+        let destination_account = &ctx.accounts.destination;
+        let signer = &ctx.accounts.payer;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+
+        let unvested_balance = ctx
+            .accounts
+            .stake_account_metadata
+            .lock
+            .get_unvested_balance(utils::clock::get_current_time())
+            .unwrap();
+
+        if (destination_account.owner != *signer.key) {
+            return Err(error!(ErrorCode::WithdrawToUnathorizedAccount));
+        }
+
+        let withdrawable_balance = utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        if (amount > withdrawable_balance) {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
+        }
+
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.stake_account_positions.key().as_ref(),
+                &[stake_account_metadata.authority_bump],
+            ]]),
+            amount,
+        )?;
+
+        Ok(())
+    }
     pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
         Ok(())
     }

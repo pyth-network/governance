@@ -15,6 +15,10 @@ pub enum ErrorCode {
     CreatePositionWithZero,
     #[msg("Epoch duration is 0")]
     ZeroEpochDuration,
+    #[msg("Owner needs to own destination account")]
+    WithdrawToUnathorizedAccount,
+    #[msg("Insufficient balance to cover the withdrawal")]
+    InsufficientWithdrawableBalance,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Other")]

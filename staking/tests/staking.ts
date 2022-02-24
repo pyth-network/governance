@@ -47,6 +47,13 @@ describe("staking", async () => {
   const pyth_mint_authority = new Keypair();
   const zero_pubkey = new PublicKey(0);
 
+  const user_ata = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    pyth_mint_account.publicKey,
+    provider.wallet.publicKey
+  );
+
   before(async () => {
     anchor.setProvider(anchor.Provider.env());
     program = anchor.workspace.Staking as Program<Staking>;
@@ -161,12 +168,8 @@ describe("staking", async () => {
 
   it("deposits tokens", async () => {
     const transaction = new Transaction();
-    const from_account = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      pyth_mint_account.publicKey,
-      provider.wallet.publicKey
-    );
+    const from_account = user_ata;
+
     const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -177,7 +180,7 @@ describe("staking", async () => {
     );
     transaction.add(create_ata_ix);
 
-    // Mint 1000 tokens. We'll send 100 to the custody wallet and save 900 for later.
+    // Mint 1000 tokens. We'll send 101 to the custody wallet and save 899 for later.
     const mint_ix = Token.createMintToInstruction(
       TOKEN_PROGRAM_ID,
       pyth_mint_account.publicKey,
@@ -204,12 +207,24 @@ describe("staking", async () => {
       to_account,
       provider.wallet.publicKey,
       [],
-      100
+      101
     );
     transaction.add(ix);
     const tx = await provider.send(transaction, [pyth_mint_authority], {
       skipPreflight: DEBUG,
     });
+  });
+
+  it("withdraws tokens", async () => {
+    const to_account = user_ata;
+
+    await program.methods
+      .withdrawStake(new BN(1))
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        destination : to_account
+      })
+      .rpc({skipPreflight : true});
   });
 
   it("creates a position that's too big", async () => {
