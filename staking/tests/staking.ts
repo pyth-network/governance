@@ -36,6 +36,7 @@ describe("staking", async () => {
   const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
   const CUSTODY_SEED = "custody";
   const AUTHORITY_SEED = "authority";
+  const VOTER_SEED = "voter_weight";
 
   const positions_account_size =
     POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE;
@@ -95,6 +96,7 @@ describe("staking", async () => {
         bump,
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
+        pythRealm : zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
       })
@@ -129,6 +131,15 @@ describe("staking", async () => {
         program.programId
       );
 
+      const [voterAccount, voterBump] =
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(VOTER_SEED),
+          owner.toBuffer(),
+        ],
+        program.programId
+      );
+
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
@@ -148,7 +159,7 @@ describe("staking", async () => {
       })
       .signers([stake_account_positions_secret])
       .rpc({
-        skipPreflight: true,
+        skipPreflight: DEBUG,
       });
 
     const stake_account_metadata_data =
@@ -160,6 +171,7 @@ describe("staking", async () => {
         custodyBump,
         authorityBump,
         metadataBump,
+        voterBump,
         owner,
         lock: { fullyVested: {} },
       })
@@ -215,6 +227,28 @@ describe("staking", async () => {
     });
   });
 
+  it("revises", async () => {
+
+    // const [voterAccount, voterBump] =
+    // await PublicKey.findProgramAddress(
+    //   [
+    //     anchor.utils.bytes.utf8.encode(VOTER_SEED),
+    //     provider.wallet.publicKey.toBuffer(),
+    //   ],
+    //   program.programId
+    // );
+
+    await program.methods
+      .revise()
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({ skipPreflight: DEBUG });
+
+      // const voter_record =
+      // await program.account.voterRecord.fetch(voterAccount);
+  });
+
   it("withdraws tokens", async () => {
     const to_account = user_ata;
 
@@ -224,7 +258,7 @@ describe("staking", async () => {
         stakeAccountPositions: stake_account_positions_secret.publicKey,
         destination: to_account,
       })
-      .rpc({ skipPreflight: true });
+      .rpc({ skipPreflight: DEBUG });
   });
 
   it("creates a position that's too big", async () => {
