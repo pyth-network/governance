@@ -33,10 +33,9 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
 
-        if (global_config.epoch_duration == 0){
+        if (global_config.epoch_duration == 0) {
             return Err(error!(ErrorCode::ZeroEpochDuration));
         }
-        
         Ok(())
     }
 
@@ -86,7 +85,7 @@ pub mod staking {
                     amount: amount,
                     product: Some(product),
                     publisher: Some(publisher),
-                    activation_epoch: current_epoch,
+                    activation_epoch: current_epoch + 1,
                     unlocking_start: None,
                 });
             }
@@ -105,6 +104,40 @@ pub mod staking {
             current_epoch,
             config.unlocking_duration,
         )?;
+
+        Ok(())
+    }
+
+    pub fn close_position(ctx: Context<ClosePosition>, index: u8) -> Result<()> {
+        let i = index as usize;
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration)?;
+
+        if stake_account_positions.positions[i].is_some() {
+            match stake_account_positions.positions[i]
+                .unwrap()
+                .get_current_position(current_epoch, config.unlocking_duration)
+                .unwrap()
+            {
+                PositionState::LOCKING | PositionState::UNLOCKED => {
+                    let current_position = stake_account_positions.positions[i].unwrap();
+                    stake_account_positions.positions[i] = None;
+                }
+                PositionState::LOCKED => {
+                    let current_position = stake_account_positions.positions[i].unwrap();
+                    stake_account_positions.positions[i] = Some(Position {
+                        amount: current_position.amount,
+                        product: current_position.product,
+                        publisher: current_position.publisher,
+                        activation_epoch: current_position.activation_epoch,
+                        unlocking_start: Some(current_epoch + 1),
+                    })
+                }
+                _ => {}
+            }
+        }
 
         Ok(())
     }
@@ -153,10 +186,6 @@ pub mod staking {
         Ok(())
     }
     pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
         Ok(())
     }
 

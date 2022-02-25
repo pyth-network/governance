@@ -126,12 +126,27 @@ pub struct CreatePostion<'info>{
 
 
 #[derive(Accounts)]
-pub struct SplitPosition<'info>{
+#[instruction(index : u8)]
+pub struct ClosePosition<'info>{
+    // Native payer:
+    #[account( address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
+    // Stake program accounts:
+    #[account(mut)]
+    pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
+    #[account(
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.custody_bump,
+    )]
+    pub stake_account_custody : Account<'info, TokenAccount>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config : Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
-pub struct ClosePosition<'info>{
+pub struct SplitPosition<'info>{
     pub payer : Signer<'info>,
 }
 
