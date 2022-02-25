@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { parseIdlErrors, Program, ProgramError } from "@project-serum/anchor";
+import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint, parseErrorMessage } from "./utils/utils";
+import { createMint, expect_fail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 
@@ -222,32 +222,21 @@ describe("staking", async () => {
       .withdrawStake(new BN(1))
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
-        destination : to_account
+        destination: to_account,
       })
-      .rpc({skipPreflight : true});
+      .rpc({ skipPreflight: true });
   });
 
   it("creates a position that's too big", async () => {
-    try {
-      await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(102))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "Insufficient balance to take on a new position"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "Insufficient balance to take on a new position",
+      errMap
+    );
   });
 
   it("creates a position", async () => {
@@ -262,26 +251,15 @@ describe("staking", async () => {
   });
 
   it("creates position with 0 principal", async () => {
-    try {
-      const tx = await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(0))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "New position needs to have positive balance"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "New position needs to have positive balance",
+      errMap
+    );
   });
 
   it("creates too many positions", async () => {
@@ -320,25 +298,14 @@ describe("staking", async () => {
     });
 
     // Now create 101, which is supposed to fail
-    try {
-      const tx = await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(1))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "Number of position limit reached"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "Number of position limit reached",
+      errMap
+    );
   });
 });

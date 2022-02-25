@@ -129,18 +129,6 @@ pub mod staking {
             return Err(error!(ErrorCode::WithdrawToUnathorizedAccount));
         }
 
-        let withdrawable_balance = utils::risk::validate(
-            &stake_account_positions,
-            stake_account_custody.amount,
-            unvested_balance,
-            current_epoch,
-            config.unlocking_duration,
-        )?;
-
-        if (amount > withdrawable_balance) {
-            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
-        }
-
         transfer(
             CpiContext::from(&*ctx.accounts).with_signer(&[&[
                 AUTHORITY_SEED.as_bytes(),
@@ -149,6 +137,18 @@ pub mod staking {
             ]]),
             amount,
         )?;
+
+        if utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
+        {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
+        }
 
         Ok(())
     }
