@@ -8,8 +8,8 @@ import {
 import * as anchor from "@project-serum/anchor";
 
 /**
-* Creates new spl-token at a random keypair
-*/
+ * Creates new spl-token at a random keypair
+ */
 export async function createMint(
   provider: anchor.Provider,
   mintAccount: Keypair,
@@ -18,7 +18,6 @@ export async function createMint(
   decimals: number,
   programId: PublicKey
 ): Promise<void> {
-
   // Allocate memory for the account
   const balanceNeeded = await Token.getMinBalanceRentForExemptMint(
     provider.connection
@@ -46,11 +45,19 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await provider.send(
-    transaction,
-    [mintAccount],
-    { skipPreflight: true }
-  );
+  const tx = await provider.send(transaction, [mintAccount], {
+    skipPreflight: true,
+  });
+}
 
-  console.log("Mint transaction signature", tx);
+/**
+ * Parses an error message from solana into a human-readable message
+ */
+export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
+  if (err.msg)
+    return err.msg;
+  if (err.code)
+    return idlErrors[err.code];
+  // E.g. Raw transaction 4c5uRCyQMVfqEuyBceA6wQknB4NpJh9A5sggU7wufHaZD9UztHMvaBwz4oBXYxCBT98cXmGeuoPitjr6nYm3opFk failed ({"err":{"InstructionError":[0,{"Custom":6002}]}})
+  return idlErrors.get(parseInt(err.toString().split("{")[3].split("}")[0].split(":")[1]));
 }

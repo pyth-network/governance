@@ -54,7 +54,7 @@ impl VestingSchedule {
     /// For a vesting schedule and the current time (in the same units used in the vesting schedule),
     /// gets the _unvested_ amount. If the unvested balance is fractional, it rounds the unvested amount up.
     /// It tries to be careful about overflow.
-    pub fn get_unvested_balance(&self, current_time: i64) -> Result<u64, ProgramError> {
+    pub fn get_unvested_balance(&self, current_time: i64) -> Result<u64> {
         match *self {
             VestingSchedule::FullyVested => Ok(0),
             VestingSchedule::LinearVesting {
