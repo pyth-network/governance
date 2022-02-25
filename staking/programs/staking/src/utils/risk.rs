@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use std::collections::BTreeMap;
 
-use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS, VOTING_POSITION};
+use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
 use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
 
 /// Validates that a proposed set of positions meets all risk requirements
@@ -13,7 +13,7 @@ pub fn validate(
     current_epoch: u64,
     unlocking_duration: u8,
 ) -> Result<()> {
-    let mut current_exposures: BTreeMap<Pubkey, u64> = BTreeMap::new();
+    let mut current_exposures: BTreeMap<Option<Pubkey>, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
         if stake_account_positions.positions[i].is_some() {
@@ -24,9 +24,8 @@ pub fn validate(
             {
                 PositionState::LOCKED | PositionState::UNLOCKING | PositionState::LOCKING => {
                     let this_position = stake_account_positions.positions[i].unwrap();
-                    let prod_exposure: &mut u64 = current_exposures
-                        .entry(this_position.product.unwrap_or(VOTING_POSITION))
-                        .or_default();
+                    let prod_exposure: &mut u64 =
+                        current_exposures.entry(this_position.product).or_default();
                     *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
                 }
                 _ => {}
@@ -36,17 +35,20 @@ pub fn validate(
     let vested_balance = total_balance - unvested_balance;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
-        if *product == VOTING_POSITION {
-            // This is the special voting position that ignores vesting
-            if *exposure > total_balance {
-                return Err(error!(InsufficientBalanceCreatePosition));
+        match *product {
+            None => {
+                // This is the special voting position that ignores vesting
+                if *exposure > total_balance {
+                    return Err(error!(InsufficientBalanceCreatePosition));
+                }
             }
-        } else {
-            // A normal position
-            if *exposure > vested_balance {
-                return Err(error!(InsufficientBalanceCreatePosition));
+            Some(_) => {
+                // A normal position
+                if *exposure > vested_balance {
+                    return Err(error!(InsufficientBalanceCreatePosition));
+                }
+                total_exposure = total_exposure.checked_add(*exposure).unwrap();
             }
-            total_exposure = total_exposure.checked_add(*exposure).unwrap();
         }
     }
     // TODO: Actually define how risk works and make this not a constant
@@ -62,7 +64,7 @@ pub fn validate(
 pub mod tests {
     use anchor_lang::prelude::{error, Pubkey};
 
-    use crate::state::positions::{PositionState, VOTING_POSITION};
+    use crate::state::positions::{PositionState};
     use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
     use crate::{
         state::positions::{Position, PositionData, MAX_POSITIONS},

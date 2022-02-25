@@ -281,7 +281,7 @@ describe("staking", async () => {
     let budgetRemaining = 200_000;
     let ixCost = 15000;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 250; // adding more positions increases the cost
+    let deltaCost = 300; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {
