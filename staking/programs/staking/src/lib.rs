@@ -31,6 +31,11 @@ pub mod staking {
         config_account.pyth_token_mint = global_config.pyth_token_mint;
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
+
+        if (global_config.epoch_duration == 0){
+            return Err(error!(ErrorCode::ZeroEpochDuration));
+        }
+        
         Ok(())
     }
 
@@ -71,7 +76,7 @@ pub mod staking {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+        let current_epoch = get_current_epoch(config.epoch_duration)?;
 
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),

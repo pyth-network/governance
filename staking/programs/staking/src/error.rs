@@ -13,6 +13,8 @@ pub enum ErrorCode {
     PositionNotInUse,
     #[msg("New position needs to have positive balance")]
     CreatePositionWithZero,
+    #[msg("Epoch duration is 0")]
+    ZeroEpochDuration,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Other")]
