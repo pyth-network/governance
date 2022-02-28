@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import { Program, Spl } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -25,6 +25,7 @@ describe("staking", async () => {
   let program: Program<Staking>;
 
   let config_account: PublicKey;
+  let voterAccount: PublicKey;
   let bump: number;
   let errMap: Map<number, string>;
 
@@ -61,6 +62,14 @@ describe("staking", async () => {
 
     [config_account, bump] = await PublicKey.findProgramAddress(
       [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+      program.programId
+    );
+    let voterBump = 0;
+    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
       program.programId
     );
 
@@ -227,14 +236,6 @@ describe("staking", async () => {
   });
 
   it("revises", async () => {
-    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode(VOTER_SEED),
-        stake_account_positions_secret.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
-
     await program.methods
       .revise()
       .accounts({
@@ -242,8 +243,10 @@ describe("staking", async () => {
       })
       .rpc({ skipPreflight: DEBUG });
 
-
-    //const voter_record = await program.account.voterRecord.fetch(voterAccount);
+    
+    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
+    // Haven't locked anything, so no voter weight
+    assert.equal(voter_record.voterWeight.toNumber(), 0);
   });
 
   it("withdraws tokens", async () => {
@@ -279,6 +282,20 @@ describe("staking", async () => {
       .rpc({
         skipPreflight: DEBUG,
       });
+  });
+
+  it("revises again", async () => {
+    await program.methods
+      .revise()
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({ skipPreflight: DEBUG });
+
+    
+    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
+    // Locked in 1 token, so voter weight is 1  
+    assert.equal(voter_record.voterWeight.toNumber(), 1);
   });
 
   it("creates position with 0 principal", async () => {

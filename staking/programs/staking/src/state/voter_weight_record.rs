@@ -3,66 +3,72 @@ use anchor_lang::Discriminator;
 
 pub const VOTER_WEIGHT_RECORD_SIZE: usize = 150;
 
-/// Had to copy paste this instead of the macro voter_weight_record!(crate::ID) because the error's macros are not updated for anchor 0.22.0
-#[derive(Clone, Debug)]
-pub struct VoterWeightRecord(spl_governance_addin_api::voter_weight::VoterWeightRecord);
+/// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/voter_weight.rs
+/// Anchor has a macro (vote_weight_record) that is supposed to generate this struct, but it doesn't work 
+/// because the error's macros are not updated for anchor 0.22.0. 
+/// Even if it did work, the type wouldn't show up in the IDL. SPL doesn't produce an API, which means 
+/// that means we'd need the equivalent of this code on the client side.
+/// If Anchor fixes the macro, we might consider changing it
+#[account]
+pub struct VoterWeightRecord {
+    /// VoterWeightRecord discriminator sha256("account:VoterWeightRecord")[..8]
+    /// Note: The discriminator size must match the addin implementing program discriminator size
+    /// to ensure it's stored in the private space of the account data and it's unique
+    /// pub account_discriminator: [u8; 8],
 
-impl anchor_lang::AccountDeserialize for VoterWeightRecord {
-    fn try_deserialize(buf: &mut &[u8]) -> Result<Self> {
-        let mut data = buf;
-        let vwr: spl_governance_addin_api::voter_weight::VoterWeightRecord =
-            anchor_lang::AnchorDeserialize::deserialize(&mut data)
-                .map_err(|_| anchor_lang::error::ErrorCode::AccountDidNotDeserialize)?;
-        if !solana_program::program_pack::IsInitialized::is_initialized(&vwr) {
-            return Err(anchor_lang::error::ErrorCode::AccountDidNotSerialize.into());
-        }
-        Ok(VoterWeightRecord(vwr))
-    }
+    /// The Realm the VoterWeightRecord belongs to
+    pub realm: Pubkey,
 
-    fn try_deserialize_unchecked(buf: &mut &[u8]) -> Result<Self> {
-        let mut data = buf;
-        let vwr: spl_governance_addin_api::voter_weight::VoterWeightRecord =
-            anchor_lang::AnchorDeserialize::deserialize(&mut data)
-                .map_err(|_| anchor_lang::error::ErrorCode::AccountDidNotDeserialize)?;
-        Ok(VoterWeightRecord(vwr))
-    }
+    /// Governing Token Mint the VoterWeightRecord is associated with
+    /// Note: The addin can take deposits of any tokens and is not restricted to the community or council tokens only
+    // The mint here is to link the record to either community or council mint of the realm
+    pub governing_token_mint: Pubkey,
+
+    /// The owner of the governing token and voter
+    /// This is the actual owner (voter) and corresponds to TokenOwnerRecord.governing_token_owner
+    pub governing_token_owner: Pubkey,
+
+    /// Voter's weight
+    /// The weight of the voter provided by the addin for the given realm, governing_token_mint and governing_token_owner (voter)
+    pub voter_weight: u64,
+
+    /// The slot when the voting weight expires
+    /// It should be set to None if the weight never expires
+    /// If the voter weight decays with time, for example for time locked based weights, then the expiry must be set
+    /// As a common pattern Revise instruction to update the weight should be invoked before governance instruction within the same transaction
+    /// and the expiry set to the current slot to provide up to date weight
+    pub voter_weight_expiry: Option<u64>,
+
+    /// The governance action the voter's weight pertains to
+    /// It allows to provided voter's weight specific to the particular action the weight is evaluated for
+    /// When the action is provided then the governance program asserts the executing action is the same as specified by the addin
+    pub weight_action: Option<VoterWeightAction>,
+
+    /// The target the voter's weight  action pertains to
+    /// It allows to provided voter's weight specific to the target the weight is evaluated for
+    /// For example when addin supplies weight to vote on a particular proposal then it must specify the proposal as the action target
+    /// When the target is provided then the governance program asserts the target is the same as specified by the addin
+    pub weight_action_target: Option<Pubkey>,
+
+    /// Reserved space for future versions
+    pub reserved: [u8; 8],
 }
+/// The governance action VoterWeight is evaluated for
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+pub enum VoterWeightAction {
+    /// Cast vote for a proposal. Target: Proposal
+    CastVote,
 
-impl anchor_lang::AccountSerialize for VoterWeightRecord {
-    fn try_serialize<W: std::io::Write>(&self, writer: &mut W) -> Result<()> {
-        let mut to_write = &mut self.0.clone();
-        //to_write.account_discriminator = *b"2ef99b4b";
-        to_write.account_discriminator =
-            VoterWeightRecord::discriminator();
-        anchor_lang::AnchorSerialize::serialize(to_write, writer)
-            .map_err(|_| anchor_lang::error::ErrorCode::AccountDidNotSerialize)?;
-        Ok(())
-    }
-}
+    /// Comment a proposal. Target: Proposal
+    CommentProposal,
 
-impl anchor_lang::Owner for VoterWeightRecord {
-    fn owner() -> Pubkey {
-        crate::ID
-    }
-}
+    /// Create Governance within a realm. Target: Realm
+    CreateGovernance,
 
-impl std::ops::Deref for VoterWeightRecord {
-    type Target = spl_governance_addin_api::voter_weight::VoterWeightRecord;
+    /// Create a proposal for a governance. Target: Governance
+    CreateProposal,
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for VoterWeightRecord {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl anchor_lang::Discriminator for VoterWeightRecord {
-    fn discriminator() -> [u8; 8] {
-        //*b"2ef99b4b"
-        return spl_governance_addin_api::voter_weight::VoterWeightRecord::ACCOUNT_DISCRIMINATOR;
-    }
+    /// Signs off a proposal for a governance. Target: Proposal
+    /// Note: SignOffProposal is not supported in the current version
+    SignOffProposal,
 }
