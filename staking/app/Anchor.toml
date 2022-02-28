@@ -1,3 +1,6 @@
+# This Anchor.toml file is used to setup programs and accounts for UI development
+# Instead of running the normal test suite, we are running app/setup.ts
+# Instead of reinventing the wheel, we are using anchor test to facilitate deployment
 [features]
 seeds = true
 
@@ -12,4 +15,4 @@ cluster = "localnet"
 wallet = "./tests/default_wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/setup.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/setup.ts"

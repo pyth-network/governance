@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
-import { positions_account_size } from "./utils/constant";
+import { positions_account_size } from "../tests/utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -13,7 +13,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint, expect_fail } from "./utils/utils";
+import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
 import fs from "fs"
 
