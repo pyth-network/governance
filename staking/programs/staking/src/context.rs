@@ -113,7 +113,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>> for CpiContext<'a, 'b, 'c, '
 
 
 #[derive(Accounts)]
-#[instruction(product : Pubkey, publisher : Pubkey, amount : u64)]
+#[instruction(product : Option<Pubkey>, publisher : Option<Pubkey>, amount : u64)]
 pub struct CreatePostion<'info>{
     // Native payer:
     #[account( address = stake_account_metadata.owner)]

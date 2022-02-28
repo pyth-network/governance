@@ -1,6 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
+import { positions_account_size } from "./utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -28,9 +29,7 @@ describe("staking", async () => {
   let bump: number;
   let errMap: Map<number, string>;
 
-  const DISCRIMINANT_SIZE = 8;
-  const POSITION_SIZE = 104;
-  const MAX_POSITIONS = 100;
+
 
   const CONFIG_SEED = "config";
   const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
@@ -38,8 +37,7 @@ describe("staking", async () => {
   const AUTHORITY_SEED = "authority";
   const VOTER_SEED = "voter_weight";
 
-  const positions_account_size =
-    POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE;
+
 
   const provider = anchor.Provider.local();
 
