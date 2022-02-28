@@ -96,7 +96,7 @@ describe("staking", async () => {
         bump,
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
-        pythRealm : zero_pubkey,
+        pythRealm: zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
       })
@@ -131,14 +131,13 @@ describe("staking", async () => {
         program.programId
       );
 
-      const [voterAccount, voterBump] =
-      await PublicKey.findProgramAddress(
-        [
-          anchor.utils.bytes.utf8.encode(VOTER_SEED),
-          owner.toBuffer(),
-        ],
-        program.programId
-      );
+    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
@@ -228,15 +227,13 @@ describe("staking", async () => {
   });
 
   it("revises", async () => {
-
-    // const [voterAccount, voterBump] =
-    // await PublicKey.findProgramAddress(
-    //   [
-    //     anchor.utils.bytes.utf8.encode(VOTER_SEED),
-    //     provider.wallet.publicKey.toBuffer(),
-    //   ],
-    //   program.programId
-    // );
+    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
     await program.methods
       .revise()
@@ -245,8 +242,8 @@ describe("staking", async () => {
       })
       .rpc({ skipPreflight: DEBUG });
 
-      // const voter_record =
-      // await program.account.voterRecord.fetch(voterAccount);
+
+    //const voter_record = await program.account.voterRecord.fetch(voterAccount);
   });
 
   it("withdraws tokens", async () => {

@@ -6,13 +6,16 @@ use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
+/// If it passes the risk check, it returns the max amount of vested balance
+/// that can be withdrawn without violating risk constraints.
+/// It's guaranteed that the returned value is between 0 and vested_balance (both inclusive)
 pub fn validate(
     stake_account_positions: &PositionData,
     total_balance: u64,
     unvested_balance: u64,
     current_epoch: u64,
     unlocking_duration: u8,
-) -> Result<(u64)> {
+) -> Result<u64> {
     let mut current_exposures: BTreeMap<Option<Pubkey>, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
@@ -62,10 +65,10 @@ pub fn validate(
     }
     // TODO: Actually define how risk works and make this not a constant
     const RISK_THRESH: u64 = 5;
-    match (vested_balance
+    match vested_balance
         .checked_mul(RISK_THRESH)
         .unwrap()
-        .checked_sub(total_exposure))
+        .checked_sub(total_exposure)
     {
         Some(amount) => {
             withdrawable_balance = cmp::min(
@@ -85,7 +88,7 @@ pub fn validate(
 pub mod tests {
     use anchor_lang::prelude::{error, Pubkey};
 
-    use crate::state::positions::{PositionState};
+    use crate::state::positions::PositionState;
     use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
     use crate::{
         state::positions::{Position, PositionData, MAX_POSITIONS},
@@ -216,6 +219,7 @@ pub mod tests {
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 15, 0, current_epoch, 1).unwrap(), 3);
     }
 
     #[should_panic]

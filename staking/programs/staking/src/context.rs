@@ -57,7 +57,7 @@ pub struct CreateStakeAccount<'info>{
         init,
         payer = payer,
         space = voter_weight_record::VOTER_WEIGHT_RECORD_SIZE,
-        seeds = [VOTER_RECORD_SEED.as_bytes(), payer.key().as_ref()],
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump)]
     pub voter_record : Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
@@ -169,7 +169,7 @@ pub struct Revise<'info>{
     pub stake_account_custody : Account<'info, TokenAccount>,
     #[account(
         mut,
-        seeds = [VOTER_RECORD_SEED.as_bytes(), payer.key().as_ref()],
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.voter_bump)]
     pub voter_record : Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]

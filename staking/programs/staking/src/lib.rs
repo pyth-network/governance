@@ -63,10 +63,8 @@ pub mod staking {
         voter_record.realm = config.pyth_realm;
         voter_record.governing_token_mint = config.pyth_token_mint;
         voter_record.governing_token_owner = owner;
-        
-        Ok(())
 
-        
+        Ok(())
     }
 
     /// Creates a position
@@ -200,8 +198,26 @@ pub mod staking {
     pub fn revise(ctx: Context<Revise>) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let voter_record = &mut ctx.accounts.voter_record;
-        // TODO implement weight        
-        voter_record.voter_weight = 0;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+
+        let unvested_balance = ctx
+            .accounts
+            .stake_account_metadata
+            .lock
+            .get_unvested_balance(utils::clock::get_current_time())
+            .unwrap();
+
+        let withdrawable = utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+        // This should not be able to underflow, so panic is okay
+        voter_record.voter_weight = stake_account_custody.amount.checked_sub(withdrawable).unwrap();
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
