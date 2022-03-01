@@ -273,7 +273,7 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     const tx = await program.methods
-      .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+      .createPosition(null, null, new BN(1))
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -293,7 +293,7 @@ describe("staking", async () => {
     
     const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
     // Locked in 1 token, so voter weight is 1  
-    assert.equal(voter_record.voterWeight.toNumber(), 1);
+    assert.equal(voter_record.voterWeight.toNumber(), 0);
   });
 
   it("creates position with 0 principal", async () => {
@@ -320,7 +320,7 @@ describe("staking", async () => {
     let budgetRemaining = 200_000;
     let ixCost = 15000;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 300; // adding more positions increases the cost
+    let deltaCost = 350; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {

@@ -204,18 +204,30 @@ pub mod staking {
             .get_unvested_balance(utils::clock::get_current_time())
             .unwrap();
 
-        let withdrawable = utils::risk::validate(
+        utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
             config.unlocking_duration,
         )?;
+
+        let mut voter_weight = 0;
+        for i in 0..MAX_POSITIONS {
+            if stake_account_positions.positions[i].is_some() {
+                let position = stake_account_positions.positions[i].unwrap();
+                match position.get_current_position(current_epoch, config.unlocking_duration)? {
+                    PositionState::LOCKED => {
+                        if position.product.is_none() {
+                            voter_weight += position.amount;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
         // This should not be able to underflow, so panic is okay
-        voter_record.voter_weight = stake_account_custody
-            .amount
-            .checked_sub(withdrawable)
-            .unwrap();
+        voter_record.voter_weight = voter_weight;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
