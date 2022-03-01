@@ -49,6 +49,7 @@ describe("setup", async () => {
 
     fs.writeFileSync(`./app/keypairs/alice.json`, JSON.stringify(alice));
     fs.writeFileSync(`./app/keypairs/bob.json`, JSON.stringify(bob));
+    fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pyth_mint_account.publicKey.toBase58()));
 
     anchor.setProvider(anchor.Provider.env());
     program = anchor.workspace.Staking as Program<Staking>;

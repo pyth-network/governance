@@ -103,7 +103,7 @@ describe("staking", async () => {
         bump,
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
-        pythRealm: zero_pubkey,
+        pythGovernanceRealm: zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
       })

@@ -3,8 +3,12 @@ use anchor_lang::prelude::*;
 #[error_code]
 #[derive(PartialEq)]
 pub enum ErrorCode {
-    #[msg("Insufficient balance to take on a new position")]
-    InsufficientBalanceCreatePosition,
+    #[msg("Too much exposure to product")]
+    TooMuchExposureToProduct,
+    #[msg("Too much exposure to governance")]
+    TooMuchExposureToGovernance,
+    #[msg("Tokens not yet vested")]
+    TokensNotYetVested,
     #[msg("Risk limit exceeded")]
     RiskLimitExceeded,
     #[msg("Number of position limit reached")]

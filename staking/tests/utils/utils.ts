@@ -54,9 +54,9 @@ export async function createMint(
 
 /**
  * Sends the rpc call and check whether the error message matches the provided string
- * @param rpc_call anchor rpc call
- * @param error expect string
- * @param idlErrors mapping from error code to error message
+ * @param rpc_call : anchor rpc call
+ * @param error : expected string
+ * @param idlErrors : mapping from error code to error message
  */
 export async function expect_fail(rpc_call , error : string, idlErrors : Map<number,string>){
   try {

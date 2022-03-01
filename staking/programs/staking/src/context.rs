@@ -156,7 +156,7 @@ pub struct ClosePosition<'info>{
 #[derive(Accounts)]
 pub struct Revise<'info>{
     // Native payer:
-    #[account(mut, address = stake_account_metadata.owner)]
+    #[account(address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions : AccountLoader<'info, positions::PositionData>,

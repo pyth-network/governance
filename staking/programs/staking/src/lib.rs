@@ -30,7 +30,7 @@ pub mod staking {
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
-        config_account.pyth_realm = global_config.pyth_realm;
+        config_account.pyth_governance_realm = global_config.pyth_governance_realm;
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
 
@@ -60,7 +60,7 @@ pub mod staking {
 
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
-        voter_record.realm = config.pyth_realm;
+        voter_record.realm = config.pyth_governance_realm;
         voter_record.governing_token_mint = config.pyth_token_mint;
         voter_record.governing_token_owner = owner;
 
@@ -135,14 +135,9 @@ pub mod staking {
                     stake_account_positions.positions[i] = None;
                 }
                 PositionState::LOCKED => {
-                    let current_position = stake_account_positions.positions[i].unwrap();
-                    stake_account_positions.positions[i] = Some(Position {
-                        amount: current_position.amount,
-                        product: current_position.product,
-                        publisher: current_position.publisher,
-                        activation_epoch: current_position.activation_epoch,
-                        unlocking_start: Some(current_epoch + 1),
-                    })
+                    // This hasn't been tested
+                    let current_position = &mut stake_account_positions.positions[i].unwrap();
+                    current_position.unlocking_start = Some(current_epoch + 1);
                 }
                 _ => {}
             }
@@ -217,7 +212,10 @@ pub mod staking {
             config.unlocking_duration,
         )?;
         // This should not be able to underflow, so panic is okay
-        voter_record.voter_weight = stake_account_custody.amount.checked_sub(withdrawable).unwrap();
+        voter_record.voter_weight = stake_account_custody
+            .amount
+            .checked_sub(withdrawable)
+            .unwrap();
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }

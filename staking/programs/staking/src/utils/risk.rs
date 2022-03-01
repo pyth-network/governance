@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use std::{cmp, collections::BTreeMap};
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
-use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
+use crate::ErrorCode::{TooMuchExposureToGovernance, TooMuchExposureToProduct, TokensNotYetVested, RiskLimitExceeded};
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -36,7 +36,8 @@ pub fn validate(
         }
     }
 
-    let vested_balance = total_balance - unvested_balance;
+    let vested_balance = total_balance.checked_sub(unvested_balance).ok_or(error!(TokensNotYetVested))?;
+
     let mut withdrawable_balance: u64 = vested_balance;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
@@ -47,7 +48,7 @@ pub fn validate(
                     withdrawable_balance = cmp::min(withdrawable_balance, amount);
                 }
                 _ => {
-                    return Err(error!(InsufficientBalanceCreatePosition));
+                    return Err(error!(TooMuchExposureToGovernance));
                 }
             }
         } else {
@@ -58,7 +59,7 @@ pub fn validate(
                     total_exposure = total_exposure.checked_add(*exposure).unwrap();
                 }
                 _ => {
-                    return Err(error!(InsufficientBalanceCreatePosition));
+                    return Err(error!(TooMuchExposureToProduct));
                 }
             }
         }
@@ -89,7 +90,7 @@ pub mod tests {
     use anchor_lang::prelude::{error, Pubkey};
 
     use crate::state::positions::PositionState;
-    use crate::ErrorCode::{InsufficientBalanceCreatePosition, RiskLimitExceeded};
+    use crate::ErrorCode::{TooMuchExposureToGovernance, TooMuchExposureToProduct, TokensNotYetVested, RiskLimitExceeded};
     use crate::{
         state::positions::{Position, PositionData, MAX_POSITIONS},
         utils::risk::validate,
