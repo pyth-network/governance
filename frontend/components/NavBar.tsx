@@ -9,10 +9,20 @@ const NavBar = () => {
   return (
     <div className="grid grid-cols-12 mb-3">
       <div className="col-span-12 xl:col-start-2 xl:col-span-10 flex h-20 items-center justify-between px-4 md:px-8 xl:px-4">
-        <Link href={fmtUrlWithCluster('/realms')}>
+        <Link href={fmtUrlWithCluster('/dao/PYTH')}>
           <div className="cursor-pointer flex items-center">
-            <img src="/img/solana-logo.svg" className="h-8 mr-3" />
+            <img src="/img/pyth-logo.svg" className="h-8 mr-3" />
             {/* <h1 className="text-lg">Sierra</h1> */}
+          </div>
+        </Link>
+        <Link href={fmtUrlWithCluster('/dao/PYTH')}>
+          <div className="cursor-pointer flex items-center">
+            <h1 className="text-lg">Governance</h1>
+          </div>
+        </Link>
+        <Link href={fmtUrlWithCluster('/dao/PYTH')}>
+          <div className="cursor-pointer flex items-center">
+            <h1 className="text-lg">Staking</h1>
           </div>
         </Link>
         <ConnectWalletButton />
