@@ -1,7 +1,7 @@
 import * as React from 'react'
 import Document, { Html, Head, Main, NextScript } from 'next/document'
 import createEmotionServer from '@emotion/server/create-instance'
-import { theme } from '../components/muiTheme'
+import theme from '../components/muiTheme'
 import createEmotionCache from '../components/createEmotionCache'
 
 export default class MyDocument extends Document {
@@ -11,10 +11,10 @@ export default class MyDocument extends Document {
         <Head>
           {/* PWA primary color */}
           <meta name="theme-color" content={theme.palette.primary.main} />
-          <link rel="shortcut icon" href="/static/favicon.ico" />
+          <link rel="shortcut icon" href="/favicon.ico" />
           <link rel="stylesheet" href="https://use.typekit.net/wsv5ulf.css" />
           {/* Inject MUI styles first to match with the prepend: true configuration. */}
-          {this.props.emotionStyleTags}
+          {(this.props as any).emotionStyleTags}
         </Head>
         <body>
           <Main />
@@ -59,7 +59,7 @@ MyDocument.getInitialProps = async (ctx) => {
 
   ctx.renderPage = () =>
     originalRenderPage({
-      enhanceApp: (App) =>
+      enhanceApp: (App: any) =>
         function EnhanceApp(props) {
           return <App emotionCache={cache} {...props} />
         },

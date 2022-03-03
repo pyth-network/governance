@@ -1,18 +1,12 @@
-import { Button, Dialog, Hidden, IconButton, Switch } from '@mui/material'
+import { Button, Dialog, Hidden, IconButton, Theme } from '@mui/material'
 import { makeStyles } from '@mui/styles'
-import { Brightness5, NightsStay } from '@mui/icons-material'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import React, { useCallback, useContext, useState } from 'react'
-import closeIcon from '../public/images/close.svg'
-import menuIconDark from '../public/images/menu-dark.svg'
-import menuIcon from '../public/images/menu.svg'
-import pythLogoDark from '../public/images/pyth-logo-dark.svg'
-import pythLogo from '../public/images/pyth-logo.svg'
+import React, { useCallback, useState } from 'react'
 import { colors, fonts } from './muiTheme'
 import Link from './Link'
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -71,7 +65,10 @@ const useStyles = makeStyles((theme) => ({
   },
   menuButton: {
     '& .MuiButton-root': {
-      marginLeft: 0,
+      padding: 10,
+    },
+    '&.MuiIconButton-root': {
+      padding: 18,
     },
   },
 }))
@@ -157,7 +154,7 @@ const Header = () => {
                 </div>
               </Link>
               <div style={{ flex: 1 }} />
-              <IconButton onClick={handleClose}>
+              <IconButton onClick={handleClose} className={classes.menuButton}>
                 <Image
                   src="/images/close.svg"
                   alt="Close menu icon"

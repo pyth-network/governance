@@ -1,12 +1,11 @@
 import * as React from 'react'
-import PropTypes from 'prop-types'
 import Head from 'next/head'
-// import { ThemeProvider } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
+import { AppProps } from 'next/app'
 import { ThemeProvider } from '@mui/material/styles'
 import { StylesProvider, createGenerateClassName } from '@mui/styles'
-import { CacheProvider } from '@emotion/react'
-import { theme } from '../components/muiTheme'
+import CssBaseline from '@mui/material/CssBaseline'
+import { CacheProvider, EmotionCache } from '@emotion/react'
+import theme from '../components/muiTheme'
 import createEmotionCache from '../components/createEmotionCache'
 
 // Client-side cache, shared for the whole session of the user in the browser.
@@ -16,9 +15,12 @@ const generateClassName = createGenerateClassName({
   productionPrefix: 'c',
 })
 
-export default function MyApp(props) {
-  const { Component, emotionCache = clientSideEmotionCache, pageProps } = props
+interface MyAppProps extends AppProps {
+  emotionCache?: EmotionCache
+}
 
+export default function MyApp(props: MyAppProps) {
+  const { Component, emotionCache = clientSideEmotionCache, pageProps } = props
   return (
     <StylesProvider generateClassName={generateClassName}>
       <CacheProvider value={emotionCache}>
@@ -33,10 +35,4 @@ export default function MyApp(props) {
       </CacheProvider>
     </StylesProvider>
   )
-}
-
-MyApp.propTypes = {
-  Component: PropTypes.elementType.isRequired,
-  emotionCache: PropTypes.object,
-  pageProps: PropTypes.object.isRequired,
 }
