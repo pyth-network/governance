@@ -38,6 +38,7 @@ interface MyAppProps extends AppProps {
 const MyApp: FC<MyAppProps> = (props: MyAppProps) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
+  // TODO: allow network to be dynamic
   const network = WalletAdapterNetwork.Devnet
 
   // You can also provide a custom RPC endpoint
