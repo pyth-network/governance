@@ -152,7 +152,7 @@ const theme = responsiveFontSizes(
             transition: 'margin-left 300ms',
           },
           iconSizeMedium: {
-            '& *:first-child': {
+            '& *:first-of-type': {
               fontSize: 16,
             },
           },

@@ -12,12 +12,9 @@ import {
 } from '@solana/wallet-adapter-react'
 import { WalletDialogProvider } from '@solana/wallet-adapter-material-ui'
 import {
-  LedgerWalletAdapter,
   PhantomWalletAdapter,
   SlopeWalletAdapter,
-  SolflareWalletAdapter,
-  SolletExtensionWalletAdapter,
-  SolletWalletAdapter,
+  GlowWalletAdapter,
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
@@ -47,17 +44,15 @@ const MyApp: FC<MyAppProps> = (props: MyAppProps) => {
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
   // of wallets that your users connect to will be loaded
+  // TODO: add more wallet adapters
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
       new SlopeWalletAdapter(),
-      new SolflareWalletAdapter({ network }),
+      new GlowWalletAdapter(),
       new TorusWalletAdapter(),
-      new LedgerWalletAdapter(),
-      new SolletWalletAdapter({ network }),
-      new SolletExtensionWalletAdapter({ network }),
     ],
-    [network]
+    []
   )
   return (
     <StylesProvider generateClassName={generateClassName}>

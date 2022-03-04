@@ -67,6 +67,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   menuButton: {
     '& .MuiButton-root': {
       padding: 10,
+      marginLeft: 10,
+      minWidth: '35px',
     },
     '&.MuiIconButton-root': {
       padding: 18,
