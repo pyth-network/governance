@@ -116,10 +116,13 @@ const theme = responsiveFontSizes(
             fontSize: 12,
             fontWeight: 700,
             letterSpacing: 1.5,
-            padding: '18px 32px',
+            padding: '12px 16px',
             '&:hover $endIcon': {
               marginLeft: 28,
             },
+          },
+          startIcon: {
+            marginRight: 8,
           },
           contained: {
             boxShadow: 'none',
@@ -152,6 +155,13 @@ const theme = responsiveFontSizes(
             '& *:first-child': {
               fontSize: 16,
             },
+          },
+        },
+      },
+      MuiButtonBase: {
+        styleOverrides: {
+          root: {
+            justifyContent: 'flex-start',
           },
         },
       },
