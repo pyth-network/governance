@@ -16,10 +16,6 @@
     "jsx": "preserve",
     "paths": {
       "@components/*": ["components/*"],
-      "@hooks/*": ["hooks/*"],
-      "@tools/*": ["tools/*"],
-      "@models/*": ["models/*"],
-      "@utils/*": ["utils/*"]
     },
     "incremental": true
   },
