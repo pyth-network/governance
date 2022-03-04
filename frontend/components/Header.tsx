@@ -72,11 +72,6 @@ const useStyles = makeStyles((theme: Theme) => ({
       padding: 18,
     },
   },
-  connectWalletButton: {
-    // '& .MuiButton-root': {
-    //   padding: 10,
-    // },
-  },
 }))
 
 const Header = () => {
@@ -132,9 +127,7 @@ const Header = () => {
         {links}
       </Hidden>
       <div style={{ flex: 1 }} />
-      <div className={classes.connectWalletButton}>
-        <WalletMultiButton size="small" />
-      </div>
+      <WalletMultiButton />
       <Hidden mdUp implementation="css">
         <div className={classes.menuButton}>
           <Button onClick={handleOpen}>
