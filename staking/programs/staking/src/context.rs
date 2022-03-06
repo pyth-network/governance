@@ -114,7 +114,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>> for CpiContext<'a, 'b, 'c, '
 
 #[derive(Accounts)]
 #[instruction(product : Option<Pubkey>, publisher : Option<Pubkey>, amount : u64)]
-pub struct CreatePostion<'info>{
+pub struct CreatePosition<'info>{
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
@@ -182,7 +182,7 @@ pub struct SplitPosition<'info>{
 }
 
 #[derive(Accounts)]
-pub struct CleanupPostions<'info>{
+pub struct CleanupPositions<'info>{
     pub payer : Signer<'info>,
 }
 
