@@ -12,6 +12,7 @@
     },
     "scripts": {
         "test" : "ln -f -s ./tests/Anchor.toml ./Anchor.toml && anchor test",
-        "setup_ui" : "ln -f -s ./app/Anchor.toml ./Anchor.toml && anchor test --detach"
+        "setup_ui" : "ln -f -s ./app/Anchor.toml ./Anchor.toml && anchor test --detach",
+        "docker" : "docker build -f docker/Dockerfile -t governance . && docker run -ti governance"
     }
 }
