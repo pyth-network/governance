@@ -39,6 +39,8 @@ pub struct CreateStakeAccount<'info>{
     // Stake program accounts:
     #[account(zero)]
     pub stake_account_positions : AccountLoader<'info, positions::PositionData>,
+    #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -48,8 +50,6 @@ pub struct CreateStakeAccount<'info>{
         token::authority = custody_authority,
     )]
     pub stake_account_custody : Account<'info, TokenAccount>,
-    #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
-    pub stake_account_metadata : Account<'info, stake_account::StakeAccountMetadata>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority : AccountInfo<'info>,
