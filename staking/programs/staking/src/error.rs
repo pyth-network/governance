@@ -19,10 +19,12 @@ pub enum ErrorCode {
     CreatePositionWithZero,
     #[msg("Invalid product/publisher pair")]
     InvalidPosition,
+    #[msg("Position already unlocking")]
+    AlreadyUnlocking,
     #[msg("Epoch duration is 0")]
     ZeroEpochDuration,
     #[msg("Owner needs to own destination account")]
-    WithdrawToUnathorizedAccount,
+    WithdrawToUnauthorizedAccount,
     #[msg("Insufficient balance to cover the withdrawal")]
     InsufficientWithdrawableBalance,
     #[msg("Not implemented")]

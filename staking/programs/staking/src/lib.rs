@@ -109,8 +109,7 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time())
-            .unwrap();
+            .get_unvested_balance(utils::clock::get_current_time())?;
         utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
@@ -136,7 +135,6 @@ pub mod staking {
                 .unwrap()
             {
                 PositionState::LOCKING | PositionState::UNLOCKED => {
-                    let current_position = stake_account_positions.positions[i].unwrap();
                     stake_account_positions.positions[i] = None;
                 }
                 PositionState::LOCKED => {
@@ -144,7 +142,9 @@ pub mod staking {
                     let current_position = &mut stake_account_positions.positions[i].unwrap();
                     current_position.unlocking_start = Some(current_epoch + 1);
                 }
-                _ => {}
+                PositionState::UNLOCKING => {
+                    return Err(error!(ErrorCode::AlreadyUnlocking));
+                }
             }
         }
 
