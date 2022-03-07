@@ -23,6 +23,8 @@ pub enum ErrorCode {
     WithdrawToUnathorizedAccount,
     #[msg("Insufficient balance to cover the withdrawal")]
     InsufficientWithdrawableBalance,
+    #[msg("Not allowed when not debugging")]
+    DebuggingOnly,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Other")]

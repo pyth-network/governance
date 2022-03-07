@@ -2,6 +2,7 @@
 # tests inside tests 
 [features]
 seeds = true
+anchor-debug = true
 
 [programs.localnet]
 staking = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"

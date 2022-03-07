@@ -13,7 +13,8 @@ no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 cpi = ["no-entrypoint"]
-default = []
+mock-clock = []
+default = ["mock-clock"]
 
 [dependencies]
 anchor-lang = "0.22.0"
