@@ -209,7 +209,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn revise(ctx: Context<Revise>) -> Result<()> {
+    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let voter_record = &mut ctx.accounts.voter_record;
         let stake_account_custody = &ctx.accounts.stake_account_custody;

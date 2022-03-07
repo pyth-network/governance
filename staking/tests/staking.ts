@@ -233,9 +233,9 @@ describe("staking", async () => {
     });
   });
 
-  it("revises", async () => {
+  it("updates voter weight", async () => {
     await program.methods
-      .revise()
+      .updateVoterWeight()
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -282,9 +282,9 @@ describe("staking", async () => {
       });
   });
 
-  it("revises again", async () => {
+  it("updates voter weight again", async () => {
     await program.methods
-      .revise()
+      .updateVoterWeight()
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -292,7 +292,7 @@ describe("staking", async () => {
 
     
     const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
-    // Locked in 1 token, so voter weight is 1  
+    // No time has passed, so nothing is locked and voter weight is still 0 
     assert.equal(voter_record.voterWeight.toNumber(), 0);
   });
 
@@ -318,9 +318,9 @@ describe("staking", async () => {
 
     // We are starting with 1 position and want to create 99 more
     let budgetRemaining = 200_000;
-    let ixCost = 15000;
+    let ixCost = 19100;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 350; // adding more positions increases the cost
+    let deltaCost = 510; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {

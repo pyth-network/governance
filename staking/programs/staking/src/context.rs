@@ -154,7 +154,7 @@ pub struct ClosePosition<'info>{
 }
 
 #[derive(Accounts)]
-pub struct Revise<'info>{
+pub struct UpdateVoterWeight<'info>{
     // Native payer:
     #[account(address = stake_account_metadata.owner)]
     pub payer : Signer<'info>,
