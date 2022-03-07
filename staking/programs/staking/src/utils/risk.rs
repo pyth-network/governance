@@ -2,7 +2,9 @@ use anchor_lang::prelude::*;
 use std::{cmp, collections::BTreeMap};
 
 use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
-use crate::ErrorCode::{TooMuchExposureToGovernance, TooMuchExposureToProduct, TokensNotYetVested, RiskLimitExceeded};
+use crate::ErrorCode::{
+    RiskLimitExceeded, TokensNotYetVested, TooMuchExposureToGovernance, TooMuchExposureToProduct,
+};
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -36,14 +38,16 @@ pub fn validate(
         }
     }
 
-    let vested_balance = total_balance.checked_sub(unvested_balance).ok_or(error!(TokensNotYetVested))?;
+    let vested_balance = total_balance
+        .checked_sub(unvested_balance)
+        .ok_or(error!(TokensNotYetVested))?;
     /*
      * The four inequalities we need to hold are:
      *      vested balance >= 0
      *      total balance = vested balance + unvested balance >= voting position
      *      vested balance >= exposure_i for each product other than voting
      *      RISK_THRESH * vested balance >= sum exposure_i (again excluding voting)
-     * 
+     *
      * If you replace vested balance with (vested balance - withdrawable amount) and then solve
      * for withdrawable amount (w), you get:
      *      w <= vested balance
@@ -57,49 +61,51 @@ pub fn validate(
      * The maximum value for w is then just the minimum of all the RHS of all the inequalities.
      */
 
-    let mut withdrawable_balance: u64 = vested_balance;
+    let mut governance_exposure: u64 = 0;
+    let mut max_product_exposure: u64 = 0;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
-        if !(*product).is_some() {
-            // This is the special voting position that ignores vesting
-            match total_balance.checked_sub(*exposure) {
-                Some(amount) => {
-                    withdrawable_balance = cmp::min(withdrawable_balance, amount);
-                }
-                _ => {
-                    return Err(error!(TooMuchExposureToGovernance));
-                }
+        match *product {
+            None => {
+                // This is the special voting position that ignores vesting
+                // If there are multiple voting positions, they've been aggregated at this point
+                governance_exposure = *exposure;
             }
-        } else {
-            // A normal position
-            match vested_balance.checked_sub(*exposure) {
-                Some(amount) => {
-                    withdrawable_balance = cmp::min(withdrawable_balance, amount);
-                    total_exposure = total_exposure.checked_add(*exposure).unwrap();
-                }
-                _ => {
-                    return Err(error!(TooMuchExposureToProduct));
-                }
+            Some(_) => {
+                // A normal position
+                max_product_exposure = cmp::max(max_product_exposure, *exposure);
+                total_exposure = total_exposure
+                    .checked_add(*exposure)
+                    .ok_or_else(|| error!(TooMuchExposureToProduct))?;
             }
         }
     }
     // TODO: Actually define how risk works and make this not a constant
     const RISK_THRESH: u64 = 5;
-    match vested_balance
-        .checked_mul(RISK_THRESH)
-        .unwrap()
-        .checked_sub(total_exposure)
-    {
-        Some(amount) => {
-            withdrawable_balance = cmp::min(
-                withdrawable_balance,
-                amount.checked_div(RISK_THRESH).unwrap(),
-            );
-        }
-        _ => {
-            return Err(error!(RiskLimitExceeded));
-        }
-    }
+
+    let mut withdrawable_balance = vested_balance;
+    withdrawable_balance = cmp::min(
+        withdrawable_balance,
+        total_balance
+            .checked_sub(governance_exposure)
+            .ok_or_else(|| error!(TooMuchExposureToGovernance))?,
+    );
+    withdrawable_balance = cmp::min(
+        withdrawable_balance,
+        vested_balance
+            .checked_sub(max_product_exposure)
+            .ok_or_else(|| error!(TooMuchExposureToProduct))?,
+    );
+    withdrawable_balance = cmp::min(
+        withdrawable_balance,
+        vested_balance
+            .checked_mul(RISK_THRESH)
+            .unwrap()
+            .checked_sub(total_exposure)
+            .ok_or_else(|| error!(RiskLimitExceeded))?
+            .checked_div(RISK_THRESH)
+            .unwrap(),
+    );
 
     return Ok(withdrawable_balance);
 }
@@ -109,7 +115,10 @@ pub mod tests {
     use anchor_lang::prelude::{error, Pubkey};
 
     use crate::state::positions::PositionState;
-    use crate::ErrorCode::{TooMuchExposureToGovernance, TooMuchExposureToProduct, TokensNotYetVested, RiskLimitExceeded};
+    use crate::ErrorCode::{
+        RiskLimitExceeded, TokensNotYetVested, TooMuchExposureToGovernance,
+        TooMuchExposureToProduct,
+    };
     use crate::{
         state::positions::{Position, PositionData, MAX_POSITIONS},
         utils::risk::validate,
