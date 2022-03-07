@@ -167,8 +167,22 @@ pub mod staking {
             .get_unvested_balance(utils::clock::get_current_time())
             .unwrap();
 
-        if (destination_account.owner != *signer.key) {
-            return Err(error!(ErrorCode::WithdrawToUnathorizedAccount));
+        if destination_account.owner != *signer.key {
+            return Err(error!(ErrorCode::WithdrawToUnauthorizedAccount));
+        }
+
+        // Pre-check
+        let remaining_balance = stake_account_custody.amount.checked_sub(amount).ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
+        if utils::risk::validate(
+            &stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
+        {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
 
         transfer(
