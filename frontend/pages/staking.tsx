@@ -92,7 +92,6 @@ const tokens = { unlocked: 10000, locked: 100, unvested: 1000 }
 const Staking: NextPage = () => {
   const classes = useStyles()
   const wallet = useWallet()
-  console.log(wallet)
   return (
     <Layout>
       <Container className={classes.sectionContainer}>
@@ -183,9 +182,11 @@ const Staking: NextPage = () => {
                     </TableHead>
                     <TableBody>
                       {Object.entries(tokens).map((t) => (
-                        <TableRow>
+                        <TableRow key={t[0]}>
                           <TableCell>{t[0]}</TableCell>
-                          <TableCell align="right">{wallet.connected ? t[1] : "-"}</TableCell>
+                          <TableCell align="right">
+                            {wallet.connected ? t[1] : '-'}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
