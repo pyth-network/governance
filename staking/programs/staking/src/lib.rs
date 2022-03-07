@@ -87,6 +87,11 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration)?;
 
+        // Make sure both are Some() or both are None
+        if product.is_none() != publisher.is_none() {
+            return Err(error!(ErrorCode::InvalidPosition));
+        }
+
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
@@ -212,14 +217,16 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        let mut voter_weight = 0;
+        let mut voter_weight = 0u64;
         for i in 0..MAX_POSITIONS {
             if stake_account_positions.positions[i].is_some() {
                 let position = stake_account_positions.positions[i].unwrap();
                 match position.get_current_position(current_epoch, config.unlocking_duration)? {
                     PositionState::LOCKED => {
-                        if position.product.is_none() {
-                            voter_weight += position.amount;
+                        if position.product.is_none() && position.publisher.is_none() {
+                            // position.amount is trusted, so I don't think this can overflow,
+                            // but still probably better to use checked math
+                            voter_weight = voter_weight.checked_add(position.amount).unwrap();
                         }
                     }
                     _ => {}

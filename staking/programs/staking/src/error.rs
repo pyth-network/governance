@@ -17,6 +17,8 @@ pub enum ErrorCode {
     PositionNotInUse,
     #[msg("New position needs to have positive balance")]
     CreatePositionWithZero,
+    #[msg("Invalid product/publisher pair")]
+    InvalidPosition,
     #[msg("Epoch duration is 0")]
     ZeroEpochDuration,
     #[msg("Owner needs to own destination account")]
