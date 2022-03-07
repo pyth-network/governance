@@ -37,6 +37,25 @@ pub fn validate(
     }
 
     let vested_balance = total_balance.checked_sub(unvested_balance).ok_or(error!(TokensNotYetVested))?;
+    /*
+     * The four inequalities we need to hold are:
+     *      vested balance >= 0
+     *      total balance = vested balance + unvested balance >= voting position
+     *      vested balance >= exposure_i for each product other than voting
+     *      RISK_THRESH * vested balance >= sum exposure_i (again excluding voting)
+     * 
+     * If you replace vested balance with (vested balance - withdrawable amount) and then solve
+     * for withdrawable amount (w), you get:
+     *      w <= vested balance
+     *      w <= total balance - voting position
+     *      w <= vested balance - exposure_i    (for each i, excluding voting)
+     *      RISK_THRESH * w <= RISK_THRESH * vested balance - sum exposure_i  (excluding voting)
+     * we want to be careful about rounding in the division for the last inequality,
+     * so we use:
+     *   w <= floor((RISK_THRESH * vested balance - sum exposure_i)/RISK_THRESH)
+     * which implies the actual inequality.
+     * The maximum value for w is then just the minimum of all the RHS of all the inequalities.
+     */
 
     let mut withdrawable_balance: u64 = vested_balance;
     let mut total_exposure: u64 = 0;
@@ -221,6 +240,26 @@ pub mod tests {
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);
         assert_eq!(validate(&pd, 15, 0, current_epoch, 1).unwrap(), 3);
+    }
+    #[test]
+    fn test_multiple_voting() {
+        let mut pd = PositionData {
+            positions: [None; MAX_POSITIONS],
+        };
+        for i in 0..5 {
+            pd.positions[i] = Some(Position {
+                activation_epoch: 1,
+                amount: 10,
+                product: None,
+                publisher: None,
+                unlocking_start: None,
+            });
+        }
+        let current_epoch = 44;
+        assert_eq!(validate(&pd, 100, 0, current_epoch, 1).unwrap(), 50);
+        assert_eq!(validate(&pd, 50, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 60, 51, current_epoch, 1).unwrap(), 9);
+        assert!(validate(&pd, 49, 0, current_epoch, 1).is_err());
     }
 
     #[should_panic]
