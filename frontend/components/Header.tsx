@@ -5,6 +5,7 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useState } from 'react'
 import { colors, fonts } from './muiTheme'
 import Link from './Link'
+import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
 
 const useStyles = makeStyles((theme: Theme) => ({
   header: {
@@ -66,6 +67,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   menuButton: {
     '& .MuiButton-root': {
       padding: 10,
+      marginLeft: 10,
+      minWidth: '35px',
     },
     '&.MuiIconButton-root': {
       padding: 18,
@@ -126,6 +129,7 @@ const Header = () => {
         {links}
       </Hidden>
       <div style={{ flex: 1 }} />
+      <WalletMultiButton />
       <Hidden mdUp implementation="css">
         <div className={classes.menuButton}>
           <Button onClick={handleOpen}>
