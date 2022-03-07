@@ -1,3 +1,4 @@
+import SEO from '@components/SEO'
 import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import styles from '../styles/Home.module.css'
@@ -5,6 +6,7 @@ import styles from '../styles/Home.module.css'
 const Home: NextPage = () => {
   return (
     <Layout>
+      <SEO title={'App'} />
       <h1 className={styles.title}>
         Welcome to <a href="https://nextjs.org">Next.js!</a>
       </h1>
