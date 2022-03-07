@@ -172,7 +172,10 @@ pub mod staking {
         }
 
         // Pre-check
-        let remaining_balance = stake_account_custody.amount.checked_sub(amount).ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
+        let remaining_balance = stake_account_custody
+            .amount
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
         if utils::risk::validate(
             &stake_account_positions,
             remaining_balance,
@@ -247,7 +250,6 @@ pub mod staking {
                 }
             }
         }
-        // This should not be able to underflow, so panic is okay
         voter_record.voter_weight = voter_weight;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
