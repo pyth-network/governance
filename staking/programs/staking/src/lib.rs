@@ -131,8 +131,7 @@ pub mod staking {
         if stake_account_positions.positions[i].is_some() {
             match stake_account_positions.positions[i]
                 .unwrap()
-                .get_current_position(current_epoch, config.unlocking_duration)
-                .unwrap()
+                .get_current_position(current_epoch, config.unlocking_duration)?
             {
                 PositionState::LOCKING | PositionState::UNLOCKED => {
                     stake_account_positions.positions[i] = None;
@@ -146,6 +145,9 @@ pub mod staking {
                     return Err(error!(ErrorCode::AlreadyUnlocking));
                 }
             }
+        }
+        else{
+            return Err(error!(ErrorCode::PositionNotInUse));
         }
 
         Ok(())

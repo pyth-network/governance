@@ -75,6 +75,10 @@ impl Position {
             }
         }
     }
+
+    pub fn is_vote(&self) -> bool {
+        return (self.product.is_none() && self.publisher.is_none());
+    }
 }
 
 /// The core states that a position can be in
