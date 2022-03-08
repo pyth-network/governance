@@ -16,6 +16,7 @@ import {
 import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
 import fs from "fs"
+import assert from "assert"
 
 describe("setup", async () => {
   let program: Program<Staking>;
@@ -51,10 +52,10 @@ describe("setup", async () => {
     fs.writeFileSync(`./app/keypairs/bob.json`, JSON.stringify(bob));
     fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pyth_mint_account.publicKey.toBase58()));
 
-    anchor.setProvider(anchor.Provider.env());
     program = anchor.workspace.Staking as Program<Staking>;
 
-    
+    await provider.connection.requestAirdrop(provider.wallet.publicKey, 1_000_000_000_000);
+
   });
 
   it("initializes config", async () => {

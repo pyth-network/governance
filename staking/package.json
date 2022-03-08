@@ -12,7 +12,8 @@
     },
     "scripts": {
         "test" : "ln -f -s ./tests/Anchor.toml ./Anchor.toml && anchor test",
-        "setup_ui" : "ln -f -s ./app/Anchor.toml ./Anchor.toml && anchor test --detach",
-        "docker" : "docker build -f docker/Dockerfile -t governance . && docker run -ti governance"
+        "setup" : "export ANCHOR_WALLET='./tests/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/setup.ts",
+        "docker_build" : "docker build -f docker/Dockerfile -t governance .",
+        "docker_start" : "docker run -ti -p 8899:8899 -p 8900:8900 governance" 
     }
 }
