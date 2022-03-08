@@ -44,9 +44,9 @@ pub mod staking {
         lock: VestingSchedule,
     ) -> Result<()> {
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
-        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
         stake_account_metadata.owner = owner;
         stake_account_metadata.lock = lock;
@@ -145,8 +145,9 @@ pub mod staking {
 
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
-        let stake_account_custody = &ctx.accounts.stake_account_custody;
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.payer;
         let config = &ctx.accounts.config;
@@ -206,8 +207,9 @@ pub mod staking {
 
     pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
-        let voter_record = &mut ctx.accounts.voter_record;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let voter_record = &mut ctx.accounts.voter_record;
+
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
 
