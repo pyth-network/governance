@@ -24,6 +24,8 @@ import Layout from '../components/Layout'
 import { colors } from '@components/muiTheme'
 import { ArrowForward } from '@mui/icons-material'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { useMemo } from 'react'
+import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -87,11 +89,12 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }))
 
-const tokens = { unlocked: 10000, locked: 100, unvested: 1000 }
+const tokens = { Unlocked: 10000, Locked: 100, Unvested: 1000 }
 
 const Staking: NextPage = () => {
   const classes = useStyles()
-  const wallet = useWallet()
+  const { publicKey, connected } = useWallet()
+  const base58 = useMemo(() => publicKey?.toBase58(), [publicKey])
   return (
     <Layout>
       <Container className={classes.sectionContainer}>
@@ -124,7 +127,7 @@ const Staking: NextPage = () => {
                 </Box>
                 <Grid container spacing={1} justifyContent="center">
                   <div className={classes.buttonGroup}>
-                    {wallet.connected ? (
+                    {connected ? (
                       <>
                         <Grid item xs={6}>
                           <Button
@@ -147,13 +150,13 @@ const Staking: NextPage = () => {
                       </>
                     ) : (
                       <Grid item xs={12}>
-                        <Button
+                        <WalletMultiButton
                           variant="outlined"
                           disableRipple
                           className={classes.button}
                         >
                           Connect Wallet
-                        </Button>
+                        </WalletMultiButton>
                       </Grid>
                     )}
                   </div>
@@ -185,7 +188,7 @@ const Staking: NextPage = () => {
                         <TableRow key={t[0]}>
                           <TableCell>{t[0]}</TableCell>
                           <TableCell align="right">
-                            {wallet.connected ? t[1] : '-'}
+                            {connected ? t[1] : '-'}
                           </TableCell>
                         </TableRow>
                       ))}

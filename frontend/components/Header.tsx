@@ -2,10 +2,11 @@ import { Button, Dialog, Hidden, IconButton, Theme } from '@mui/material'
 import { makeStyles } from '@mui/styles'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { colors, fonts } from './muiTheme'
 import Link from './Link'
 import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
+import { useWallet } from '@solana/wallet-adapter-react'
 
 const useStyles = makeStyles((theme: Theme) => ({
   header: {
@@ -79,6 +80,8 @@ const useStyles = makeStyles((theme: Theme) => ({
 const Header = () => {
   const classes = useStyles()
   const router = useRouter()
+  const { publicKey, connected } = useWallet()
+  const base58 = useMemo(() => publicKey?.toBase58(), [publicKey])
   const [open, setOpen] = useState(false)
 
   const handleOpen = useCallback(() => {
@@ -129,7 +132,13 @@ const Header = () => {
         {links}
       </Hidden>
       <div style={{ flex: 1 }} />
-      <WalletMultiButton />
+      {connected && base58 ? (
+        <WalletMultiButton>
+          {base58.slice(0, 5) + '..' + base58.slice(-5)}
+        </WalletMultiButton>
+      ) : (
+        <WalletMultiButton>Connect Wallet</WalletMultiButton>
+      )}
       <Hidden mdUp implementation="css">
         <div className={classes.menuButton}>
           <Button onClick={handleOpen}>
