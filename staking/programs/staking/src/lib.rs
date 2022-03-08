@@ -71,7 +71,7 @@ pub mod staking {
     /// Looks for the first available place in the array, fails if array is full
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
-        ctx: Context<CreatePostion>,
+        ctx: Context<CreatePosition>,
         product: Option<Pubkey>,
         publisher: Option<Pubkey>,
         amount: u64,
@@ -258,7 +258,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn cleanup_positions(ctx: Context<CleanupPostions>) -> Result<()> {
+    pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
         Ok(())
     }
 }
