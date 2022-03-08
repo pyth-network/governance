@@ -1,5 +1,3 @@
-# This Anchor.toml file is used for testing purposes. yarn test runs all available
-# tests inside tests 
 [features]
 seeds = true
 

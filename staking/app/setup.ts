@@ -16,7 +16,6 @@ import {
 import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
 import fs from "fs"
-import assert from "assert"
 
 describe("setup", async () => {
   let program: Program<Staking>;
