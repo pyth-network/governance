@@ -4,5 +4,6 @@ COPY . governance/
 
 WORKDIR /workdir/governance
 RUN anchor build
+RUN ./prepare.sh
 
 ENTRYPOINT [ "./docker/validator.sh" ]
