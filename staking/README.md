@@ -10,8 +10,8 @@ yarn docker_build
 yarn docker_start
 ```
 
-The staking program is deployed in the genesis block as :
-Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS
+The staking program is deployed in the genesis block at the address :
+```Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS```
 
 
 The validator gets deployed to ```localhost:8899``` (websocket : ```localhost:8900```). It runs inside the docker.
