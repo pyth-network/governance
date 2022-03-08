@@ -91,6 +91,11 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
+        // Make sure both are Some() or both are None
+        if product.is_none() != publisher.is_none() {
+            return Err(error!(ErrorCode::InvalidPosition));
+        }
+
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
@@ -108,8 +113,8 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time(config))
-            .unwrap();
+            .get_unvested_balance(utils::clock::get_current_time(config))?;
+
         utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
@@ -135,7 +140,6 @@ pub mod staking {
                 .unwrap()
             {
                 PositionState::LOCKING | PositionState::UNLOCKED => {
-                    let current_position = stake_account_positions.positions[i].unwrap();
                     stake_account_positions.positions[i] = None;
                 }
                 PositionState::LOCKED => {
@@ -143,7 +147,9 @@ pub mod staking {
                     let current_position = &mut stake_account_positions.positions[i].unwrap();
                     current_position.unlocking_start = Some(current_epoch + 1);
                 }
-                _ => {}
+                PositionState::UNLOCKING => {
+                    return Err(error!(ErrorCode::AlreadyUnlocking));
+                }
             }
         }
 
@@ -166,8 +172,25 @@ pub mod staking {
             .get_unvested_balance(utils::clock::get_current_time(config))
             .unwrap();
 
-        if (destination_account.owner != *signer.key) {
-            return Err(error!(ErrorCode::WithdrawToUnathorizedAccount));
+        if destination_account.owner != *signer.key {
+            return Err(error!(ErrorCode::WithdrawToUnauthorizedAccount));
+        }
+
+        // Pre-check
+        let remaining_balance = stake_account_custody
+            .amount
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
+        if utils::risk::validate(
+            &stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
+        {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
 
         transfer(
@@ -194,7 +217,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn revise(ctx: Context<Revise>) -> Result<()> {
+    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let voter_record = &mut ctx.accounts.voter_record;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
@@ -216,14 +239,16 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        let mut voter_weight = 0;
+        let mut voter_weight = 0u64;
         for i in 0..MAX_POSITIONS {
             if stake_account_positions.positions[i].is_some() {
                 let position = stake_account_positions.positions[i].unwrap();
                 match position.get_current_position(current_epoch, config.unlocking_duration)? {
                     PositionState::LOCKED => {
-                        if position.product.is_none() {
-                            voter_weight += position.amount;
+                        if position.product.is_none() && position.publisher.is_none() {
+                            // position.amount is trusted, so I don't think this can overflow,
+                            // but still probably better to use checked math
+                            voter_weight = voter_weight.checked_add(position.amount).unwrap();
                         }
                     }
                     _ => {
@@ -231,7 +256,6 @@ pub mod staking {
                 }
             }
         }
-        // This should not be able to underflow, so panic is okay
         voter_record.voter_weight = voter_weight;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())

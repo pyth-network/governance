@@ -41,6 +41,8 @@ pub struct Position {
     pub unlocking_start: Option<u64>,
     pub product: Option<Pubkey>,
     pub publisher: Option<Pubkey>,
+    // Note: If you add a field here, you may need to change MAX_POSITIONS or the account size 
+    // as well as POSITION_SIZE in constants.ts.
 } // TODO: Decide if we want to reserve some space here for reward tracking state
 
 impl Position {

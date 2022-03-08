@@ -248,9 +248,9 @@ describe("staking", async () => {
     });
   });
 
-  it("revises", async () => {
+  it("updates voter weight", async () => {
     await program.methods
-      .revise()
+      .updateVoterWeight()
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -297,14 +297,14 @@ describe("staking", async () => {
       });
   });
 
-  it("revises again", async () => {
+  it("updates voter weight again", async () => {
     await program.methods
       .advanceClock(new BN(5*3600))
       .accounts()
       .rpc({ skipPreflight: DEBUG });
 
     await program.methods
-      .revise()
+      .updateVoterWeight()
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
