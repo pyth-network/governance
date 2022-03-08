@@ -242,7 +242,7 @@ pub mod staking {
                 let position = stake_account_positions.positions[i].unwrap();
                 match position.get_current_position(current_epoch, config.unlocking_duration)? {
                     PositionState::LOCKED => {
-                        if position.product.is_none() && position.publisher.is_none() {
+                        if position.is_vote() {
                             // position.amount is trusted, so I don't think this can overflow,
                             // but still probably better to use checked math
                             voter_weight = voter_weight.checked_add(position.amount).unwrap();
