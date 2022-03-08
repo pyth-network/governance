@@ -1,6 +1,7 @@
 import * as anchor from "@project-serum/anchor";
-import { parseIdlErrors, Program, ProgramError } from "@project-serum/anchor";
+import { Program, Spl } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
+import { positions_account_size } from "./utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -12,7 +13,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint, parseErrorMessage } from "./utils/utils";
+import { createMint, expect_fail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 
@@ -25,20 +26,19 @@ describe("staking", async () => {
   let program: Program<Staking>;
 
   let config_account: PublicKey;
+  let voterAccount: PublicKey;
   let bump: number;
   let errMap: Map<number, string>;
 
-  const DISCRIMINANT_SIZE = 8;
-  const POSITION_SIZE = 104;
-  const MAX_POSITIONS = 100;
+
 
   const CONFIG_SEED = "config";
   const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
   const CUSTODY_SEED = "custody";
   const AUTHORITY_SEED = "authority";
+  const VOTER_SEED = "voter_weight";
 
-  const positions_account_size =
-    POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE;
+
 
   const provider = anchor.Provider.local();
 
@@ -47,12 +47,27 @@ describe("staking", async () => {
   const pyth_mint_authority = new Keypair();
   const zero_pubkey = new PublicKey(0);
 
+  const user_ata = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    pyth_mint_account.publicKey,
+    provider.wallet.publicKey
+  );
+
   before(async () => {
     anchor.setProvider(anchor.Provider.env());
     program = anchor.workspace.Staking as Program<Staking>;
 
     [config_account, bump] = await PublicKey.findProgramAddress(
       [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+      program.programId
+    );
+    let voterBump = 0;
+    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
       program.programId
     );
 
@@ -88,6 +103,7 @@ describe("staking", async () => {
         bump,
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
+        pythGovernanceRealm: zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
       })
@@ -122,6 +138,14 @@ describe("staking", async () => {
         program.programId
       );
 
+    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stake_account_positions_secret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
@@ -141,7 +165,7 @@ describe("staking", async () => {
       })
       .signers([stake_account_positions_secret])
       .rpc({
-        skipPreflight: true,
+        skipPreflight: DEBUG,
       });
 
     const stake_account_metadata_data =
@@ -153,6 +177,7 @@ describe("staking", async () => {
         custodyBump,
         authorityBump,
         metadataBump,
+        voterBump,
         owner,
         lock: { fullyVested: {} },
       })
@@ -161,12 +186,8 @@ describe("staking", async () => {
 
   it("deposits tokens", async () => {
     const transaction = new Transaction();
-    const from_account = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      pyth_mint_account.publicKey,
-      provider.wallet.publicKey
-    );
+    const from_account = user_ata;
+
     const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -177,7 +198,7 @@ describe("staking", async () => {
     );
     transaction.add(create_ata_ix);
 
-    // Mint 1000 tokens. We'll send 100 to the custody wallet and save 900 for later.
+    // Mint 1000 tokens. We'll send 101 to the custody wallet and save 899 for later.
     const mint_ix = Token.createMintToInstruction(
       TOKEN_PROGRAM_ID,
       pyth_mint_account.publicKey,
@@ -204,7 +225,7 @@ describe("staking", async () => {
       to_account,
       provider.wallet.publicKey,
       [],
-      100
+      101
     );
     transaction.add(ix);
     const tx = await provider.send(transaction, [pyth_mint_authority], {
@@ -212,32 +233,47 @@ describe("staking", async () => {
     });
   });
 
+  it("updates voter weight", async () => {
+    await program.methods
+      .updateVoterWeight()
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({ skipPreflight: DEBUG });
+
+    
+    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
+    // Haven't locked anything, so no voter weight
+    assert.equal(voter_record.voterWeight.toNumber(), 0);
+  });
+
+  it("withdraws tokens", async () => {
+    const to_account = user_ata;
+
+    await program.methods
+      .withdrawStake(new BN(1))
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        destination: to_account,
+      })
+      .rpc({ skipPreflight: DEBUG });
+  });
+
   it("creates a position that's too big", async () => {
-    try {
-      await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(102))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "Insufficient balance to take on a new position"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "Insufficient balance to take on a new position",
+      errMap
+    );
   });
 
   it("creates a position", async () => {
     const tx = await program.methods
-      .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+      .createPosition(null, null, new BN(1))
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -246,27 +282,30 @@ describe("staking", async () => {
       });
   });
 
+  it("updates voter weight again", async () => {
+    await program.methods
+      .updateVoterWeight()
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({ skipPreflight: DEBUG });
+
+    
+    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
+    // No time has passed, so nothing is locked and voter weight is still 0 
+    assert.equal(voter_record.voterWeight.toNumber(), 0);
+  });
+
   it("creates position with 0 principal", async () => {
-    try {
-      const tx = await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(0))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "New position needs to have positive balance"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "New position needs to have positive balance",
+      errMap
+    );
   });
 
   it("creates too many positions", async () => {
@@ -279,9 +318,9 @@ describe("staking", async () => {
 
     // We are starting with 1 position and want to create 99 more
     let budgetRemaining = 200_000;
-    let ixCost = 15000;
+    let ixCost = 19100;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 300; // adding more positions increases the cost
+    let deltaCost = 510; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {
@@ -305,25 +344,14 @@ describe("staking", async () => {
     });
 
     // Now create 101, which is supposed to fail
-    try {
-      const tx = await program.methods
+    expect_fail(
+      program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(1))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
-        })
-        .rpc({
-          skipPreflight: false,
-        });
-      assert(false, "Transaction should fail");
-    } catch (err) {
-      if (err instanceof ProgramError) {
-        assert.equal(
-          parseErrorMessage(err, errMap),
-          "Number of position limit reached"
-        );
-      } else {
-        throw err;
-      }
-    }
+        }),
+      "Number of position limit reached",
+      errMap
+    );
   });
 });

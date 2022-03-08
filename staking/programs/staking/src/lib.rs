@@ -1,12 +1,13 @@
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use anchor_spl::token::transfer;
 use context::*;
 use state::{
     global_config::GlobalConfig,
-    positions::{PositionData, PositionState, Position, MAX_POSITIONS},
+    positions::{Position, PositionData, PositionState, MAX_POSITIONS},
     vesting::VestingSchedule,
 };
-use utils::clock::{get_current_epoch};
+use utils::clock::get_current_epoch;
 
 mod constants;
 mod context;
@@ -29,13 +30,13 @@ pub mod staking {
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
+        config_account.pyth_governance_realm = global_config.pyth_governance_realm;
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
 
-        if (global_config.epoch_duration == 0){
+        if (global_config.epoch_duration == 0) {
             return Err(error!(ErrorCode::ZeroEpochDuration));
         }
-        
         Ok(())
     }
 
@@ -50,21 +51,29 @@ pub mod staking {
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
         stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
+        stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
         stake_account_metadata.owner = owner;
         stake_account_metadata.lock = lock;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.positions = [None ; MAX_POSITIONS];
+        stake_account_positions.positions = [None; MAX_POSITIONS];
+
+        let voter_record = &mut ctx.accounts.voter_record;
+        let config = &ctx.accounts.config;
+        voter_record.realm = config.pyth_governance_realm;
+        voter_record.governing_token_mint = config.pyth_token_mint;
+        voter_record.governing_token_owner = owner;
+
         Ok(())
     }
 
-    /// Creates a position 
+    /// Creates a position
     /// Looks for the first available place in the array, fails if array is full
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
         ctx: Context<CreatePostion>,
-        product: Pubkey,
-        publisher: Pubkey,
+        product: Option<Pubkey>,
+        publisher: Option<Pubkey>,
         amount: u64,
     ) -> Result<()> {
         if amount == 0 {
@@ -78,14 +87,19 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration)?;
 
+        // Make sure both are Some() or both are None
+        if product.is_none() != publisher.is_none() {
+            return Err(error!(ErrorCode::InvalidPosition));
+        }
+
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = Some(Position{
+                stake_account_positions.positions[i] = Some(Position {
                     amount: amount,
-                    product: Some(product),
-                    publisher: Some(publisher),
-                    activation_epoch: current_epoch,
+                    product: product,
+                    publisher: publisher,
+                    activation_epoch: current_epoch + 1,
                     unlocking_start: None,
                 });
             }
@@ -95,22 +109,152 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time()).unwrap();
-        
+            .get_unvested_balance(utils::clock::get_current_time())?;
         utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
             config.unlocking_duration,
-        )
-    }
+        )?;
 
-    pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>) -> Result<()> {
+    pub fn close_position(ctx: Context<ClosePosition>, index: u8) -> Result<()> {
+        let i = index as usize;
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration)?;
+
+        if stake_account_positions.positions[i].is_some() {
+            match stake_account_positions.positions[i]
+                .unwrap()
+                .get_current_position(current_epoch, config.unlocking_duration)
+                .unwrap()
+            {
+                PositionState::LOCKING | PositionState::UNLOCKED => {
+                    stake_account_positions.positions[i] = None;
+                }
+                PositionState::LOCKED => {
+                    // This hasn't been tested
+                    let current_position = &mut stake_account_positions.positions[i].unwrap();
+                    current_position.unlocking_start = Some(current_epoch + 1);
+                }
+                PositionState::UNLOCKING => {
+                    return Err(error!(ErrorCode::AlreadyUnlocking));
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
+        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let stake_account_metadata = &ctx.accounts.stake_account_metadata;
+        let destination_account = &ctx.accounts.destination;
+        let signer = &ctx.accounts.payer;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+
+        let unvested_balance = ctx
+            .accounts
+            .stake_account_metadata
+            .lock
+            .get_unvested_balance(utils::clock::get_current_time())
+            .unwrap();
+
+        if destination_account.owner != *signer.key {
+            return Err(error!(ErrorCode::WithdrawToUnauthorizedAccount));
+        }
+
+        // Pre-check
+        let remaining_balance = stake_account_custody
+            .amount
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
+        if utils::risk::validate(
+            &stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
+        {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
+        }
+
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.stake_account_positions.key().as_ref(),
+                &[stake_account_metadata.authority_bump],
+            ]]),
+            amount,
+        )?;
+
+        if utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
+        {
+            return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
+        }
+
+        Ok(())
+    }
+
+    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
+        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let voter_record = &mut ctx.accounts.voter_record;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+
+        let unvested_balance = ctx
+            .accounts
+            .stake_account_metadata
+            .lock
+            .get_unvested_balance(utils::clock::get_current_time())
+            .unwrap();
+
+        utils::risk::validate(
+            &stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        let mut voter_weight = 0u64;
+        for i in 0..MAX_POSITIONS {
+            if stake_account_positions.positions[i].is_some() {
+                let position = stake_account_positions.positions[i].unwrap();
+                match position.get_current_position(current_epoch, config.unlocking_duration)? {
+                    PositionState::LOCKED => {
+                        if position.product.is_none() && position.publisher.is_none() {
+                            // position.amount is trusted, so I don't think this can overflow,
+                            // but still probably better to use checked math
+                            voter_weight = voter_weight.checked_add(position.amount).unwrap();
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        voter_record.voter_weight = voter_weight;
+        voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
+        Ok(())
+    }
+    pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
         Ok(())
     }
 

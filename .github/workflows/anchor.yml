@@ -34,5 +34,5 @@ jobs:
       run: ./prepare.sh
     - name: Anchor test
       working-directory: ./staking
-      run: anchor test
+      run: yarn test
 
