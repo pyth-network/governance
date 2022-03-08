@@ -72,8 +72,8 @@ pub mod staking {
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
         ctx: Context<CreatePosition>,
-        product: Pubkey,
-        publisher: Pubkey,
+        product: Option<Pubkey>,
+        publisher: Option<Pubkey>,
         amount: u64,
     ) -> Result<()> {
         if amount == 0 {
