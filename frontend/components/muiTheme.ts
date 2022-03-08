@@ -142,7 +142,6 @@ const theme = responsiveFontSizes(
             },
           },
           outlined: {
-            borderWidth: '2px',
             padding: '18px 32px',
             transition:
               'background-color 300ms, border-color 300ms, color 300ms',
