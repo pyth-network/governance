@@ -11,7 +11,6 @@ import {
   InputLabel,
   Input,
   Theme,
-  Typography,
   TableContainer,
   Table,
   TableCell,
@@ -22,10 +21,10 @@ import {
 } from '@mui/material'
 import Layout from '../components/Layout'
 import { colors } from '@components/muiTheme'
-import { ArrowForward } from '@mui/icons-material'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { useMemo } from 'react'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { ChangeEvent, MouseEvent, useMemo, useState } from 'react'
 import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
+import { createStakeAccount } from 'actions/createStakeAccount'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -93,8 +92,21 @@ const tokens = { Unlocked: 10000, Locked: 100, Unvested: 1000 }
 
 const Staking: NextPage = () => {
   const classes = useStyles()
+  const { connection } = useConnection()
   const { publicKey, connected } = useWallet()
-  const base58 = useMemo(() => publicKey?.toBase58(), [publicKey])
+  const [amount, setAmount] = useState<Number>(0)
+  const pubkey = useMemo(() => publicKey?.toBase58(), [publicKey])
+
+  //handler
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setAmount(parseInt(event.target.value))
+  }
+
+  //handler
+  const handleLock = async () => {
+    console.log(amount)
+  }
+
   return (
     <Layout>
       <Container className={classes.sectionContainer}>
@@ -120,8 +132,9 @@ const Staking: NextPage = () => {
                       disableUnderline={true}
                       id="amount-pyth-lock"
                       type="number"
-                      defaultValue="0"
                       className={classes.amountInput}
+                      onChange={handleChange}
+                      value={amount?.toString()}
                     />
                   </FormControl>
                 </Box>
@@ -134,6 +147,7 @@ const Staking: NextPage = () => {
                             variant="outlined"
                             disableRipple
                             className={classes.button}
+                            onClick={handleLock}
                           >
                             Lock
                           </Button>
