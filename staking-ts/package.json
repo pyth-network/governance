@@ -1,0 +1,10 @@
+{
+  "name": "@pythnetwork/staking-ts",
+  "version": "1.0.0",
+  "description": "SDK for pyth token staking",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "dependencies": {
+    "@project-serum/anchor": "0.22.0"
+  }
+}

@@ -1,9 +1,7 @@
 import { Keypair, PublicKey, Connection } from "@solana/web3.js";
 import { utils, Provider, Program, Wallet, Idl} from "@project-serum/anchor";
-import { Staking } from "../target/types/staking";
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import fs from "fs";
-import { program } from "@project-serum/anchor/dist/cjs/spl/token";
+import { StakeConnection} from "../../staking-ts"
 
 const staking_program = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -53,8 +51,10 @@ async function main() {
   const idl = await Program.fetchIdl(staking_program, provider);
   const program = new Program(idl, staking_program, provider);
 
-  const res = await getUserStakePositionAccounts(program, provider, alice.publicKey)
-  console.log(res);
+  const stake_account_connection = new StakeConnection(provider, program);
+
+  // const res = await getUserStakePositionAccounts(program, provider, alice.publicKey)
+  // console.log(res);
 }
 
 main();
