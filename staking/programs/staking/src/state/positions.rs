@@ -76,8 +76,8 @@ impl Position {
         }
     }
 
-    pub fn is_vote(&self) -> bool {
-        return (self.product.is_none() && self.publisher.is_none());
+    pub fn is_voting(&self) -> bool {
+        return self.product.is_none() && self.publisher.is_none();
     }
 }
 
@@ -94,8 +94,7 @@ pub enum PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{Position, PositionState};
-    use anchor_lang::prelude::*;
-
+    
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {

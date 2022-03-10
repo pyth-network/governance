@@ -19,10 +19,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
-    use std::convert::TryInto;
-
-    use anchor_lang::solana_program::clock::UnixTimestamp;
-
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -34,7 +30,7 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
 
-        if (global_config.epoch_duration == 0) {
+        if global_config.epoch_duration == 0 {
             return Err(error!(ErrorCode::ZeroEpochDuration));
         }
         Ok(())
@@ -124,30 +120,24 @@ pub mod staking {
     pub fn close_position(ctx: Context<ClosePosition>, index: u8) -> Result<()> {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration)?;
 
-        if stake_account_positions.positions[i].is_some() {
-            match stake_account_positions.positions[i]
-                .unwrap()
-                .get_current_position(current_epoch, config.unlocking_duration)?
-            {
-                PositionState::LOCKING | PositionState::UNLOCKED => {
-                    stake_account_positions.positions[i] = None;
-                }
-                PositionState::LOCKED => {
-                    // This hasn't been tested
-                    let current_position = &mut stake_account_positions.positions[i].unwrap();
-                    current_position.unlocking_start = Some(current_epoch + 1);
-                }
-                PositionState::UNLOCKING => {
-                    return Err(error!(ErrorCode::AlreadyUnlocking));
-                }
+        match stake_account_positions.positions[i]
+            .ok_or(error!(ErrorCode::PositionNotInUse))?
+            .get_current_position(current_epoch, config.unlocking_duration)?
+        {
+            PositionState::LOCKING | PositionState::UNLOCKED => {
+                stake_account_positions.positions[i] = None;
             }
-        }
-        else{
-            return Err(error!(ErrorCode::PositionNotInUse));
+            PositionState::LOCKED => {
+                // This hasn't been tested
+                let current_position = &mut stake_account_positions.positions[i].unwrap();
+                current_position.unlocking_start = Some(current_epoch + 1);
+            }
+            PositionState::UNLOCKING => {
+                return Err(error!(ErrorCode::AlreadyUnlocking));
+            }
         }
 
         Ok(())
@@ -242,7 +232,7 @@ pub mod staking {
                 let position = stake_account_positions.positions[i].unwrap();
                 match position.get_current_position(current_epoch, config.unlocking_duration)? {
                     PositionState::LOCKED => {
-                        if position.is_vote() {
+                        if position.is_voting() {
                             // position.amount is trusted, so I don't think this can overflow,
                             // but still probably better to use checked math
                             voter_weight = voter_weight.checked_add(position.amount).unwrap();
