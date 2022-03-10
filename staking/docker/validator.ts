@@ -10,6 +10,7 @@ const ledger_dir = config.validator.ledger_dir
 const wallet_pubkey_path = config.provider.wallet;
 const program_address = new PublicKey(config.programs.localnet.staking);
 
+exec("anchor build")
 exec(`solana-keygen new -o ${wallet_pubkey_path} --no-bip39-passphrase --force`)
 
 const wallet_pubkey = Keypair.fromSecretKey(
