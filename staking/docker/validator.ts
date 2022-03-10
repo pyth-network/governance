@@ -1,4 +1,3 @@
-
 import fs from "fs";
 import toml from 'toml';
 import {PublicKey, Keypair } from "@solana/web3.js";
@@ -10,6 +9,7 @@ const ledger_dir = config.validator.ledger_dir
 const wallet_pubkey_path = config.provider.wallet;
 const program_address = new PublicKey(config.programs.localnet.staking);
 
+exec("set -m")
 exec("anchor build")
 exec(`solana-keygen new -o ${wallet_pubkey_path} --no-bip39-passphrase --force`)
 
