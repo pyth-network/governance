@@ -6,17 +6,23 @@ export class StakeConnection {
     stake_program : Program
     owner : PublicKey
     current_stake_account : StakeAccount
+    config
     constructor(provider : Provider, stake_program : Program){
         this.provider = provider;
         this.stake_program = stake_program;
         this.owner = provider.wallet.publicKey 
     }
 
+    //loads config
+    public async load(){
+        
+    }
     //gets this.owner stake accounts
     public async getStakeAccounts() : Promise<StakeAccount[]> {
         return 
     }
 
+    // creates stake account and returns it as a StakeAccount
     public async createStakeAccount() : Promise<StakeAccount> {
         return
     }
