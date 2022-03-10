@@ -75,6 +75,10 @@ impl Position {
             }
         }
     }
+
+    pub fn is_voting(&self) -> bool {
+        return self.product.is_none() && self.publisher.is_none();
+    }
 }
 
 /// The core states that a position can be in
@@ -90,8 +94,7 @@ pub enum PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{Position, PositionState};
-    use anchor_lang::prelude::*;
-
+    
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
