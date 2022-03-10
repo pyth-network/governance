@@ -10,8 +10,9 @@ const wallet_pubkey_path = config.provider.wallet;
 const program_address = new PublicKey(config.programs.localnet.staking);
 
 exec("set -m")
-exec("anchor build")
 exec(`solana-keygen new -o ${wallet_pubkey_path} --no-bip39-passphrase --force`)
+
+exec("anchor build")
 
 const wallet_pubkey = Keypair.fromSecretKey(
     new Uint8Array(
@@ -20,7 +21,6 @@ const wallet_pubkey = Keypair.fromSecretKey(
   ).publicKey
 
 exec(`mkdir -p ${ledger_dir}`)
-exec(`solana-test-validator --ledger ${ledger_dir} --mint ${wallet_pubkey} --reset --bpf-program  ${program_address} ./target/deploy/staking.so &`)
+exec(`solana-test-validator --ledger ${ledger_dir} --mint ${wallet_pubkey} --reset --bpf-program  ${program_address} ./target/deploy/staking.so`)
 exec("sleep 3");
 exec(`anchor idl init --filepath target/idl/staking.json ${program_address}`)
-exec("fg")
