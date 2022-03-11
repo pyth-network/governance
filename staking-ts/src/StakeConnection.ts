@@ -1,29 +1,26 @@
 import { Provider, Program} from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 
-export class StakeConnection {
-    provider : Provider
-    stake_program : Program
-    owner : PublicKey
-    current_stake_account : StakeAccount
-    config
-    constructor(provider : Provider, stake_program : Program){
-        this.provider = provider;
-        this.stake_program = stake_program;
-        this.owner = provider.wallet.publicKey 
+export class StakeConfig {
+    public static async loadStakeConfig(address : PublicKey, program : Program) : Promise<StakeAccount> {
+      return
     }
 
-    //loads config
-    public async load(){
-        
+}
+export class StakeUser {
+    owner : PublicKey
+
+    constructor(program : Program, user : PublicKey){
+        this.owner = user
     }
+
     //gets this.owner stake accounts
-    public async getStakeAccounts() : Promise<StakeAccount[]> {
+    public async getStakeAccounts(program : Program) : Promise<StakeAccount[]> {
         return 
     }
 
     // creates stake account and returns it as a StakeAccount
-    public async createStakeAccount() : Promise<StakeAccount> {
+    public async createStakeAccount(program : Program) : Promise<StakeAccount> {
         return
     }
 
@@ -31,33 +28,26 @@ export class StakeConnection {
 
 
 export class StakeAccount {
-    provider : Provider
-    stake_program : Program
-    owner : PublicKey
     address : PublicKey
-    
+    stake_account_positions
+    stake_account_metadata
 
-    constructor(provider : Provider, stake_program : Program, address : PublicKey){
-        this.address = address;
-        this.provider = provider;
-        this.stake_program = stake_program;
-    }
-
-    async load(){
+    public static async loadStakeAccount(address : PublicKey, program : Program) : Promise<StakeAccount> {
+      return
     }
 
 
     //unlock a provided token balance
-    public async unlockTokens(amount : number){
+    public async unlockTokens(amount : number, program : Program){
 
     }
 
     //deposit tokens
-    public async depositAndLockTokens(amount : number){
+    public async depositAndLockTokens(amount : number, program : Program){
     }
 
     //withdraw tokens
-    public async withdrawTokens(amount : number){
+    public async withdrawTokens(amount : number, program : Program){
 
     }
 

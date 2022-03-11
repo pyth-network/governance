@@ -22,5 +22,5 @@ const wallet_pubkey = Keypair.fromSecretKey(
 
 shell.exec(`mkdir -p ${ledger_dir}`)
 exec(`solana-test-validator --ledger ${ledger_dir} --mint ${wallet_pubkey} --reset --bpf-program  ${program_address} ./target/deploy/staking.so`)
-
+// we sleep 3 because the validator running in the background needs to get started before we upload the blockchain idl
 shell.exec(`sleep 3 && anchor idl init --filepath target/idl/staking.json ${program_address}`)
