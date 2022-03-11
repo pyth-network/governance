@@ -3,7 +3,6 @@ import toml from "toml";
 import { PublicKey, Keypair, Connection } from "@solana/web3.js";
 import { exec } from "child_process";
 import shell from "shelljs";
-import { getMultipleAccounts } from "@project-serum/anchor/dist/cjs/utils/rpc";
 
 async function main() {
   const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
