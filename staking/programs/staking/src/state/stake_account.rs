@@ -8,9 +8,9 @@ use crate::state::vesting::VestingSchedule;
 #[account]
 #[derive(Default)]
 pub struct StakeAccountMetadata {
+    pub metadata_bump: u8,
     pub custody_bump: u8,
     pub authority_bump: u8,
-    pub metadata_bump: u8,
     pub voter_bump : u8,
     pub owner: Pubkey,
     pub lock: VestingSchedule,
