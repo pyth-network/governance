@@ -12,7 +12,7 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "test": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase && anchor test",
+        "test": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force && ./build_wasm.sh && anchor test",
         "setup": "export ANCHOR_WALLET='./tests/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/setup.ts",
         "docker_build": "docker build -f docker/Dockerfile -t governance .",
         "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
