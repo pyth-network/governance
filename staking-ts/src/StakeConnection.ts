@@ -6,6 +6,7 @@ export class StakeConnection {
   config: StakeConfig;
 
   // creates a program connection and loads the staking config
+  // the constructor cannot be async so we use a static method
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
@@ -53,7 +54,7 @@ export class StakeAccount {
   stake_account_positions;
   stake_account_metadata;
 
-  //factory method
+  //factory static method instead of constructor
   public static async loadStakeAccount(
     address: PublicKey,
     program: Program
