@@ -16,6 +16,7 @@ import {
 import { createMint, expect_fail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
+import * as wasm from "../node-wasm/staking"
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -259,6 +260,16 @@ describe("staking", async () => {
       .rpc({ skipPreflight: DEBUG });
   });
 
+  it("parses positions", async () => {
+    const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
+    const outbuffer = Buffer.alloc(10*1024);
+    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const positions = program.coder.accounts.decode("PositionData", outbuffer);
+    for (let index = 0; index < positions.positions.length; index++) {
+      assert.equal(positions.positions[index], null);
+    }
+  });
+
   it("creates a position that's too big", async () => {
     expect_fail(
       program.methods
@@ -280,6 +291,22 @@ describe("staking", async () => {
       .rpc({
         skipPreflight: DEBUG,
       });
+  });
+
+  it("validates position", async () => {
+    const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
+    const outbuffer = Buffer.alloc(10*1024);
+    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const positions = program.coder.accounts.decode("PositionData", outbuffer);
+
+    // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
+    assert.equal(positions.positions[0].amount.toNumber(), new BN(1).toNumber());
+    assert.equal(positions.positions[0].product, null);
+    assert.equal(positions.positions[0].publisher, null);
+    assert.equal(positions.positions[0].unlockingStart, null);
+    for (let index = 1; index < positions.positions.length; index++) {
+      assert.equal(positions.positions[index], null);
+    }
   });
 
   it("updates voter weight again", async () => {

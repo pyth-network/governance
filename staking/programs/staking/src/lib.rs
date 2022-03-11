@@ -1,3 +1,4 @@
+#![feature(trivial_bounds)]
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_spl::token::transfer;
@@ -14,6 +15,7 @@ mod context;
 mod error;
 mod state;
 mod utils;
+pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
