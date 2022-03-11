@@ -29,9 +29,6 @@ jobs:
     - name: Install Anchor
       working-directory: ./staking
       run: npm i -g @project-serum/anchor-cli
-    - name: Prepare for tests
-      working-directory: ./staking
-      run: ./prepare.sh
     - name: Anchor test
       working-directory: ./staking
       run: yarn test
