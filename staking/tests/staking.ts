@@ -16,7 +16,7 @@ import {
 import { createMint, expect_fail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
-import * as wasm from "../node-wasm/staking"
+import * as wasm from "../wasm/node/staking";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
