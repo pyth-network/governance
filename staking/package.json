@@ -11,7 +11,7 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "test" : "ln -f -s ./tests/Anchor.toml ./Anchor.toml && anchor test",
-        "setup_ui" : "ln -f -s ./app/Anchor.toml ./Anchor.toml && anchor test --detach"
+        "test" : "ln -f -s ./tests/Anchor.toml ./Anchor.toml && anchor test -- --features mock-clock",
+        "setup_ui" : "ln -f -s ./app/Anchor.toml ./Anchor.toml && anchor test --detach -- --features mock-clock"
     }
 }
