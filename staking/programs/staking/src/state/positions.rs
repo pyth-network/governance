@@ -8,6 +8,7 @@ pub const MAX_POSITIONS: usize = 100;
 /// Because users can close positions, it might get fragmented.
 #[account(zero_copy)]
 pub struct PositionData {
+    pub owner : Pubkey,
     pub positions: [Option<Position>; MAX_POSITIONS],
 }
 

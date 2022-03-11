@@ -46,9 +46,10 @@ describe("setup", async () => {
   const provider = anchor.Provider.local();
 
   before(async () => {
-
-    fs.writeFileSync(`./app/keypairs/alice.json`, JSON.stringify(alice));
-    fs.writeFileSync(`./app/keypairs/bob.json`, JSON.stringify(bob));
+    
+    // Drop keypairs in format compatible with Phantom Wallet
+    fs.writeFileSync(`./app/keypairs/alice.json`, `[${alice.secretKey.toString()}]`);
+    fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
     fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pyth_mint_account.publicKey.toBase58()));
 
     program = anchor.workspace.Staking as Program<Staking>;
