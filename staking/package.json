@@ -2,7 +2,8 @@
     "dependencies": {
         "@project-serum/anchor": "0.22.0",
         "@solana/spl-token": "^0.1.8",
-        "shelljs": "^0.8.5"
+        "shelljs": "^0.8.5",
+        "wasm-pack": "^0.10.2"
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
