@@ -314,6 +314,8 @@ describe("staking", async () => {
     wasm.convert_positions_account(inbuf.data, outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
 
+    console.log(positions);
+
     // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
     assert.equal(positions.positions[0].amount.toNumber(), new BN(1).toNumber());
     assert.equal(positions.positions[0].product, null);
