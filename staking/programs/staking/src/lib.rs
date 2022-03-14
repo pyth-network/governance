@@ -8,6 +8,7 @@ use state::{
     vesting::VestingSchedule,
 };
 use utils::clock::get_current_epoch;
+use anchor_lang::solana_program::log;
 
 mod constants;
 mod context;
@@ -29,6 +30,8 @@ pub mod staking {
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
+        #[cfg(feature = "mock-clock")]
+        { config_account.mock_clock_time = global_config.mock_clock_time; }
 
         if global_config.epoch_duration == 0 {
             return Err(error!(ErrorCode::ZeroEpochDuration));
@@ -38,6 +41,7 @@ pub mod staking {
 
     /// Trustless instruction that creates a stake account for a user
     /// The main account i.e. the position accounts needs to be initialized outside of the program otherwise we run into stack limits
+    #[inline(never)]
     pub fn create_stake_account(
         ctx: Context<CreateStakeAccount>,
         owner: Pubkey,
@@ -82,7 +86,7 @@ pub mod staking {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config.epoch_duration)?;
+        let current_epoch = get_current_epoch(config)?;
 
         // Make sure both are Some() or both are None
         if product.is_none() != publisher.is_none() {
@@ -106,7 +110,8 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time())?;
+            .get_unvested_balance(utils::clock::get_current_time(config))?;
+
         utils::risk::validate(
             &stake_account_positions,
             stake_account_custody.amount,
@@ -122,7 +127,7 @@ pub mod staking {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config.epoch_duration)?;
+        let current_epoch = get_current_epoch(config)?;
 
         match stake_account_positions.positions[i]
             .ok_or(error!(ErrorCode::PositionNotInUse))?
@@ -152,13 +157,13 @@ pub mod staking {
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.payer;
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+        let current_epoch = get_current_epoch(config).unwrap();
 
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time())
+            .get_unvested_balance(utils::clock::get_current_time(config))
             .unwrap();
 
         if destination_account.owner != *signer.key {
@@ -212,13 +217,13 @@ pub mod staking {
         let voter_record = &mut ctx.accounts.voter_record;
 
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
+        let current_epoch = get_current_epoch(config).unwrap();
 
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time())
+            .get_unvested_balance(utils::clock::get_current_time(config))
             .unwrap();
 
         utils::risk::validate(
@@ -241,7 +246,8 @@ pub mod staking {
                             voter_weight = voter_weight.checked_add(position.amount).unwrap();
                         }
                     }
-                    _ => {}
+                    _ => {
+                    }
                 }
             }
         }
@@ -256,4 +262,21 @@ pub mod staking {
     pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
         Ok(())
     }
+
+
+    // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
+    // so we have to keep it, but make it a no-op.
+    pub fn advance_clock(ctx: Context<AdvanceClock>, seconds: i64) -> Result<()> {
+        #[cfg(feature = "mock-clock")]
+        {
+        let config = &mut ctx.accounts.config;
+        config.mock_clock_time = config.mock_clock_time.checked_add(seconds).unwrap();
+        Ok(())
+        }
+        #[cfg(not(feature = "mock-clock"))]
+        {
+            return Err(error!(ErrorCode::DebuggingOnly));
+        }
+    }
+
 }

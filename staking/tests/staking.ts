@@ -20,7 +20,7 @@ import assert from "assert";
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
-const DEBUG = false;
+const DEBUG = true;
 
 describe("staking", async () => {
   let program: Program<Staking>;
@@ -90,8 +90,11 @@ describe("staking", async () => {
         pythTokenMint: pyth_mint_account.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        mockClockTime: new BN(10)
       })
-      .rpc();
+      .rpc({
+        skipPreflight: DEBUG,
+      });
 
     const config_account_data = await program.account.globalConfig.fetch(
       config_account
@@ -106,8 +109,20 @@ describe("staking", async () => {
         pythGovernanceRealm: zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        mockClockTime: new BN(10)
       })
     );
+  });
+  it("advances clock", async() => {
+    await program.methods
+    .advanceClock(new BN(5))
+    .accounts(
+      {   
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        mint: pyth_mint_account.publicKey,
+      }
+    )
+    .rpc({ skipPreflight: DEBUG });
   });
 
   it("creates vested staking account", async () => {
@@ -284,6 +299,11 @@ describe("staking", async () => {
 
   it("updates voter weight again", async () => {
     await program.methods
+      .advanceClock(new BN(5*3600))
+      .accounts()
+      .rpc({ skipPreflight: DEBUG });
+
+    await program.methods
       .updateVoterWeight()
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
@@ -292,8 +312,8 @@ describe("staking", async () => {
 
     
     const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
-    // No time has passed, so nothing is locked and voter weight is still 0 
-    assert.equal(voter_record.voterWeight.toNumber(), 0);
+    // Locked in 1 token, so voter weight is 1  
+    assert.equal(voter_record.voterWeight.toNumber(), 1);
   });
 
   it("creates position with 0 principal", async () => {
