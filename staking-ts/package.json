@@ -6,5 +6,8 @@
   "license": "MIT",
   "dependencies": {
     "@project-serum/anchor": "0.22.0"
+  },
+  "scripts": {
+    "test": "yarn ts-node tests/test.ts"
   }
 }
