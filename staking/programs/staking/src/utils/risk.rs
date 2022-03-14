@@ -112,7 +112,7 @@ pub fn validate(
 
 #[cfg(test)]
 pub mod tests {
-    use anchor_lang::prelude::{error, Pubkey};
+    use anchor_lang::prelude::{Pubkey};
 
     use crate::state::positions::PositionState;
     use crate::ErrorCode::{

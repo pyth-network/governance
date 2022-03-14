@@ -189,9 +189,9 @@ describe("staking", async () => {
     assert.equal(
       JSON.stringify(stake_account_metadata_data),
       JSON.stringify({
+        metadataBump,
         custodyBump,
         authorityBump,
-        metadataBump,
         voterBump,
         owner,
         lock: { fullyVested: {} },

@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use crate::state::vesting::VestingSchedule;
-use crate::error::ErrorCode;
 
 /// This is the metadata account for each staker
 /// It is derived from the positions account with seeds "stake_metadata" and the positions account pubkey
@@ -9,9 +8,9 @@ use crate::error::ErrorCode;
 #[account]
 #[derive(Default)]
 pub struct StakeAccountMetadata {
+    pub metadata_bump: u8,
     pub custody_bump: u8,
     pub authority_bump: u8,
-    pub metadata_bump: u8,
     pub voter_bump : u8,
     pub owner: Pubkey,
     pub lock: VestingSchedule,
