@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::Discriminator;
 
 pub const VOTER_WEIGHT_RECORD_SIZE: usize = 150;
 

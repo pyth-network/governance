@@ -1,3 +1,4 @@
+#![feature(trivial_bounds)]
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_spl::token::transfer;
@@ -14,15 +15,13 @@ mod context;
 mod error;
 mod state;
 mod utils;
+#[cfg(feature="wasm")]
+pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
-    use std::convert::TryInto;
-
-    use anchor_lang::solana_program::clock::UnixTimestamp;
-
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -34,7 +33,7 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
 
-        if (global_config.epoch_duration == 0) {
+        if global_config.epoch_duration == 0 {
             return Err(error!(ErrorCode::ZeroEpochDuration));
         }
         Ok(())
@@ -48,9 +47,9 @@ pub mod staking {
         lock: VestingSchedule,
     ) -> Result<()> {
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
-        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
         stake_account_metadata.owner = owner;
         stake_account_metadata.lock = lock;
@@ -72,7 +71,7 @@ pub mod staking {
     /// Looks for the first available place in the array, fails if array is full
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
-        ctx: Context<CreatePostion>,
+        ctx: Context<CreatePosition>,
         product: Option<Pubkey>,
         publisher: Option<Pubkey>,
         amount: u64,
@@ -125,27 +124,23 @@ pub mod staking {
     pub fn close_position(ctx: Context<ClosePosition>, index: u8) -> Result<()> {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration)?;
 
-        if stake_account_positions.positions[i].is_some() {
-            match stake_account_positions.positions[i]
-                .unwrap()
-                .get_current_position(current_epoch, config.unlocking_duration)
-                .unwrap()
-            {
-                PositionState::LOCKING | PositionState::UNLOCKED => {
-                    stake_account_positions.positions[i] = None;
-                }
-                PositionState::LOCKED => {
-                    // This hasn't been tested
-                    let current_position = &mut stake_account_positions.positions[i].unwrap();
-                    current_position.unlocking_start = Some(current_epoch + 1);
-                }
-                PositionState::UNLOCKING => {
-                    return Err(error!(ErrorCode::AlreadyUnlocking));
-                }
+        match stake_account_positions.positions[i]
+            .ok_or(error!(ErrorCode::PositionNotInUse))?
+            .get_current_position(current_epoch, config.unlocking_duration)?
+        {
+            PositionState::LOCKING | PositionState::UNLOCKED => {
+                stake_account_positions.positions[i] = None;
+            }
+            PositionState::LOCKED => {
+                // This hasn't been tested
+                let current_position = &mut stake_account_positions.positions[i].unwrap();
+                current_position.unlocking_start = Some(current_epoch + 1);
+            }
+            PositionState::UNLOCKING => {
+                return Err(error!(ErrorCode::AlreadyUnlocking));
             }
         }
 
@@ -154,8 +149,9 @@ pub mod staking {
 
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
-        let stake_account_custody = &ctx.accounts.stake_account_custody;
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.payer;
         let config = &ctx.accounts.config;
@@ -215,8 +211,9 @@ pub mod staking {
 
     pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
-        let voter_record = &mut ctx.accounts.voter_record;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let voter_record = &mut ctx.accounts.voter_record;
+
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config.epoch_duration).unwrap();
 
@@ -241,7 +238,7 @@ pub mod staking {
                 let position = stake_account_positions.positions[i].unwrap();
                 match position.get_current_position(current_epoch, config.unlocking_duration)? {
                     PositionState::LOCKED => {
-                        if position.product.is_none() && position.publisher.is_none() {
+                        if position.is_voting() {
                             // position.amount is trusted, so I don't think this can overflow,
                             // but still probably better to use checked math
                             voter_weight = voter_weight.checked_add(position.amount).unwrap();
@@ -259,7 +256,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn cleanup_positions(ctx: Context<CleanupPostions>) -> Result<()> {
+    pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
         Ok(())
     }
 }

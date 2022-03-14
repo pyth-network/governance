@@ -112,7 +112,7 @@ pub fn validate(
 
 #[cfg(test)]
 pub mod tests {
-    use anchor_lang::prelude::{error, Pubkey};
+    use anchor_lang::prelude::{Pubkey};
 
     use crate::state::positions::PositionState;
     use crate::ErrorCode::{
@@ -127,6 +127,7 @@ pub mod tests {
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
@@ -168,6 +169,7 @@ pub mod tests {
     #[test]
     fn test_voting() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
@@ -196,6 +198,7 @@ pub mod tests {
     #[test]
     fn test_double_product() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
@@ -224,6 +227,7 @@ pub mod tests {
     #[test]
     fn test_risk() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
@@ -253,6 +257,7 @@ pub mod tests {
     #[test]
     fn test_multiple_voting() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
@@ -275,6 +280,7 @@ pub mod tests {
     #[test]
     fn test_overflow_total() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
@@ -294,6 +300,7 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
+            owner : Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();

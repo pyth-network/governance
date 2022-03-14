@@ -1,5 +1,7 @@
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use crate::borsh::BorshSerialize;
+
 
 pub const MAX_POSITIONS: usize = 100;
 
@@ -29,6 +31,17 @@ impl PositionData {
             }
         }
         return Err(error!(ErrorCode::TooManyPositions));
+    }
+}
+/// Because of Rust nonsense, Borsh can't serialize this automatically, but the way it serializes
+/// an array is to serialize the elements in turn, so we can mimic that.
+impl BorshSerialize for PositionData {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        self.owner.serialize(writer)?;
+        for i in 0..MAX_POSITIONS {
+            self.positions[i].serialize(writer)?;
+        }
+        Ok(())
     }
 }
 
@@ -76,6 +89,10 @@ impl Position {
             }
         }
     }
+
+    pub fn is_voting(&self) -> bool {
+        return self.product.is_none() && self.publisher.is_none();
+    }
 }
 
 /// The core states that a position can be in
@@ -91,8 +108,7 @@ pub enum PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{Position, PositionState};
-    use anchor_lang::prelude::*;
-
+    
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
