@@ -43,7 +43,7 @@ export class StakeConnection {
 
   //deposit tokens
   public async depositAndLockTokens(
-    stake_account: StakeAccount,
+    stake_account: StakeAccount | undefined,
     amount: number,
     program: Program
   ) {}
