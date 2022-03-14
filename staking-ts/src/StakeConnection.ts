@@ -1,8 +1,8 @@
 import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
-import { PublicKey, Connection } from "@solana/web3.js";
+import { PublicKey, Connection, SystemProgram, Keypair } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
-// import { positions_account_size } from "../../staking/tests/utils/constant";
+import { positions_account_size } from "../../staking/tests/utils/constant";
 import * as wasm from "../../staking/wasm/node/staking";
 
 const staking_program = new PublicKey(
@@ -11,7 +11,7 @@ const staking_program = new PublicKey(
 
 export class StakeConnection {
   program: Program;
-  config: StakeConfig;
+  config;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -63,7 +63,7 @@ export class StakeConnection {
         ],
       }
     );
-
+    console.log(res.length);
     return await Promise.all(
       res.map(async (account) => {
         return await this.loadStakeAccount(account.pubkey);
@@ -108,7 +108,30 @@ export class StakeConnection {
 
   // creates stake account and returns it as a StakeAccount
   public async createStakeAccount(user: PublicKey): Promise<StakeAccount> {
-    return;
+    const stake_account_keypair = new Keypair();
+    console.log(this.program.provider.wallet.publicKey.toBase58());
+    const tx = await this.program.methods
+      .createStakeAccount(user, { fullyVested: {} })
+      .preInstructions([
+        SystemProgram.createAccount({
+          fromPubkey: user,
+          newAccountPubkey: stake_account_keypair.publicKey,
+          lamports:
+            await this.program.provider.connection.getMinimumBalanceForRentExemption(
+              positions_account_size
+            ),
+          space: positions_account_size,
+          programId: this.program.programId,
+        }),
+      ])
+      .accounts({
+        stakeAccountPositions: stake_account_keypair.publicKey,
+        mint: this.config.pythTokenMint,
+      })
+      .signers([stake_account_keypair])
+      .rpc({skip_preflight : true});
+
+    return await this.loadStakeAccount(stake_account_keypair.publicKey);
   }
 
   //unlock a provided token balance
@@ -133,7 +156,6 @@ export class StakeConnection {
   ) {}
 }
 
-export class StakeConfig {}
 
 export class StakeAccount {
   address: PublicKey;

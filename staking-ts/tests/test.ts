@@ -25,10 +25,15 @@ async function main() {
   const stake_connection : StakeConnection = await StakeConnection.createStakeConnection(connection, new Wallet(alice), staking_program);
 
   const res = await stake_connection.getStakeAccounts(alice.publicKey);
-
-
-
   console.log(res);
+
+
+  const res1 = await stake_connection.createStakeAccount(alice.publicKey);
+  console.log(res1);
+  
+  const res2 = await stake_connection.getStakeAccounts(alice.publicKey);
+  console.log(res2);
+
 
 
 
