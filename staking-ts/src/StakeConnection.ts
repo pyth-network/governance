@@ -3,7 +3,15 @@ import { PublicKey, Connection, SystemProgram, Keypair } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { positions_account_size } from "../../staking/tests/utils/constant";
-import * as wasm from "../../staking/wasm/bundle/staking";
+
+const isBrowser =
+  typeof window !== "undefined" && typeof window.document !== "undefined";
+let wasm;
+(async () => {
+  wasm = isBrowser
+    ? await import("../../staking/wasm/bundle/staking")
+    : await import("../../staking/wasm/node/staking");
+})();
 
 const staking_program = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -129,7 +137,7 @@ export class StakeConnection {
         mint: this.config.pythTokenMint,
       })
       .signers([stake_account_keypair])
-      .rpc({skip_preflight : true});
+      .rpc({ skip_preflight: true });
 
     return await this.loadStakeAccount(stake_account_keypair.publicKey);
   }
@@ -155,7 +163,6 @@ export class StakeConnection {
     program: Program
   ) {}
 }
-
 
 export class StakeAccount {
   address: PublicKey;
