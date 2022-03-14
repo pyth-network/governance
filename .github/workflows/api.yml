@@ -32,6 +32,9 @@ jobs:
     - name: Install Anchor
       working-directory: ./staking
       run: npm i -g @project-serum/anchor-cli
+    - name: Compile wasms
+      working-directory: ./staking
+      run: yarn build_wasm
     - name: Start validator
       working-directory: ./staking
       run: yarn start &
