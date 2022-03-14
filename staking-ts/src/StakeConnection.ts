@@ -3,7 +3,7 @@ import { PublicKey, Connection } from "@solana/web3.js";
 
 export class StakeConnection {
   program: Program;
-  config: StakeConfig;
+  config;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -20,8 +20,17 @@ export class StakeConnection {
     return;
   }
 
-  // creates stake account and returns it as a StakeAccount
-  public async createStakeAccount(user: PublicKey): Promise<StakeAccount> {
+  // creates stake account will happen inside deposit
+  // public async createStakeAccount(user: PublicKey): Promise<StakeAccount> {
+  //   return;
+  // }
+
+  async fetchPositionAccount(address: PublicKey) {
+    return 
+  }
+
+  //stake accounts are loaded by a StakeConnection object
+  public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
     return;
   }
 
@@ -45,22 +54,14 @@ export class StakeConnection {
     amount: number,
     program: Program
   ) {}
-}
 
-export class StakeConfig {}
+}
 
 export class StakeAccount {
   address: PublicKey;
   stake_account_positions;
   stake_account_metadata;
-
-  //factory static method instead of constructor
-  public static async loadStakeAccount(
-    address: PublicKey,
-    program: Program
-  ): Promise<StakeAccount> {
-    return;
-  }
+  token_balance;
 
   // Withdrawable
 
