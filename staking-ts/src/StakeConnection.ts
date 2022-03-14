@@ -3,7 +3,7 @@ import { PublicKey, Connection, SystemProgram, Keypair } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { positions_account_size } from "../../staking/tests/utils/constant";
-import * as wasm from "../../staking/wasm/node/staking";
+import * as wasm from "../../staking/wasm/bundle/staking";
 
 const staking_program = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
