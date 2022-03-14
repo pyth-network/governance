@@ -15,6 +15,8 @@ mod context;
 mod error;
 mod state;
 mod utils;
+#[cfg(feature="wasm")]
+pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

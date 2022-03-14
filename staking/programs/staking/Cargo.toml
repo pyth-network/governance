@@ -14,9 +14,11 @@ no-idl = []
 no-log-ix-name = []
 cpi = ["no-entrypoint"]
 mock-clock = []
+wasm = ["no-entrypoint"]
 default = []
 
 [dependencies]
 anchor-lang = "0.22.0"
 anchor-spl = "0.22.0"
+wasm-bindgen = "0.2.79"
 
