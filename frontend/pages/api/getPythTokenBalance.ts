@@ -1,7 +1,4 @@
-import { PYTH_MINT_ACCOUNT, STAKING_PROGRAM } from '@components/constants'
-import { Provider, Program, Idl, Wallet } from '@project-serum/anchor'
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { AnchorWallet } from '@solana/wallet-adapter-react'
+import { PYTH_MINT_PUBKEY } from '@components/constants'
 import { Connection, PublicKey } from '@solana/web3.js'
 
 export const getPythTokenBalance = async (
@@ -9,7 +6,7 @@ export const getPythTokenBalance = async (
   publicKey: PublicKey
 ) => {
   const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
-    mint: PYTH_MINT_ACCOUNT,
+    mint: PYTH_MINT_PUBKEY,
   })
   let balance = 0
   for (const account of tokenAccounts.value) {

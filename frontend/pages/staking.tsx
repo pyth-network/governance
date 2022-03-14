@@ -33,10 +33,13 @@ import {
 import { ChangeEvent, useEffect, useState } from 'react'
 import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
 import { useSnackbar } from 'notistack'
-import { getStakeAccounts } from './api/getStakeAccounts'
-import { createStakeAccount } from './api/createStakeAccount'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
-import { depositTokens } from './api/depositTokens'
+import { STAKING_PROGRAM } from '@components/constants'
+import { Wallet } from '@project-serum/anchor'
+import {
+  StakeAccount,
+  StakeConnection,
+} from '../../staking-ts/src/StakeConnection'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -143,28 +146,51 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }))
 
-const tokens = { Unlocked: 10000, Locked: 100, Unvested: 1000 }
-
 const Staking: NextPage = () => {
   const classes = useStyles()
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
   const { publicKey, connected } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
-  const [stakeAccountExists, setStakeAccountExists] = useState<boolean>(false)
+  const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
+  const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
+  const [balance, setBalance] = useState<number>(0)
   const [pythBalance, setPythBalance] = useState<number>(0)
-  const [lockedPythBalance, setLockedPythBalance] = useState<Number>(0)
+  const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
+  const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
+  const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
   const [currentTab, setCurrentTab] = useState<string>('Deposit')
 
+  // create stake connection when wallet is connected
   useEffect(() => {
+    const createStakeConnection = async () => {
+      const sc = await StakeConnection.createStakeConnection(
+        connection,
+        anchorWallet as Wallet,
+        STAKING_PROGRAM
+      )
+      setStakeConnection(sc)
+    }
     if (!connected) {
-      setStakeAccountExists(false)
+      setStakeConnection(undefined)
+      setStakeAccount(undefined)
     } else {
-      getStakeAccounts(connection, anchorWallet, publicKey!)
-        .then((stakeAccounts) => {
-          if (stakeAccounts.length > 0) {
-            setStakeAccountExists(true)
+      console.log('creating stake connection...')
+      createStakeConnection()
+      console.log('stake connection created')
+    }
+  }, [connected])
+
+  // get stake accounts when stake connection is set
+  useEffect(() => {
+    if (stakeConnection) {
+      stakeConnection
+        ?.getStakeAccounts(publicKey!)
+        .then((sa) => {
+          if (sa.length > 0) {
+            setStakeAccount(sa[0])
+            console.log(sa[0])
           }
         })
         .then(() =>
@@ -173,42 +199,68 @@ const Staking: NextPage = () => {
           )
         )
     }
-  }, [connected])
+  }, [stakeConnection])
 
-  //handler
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+  // set ui balance amount whenever current tab changes
+  useEffect(() => {
+    if (connected) {
+      switch (currentTab) {
+        case 'Deposit':
+          setBalance(pythBalance)
+          break
+        case 'Unlock':
+          setBalance(lockedPythBalance)
+          break
+        case 'Withdraw':
+          setBalance(unlockedPythBalance)
+          break
+      }
+    } else {
+      setBalance(0)
+    }
+  }, [
+    currentTab,
+    connected,
+    pythBalance,
+    lockedPythBalance,
+    unlockedPythBalance,
+  ])
+
+  // set amount when input changes
+  const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
     setAmount(parseFloat(event.target.value))
   }
 
   //handler
   const handleDeposit = async () => {
-    const stakeAccounts = await getStakeAccounts(
-      connection,
-      anchorWallet,
-      publicKey!
-    )
+    if (stakeConnection && publicKey) {
+      if (!stakeAccount) {
+        // create stake account
+        try {
+          const sa = await stakeConnection.createStakeAccount(publicKey)
+          setStakeAccount(sa)
+          enqueueSnackbar('stake account created', { variant: 'success' })
+        } catch (e) {
+          enqueueSnackbar(e.message, { variant: 'error' })
+        }
+      }
 
-    try {
-      const res = await depositTokens(
-        connection,
-        anchorWallet,
-        publicKey!,
-        amount
-      )
-      enqueueSnackbar('deposit successful!', { variant: 'success' })
-    } catch (e) {
-      enqueueSnackbar(e.message, { variant: 'error' })
-    }
-  }
-
-  const handleCreateStakeAccount = async () => {
-    console.log('create stake account')
-    try {
-      await createStakeAccount(connection, anchorWallet)
-      enqueueSnackbar('stake account created!', { variant: 'success' })
-      setStakeAccountExists(true)
-    } catch (e) {
-      enqueueSnackbar(e.message, { variant: 'error' })
+      if (stakeAccount) {
+        // deposit and lock
+        try {
+          await stakeConnection.depositAndLockTokens(
+            publicKey,
+            stakeAccount,
+            amount
+          )
+          enqueueSnackbar(`deposited and locked ${amount} $PYTH`, {
+            variant: 'success',
+          })
+        } catch (e) {
+          console.log(e)
+          enqueueSnackbar(e.message, { variant: 'error' })
+        }
+      }
     }
   }
 
@@ -217,19 +269,19 @@ const Staking: NextPage = () => {
   }
 
   const handleHalfBalanceClick = () => {
-    setAmount(Number(pythBalance) / 2)
+    setAmount(balance / 2)
   }
 
   const handleMaxBalanceClick = () => {
-    setAmount(pythBalance)
+    setAmount(balance)
   }
 
   useEffect(() => {
-    console.log(currentTab)
+    console.log(`Current Tab: ${currentTab}`)
   }, [currentTab])
 
   useEffect(() => {
-    console.log(amount)
+    console.log(`Current Amount: ${amount}`)
   }, [amount])
 
   return (
@@ -285,7 +337,7 @@ const Staking: NextPage = () => {
                         </InputLabel>
                       </div>
                       <Typography variant="body1">
-                        Balance: {pythBalance}
+                        Balance: {balance}
                       </Typography>
                       <div style={{ flex: 1 }} />
                       <Chip
@@ -306,56 +358,42 @@ const Staking: NextPage = () => {
                       id="amount-pyth-lock"
                       type="number"
                       className={classes.amountInput}
-                      onChange={handleChange}
+                      onChange={handleAmountChange}
                       value={amount?.toString()}
-                      disabled={!stakeAccountExists}
                     />
                   </FormControl>
                 </Box>
                 <Grid container spacing={1} justifyContent="center">
                   <div className={classes.buttonGroup}>
                     {connected ? (
-                      stakeAccountExists ? (
-                        <Grid item xs={12}>
-                          {currentTab === 'Deposit' ? (
-                            <Button
-                              variant="outlined"
-                              disableRipple
-                              className={classes.button}
-                              onClick={handleDeposit}
-                            >
-                              Deposit
-                            </Button>
-                          ) : currentTab === 'Unlock' ? (
-                            <Button
-                              variant="outlined"
-                              disableRipple
-                              className={classes.button}
-                            >
-                              Unlock
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outlined"
-                              disableRipple
-                              className={classes.button}
-                            >
-                              Withdraw
-                            </Button>
-                          )}
-                        </Grid>
-                      ) : (
-                        <Grid item xs={12}>
+                      <Grid item xs={12}>
+                        {currentTab === 'Deposit' ? (
                           <Button
                             variant="outlined"
                             disableRipple
                             className={classes.button}
-                            onClick={handleCreateStakeAccount}
+                            onClick={handleDeposit}
                           >
-                            Create Stake Account
+                            Deposit
                           </Button>
-                        </Grid>
-                      )
+                        ) : currentTab === 'Unlock' ? (
+                          <Button
+                            variant="outlined"
+                            disableRipple
+                            className={classes.button}
+                          >
+                            Unlock
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outlined"
+                            disableRipple
+                            className={classes.button}
+                          >
+                            Withdraw
+                          </Button>
+                        )}
+                      </Grid>
                     ) : (
                       <Grid item xs={12}>
                         <WalletMultiButton
@@ -392,14 +430,24 @@ const Staking: NextPage = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {Object.entries(tokens).map((t) => (
-                        <TableRow key={t[0]}>
-                          <TableCell>{t[0]}</TableCell>
-                          <TableCell align="right">
-                            {connected ? t[1] : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow key="Unlocked">
+                        <TableCell>Unlocked</TableCell>
+                        <TableCell align="right">
+                          {connected ? unlockedPythBalance : '-'}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow key="Locked">
+                        <TableCell>Locked</TableCell>
+                        <TableCell align="right">
+                          {connected ? lockedPythBalance : '-'}
+                        </TableCell>
+                      </TableRow>
+                      <TableRow key="Unvested">
+                        <TableCell>Unvested</TableCell>
+                        <TableCell align="right">
+                          {connected ? unvestedPythBalance : '-'}
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
                 </TableContainer>
