@@ -1,4 +1,3 @@
-#![feature(trivial_bounds)]
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_spl::token::transfer;
