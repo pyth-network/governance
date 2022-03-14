@@ -37,6 +37,7 @@ impl PositionData {
 /// an array is to serialize the elements in turn, so we can mimic that.
 impl BorshSerialize for PositionData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        self.owner.serialize(writer)?;
         for i in 0..MAX_POSITIONS {
             self.positions[i].serialize(writer)?;
         }

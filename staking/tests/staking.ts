@@ -312,10 +312,7 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
     const outbuffer = Buffer.alloc(10*1024);
     wasm.convert_positions_account(inbuf.data, outbuffer);
-    console.log(program.idl.accounts[1]['type']['fields'])
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
-
-    console.log(positions);
 
     // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
     assert.equal(positions.positions[0].amount.toNumber(), new BN(1).toNumber());
