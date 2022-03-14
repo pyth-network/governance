@@ -21,4 +21,4 @@ default = []
 anchor-lang = "0.22.0"
 anchor-spl = "0.22.0"
 wasm-bindgen = "0.2.79"
-
+js-sys = "0.3.56"
