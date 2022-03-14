@@ -52,11 +52,7 @@ describe("api", async () => {
   // const provider = stake_connection.program.provider;
 
   it("initializes config", async () => {
-    const provider = new Provider(
-      connection,
-      new Wallet(alice),
-      Provider.defaultOptions()
-    );
+    const provider = new Provider(connection, new Wallet(alice), {});
     let idl;
 
     while (true) {
@@ -103,4 +99,83 @@ describe("api", async () => {
     );
   });
 
+  it("alice receive tokens", async () => {
+    const transaction = new Transaction();
+
+    const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pyth_mint_account.publicKey,
+      alice_ata,
+      alice.publicKey,
+      stake_connection.program.provider.wallet.publicKey
+    );
+    transaction.add(create_ata_ix);
+
+    // Mint 1000 tokens.
+    const mint_ix = Token.createMintToInstruction(
+      TOKEN_PROGRAM_ID,
+      pyth_mint_account.publicKey,
+      alice_ata,
+      pyth_mint_authority.publicKey,
+      [],
+      1000
+    );
+
+    transaction.add(mint_ix);
+
+    const tx = await stake_connection.program.provider.send(transaction, [
+      pyth_mint_authority,
+    ]);
+  });
+
+  it("alice gets staking accounts", async () => {
+    const tx = await stake_connection.program.methods
+      .createStakeAccount(alice.publicKey, { fullyVested: {} })
+      .preInstructions([
+        SystemProgram.createAccount({
+          fromPubkey: stake_connection.program.provider.wallet.publicKey,
+          newAccountPubkey: alice_stake_account.publicKey,
+          lamports:
+            await stake_connection.program.provider.connection.getMinimumBalanceForRentExemption(
+              positions_account_size
+            ),
+          space: positions_account_size,
+          programId: stake_connection.program.programId,
+        }),
+      ])
+      .accounts({
+        stakeAccountPositions: alice_stake_account.publicKey,
+        mint: pyth_mint_account.publicKey,
+      })
+      .signers([alice_stake_account])
+      .rpc({ skipPreflight: true });
+  });
+
+  it("alice deposit token", async () => {
+    const transaction = new Transaction();
+
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("custody"),
+          alice_stake_account.publicKey.toBuffer(),
+        ],
+        stake_connection.program.programId
+      )
+    )[0];
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      alice_ata,
+      to_account,
+      alice.publicKey,
+      [],
+      1000
+    );
+    transaction.add(ix);
+    const tx = await stake_connection.program.provider.send(transaction, [
+      alice,
+    ]);
+  });
 });

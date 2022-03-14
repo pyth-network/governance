@@ -1,4 +1,4 @@
-import { Provider, Program, Wallet } from "@project-serum/anchor";
+import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
 import { PublicKey, Connection } from "@solana/web3.js";
 
 export class StakeConnection {
@@ -12,6 +12,21 @@ export class StakeConnection {
     wallet: Wallet,
     address: PublicKey
   ): Promise<StakeConnection> {
+    const stake_connection = new StakeConnection();
+    const provider = new Provider(connection, wallet, {});
+    const idl = await Program.fetchIdl(address, provider);
+    stake_connection.program = new Program(idl, address, provider);
+
+    const config_address = (
+      await PublicKey.findProgramAddress(
+        [utils.bytes.utf8.encode("config")],
+        stake_connection.program.programId
+      )
+    )[0];
+
+    stake_connection.config =
+      await stake_connection.program.account.globalConfig.fetch(config_address);
+    return stake_connection;
     return;
   }
 
@@ -26,7 +41,7 @@ export class StakeConnection {
   // }
 
   async fetchPositionAccount(address: PublicKey) {
-    return 
+    return;
   }
 
   //stake accounts are loaded by a StakeConnection object
@@ -54,7 +69,6 @@ export class StakeConnection {
     amount: number,
     program: Program
   ) {}
-
 }
 
 export class StakeAccount {
