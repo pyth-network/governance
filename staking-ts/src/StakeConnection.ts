@@ -21,7 +21,7 @@ export class StakeConnection {
     address: PublicKey
   ): Promise<StakeConnection> {
     const stake_connection = new StakeConnection();
-    const provider = new Provider(connection, wallet, {});
+    const provider = new Provider(connection, wallet,{});
     const idl = await Program.fetchIdl(staking_program, provider);
     stake_connection.program = new Program(idl, staking_program, provider);
 

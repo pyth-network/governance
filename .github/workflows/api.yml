@@ -33,6 +33,6 @@ jobs:
       working-directory: ./staking
       run: yarn start &
     - name : Setup accounts
-      working-directory: ./staking
-      run: yarn setup
+      working-directory: ./staking-ts
+      run: yarn test
 
