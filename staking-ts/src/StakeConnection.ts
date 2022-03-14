@@ -3,8 +3,7 @@ import { PublicKey, Connection } from "@solana/web3.js";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 // import { positions_account_size } from "../../staking/tests/utils/constant";
-import * as wasm from "../../staking/wasm/node/staking"
-
+import * as wasm from "../../staking/wasm/node/staking";
 
 const staking_program = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -21,7 +20,6 @@ export class StakeConnection {
     wallet: Wallet,
     address: PublicKey
   ): Promise<StakeConnection> {
-
     const stake_connection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
     const idl = await Program.fetchIdl(staking_program, provider);
@@ -34,14 +32,13 @@ export class StakeConnection {
       )
     )[0];
 
-
-    stake_connection.config = await stake_connection.program.account.globalConfig.fetch(config_address);
+    stake_connection.config =
+      await stake_connection.program.account.globalConfig.fetch(config_address);
     return stake_connection;
   }
 
   //gets a users stake accounts
-  public async getStakeAccounts(user: PublicKey): Promise<PublicKey[]> {
-
+  public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
     const discriminator = Buffer.from(
       sha256.digest(`account:PositionData`)
     ).slice(0, 8);
@@ -57,33 +54,59 @@ export class StakeConnection {
               bytes: bs58.encode(discriminator),
             },
           },
-          // {
-          //   memcmp: {
-          //     offset: 8,
-          //     bytes: user.toBase58(),
-          //   },
-          // },
+          {
+            memcmp: {
+              offset: 8,
+              bytes: user.toBase58(),
+            },
+          },
         ],
       }
     );
 
     return await Promise.all(
       res.map(async (account) => {
-        return account.pubkey;
+        return await this.loadStakeAccount(account.pubkey);
       })
     );
   }
 
   async fetchPositionAccount(address: PublicKey) {
-    return 
+
+    const inbuf = await this.program.provider.connection.getAccountInfo(
+      address
+    );
+    const outbuffer = Buffer.alloc(10 * 1024);
+    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const positions = this.program.coder.accounts.decode(
+      "PositionData",
+      outbuffer
+    );
+    return positions;
   }
 
-  //stake accounts are loaded by a StakeConnection object
+  //factory static method instead of constructor
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
+    const stake_account = new StakeAccount();
 
+    stake_account.address = address;
+    stake_account.stake_account_positions = await this.fetchPositionAccount(
+      address
+    );
 
-    return;
+    const metadata_address = (
+      await PublicKey.findProgramAddress(
+        [utils.bytes.utf8.encode("stake_metadata"), address.toBuffer()],
+        this.program.programId
+      )
+    )[0];
+
+    stake_account.stake_account_metadata =
+      await this.program.account.stakeAccountMetadata.fetch(metadata_address);
+
+    return stake_account;
   }
+
 
   //unlock a provided token balance
   public async unlockTokens(
@@ -113,27 +136,6 @@ export class StakeAccount {
   stake_account_positions;
   stake_account_metadata;
   token_balance;
-
-  //factory static method instead of constructor
-  public static async loadStakeAccount(
-    address: PublicKey,
-    program: Program
-  ): Promise<StakeAccount> {
-
-    const stake_account = new StakeAccount();
-
-    const inbuf = await program.provider.connection.getAccountInfo(address);
-    const outbuffer = Buffer.alloc(10*1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
-    
-    console.log(outbuffer);
-    const positions = program.coder.accounts.decode("PositionData", outbuffer);
-    
-    stake_account.address = address;
-    stake_account.stake_account_positions = positions;
-
-    return stake_account;
-  }
 
   // Withdrawable
 

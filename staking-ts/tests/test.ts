@@ -26,11 +26,9 @@ async function main() {
 
   const res = await stake_connection.getStakeAccounts(alice.publicKey);
 
-  console.log(res[0].toBase58());
 
-  const account = await StakeAccount.loadStakeAccount(res[0], stake_connection.program);
 
-  console.log(account);
+  console.log(res);
 
 
 
