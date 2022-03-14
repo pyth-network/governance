@@ -22,6 +22,9 @@ jobs:
     - name: Yarn install everything else
       working-directory: ./staking
       run: yarn install
+    - name: Yarn install everything api
+      working-directory: ./staking-ts
+      run: yarn install
     - name: Install Solana 
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.9.1/install)"
@@ -32,7 +35,7 @@ jobs:
     - name: Start validator
       working-directory: ./staking
       run: yarn start &
-    - name : Setup accounts
+    - name : Test api
       working-directory: ./staking-ts
       run: yarn test
 
