@@ -1,9 +1,18 @@
 import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
-import { PublicKey, Connection, SystemProgram, Keypair } from "@solana/web3.js";
+import {
+  PublicKey,
+  Connection,
+  SystemProgram,
+  Transaction,
+  Keypair,
+} from "@solana/web3.js";
+import { createTransferInstruction, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { positions_account_size } from "../../staking/tests/utils/constant";
 import * as wasm from "../../staking/wasm/bundle/staking";
+import { CUSTODY_SEED, PYTH_MINT_PUBKEY } from "./constants";
+import { findAssociatedTokenAddress } from "./utils";
 
 const staking_program = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
@@ -63,7 +72,7 @@ export class StakeConnection {
         ],
       }
     );
-    console.log(res.length);
+    // console.log(res.length);
     return await Promise.all(
       res.map(async (account) => {
         return await this.loadStakeAccount(account.pubkey);
@@ -129,7 +138,7 @@ export class StakeConnection {
         mint: this.config.pythTokenMint,
       })
       .signers([stake_account_keypair])
-      .rpc({skip_preflight : true});
+      .rpc({ skip_preflight: true });
 
     return await this.loadStakeAccount(stake_account_keypair.publicKey);
   }
@@ -143,10 +152,35 @@ export class StakeConnection {
 
   //deposit tokens
   public async depositAndLockTokens(
+    user: PublicKey,
     stake_account: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+    amount: number
+  ) {
+    const transaction = new Transaction();
+    const toAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(CUSTODY_SEED),
+          stake_account.address.toBuffer(),
+        ],
+        this.program.programId
+      )
+    )[0];
+
+    const ata = await findAssociatedTokenAddress(user, PYTH_MINT_PUBKEY);
+
+    const ix = createTransferInstruction(
+      ata,
+      toAccount,
+      user,
+      amount,
+      [],
+      TOKEN_PROGRAM_ID
+    );
+    transaction.add(ix);
+    const tx = await this.program.provider.send(transaction);
+    console.log(`deposited ${amount} $PYTH`);
+  }
 
   //withdraw tokens
   public async withdrawTokens(
@@ -155,7 +189,6 @@ export class StakeConnection {
     program: Program
   ) {}
 }
-
 
 export class StakeAccount {
   address: PublicKey;
