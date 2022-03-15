@@ -79,7 +79,7 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    const tx = await setupProgram.methods
+    await setupProgram.methods
       .initConfig({
         governanceAuthority: setupProvider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
@@ -88,7 +88,6 @@ describe("api", async () => {
         epochDuration: new BN(1),
       })
       .rpc();
-    console.log(tx);
   });
 
   it("alice receive tokens", async () => {
