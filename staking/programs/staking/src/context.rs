@@ -134,7 +134,7 @@ pub struct CreatePosition<'info>{
 
 
 #[derive(Accounts)]
-#[instruction(index : u8)]
+#[instruction(index : u8, amount : u64)]
 pub struct ClosePosition<'info>{
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -152,6 +152,9 @@ pub struct ClosePosition<'info>{
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config : Account<'info, global_config::GlobalConfig>,
 }
+
+
+
 
 #[derive(Accounts)]
 pub struct UpdateVoterWeight<'info>{
@@ -174,11 +177,6 @@ pub struct UpdateVoterWeight<'info>{
     pub voter_record : Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config : Account<'info, global_config::GlobalConfig>,
-}
-
-#[derive(Accounts)]
-pub struct SplitPosition<'info>{
-    pub payer : Signer<'info>,
 }
 
 #[derive(Accounts)]
