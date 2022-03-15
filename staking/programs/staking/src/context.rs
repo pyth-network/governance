@@ -21,7 +21,7 @@ pub struct InitConfig<'info>{
         init,
         seeds = [CONFIG_SEED.as_bytes()],
         bump,
-        payer = payer,
+        payer = payer
     )]
     // Stake program accounts:
     pub config_account : Account<'info, global_config::GlobalConfig>,
@@ -186,3 +186,12 @@ pub struct CleanupPositions<'info>{
     pub payer : Signer<'info>,
 }
 
+
+// Anchor's parser doesn't understand cfg(feature), so the IDL gets messed
+// up if we try to use it here. We can just keep the definition the same.
+#[derive(Accounts)]
+#[instruction(seconds: i64)]
+pub struct AdvanceClock<'info> {
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config : Account<'info, global_config::GlobalConfig>,
+}
