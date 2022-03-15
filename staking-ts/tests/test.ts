@@ -79,7 +79,7 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    const tx = await setupProgram.methods
+    await setupProgram.methods
       .initConfig({
         governanceAuthority: setupProvider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
@@ -88,7 +88,6 @@ describe("api", async () => {
         epochDuration: new BN(1),
       })
       .rpc();
-    console.log(tx);
   });
 
   it("alice receive tokens", async () => {
@@ -129,67 +128,27 @@ describe("api", async () => {
     );
   });
 
-
-
-  it("alice gets staking accounts", async () => {
-    const tx = await stake_connection.program.methods
-      .createStakeAccount(alice.publicKey, { fullyVested: {} })
-      .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: stake_connection.program.provider.wallet.publicKey,
-          newAccountPubkey: alice_stake_account.publicKey,
-          lamports:
-            await stake_connection.program.provider.connection.getMinimumBalanceForRentExemption(
-              positions_account_size
-            ),
-          space: positions_account_size,
-          programId: stake_connection.program.programId,
-        }),
-      ])
-      .accounts({
-        stakeAccountPositions: alice_stake_account.publicKey,
-        mint: pyth_mint_account.publicKey,
-      })
-      .signers([alice_stake_account])
-      .rpc({ skipPreflight: true });
-  });
-
-  it("alice deposit token", async () => {
-    const transaction = new Transaction();
-
-    const to_account = (
-      await PublicKey.findProgramAddress(
-        [
-          anchor.utils.bytes.utf8.encode("custody"),
-          alice_stake_account.publicKey.toBuffer(),
-        ],
-        stake_connection.program.programId
-      )
-    )[0];
-
-    const ix = Token.createTransferInstruction(
-      TOKEN_PROGRAM_ID,
-      alice_ata,
-      to_account,
-      alice.publicKey,
-      [],
-      1000
-    );
-    transaction.add(ix);
-    const tx = await stake_connection.program.provider.send(transaction, [
-      alice,
-    ]);
-  });
-
+  it("alice create deposit and lock", async () =>{
+    await stake_connection.depositAndLockTokens(undefined, 600);
+  })
 
 
   it("find and parse stake accounts", async () => {
     const res = await stake_connection.getStakeAccounts(alice.publicKey);
 
+    
+    assert.equal(res.length, 1);
     assert.equal(res[0].stake_account_positions.owner.toBase58(), alice.publicKey.toBase58());
     assert.equal(res[0].stake_account_metadata.owner.toBase58(), alice.publicKey.toBase58());
-    assert.equal(res[0].stake_account_positions.positions[0], null);
-    assert.equal(res[0].token_balance, 1000)
+    assert.equal(res[0].stake_account_positions.positions[0].amount.toNumber(), 600);
+    assert.equal(res[0].token_balance.toNumber(), 600)
+
+    await stake_connection.depositAndLockTokens(res[0], 100);
+
+    const after = await stake_connection.getStakeAccounts(alice.publicKey);
+    assert.equal(after.length, 1);
+    assert.equal(after[0].stake_account_positions.positions[1].amount.toNumber(), 100);
+    assert.equal(after[0].token_balance.toNumber(), 700)
     
   });
 
