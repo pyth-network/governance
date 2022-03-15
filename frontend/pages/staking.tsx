@@ -190,7 +190,9 @@ const Staking: NextPage = () => {
         .then((sa) => {
           if (sa.length > 0) {
             setStakeAccount(sa[0])
+            setLockedPythBalance(sa[0].token_balance.toString())
             console.log(sa[0])
+            console.log(sa[0].token_balance.toString())
           }
         })
         .then(() =>
@@ -234,32 +236,13 @@ const Staking: NextPage = () => {
   //handler
   const handleDeposit = async () => {
     if (stakeConnection && publicKey) {
-      if (!stakeAccount) {
-        // create stake account
-        try {
-          const sa = await stakeConnection.createStakeAccount(publicKey)
-          setStakeAccount(sa)
-          enqueueSnackbar('stake account created', { variant: 'success' })
-        } catch (e) {
-          enqueueSnackbar(e.message, { variant: 'error' })
-        }
-      }
-
-      if (stakeAccount) {
-        // deposit and lock
-        try {
-          await stakeConnection.depositAndLockTokens(
-            publicKey,
-            stakeAccount,
-            amount
-          )
-          enqueueSnackbar(`deposited and locked ${amount} $PYTH`, {
-            variant: 'success',
-          })
-        } catch (e) {
-          console.log(e)
-          enqueueSnackbar(e.message, { variant: 'error' })
-        }
+      try {
+        await stakeConnection.depositAndLockTokens(amount, stakeAccount)
+        enqueueSnackbar('deposit successful', { variant: 'success' })
+      } catch (e) {
+        enqueueSnackbar(e.message, {
+          variant: 'error',
+        })
       }
     }
   }
