@@ -6,7 +6,7 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 import { Wallet, Provider } from "@project-serum/anchor";
-import fs from "fs";
+import assert from 'assert';
 import { StakeConnection } from "../src";
 
 // let's try to get rid of this magic constant
@@ -180,4 +180,17 @@ describe("api", async () => {
       alice,
     ]);
   });
+
+
+
+  it("find and parse stake accounts", async () => {
+    const res = await stake_connection.getStakeAccounts(alice.publicKey);
+
+    assert.equal(res[0].stake_account_positions.owner.toBase58(), alice.publicKey.toBase58());
+    assert.equal(res[0].stake_account_metadata.owner.toBase58(), alice.publicKey.toBase58());
+    assert.equal(res[0].stake_account_positions.positions[0], null);
+    assert.equal(res[0].token_balance, 1000)
+    
+  });
+
 });
