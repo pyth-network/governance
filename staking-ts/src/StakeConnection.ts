@@ -1,12 +1,15 @@
 import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
-import { PublicKey, Connection, Keypair } from "@solana/web3.js";
+import { PublicKey, Connection, Keypair, SystemProgram } from "@solana/web3.js";
 import * as wasm from "../../staking/wasm/node/staking";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
+import { positions_account_size } from "../../staking/tests/utils/constant";
 import {
   Token,
-  TOKEN_PROGRAM_ID
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import BN from "bn.js";
 
 export class StakeConnection {
   program: Program;
@@ -121,8 +124,15 @@ export class StakeConnection {
       )
     )[0];
 
-    const mint = new Token(this.program.provider.connection, this.config.pythTokenMint, TOKEN_PROGRAM_ID, new Keypair());
-    stake_account.token_balance = (await mint.getAccountInfo(custody_address)).amount;
+    const mint = new Token(
+      this.program.provider.connection,
+      this.config.pythTokenMint,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    );
+    stake_account.token_balance = (
+      await mint.getAccountInfo(custody_address)
+    ).amount;
     return stake_account;
   }
 
@@ -135,10 +145,72 @@ export class StakeConnection {
 
   //deposit tokens
   public async depositAndLockTokens(
-    stake_account: StakeAccount | undefined,
     amount: number,
-    program: Program
-  ) {}
+    stake_account?: StakeAccount
+  ) {
+    const stake_account_keypair = new Keypair();
+    let stake_account_address: PublicKey;
+
+    const owner = this.program.provider.wallet.publicKey;
+
+    if (stake_account == null) {
+      const tx = await this.program.methods
+        .createStakeAccount(owner, { fullyVested: {} })
+        .preInstructions([
+          SystemProgram.createAccount({
+            fromPubkey: owner,
+            newAccountPubkey: stake_account_keypair.publicKey,
+            lamports:
+              await this.program.provider.connection.getMinimumBalanceForRentExemption(
+                positions_account_size
+              ),
+            space: positions_account_size,
+            programId: this.program.programId,
+          }),
+        ])
+        .accounts({
+          stakeAccountPositions: stake_account_keypair.publicKey,
+          mint: this.config.pythTokenMint,
+        })
+        .signers([stake_account_keypair])
+        .rpc({ skip_preflight: true });
+
+      stake_account_address = stake_account_keypair.publicKey;
+    } else {
+      stake_account_address = stake_account.address;
+    }
+
+    const toAccount = (
+      await PublicKey.findProgramAddress(
+        [utils.bytes.utf8.encode("custody"), stake_account_address.toBuffer()],
+        this.program.programId
+      )
+    )[0];
+
+    const ata = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      owner
+    );
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      ata,
+      toAccount,
+      owner,
+      [],
+      amount
+    );
+
+    await this.program.methods
+      .createPosition(null, null, new BN(amount))
+      .preInstructions([ix])
+      .accounts({
+        stakeAccountPositions: stake_account_address,
+      })
+      .rpc();
+  }
 
   //withdraw tokens
   public async withdrawTokens(
