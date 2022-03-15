@@ -30,8 +30,8 @@ import {
   useConnection,
   useWallet,
 } from '@solana/wallet-adapter-react'
+import { WalletDialogButton } from '@solana/wallet-adapter-material-ui'
 import { ChangeEvent, useEffect, useState } from 'react'
-import { WalletMultiButton } from '@solana/wallet-adapter-material-ui'
 import { useSnackbar } from 'notistack'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import { STAKING_PROGRAM } from '@components/constants'
@@ -150,7 +150,7 @@ const Staking: NextPage = () => {
   const classes = useStyles()
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
-  const { publicKey, connected } = useWallet()
+  const { publicKey, connected, connecting } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
@@ -193,6 +193,9 @@ const Staking: NextPage = () => {
             setLockedPythBalance(sa[0].token_balance.toString())
             console.log(sa[0])
             console.log(sa[0].token_balance.toString())
+            console.log(
+              sa[0].stake_account_positions.positions[0].amount.toString()
+            )
           }
         })
         .then(() =>
@@ -379,13 +382,14 @@ const Staking: NextPage = () => {
                       </Grid>
                     ) : (
                       <Grid item xs={12}>
-                        <WalletMultiButton
+                        <WalletDialogButton
                           variant="outlined"
                           disableRipple
                           className={classes.button}
+                          disabled={connecting}
                         >
                           Connect Wallet
-                        </WalletMultiButton>
+                        </WalletDialogButton>
                       </Grid>
                     )}
                   </div>
