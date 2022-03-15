@@ -22,6 +22,7 @@ import {
   Tabs,
   Typography,
   Chip,
+  Hidden,
 } from '@mui/material'
 import Layout from '../components/Layout'
 import { colors } from '@components/muiTheme'
@@ -59,7 +60,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     '& .MuiFormControl-root': { marginBottom: 30 },
   },
   amountInputLabel: {
-    marginTop: 6,
+    display: 'flex',
+    alignItems: 'center',
     '& .MuiInputLabel-root': {
       color: 'white',
       '&.Mui-focused': {
@@ -129,6 +131,9 @@ const useStyles = makeStyles((theme: Theme) => ({
     '&.Mui-focusVisible': {
       backgroundColor: 'rgba(100, 95, 228, 0.32)',
     },
+  },
+  amountBalanceGroup: {
+    display: 'flex',
   },
   balanceGroup: {
     display: 'flex',
@@ -247,6 +252,16 @@ const Staking: NextPage = () => {
           variant: 'error',
         })
       }
+      await refreshBalance()
+      console.log(pythBalance)
+    }
+  }
+
+  const refreshBalance = async () => {
+    setPythBalance(await getPythTokenBalance(connection, publicKey!))
+    if (stakeConnection) {
+      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey!)
+      setLockedPythBalance(stakeAccounts[0].token_balance.toString())
     }
   }
 
@@ -312,32 +327,30 @@ const Staking: NextPage = () => {
                   className={classes.form}
                 >
                   <FormControl fullWidth variant="standard">
-                    <div className={classes.balanceGroup}>
+                    <div className={classes.amountBalanceGroup}>
                       <div className={classes.amountInputLabel}>
-                        <InputLabel
-                          shrink
-                          htmlFor="amount-pyth-lock"
-                          className={classes.amountInputLabel}
-                        >
-                          Amount (PYTH)
-                        </InputLabel>
+                        <Typography variant="body2">Amount (PYTH)</Typography>
                       </div>
-                      <Typography variant="body1">
-                        Balance: {balance}
-                      </Typography>
-                      <div style={{ flex: 1 }} />
-                      <Chip
-                        label="Half"
-                        variant="outlined"
-                        size="small"
-                        onClick={handleHalfBalanceClick}
-                      />
-                      <Chip
-                        label="Max"
-                        variant="outlined"
-                        size="small"
-                        onClick={handleMaxBalanceClick}
-                      />
+                      {/* <Hidden mdDown implementation="css"> */}
+                      <div className={classes.balanceGroup}>
+                        <Typography variant="body2">
+                          Balance: {balance}
+                        </Typography>
+                        <div style={{ flex: 1 }} />
+                        <Chip
+                          label="Half"
+                          variant="outlined"
+                          size="small"
+                          onClick={handleHalfBalanceClick}
+                        />
+                        <Chip
+                          label="Max"
+                          variant="outlined"
+                          size="small"
+                          onClick={handleMaxBalanceClick}
+                        />
+                      </div>
+                      {/* </Hidden> */}
                     </div>
                     <Input
                       disableUnderline={true}
