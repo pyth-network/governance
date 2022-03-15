@@ -129,7 +129,7 @@ describe("api", async () => {
   });
 
   it("alice create deposit and lock", async () =>{
-    await stake_connection.depositAndLockTokens(600);
+    await stake_connection.depositAndLockTokens(undefined, 600);
   })
 
 
@@ -142,7 +142,7 @@ describe("api", async () => {
     assert.equal(res[0].stake_account_positions.positions[0].amount.toNumber(), 600);
     assert.equal(res[0].token_balance.toNumber(), 600)
 
-    await stake_connection.depositAndLockTokens(100, res[0]);
+    await stake_connection.depositAndLockTokens(res[0], 100);
 
     const after = await stake_connection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);

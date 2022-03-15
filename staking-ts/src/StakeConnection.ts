@@ -232,8 +232,8 @@ export class StakeConnection {
   }
   //deposit tokens
   public async depositAndLockTokens(
-    amount: number,
-    stake_account?: StakeAccount
+    stake_account: StakeAccount | undefined,
+    amount: number
   ) {
     let stake_account_address: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
@@ -251,7 +251,7 @@ export class StakeConnection {
     
 
 
-    if (stake_account == null) {
+    if (!stake_account) {
       const stake_account_keypair = await this.withCreateAccount(ixs, owner);
       signers.push(stake_account_keypair);
       stake_account_address = stake_account_keypair.publicKey;
