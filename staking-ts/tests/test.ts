@@ -48,34 +48,30 @@ describe("api", async () => {
     Provider.defaultOptions().commitment
   );
   let stake_connection;
-
+  const setupProvider = new Provider(connection, new Wallet(alice), {});
   // const provider = stake_connection.program.provider;
 
   it("initializes config", async () => {
-    const provider = new Provider(
-      connection,
-      new Wallet(alice),
-      Provider.defaultOptions()
-    );
+    
     let idl;
 
     while (true) {
       try {
         console.log("waiting for validator");
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        idl = await Program.fetchIdl(staking_program, provider);
+        idl = await Program.fetchIdl(staking_program, setupProvider);
         if (idl != null) {
           break;
         }
       } catch (e) {}
     }
 
-    const program = new Program(idl, staking_program, provider);
+    const setupProgram = new Program(idl, staking_program, setupProvider);
 
     await connection.requestAirdrop(alice.publicKey, 1_000_000_000_000);
 
     await createMint(
-      provider,
+      setupProvider,
       pyth_mint_account,
       pyth_mint_authority.publicKey,
       null,
@@ -83,9 +79,9 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    const tx = await program.methods
+    const tx = await setupProgram.methods
       .initConfig({
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: setupProvider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
         unlockingDuration: 2,
         // Epoch time set to 1 second
@@ -93,6 +89,36 @@ describe("api", async () => {
       })
       .rpc();
     console.log(tx);
+  });
+
+  it("alice receive tokens", async () => {
+    const transaction = new Transaction();
+
+    const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pyth_mint_account.publicKey,
+      alice_ata,
+      alice.publicKey,
+      alice.publicKey
+    );
+    transaction.add(create_ata_ix);
+
+    // Mint 1000 tokens.
+    const mint_ix = Token.createMintToInstruction(
+      TOKEN_PROGRAM_ID,
+      pyth_mint_account.publicKey,
+      alice_ata,
+      pyth_mint_authority.publicKey,
+      [],
+      1000
+    );
+
+    transaction.add(mint_ix);
+
+    const tx = await setupProvider.send(transaction, [
+      pyth_mint_authority,
+    ]);
   });
 
   it("creates StakeConnection", async () => {
@@ -103,4 +129,55 @@ describe("api", async () => {
     );
   });
 
+
+
+  it("alice gets staking accounts", async () => {
+    const tx = await stake_connection.program.methods
+      .createStakeAccount(alice.publicKey, { fullyVested: {} })
+      .preInstructions([
+        SystemProgram.createAccount({
+          fromPubkey: stake_connection.program.provider.wallet.publicKey,
+          newAccountPubkey: alice_stake_account.publicKey,
+          lamports:
+            await stake_connection.program.provider.connection.getMinimumBalanceForRentExemption(
+              positions_account_size
+            ),
+          space: positions_account_size,
+          programId: stake_connection.program.programId,
+        }),
+      ])
+      .accounts({
+        stakeAccountPositions: alice_stake_account.publicKey,
+        mint: pyth_mint_account.publicKey,
+      })
+      .signers([alice_stake_account])
+      .rpc({ skipPreflight: true });
+  });
+
+  it("alice deposit token", async () => {
+    const transaction = new Transaction();
+
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("custody"),
+          alice_stake_account.publicKey.toBuffer(),
+        ],
+        stake_connection.program.programId
+      )
+    )[0];
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      alice_ata,
+      to_account,
+      alice.publicKey,
+      [],
+      1000
+    );
+    transaction.add(ix);
+    const tx = await stake_connection.program.provider.send(transaction, [
+      alice,
+    ]);
+  });
 });
