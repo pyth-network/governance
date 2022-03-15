@@ -90,11 +90,12 @@ export class StakeConnection {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
-    const outbuffer = Buffer.alloc(10 * 1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+	const pd = new wasm.WasmPositionData(inbuf.data);
+    const outBuffer = Buffer.alloc(pd.borshLength);
+    pd.asBorsh(outBuffer);
     const positions = this.program.coder.accounts.decode(
       "PositionData",
-      outbuffer
+      outBuffer
     );
     return positions;
   }
