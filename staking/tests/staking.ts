@@ -277,8 +277,10 @@ describe("staking", async () => {
 
   it("parses positions", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
-    const outbuffer = Buffer.alloc(10*1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+    
+    const pd = new wasm.WasmPositionData(inbuf.data);
+    const outbuffer = Buffer.alloc(pd.borshLength);
+    pd.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
     for (let index = 0; index < positions.positions.length; index++) {
       assert.equal(positions.positions[index], null);
@@ -310,8 +312,9 @@ describe("staking", async () => {
 
   it("validates position", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
-    const outbuffer = Buffer.alloc(10*1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+    let wPositions = new wasm.WasmPositionData(inbuf.data);
+    const outbuffer = Buffer.alloc(wPositions.borshLength);
+    wPositions.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
 
     // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
