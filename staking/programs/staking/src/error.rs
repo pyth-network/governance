@@ -19,6 +19,8 @@ pub enum ErrorCode {
     CreatePositionWithZero,
     #[msg("Invalid product/publisher pair")]
     InvalidPosition,
+    #[msg("Amount to unlock bigger than position")]
+    AmountBiggerThanPosition,
     #[msg("Position already unlocking")]
     AlreadyUnlocking,
     #[msg("Epoch duration is 0")]
