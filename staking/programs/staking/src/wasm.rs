@@ -2,6 +2,7 @@ use crate::borsh::BorshSerialize;
 use crate::state::positions::{PositionData, MAX_POSITIONS};
 use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator};
 use wasm_bindgen::prelude::*;
+use std::io::Write;
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
@@ -21,7 +22,7 @@ impl WasmPositionData {
     #[wasm_bindgen(getter, js_name=borshLength)]
     pub fn get_borsh_length(&self) -> usize {
         // We could serialize and get the length, but this is way cheaper
-        MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33)
+        32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33)
     }
     /// Serialize this account using Borsh so that Anchor can deserialize it
     #[wasm_bindgen(js_name=asBorsh)]
@@ -31,10 +32,9 @@ impl WasmPositionData {
     fn as_borsh_impl(&self, output_buffer: &mut [u8]) -> Result<(), Error> {
         // TODO: Borsh panics if the buffer is too large, so we do this inefficient
         // copy. IIRC Solana has some rust code that works around this problem.
-        let serialized = self.wrapped.try_to_vec()?;
-        let len = serialized.len();
-        output_buffer[0..8].copy_from_slice(&PositionData::discriminator());
-        output_buffer[8..(len + 8)].copy_from_slice(&serialized[..]);
+        let mut writer = output_buffer;
+        writer.write_all(&PositionData::discriminator())?;
+        self.wrapped.serialize(&mut writer)?;
         Ok(())
     }
     #[wasm_bindgen(js_name=getUnlocked)]
