@@ -41,6 +41,8 @@ import {
   StakeAccount,
   StakeConnection,
 } from '../../staking-ts/src/StakeConnection'
+import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
+import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -189,25 +191,19 @@ const Staking: NextPage = () => {
 
   // get stake accounts when stake connection is set
   useEffect(() => {
-    if (stakeConnection) {
+    if (stakeConnection && publicKey) {
       stakeConnection
-        ?.getStakeAccounts(publicKey!)
+        ?.getStakeAccounts(publicKey)
         .then((sa) => {
           if (sa.length > 0) {
             setStakeAccount(sa[0])
             setLockedPythBalance(sa[0].token_balance.toString())
             console.log(sa[0])
-            console.log(sa[0].token_balance.toString())
-            console.log(
-              sa[0].stake_account_positions.positions[0].amount.toString()
-            )
           }
         })
-        .then(() =>
-          getPythTokenBalance(connection, publicKey!).then((balance) =>
-            setPythBalance(balance)
-          )
-        )
+        .then(() => {
+          refreshBalance()
+        })
     }
   }, [stakeConnection])
 
@@ -245,7 +241,7 @@ const Staking: NextPage = () => {
   const handleDeposit = async () => {
     if (stakeConnection && publicKey) {
       try {
-        await stakeConnection.depositAndLockTokens(amount, stakeAccount)
+        await stakeConnection.depositAndLockTokens(stakeAccount, amount)
         enqueueSnackbar('deposit successful', { variant: 'success' })
       } catch (e) {
         enqueueSnackbar(e.message, {
@@ -253,15 +249,18 @@ const Staking: NextPage = () => {
         })
       }
       await refreshBalance()
-      console.log(pythBalance)
     }
   }
 
   const refreshBalance = async () => {
-    setPythBalance(await getPythTokenBalance(connection, publicKey!))
-    if (stakeConnection) {
-      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey!)
-      setLockedPythBalance(stakeAccounts[0].token_balance.toString())
+    if (stakeConnection && publicKey) {
+      setPythBalance(await getPythTokenBalance(connection, publicKey))
+      setLockedPythBalance(
+        await getLockedPythTokenBalance(stakeConnection, publicKey)
+      )
+      setUnlockedPythBalance(
+        await getUnlockedPythTokenBalance(stakeConnection, publicKey)
+      )
     }
   }
 
@@ -276,10 +275,6 @@ const Staking: NextPage = () => {
   const handleMaxBalanceClick = () => {
     setAmount(balance)
   }
-
-  useEffect(() => {
-    console.log(`Current Tab: ${currentTab}`)
-  }, [currentTab])
 
   useEffect(() => {
     console.log(`Current Amount: ${amount}`)
