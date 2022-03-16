@@ -37,8 +37,5 @@ jobs:
       run: yarn build_wasm
     - name: Start validator
       working-directory: ./staking
-      run: yarn start &
-    - name : Test api
-      working-directory: ./staking-ts
-      run: yarn test
+      run: yarn test_api
 
