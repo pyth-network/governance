@@ -1,10 +1,8 @@
 use crate::state::positions::{PositionData, MAX_POSITIONS};
-use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator};
-use std::io::Write;
-use js_sys;
+use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
-use anchor_lang::solana_program::borsh::get_packed_len;
-use borsh::BorshSerialize;
+use std::io::Write;
+use crate::VestingSchedule;
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
@@ -72,6 +70,16 @@ impl WasmPositionData {
     }
 }
 
+#[wasm_bindgen(js_name=getUnvestedBalance)]
+pub fn get_unvested_balance(vestingSchedBorsh: &[u8], currentTime: i64) -> Result<u64, JsValue> {
+    log_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime))
+}
+fn get_unvested_balance_impl(vesting_sched_borsh: &[u8], current_time: i64) -> anchor_lang::Result<u64> {
+    let mut ptr = vesting_sched_borsh;
+    let vs = VestingSchedule::deserialize(&mut ptr)?;
+    vs.get_unvested_balance(current_time)
+}
+
 /// Most of the Rust code returns anchor_lang::Result<T>, which is core::result::Result<T, anchor_lang::error::Error>
 /// in order to return a result via WASM, we need to return a core::result::Result<T, JsValue>
 /// and anchor_lang::error::Error is not convertible to a JsValue. This method manually converts it
@@ -85,6 +93,8 @@ where
         Err(e) => Err(e.to_string().into()),
     }
 }
+
+
 
 #[wasm_bindgen]
 pub struct Constants {}
