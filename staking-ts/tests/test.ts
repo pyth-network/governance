@@ -48,30 +48,30 @@ describe("api", async () => {
     Provider.defaultOptions().commitment
   );
   let stake_connection;
-
+  const setupProvider = new Provider(connection, new Wallet(alice), {});
   // const provider = stake_connection.program.provider;
 
   it("initializes config", async () => {
-    const provider = new Provider(connection, new Wallet(alice), {});
+    
     let idl;
 
     while (true) {
       try {
         console.log("waiting for validator");
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        idl = await Program.fetchIdl(staking_program, provider);
+        idl = await Program.fetchIdl(staking_program, setupProvider);
         if (idl != null) {
           break;
         }
       } catch (e) {}
     }
 
-    const program = new Program(idl, staking_program, provider);
+    const setupProgram = new Program(idl, staking_program, setupProvider);
 
     await connection.requestAirdrop(alice.publicKey, 1_000_000_000_000);
 
     await createMint(
-      provider,
+      setupProvider,
       pyth_mint_account,
       pyth_mint_authority.publicKey,
       null,
@@ -79,24 +79,15 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    const tx = await program.methods
+    await setupProgram.methods
       .initConfig({
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: setupProvider.wallet.publicKey,
         pythTokenMint: pyth_mint_account.publicKey,
         unlockingDuration: 2,
         // Epoch time set to 1 second
         epochDuration: new BN(1),
       })
       .rpc();
-    console.log(tx);
-  });
-
-  it("creates StakeConnection", async () => {
-    stake_connection = await StakeConnection.createStakeConnection(
-      connection,
-      new Wallet(alice),
-      staking_program
-    );
   });
 
   it("alice receive tokens", async () => {
@@ -108,7 +99,7 @@ describe("api", async () => {
       pyth_mint_account.publicKey,
       alice_ata,
       alice.publicKey,
-      stake_connection.program.provider.wallet.publicKey
+      alice.publicKey
     );
     transaction.add(create_ata_ix);
 
@@ -124,26 +115,35 @@ describe("api", async () => {
 
     transaction.add(mint_ix);
 
-    const tx = await stake_connection.program.provider.send(transaction, [
+    const tx = await setupProvider.send(transaction, [
       pyth_mint_authority,
     ]);
   });
 
+  it("creates StakeConnection", async () => {
+    stake_connection = await StakeConnection.createStakeConnection(
+      connection,
+      new Wallet(alice),
+      staking_program
+    );
+  });
+
   it("alice create deposit and lock", async () =>{
-    await stake_connection.depositAndLockTokens(600);
+    await stake_connection.depositAndLockTokens(undefined, 600);
   })
 
 
   it("find and parse stake accounts", async () => {
     const res = await stake_connection.getStakeAccounts(alice.publicKey);
 
+    
     assert.equal(res.length, 1);
     assert.equal(res[0].stake_account_positions.owner.toBase58(), alice.publicKey.toBase58());
     assert.equal(res[0].stake_account_metadata.owner.toBase58(), alice.publicKey.toBase58());
     assert.equal(res[0].stake_account_positions.positions[0].amount.toNumber(), 600);
     assert.equal(res[0].token_balance.toNumber(), 600)
 
-    await stake_connection.depositAndLockTokens(100, res[0]);
+    await stake_connection.depositAndLockTokens(res[0], 100);
 
     const after = await stake_connection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);
