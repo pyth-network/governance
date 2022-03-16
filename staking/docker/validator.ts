@@ -68,8 +68,9 @@ async function main() {
   if (shell.exec(argv.command).code !== 0) {
     if (!argv.detach) {
       controller.abort();
+      throw Error("Failed tests");
     }
-    throw Error("Failed tests");
+    
   }
   if (!argv.detach) {
     controller.abort();
