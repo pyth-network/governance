@@ -1,4 +1,4 @@
-import { PYTH_MINT_PUBKEY } from '@components/constants'
+import { PYTH_MINT_ACCOUNT_PUBKEY } from '@components/constants'
 import { Connection, PublicKey } from '@solana/web3.js'
 
 export const getPythTokenBalance = async (
@@ -6,7 +6,7 @@ export const getPythTokenBalance = async (
   publicKey: PublicKey
 ) => {
   const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
-    mint: PYTH_MINT_PUBKEY,
+    mint: PYTH_MINT_ACCOUNT_PUBKEY,
   })
   let balance = 0
   for (const account of tokenAccounts.value) {

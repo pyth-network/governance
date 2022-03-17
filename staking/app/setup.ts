@@ -15,7 +15,7 @@ import {
 } from "@solana/web3.js";
 import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
-import fs from "fs"
+import fs from "fs";
 
 describe("setup", async () => {
   let program: Program<Staking>;
@@ -46,16 +46,30 @@ describe("setup", async () => {
   const provider = anchor.Provider.local();
 
   before(async () => {
-    
     // Drop keypairs in format compatible with Phantom Wallet
-    fs.writeFileSync(`./app/keypairs/alice.json`, `[${alice.secretKey.toString()}]`);
-    fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
-    fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pyth_mint_account.publicKey.toBase58()));
+    fs.writeFileSync(
+      `./app/keypairs/alice.json`,
+      `[${alice.secretKey.toString()}]`
+    );
+    fs.writeFileSync(
+      `./app/keypairs/bob.json`,
+      `[${bob.secretKey.toString()}]`
+    );
+    fs.writeFileSync(
+      `./app/keypairs/pyth_mint_account.json`,
+      JSON.stringify(pyth_mint_account.publicKey.toBase58())
+    );
+    fs.writeFileSync(
+      `./app/keypairs/pyth_mint_authority.json`,
+      `[${pyth_mint_authority.secretKey.toString()}]`
+    );
 
     program = anchor.workspace.Staking as Program<Staking>;
 
-    await provider.connection.requestAirdrop(provider.wallet.publicKey, 1_000_000_000_000);
-
+    await provider.connection.requestAirdrop(
+      provider.wallet.publicKey,
+      1_000_000_000_000
+    );
   });
 
   it("initializes config", async () => {
@@ -109,7 +123,7 @@ describe("setup", async () => {
         to_account,
         pyth_mint_authority.publicKey,
         [],
-        1000
+        2000
       );
 
       transaction.add(mint_ix);

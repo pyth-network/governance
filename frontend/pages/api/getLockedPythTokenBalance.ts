@@ -6,11 +6,13 @@ export const getLockedPythTokenBalance = async (
   publicKey: PublicKey
 ) => {
   const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
-  const positions = stakeAccounts[0].stake_account_positions.positions
   let lockedTokens = 0
-  for (const pos of positions) {
-    if (pos) {
-      lockedTokens += pos.amount.toNumber()
+  if (stakeAccounts.length > 0) {
+    const positions = stakeAccounts[0].stake_account_positions.positions
+    for (const pos of positions) {
+      if (pos) {
+        lockedTokens += pos.amount.toNumber()
+      }
     }
   }
   return lockedTokens

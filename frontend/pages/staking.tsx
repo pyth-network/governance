@@ -36,13 +36,14 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import { useSnackbar } from 'notistack'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import { STAKING_PROGRAM } from '@components/constants'
-import { Wallet } from '@project-serum/anchor'
+import { Wallet, Provider, getProvider } from '@project-serum/anchor'
 import {
   StakeAccount,
   StakeConnection,
 } from '../../staking-ts/src/StakeConnection'
 import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
 import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
+import { airdropPythToken } from './api/airdropPythToken'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -157,6 +158,7 @@ const Staking: NextPage = () => {
   const classes = useStyles()
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
+  const hello = useWallet()
   const { publicKey, connected, connecting } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
@@ -252,8 +254,24 @@ const Staking: NextPage = () => {
     }
   }
 
+  const handleClaimPyth = async () => {
+    if (publicKey) {
+      const provider = new Provider(connection, anchorWallet as Wallet, {})
+      try {
+        await airdropPythToken(provider, publicKey)
+        enqueueSnackbar('airdrop successful', { variant: 'success' })
+      } catch (e) {
+        enqueueSnackbar(e.message, {
+          variant: 'error',
+        })
+      }
+    }
+    await refreshBalance()
+  }
+
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
+      console.log(connection)
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       setLockedPythBalance(
         await getLockedPythTokenBalance(stakeConnection, publicKey)
@@ -361,7 +379,16 @@ const Staking: NextPage = () => {
                   <div className={classes.buttonGroup}>
                     {connected ? (
                       <Grid item xs={12}>
-                        {currentTab === 'Deposit' ? (
+                        {pythBalance === 0 ? (
+                          <Button
+                            variant="outlined"
+                            disableRipple
+                            className={classes.button}
+                            onClick={handleClaimPyth}
+                          >
+                            Claim $PYTH
+                          </Button>
+                        ) : currentTab === 'Deposit' ? (
                           <Button
                             variant="outlined"
                             disableRipple
