@@ -1,4 +1,4 @@
-import { Provider, Program, Wallet, utils, Coder } from "@project-serum/anchor";
+import { Provider, Program, Wallet, utils, Coder, Idl } from "@project-serum/anchor";
 import {
   PublicKey,
   Connection,
@@ -19,6 +19,7 @@ import {
   u64,
 } from "@solana/spl-token";
 import BN from "bn.js";
+import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 
 export class StakeConnection {
   program: Program;
@@ -123,7 +124,7 @@ export class StakeConnection {
 
     stake_account.stake_account_metadata =
       await this.program.account.stakeAccountMetadata.fetch(metadata_address);
-    stake_account.vestingSchedule = StakeAccount.serializeVesting(stake_account.stake_account_metadata.lock, this.program.coder);
+    stake_account.vestingSchedule = StakeAccount.serializeVesting(stake_account.stake_account_metadata.lock, this.program.idl);
 
     const custody_address = (
       await PublicKey.findProgramAddress(
@@ -338,18 +339,18 @@ export class StakeAccount {
   // Unvested
 
   public getBalanceSummary(unixTime: BN): BalanceSummary {
-    let unvested = wasm.getUnvestedBalance(this.vestingSchedule, BigInt(unixTime.toString()));
-    let currentEpoch = 0;
-    let unlockingDuration = 0;
+    let unvestedBalance = wasm.getUnvestedBalance(this.vestingSchedule, BigInt(unixTime.toString()));
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
     
     const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
       BigInt(this.token_balance.toString()),
-      unvested,
-      BigInt(currentEpoch),
+      unvestedBalance,
+      BigInt(currentEpoch.toString()),
       unlockingDuration
     );
     const withdrawableBN = new BN(withdrawable.toString());
-    const unvestedBN = new BN(unvested.toString());
+    const unvestedBN = new BN(unvestedBalance.toString());
     return {
       withdrawable: withdrawableBN,
       locked: this.token_balance.sub(withdrawableBN).sub(unvestedBN),
@@ -360,14 +361,12 @@ export class StakeAccount {
   // What is the best way to represent current vesting schedule in the UI
   public getVestingSchedule() {}
 
-  static serializeVesting(lock: any, coder: Coder): any {
-    // TODO: This is kind of terrible, but it's the best way to do it so far
+  static serializeVesting(lock: any, idl: Idl): any {
     const VESTING_SCHED_MAX_BORSH_LEN = 4*8+1;
     let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
-    const coderInstr : any = coder.instruction; // ixLayout is a private field
-    // We know vesting schedule is part of the data for createStakeAccount,
-    // so pull the layout from it
-    const vestingSchedLayout = coderInstr.ixLayout.get("createStakeAccount").fields[1];
+
+    let idltype = idl.types.find(v => v.name === 'VestingSchedule');
+    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(idltype, idl.types);
     const length =  vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
   }
