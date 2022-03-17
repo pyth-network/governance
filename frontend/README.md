@@ -16,7 +16,12 @@ Once the Idl account has been created, keep the process running, open a new term
 yarn setup
 ```
 
-One setup is done, change directory to the frontend directory and run:
+One setup is done, change directory to the `staking-ts` directory and run:
+```bash
+yarn install
+```
+
+Once that's done, change directory to the frontend directory and run:
 
 ```bash
 npm install
