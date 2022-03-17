@@ -11,12 +11,13 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "test": "yarn build_wasm && ts-node ./docker/validator.ts --mock_clock --command \"yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/*.ts  \"",
+        "test":  "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clok && && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
         "setup": "ts-node ./docker/validator.ts --command \"yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./app/setup.ts\" --detach",
         "build_wasm" : "./wasm/build_wasm.sh",
         "docker_build": "docker build -f docker/Dockerfile -t governance .",
         "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
         "start": "ts-node ./docker/validator.ts --detach",
-        "test_api": "yarn build_wasm && ts-node ./docker/validator.ts --command \"cd ../staking-ts/ && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/test.ts\"" 
+        "test_api": "yarn build_wasm && ts-node ./docker/validator.ts --command \"cd ../staking-ts/ && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/test.ts\"",
+        "generate_keypair": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force"
     }
 }
