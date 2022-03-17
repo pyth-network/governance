@@ -1,25 +1,20 @@
-import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
+import { utils } from "@project-serum/anchor";
 import { PublicKey, Keypair, Transaction, Connection } from "@solana/web3.js";
-import { createMint } from "./utils/utils";
+import { createMint } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
 import fs from "fs";
 import toml from "toml";
-import { exec } from "child_process";
-import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { startValidator } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
 const DEBUG = true;
+const portNumber = 8899;
 
 describe("config", async () => {
-  const portNumber = 8899;
-
   const CONFIG_SEED = "config";
 
   const pythMintAccount = new Keypair();
@@ -28,73 +23,23 @@ describe("config", async () => {
 
   const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
 
-  const user = Keypair.fromSecretKey(
-    new Uint8Array(
-      JSON.parse(fs.readFileSync(config.provider.wallet).toString())
-    )
-  );
-  const ledgerDir = config.validator.ledger_dir;
-  const programAddress = new PublicKey(config.programs.localnet.staking);
-  const idlPath = config.build.idl_path;
-  const binaryPath = config.build.binary_path;
-
-  const connection: Connection = new Connection(
-    `http://localhost:${portNumber}`,
-    Provider.defaultOptions().commitment
-  );
-
-  let provider;
   let program;
-  const controller = new AbortController();
-  const { signal } = controller;
+  let controller;
 
   let configAccount: PublicKey;
   let bump: number;
-
-  [configAccount, bump] = await PublicKey.findProgramAddress(
-    [utils.bytes.utf8.encode(CONFIG_SEED)],
-    programAddress
-  );
 
   after(async () => {
     controller.abort();
   });
 
   it("deploy program", async () => {
-    exec(
-      `mkdir -p ${ledgerDir}/${portNumber} && solana-test-validator --ledger ${ledgerDir}/${portNumber} --rpc-port ${portNumber} --mint ${
-        user.publicKey
-      } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath}`,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-        console.error(`stderr: ${stderr}`);
-      }
-    );
-
-    while (true) {
-      try {
-        console.log("waiting");
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        await connection.getEpochInfo();
-        break;
-      } catch (e) {}
-    }
-
-    provider = new Provider(connection, new Wallet(user), {});
-    program = new Program(
-      JSON.parse(fs.readFileSync(idlPath).toString()),
-      programAddress,
-      provider
-    );
+    ({ controller, program } = await startValidator(portNumber, config));
   });
 
   it("creates mint", async () => {
     await createMint(
-      provider,
+      program.provider,
       pythMintAccount,
       pythMintAuthority.publicKey,
       null,
@@ -103,11 +48,15 @@ describe("config", async () => {
     );
   });
 
-
   it("initializes config", async () => {
+    [configAccount, bump] = await PublicKey.findProgramAddress(
+      [utils.bytes.utf8.encode(CONFIG_SEED)],
+      program.programId
+    );
+
     await program.methods
       .initConfig({
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: program.provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
@@ -125,7 +74,7 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: program.provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
@@ -146,7 +95,7 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: program.provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
@@ -159,15 +108,13 @@ describe("config", async () => {
       .advanceClock(new BN(15))
       .rpc({ skipPreflight: DEBUG });
 
-    configAccountData = await program.account.globalConfig.fetch(
-      configAccount
-    );
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
 
     assert.equal(
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: provider.wallet.publicKey,
+        governanceAuthority: program.provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,

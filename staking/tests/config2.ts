@@ -1,6 +1,6 @@
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
 import { PublicKey, Keypair, Transaction, Connection } from "@solana/web3.js";
-import { createMint } from "./utils/utils";
+import { createMint } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
 import fs from "fs";
