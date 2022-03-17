@@ -82,6 +82,7 @@ const useStyles = makeStyles((theme: Theme) => ({
       marginTop: 15,
       padding: 15,
       backgroundColor: '#835FCC',
+      fontWeight: 800,
     },
     '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
       '-webkit-appearance': 'none',
@@ -159,6 +160,10 @@ const useStyles = makeStyles((theme: Theme) => ({
     display: 'flex',
     textAlign: 'center',
     justifyContent: 'center',
+  },
+  amount: {
+    fontFamily: 'Inter',
+    fontWeight: 700,
   },
 }))
 
