@@ -351,7 +351,12 @@ const Staking: NextPage = () => {
                       {/* <Hidden mdDown implementation="css"> */}
                       <div className={classes.balanceGroup}>
                         <Typography variant="body2">
-                          Balance: {balance}
+                          {currentTab === 'Deposit'
+                            ? 'Balance'
+                            : currentTab === 'Unlock'
+                            ? 'Locked Tokens'
+                            : 'Withdrawable'}
+                          : {balance}
                         </Typography>
                         <div style={{ flex: 1 }} />
                         <Chip
