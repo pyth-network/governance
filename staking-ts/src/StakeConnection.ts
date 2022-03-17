@@ -35,7 +35,6 @@ export class StakeConnection {
     const stake_connection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
     const idl = await Program.fetchIdl(address, provider);
-
     stake_connection.program = new Program(idl, address, provider);
 
     const config_address = (
