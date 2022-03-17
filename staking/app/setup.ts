@@ -13,7 +13,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint } from "../tests/utils/utils";
+import { createMint } from "../tests/utils/before";
 import BN from "bn.js";
 import fs from "fs"
 
