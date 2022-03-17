@@ -4,7 +4,6 @@ import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  MintLayout
 } from "@solana/spl-token";
 import {
   PublicKey,
@@ -17,51 +16,6 @@ import {ProgramError } from "@project-serum/anchor";
 import assert from "assert";
 import { positions_account_size } from "./constant";
 import { utils } from "@project-serum/anchor";
-
-
-
-/**
- * Creates new spl-token at a random keypair
- */
-export async function createMint(
-  provider: anchor.Provider,
-  mintAccount: Keypair,
-  mintAuthority: PublicKey,
-  freezeAuthority: PublicKey | null,
-  decimals: number,
-  programId: PublicKey
-): Promise<void> {
-  // Allocate memory for the account
-  const balanceNeeded = await Token.getMinBalanceRentForExemptMint(
-    provider.connection
-  );
-
-  const transaction = new Transaction();
-  transaction.add(
-    SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
-      newAccountPubkey: mintAccount.publicKey,
-      lamports: balanceNeeded,
-      space: MintLayout.span,
-      programId,
-    })
-  );
-
-  transaction.add(
-    Token.createInitMintInstruction(
-      programId,
-      mintAccount.publicKey,
-      decimals,
-      mintAuthority,
-      freezeAuthority
-    )
-  );
-
-  // Send the two instructions
-  const tx = await provider.send(transaction, [mintAccount], {
-    skipPreflight: true,
-  });
-}
 
 /**
  * Sends the rpc call and check whether the error message matches the provided string
