@@ -171,7 +171,6 @@ const Staking: NextPage = () => {
   const classes = useStyles()
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
-  const hello = useWallet()
   const { publicKey, connected, connecting } = useWallet()
   const { enqueueSnackbar } = useSnackbar()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
