@@ -23,6 +23,7 @@ import {
   Typography,
   Chip,
   Hidden,
+  Divider,
 } from '@mui/material'
 import Layout from '../components/Layout'
 import { colors } from '@components/muiTheme'
@@ -44,6 +45,7 @@ import {
 import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
 import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
 import { airdropPythToken } from './api/airdropPythToken'
+import Image from 'next/image'
 
 const useStyles = makeStyles((theme: Theme) => ({
   sectionContainer: {
@@ -56,6 +58,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     margin: 'auto',
   },
   cardBlack: {
+    marginTop: 30,
     maxWidth: 600,
     margin: 'auto',
   },
@@ -151,6 +154,11 @@ const useStyles = makeStyles((theme: Theme) => ({
       border: `1px solid ${colors.lightPurple}`,
       backgroundColor: '#835FCC',
     },
+  },
+  tokenLogoGroup: {
+    display: 'flex',
+    textAlign: 'center',
+    justifyContent: 'center',
   },
 }))
 
@@ -271,7 +279,6 @@ const Staking: NextPage = () => {
 
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
-      console.log(connection)
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       setLockedPythBalance(
         await getLockedPythTokenBalance(stakeConnection, publicKey)
@@ -437,42 +444,74 @@ const Staking: NextPage = () => {
           <Grid item xs={12}>
             <Card className={classes.cardBlack}>
               <CardContent>
-                <TableContainer style={{ maxHeight: '78vh' }}>
-                  <Table
-                    sx={{
-                      [`& .${tableCellClasses.root}`]: {
-                        borderBottom: 'none',
-                      },
-                    }}
-                  >
-                    <TableHead>
-                      <TableRow>
-                        <TableCell width="70%">Tokens</TableCell>
-                        <TableCell align="right">Amount (PYTH)</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      <TableRow key="Unlocked">
-                        <TableCell>Unlocked</TableCell>
-                        <TableCell align="right">
-                          {connected ? unlockedPythBalance : '-'}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow key="Locked">
-                        <TableCell>Locked</TableCell>
-                        <TableCell align="right">
-                          {connected ? lockedPythBalance : '-'}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow key="Unvested">
-                        <TableCell>Unvested</TableCell>
-                        <TableCell align="right">
-                          {connected ? unvestedPythBalance : '-'}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
+                      align="center"
+                    >
+                      Unlocked
+                    </Typography>
+                    <div className={classes.tokenLogoGroup}>
+                      <Typography variant="subtitle1">
+                        {' '}
+                        {connected ? unlockedPythBalance : '-'}
+                      </Typography>
+                      <div style={{ flex: 0.1 }} />
+                      <Image
+                        src="/images/pyth-coin-logo.svg"
+                        alt="Pyth logo"
+                        height={25}
+                        width={25}
+                      />
+                    </div>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
+                      align="center"
+                    >
+                      Locked
+                    </Typography>
+                    <div className={classes.tokenLogoGroup}>
+                      <Typography variant="subtitle1">
+                        {' '}
+                        {connected ? lockedPythBalance : '-'}
+                      </Typography>
+                      <div style={{ flex: 0.1 }} />
+                      <Image
+                        src="/images/pyth-coin-logo.svg"
+                        alt="Pyth logo"
+                        height={25}
+                        width={25}
+                      />
+                    </div>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
+                      align="center"
+                    >
+                      Unvested
+                    </Typography>
+                    <div className={classes.tokenLogoGroup}>
+                      <Typography variant="subtitle1">
+                        {' '}
+                        {connected ? unvestedPythBalance : '-'}
+                      </Typography>
+                      <div style={{ flex: 0.1 }} />
+                      <Image
+                        src="/images/pyth-coin-logo.svg"
+                        alt="Pyth logo"
+                        height={25}
+                        width={25}
+                      />
+                    </div>
+                  </Grid>
+                </Grid>
               </CardContent>
             </Card>
           </Grid>
