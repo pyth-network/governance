@@ -197,9 +197,7 @@ const Staking: NextPage = () => {
       setStakeConnection(undefined)
       setStakeAccount(undefined)
     } else {
-      console.log('creating stake connection...')
       createStakeConnection()
-      console.log('stake connection created')
     }
   }, [connected])
 
@@ -212,7 +210,6 @@ const Staking: NextPage = () => {
           if (sa.length > 0) {
             setStakeAccount(sa[0])
             setLockedPythBalance(sa[0].token_balance.toString())
-            console.log(sa[0])
           }
         })
         .then(() => {
@@ -304,10 +301,6 @@ const Staking: NextPage = () => {
   const handleMaxBalanceClick = () => {
     setAmount(balance)
   }
-
-  useEffect(() => {
-    console.log(`Current Amount: ${amount}`)
-  }, [amount])
 
   return (
     <Layout>
