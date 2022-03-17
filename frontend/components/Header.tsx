@@ -117,7 +117,7 @@ const Header = () => {
 
   return (
     <header className={classes.header}>
-      <Link href="/">
+      <Link href="/governance">
         <div style={{ display: 'flex' }}>
           <Image
             src="/images/pyth-logo.svg"

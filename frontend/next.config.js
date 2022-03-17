@@ -8,6 +8,15 @@ const nextConfig = {
     config.experiments = { asyncWebAssembly: true }
     return config
   },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/governance',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
