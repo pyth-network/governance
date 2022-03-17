@@ -53,7 +53,7 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    const tx = await setupProgram.methods
+    await setupProgram.methods
       .initConfig({
         governanceAuthority: setupProgram.provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
@@ -78,12 +78,12 @@ describe("api", async () => {
       config.programs.localnet.staking
     );
 
-    
   });
 
   it("alice create deposit and lock", async () =>{
     await stake_connection.depositAndLockTokens(undefined, 600);
   })
+
 
   it("find and parse stake accounts", async () => {
     const res = await stake_connection.getStakeAccounts(alice.publicKey);
