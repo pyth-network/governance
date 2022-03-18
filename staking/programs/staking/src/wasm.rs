@@ -1,8 +1,9 @@
-use crate::borsh::BorshSerialize;
 use crate::state::positions::{PositionData, MAX_POSITIONS};
 use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator};
-use wasm_bindgen::prelude::*;
 use std::io::Write;
+use wasm_bindgen::prelude::*;
+use anchor_lang::solana_program::borsh::get_packed_len;
+use borsh::BorshSerialize;
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
@@ -10,28 +11,29 @@ pub struct WasmPositionData {
 }
 
 #[wasm_bindgen]
-impl WasmPositionData { 
+impl WasmPositionData {
     #[wasm_bindgen(constructor)]
-    pub fn from_buffer(buffer: &[u8]) -> WasmPositionData {
-        let mut ptr = buffer;
-        let position_data = PositionData::try_deserialize(&mut ptr).unwrap();
-        WasmPositionData {
-            wrapped: position_data,
-        }
+    pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
+        convert_error(WasmPositionData::from_buffer_impl(buffer))
     }
+    fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
+        let mut ptr = buffer;
+        let position_data = PositionData::try_deserialize(&mut ptr)?;
+        Ok(WasmPositionData {
+            wrapped: position_data,
+        })
+    }
+
     #[wasm_bindgen(getter, js_name=borshLength)]
     pub fn get_borsh_length(&self) -> usize {
-        // We could serialize and get the length, but this is way cheaper
-        32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33)
+        get_packed_len::<PositionData>()
     }
     /// Serialize this account using Borsh so that Anchor can deserialize it
     #[wasm_bindgen(js_name=asBorsh)]
     pub fn as_borsh(&self, output_buffer: &mut [u8]) -> Result<(), JsValue> {
-        log_error(self.as_borsh_impl(output_buffer))
+        convert_error(self.as_borsh_impl(output_buffer))
     }
     fn as_borsh_impl(&self, output_buffer: &mut [u8]) -> Result<(), Error> {
-        // TODO: Borsh panics if the buffer is too large, so we do this inefficient
-        // copy. IIRC Solana has some rust code that works around this problem.
         let mut writer = output_buffer;
         writer.write_all(&PositionData::discriminator())?;
         self.wrapped.serialize(&mut writer)?;
@@ -39,11 +41,11 @@ impl WasmPositionData {
     }
     #[wasm_bindgen(js_name=getUnlocked)]
     pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64, JsValue> {
-        log_error(self.wrapped.get_unlocked(current_epoch))
+        convert_error(self.wrapped.get_unlocked(current_epoch))
     }
     #[wasm_bindgen(js_name=getLocked)]
     pub fn get_locked(&self, current_epoch: u64) -> Result<u64, JsValue> {
-        log_error(self.wrapped.get_locked(current_epoch))
+        convert_error(self.wrapped.get_locked(current_epoch))
     }
     #[wasm_bindgen(js_name=getWithdrawable)]
     pub fn get_widthdrawable(
@@ -53,7 +55,7 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> Result<u64, JsValue> {
-        log_error(crate::utils::risk::validate(
+        convert_error(crate::utils::risk::validate(
             &self.wrapped,
             total_balance,
             unvested_balance,
@@ -65,20 +67,21 @@ impl WasmPositionData {
     /// Finds first index available for a new position
     #[wasm_bindgen(js_name=getUnusedIndex)]
     pub fn get_unused_index(&self) -> Result<usize, JsValue> {
-        log_error(self.wrapped.get_unused_index())
+        convert_error(self.wrapped.get_unused_index())
     }
 }
 
-fn log_error<T, E>(return_val: Result<T, E>) -> Result<T, JsValue>
+/// Most of the Rust code returns anchor_lang::Result<T>, which is core::result::Result<T, anchor_lang::error::Error>
+/// in order to return a result via WASM, we need to return a core::result::Result<T, JsValue>
+/// and anchor_lang::error::Error is not convertible to a JsValue. This method manually converts it
+/// by making a generic error that has the right error message.
+fn convert_error<T, E>(return_val: Result<T, E>) -> Result<T, JsValue>
 where
     E: std::fmt::Display,
 {
     match return_val {
         Ok(x) => Ok(x),
-        Err(e) => {
-            log(&e.to_string());
-            Err(e.to_string().into())
-        }
+        Err(e) => Err(e.to_string().into()),
     }
 }
 

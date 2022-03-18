@@ -368,9 +368,9 @@ describe("staking", async () => {
 
     // We are starting with 1 position and want to create 99 more
     let budgetRemaining = 200_000;
-    let ixCost = 19100;
+    let ixCost = 19200;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 510; // adding more positions increases the cost
+    let deltaCost = 520; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {
