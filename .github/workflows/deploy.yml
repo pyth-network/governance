@@ -43,9 +43,9 @@ jobs:
       - name: Update program address declaration
         working-directory: ./staking
         run: |
-          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}' programs/staking/src/lib.rs
-          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}' ./Anchor.toml
-          sed -i 's,localnet,http://13.40.33.111:8899' ./Anchor.toml
+          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}/' programs/staking/src/lib.rs
+          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}/' ./Anchor.toml
+          sed -i 's,localnet,http://13.40.33.111:8899,' ./Anchor.toml
       - name: Anchor build
         working-directory: ./staking
         run: anchor build
