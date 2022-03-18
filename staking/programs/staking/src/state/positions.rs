@@ -1,5 +1,5 @@
 use crate::error::ErrorCode;
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{*, borsh::BorshSchema};
 use crate::borsh::BorshSerialize;
 
 
@@ -9,6 +9,7 @@ pub const MAX_POSITIONS: usize = 100;
 /// We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
 #[account(zero_copy)]
+#[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
     pub owner : Pubkey,
     pub positions: [Option<Position>; MAX_POSITIONS],
@@ -33,22 +34,11 @@ impl PositionData {
         return Err(error!(ErrorCode::TooManyPositions));
     }
 }
-/// Because of Rust nonsense, Borsh can't serialize this automatically, but the way it serializes
-/// an array is to serialize the elements in turn, so we can mimic that.
-impl BorshSerialize for PositionData {
-    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        self.owner.serialize(writer)?;
-        for i in 0..MAX_POSITIONS {
-            self.positions[i].serialize(writer)?;
-        }
-        Ok(())
-    }
-}
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
 /// This is one of the core pieces of our staking design, and stores all of the state related to a position
 /// The voting position is a position where the product is None
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 pub struct Position {
     pub amount: u64,
     pub activation_epoch: u64,
@@ -107,7 +97,7 @@ pub enum PositionState {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{Position, PositionState};
+    use crate::state::positions::{Position, PositionState, PositionData, MAX_POSITIONS};
     
     #[test]
     fn lifecycle_lock_unlock() {
@@ -167,5 +157,10 @@ pub mod tests {
             PositionState::LOCKED,
             p.get_current_position(300, 2).unwrap()
         );
+    }
+    #[test]
+    fn test_serialized_size() {
+        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<PositionData>(),
+        32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33));
     }
 }
