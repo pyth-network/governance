@@ -1,8 +1,10 @@
-use crate::state::positions::{PositionData, MAX_POSITIONS};
+use crate::state::positions::{PositionData};
 use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
 use std::io::Write;
 use crate::VestingSchedule;
+use anchor_lang::solana_program::borsh::get_packed_len;
+use borsh::BorshSerialize;
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
@@ -72,7 +74,7 @@ impl WasmPositionData {
 
 #[wasm_bindgen(js_name=getUnvestedBalance)]
 pub fn get_unvested_balance(vestingSchedBorsh: &[u8], currentTime: i64) -> Result<u64, JsValue> {
-    log_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime))
+    convert_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime))
 }
 fn get_unvested_balance_impl(vesting_sched_borsh: &[u8], current_time: i64) -> anchor_lang::Result<u64> {
     let mut ptr = vesting_sched_borsh;
