@@ -39,7 +39,7 @@ jobs:
         run: solana config set --url http://13.40.33.111:8899 --keypair ./tests/default_wallet.json
       - name: Setup program pubkey as environment variable
         working-directory: ./staking
-        run: echo "PROGRAM_KEY=$(solana-keygen pubkey ./tests/program.json" >> $GITHUB_ENV
+        run: echo "PROGRAM_KEY=$(solana-keygen pubkey ./tests/program.json)" >> $GITHUB_ENV
       - name: Update program address declaration
         working-directory: ./staking
         run: |
