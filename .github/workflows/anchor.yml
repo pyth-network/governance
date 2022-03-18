@@ -23,7 +23,7 @@ jobs:
       working-directory: ./staking
       run: yarn install
     - name: Yarn install everything else
-      working-directory: ./staking.ts
+      working-directory: ./staking-ts
       run: yarn install
     - name: Install Solana 
       run: |
