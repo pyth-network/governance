@@ -1,7 +1,4 @@
-const DISCRIMINANT_SIZE = 8;
-const POSITION_SIZE = 104;
-const MAX_POSITIONS = 100;
-const PUBKEY = 32;
+import { Constants } from "../../wasm/node/staking"; 
 
-export const positions_account_size =
-  POSITION_SIZE * MAX_POSITIONS + DISCRIMINANT_SIZE + PUBKEY;
+export const positions_account_size = Constants.POSITIONS_ACCOUNT_SIZE();
+
