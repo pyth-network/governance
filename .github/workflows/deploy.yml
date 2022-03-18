@@ -37,6 +37,9 @@ jobs:
       - name: Connect to the test network
         working-directory: ./staking
         run: solana config set --url http://13.40.33.111:8899 --keypair ./tests/default_wallet.json
+      - name: Airdrop sol
+        working-directory: ./staking
+        run: solana airdrop 1000
       - name: Setup program pubkey as environment variable
         working-directory: ./staking
         run: echo "PROGRAM_KEY=$(solana-keygen pubkey ./tests/program.json)" >> $GITHUB_ENV
