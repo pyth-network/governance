@@ -33,14 +33,6 @@ describe("staking", async () => {
 
 
 
-  const CONFIG_SEED = "config";
-  const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
-  const CUSTODY_SEED = "custody";
-  const AUTHORITY_SEED = "authority";
-  const VOTER_SEED = "voter_weight";
-
-
-
   const provider = anchor.Provider.local();
 
   const stake_account_positions_secret = new Keypair();
@@ -60,13 +52,13 @@ describe("staking", async () => {
     program = anchor.workspace.Staking as Program<Staking>;
 
     [config_account, bump] = await PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+      [anchor.utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
       program.programId
     );
     let voterBump = 0;
     [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -131,7 +123,7 @@ describe("staking", async () => {
 
     const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.STAKE_ACCOUNT_METADATA_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -139,7 +131,7 @@ describe("staking", async () => {
 
     const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(CUSTODY_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -148,7 +140,7 @@ describe("staking", async () => {
     const [authorityAccount, authorityBump] =
       await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode(AUTHORITY_SEED),
+          anchor.utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
           stake_account_positions_secret.publicKey.toBuffer(),
         ],
         program.programId
@@ -156,7 +148,7 @@ describe("staking", async () => {
 
     const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId

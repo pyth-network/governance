@@ -1,6 +1,7 @@
 use crate::state::positions::{PositionData, MAX_POSITIONS};
 use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator};
 use std::io::Write;
+use js_sys;
 use wasm_bindgen::prelude::*;
 use anchor_lang::solana_program::borsh::get_packed_len;
 use borsh::BorshSerialize;
@@ -82,6 +83,44 @@ where
     match return_val {
         Ok(x) => Ok(x),
         Err(e) => Err(e.to_string().into()),
+    }
+}
+
+#[wasm_bindgen]
+pub struct Constants {}
+// Define a macro to re-export these constants to prevent copy-paste errors (already almost made one)
+macro_rules! reexport_seed_const {
+    ( $c:ident ) => {
+        #[wasm_bindgen]
+        impl Constants {
+            #[wasm_bindgen]
+            pub fn $c() -> js_sys::JsString {
+                crate::context::$c.into()
+            }
+        }
+    };
+}
+
+reexport_seed_const!(AUTHORITY_SEED);
+reexport_seed_const!(CUSTODY_SEED);
+reexport_seed_const!(STAKE_ACCOUNT_METADATA_SEED);
+reexport_seed_const!(CONFIG_SEED);
+reexport_seed_const!(VOTER_RECORD_SEED);
+
+#[wasm_bindgen]
+impl Constants {
+    #[wasm_bindgen]
+    pub fn ANCHOR_DISCRIMINATOR_SIZE() -> usize {
+        //anchor_lang::Discriminator::discriminator().len()
+        8
+    }
+    #[wasm_bindgen]
+    pub fn MAX_POSITIONS() -> usize {
+        crate::state::positions::MAX_POSITIONS
+    }
+    #[wasm_bindgen]
+    pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
+        Constants::ANCHOR_DISCRIMINATOR_SIZE() + std::mem::size_of::<PositionData>()
     }
 }
 
