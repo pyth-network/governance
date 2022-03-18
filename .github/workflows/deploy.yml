@@ -1,5 +1,5 @@
 # This workflow will run `anchor test`
-name: Anchor Test CI
+name: Deploy program 
 
 on:
   push:
