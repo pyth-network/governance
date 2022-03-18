@@ -2,7 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { exec } from "child_process";
 import { PublicKey, Connection, Keypair, Transaction, SystemProgram} from "@solana/web3.js";
 import fs from "fs";
-import { Program, Provider, Wallet } from "@project-serum/anchor";
+import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -10,6 +10,9 @@ import {
 } from "@solana/spl-token";
 import { MintLayout } from "@solana/spl-token";
 import shell from "shelljs";
+import { positions_account_size } from "./constant";
+import BN from "bn.js";
+
 
 export async function startValidator(portNumber: number, config: any) {
   const connection: Connection = new Connection(
@@ -153,3 +156,111 @@ export async function requestPythAirdrop(
       skipPreflight: true,
     });
   }
+
+  export async function initConfig(program : Program, pythMintAccount : PublicKey){
+    const [configAccount, bump] = await PublicKey.findProgramAddress(
+        [utils.bytes.utf8.encode('config')],
+        program.programId
+      );
+  
+      await program.methods
+        .initConfig({
+          governanceAuthority: program.provider.wallet.publicKey,
+          pythTokenMint: pythMintAccount,
+          unlockingDuration: 2,
+          epochDuration: new BN(3600),
+          mockClockTime: new BN(10),
+        })
+        .rpc({
+          skipPreflight: true,
+        });
+
+  }
+
+  export async function createStakeAccount(
+    program: Program,
+    stakeAccountPositionsSecret: Keypair,
+    pythMintAccount: PublicKey
+  ) {
+    const tx = await program.methods
+      .createStakeAccount(program.provider.wallet.publicKey, { fullyVested: {} })
+      .preInstructions([
+        SystemProgram.createAccount({
+          fromPubkey: program.provider.wallet.publicKey,
+          newAccountPubkey: stakeAccountPositionsSecret.publicKey,
+          lamports:
+            await program.provider.connection.getMinimumBalanceForRentExemption(
+              positions_account_size
+            ),
+          space: positions_account_size,
+          programId: program.programId,
+        }),
+      ])
+      .accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        mint: pythMintAccount,
+      })
+      .signers([stakeAccountPositionsSecret])
+      .rpc({
+        skipPreflight: false,
+      });
+    return tx;
+  }
+
+export async function depositTokensInstruction(
+    program: Program,
+    stakeAccountPositionsAddress: PublicKey,
+    pyth_mint_account: PublicKey,
+    amount: number
+  ) {
+    const from_account = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pyth_mint_account,
+      program.provider.wallet.publicKey
+    );
+  
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode("custody"),
+          stakeAccountPositionsAddress.toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
+  
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      from_account,
+      to_account,
+      program.provider.wallet.publicKey,
+      [],
+      amount
+    );
+  
+    return ix;
+  }
+
+
+  export async function depositTokens(
+    program: Program,
+    stakeAccountPositionsAddress: PublicKey,
+    pythMintAccount: PublicKey,
+    amount: number
+  ) {
+    const transaction = new Transaction();
+    const ix = await depositTokensInstruction(
+      program,
+      stakeAccountPositionsAddress,
+      pythMintAccount,
+      amount
+    );
+    transaction.add(ix);
+    const tx = await program.provider.send(transaction, [], {
+      skipPreflight: true,
+    });
+  
+    return ix;
+  }
+  

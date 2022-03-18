@@ -12,5 +12,8 @@
     "mocha": "^9.0.3",
     "ts-mocha": "^8.0.0",
     "typescript": "^4.3.5"
+  },
+  "devDependencies": {
+    "@solana/web3.js": "^1.36.0"
   }
 }

@@ -1,181 +1,225 @@
-// import * as anchor from "@project-serum/anchor";
-// import { Program } from "@project-serum/anchor";
-// import { Staking } from "../target/types/staking";
-// import { depositTokensInstruction, createStakeAccount } from "./utils/utils";
+import * as anchor from "@project-serum/anchor";
+import toml from "toml";
+import {
+  TOKEN_PROGRAM_ID,
+  Token,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import {
+  startValidator,
+  createMint,
+  requestPythAirdrop,
+  depositTokensInstruction,
+  createStakeAccount,
+  initConfig,
+} from "./utils/before";
+import {
+  PublicKey,
+  Keypair,
+  Transaction,
+} from "@solana/web3.js";
+import * as wasm from "../wasm/node/staking";
+import BN from 'bn.js'
+import assert from "assert";
+import fs from "fs";
 
-// import {
-//   TOKEN_PROGRAM_ID,
-//   Token,
-//   ASSOCIATED_TOKEN_PROGRAM_ID,
-// } from "@solana/spl-token";
+const DEBUG = true;
+const portNumber = 8905;
 
-// import {
-//   PublicKey,
-//   Keypair,
-//   Transaction,
-//   SystemProgram,
-// } from "@solana/web3.js";
+describe("create_stake_account", async () => {
+  const CONFIG_SEED = "config";
+  const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
+  const CUSTODY_SEED = "custody";
+  const AUTHORITY_SEED = "authority";
+  const VOTER_SEED = "voter_weight";
 
-// import assert from "assert";
-// import fs from "fs";
+  const pythMintAccount = new Keypair();
+  const pythMintAuthority = new Keypair();
+  const zeroPubkey = new PublicKey(0);
 
-// const DEBUG = true;
+  const stakeAccountPositionSecret = new Keypair();
 
-// describe("create_stake_account", async () => {
-//   let program: Program<Staking>;
+  const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
 
-//   let config_account: PublicKey;
-//   let bump: number;
+  let program;
+  let controller;
 
-//   let errMap: Map<number, string>;
+  let owner;
+  let owner_ata;
 
-//   const CONFIG_SEED = "config";
-//   const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
-//   const CUSTODY_SEED = "custody";
-//   const AUTHORITY_SEED = "authority";
-//   const VOTER_SEED = "voter_weight";
+  after(async () => {
+    controller.abort();
+  });
 
-//   const stake_account_positions_secret = new Keypair();
+  before(async () => {
+    ({ controller, program } = await startValidator(portNumber, config));
 
-//   let pyth_mint_account;
-//   let pyth_mint_authority;
-//   const zero_pubkey = new PublicKey(0);
+    await createMint(
+      program.provider,
+      pythMintAccount,
+      pythMintAuthority.publicKey,
+      null,
+      0,
+      TOKEN_PROGRAM_ID
+    );
 
-//   let user_ata;
+    owner = program.provider.wallet.publicKey;
 
-//   before(async () => {
-//     program = anchor.workspace.Staking as Program<Staking>;
+    owner_ata = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pythMintAccount.publicKey,
+      program.provider.wallet.publicKey
+    );
 
-//     [config_account, bump] = await PublicKey.findProgramAddress(
-//       [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
-//       program.programId
-//     );
+    await requestPythAirdrop(
+      owner,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      200,
+      program.provider.connection
+    );
 
-//     while (true) {
-//       try {
-//         console.log("waiting");
-//         await new Promise((resolve) => setTimeout(resolve, 1000));
-//         await program.account.globalConfig.fetch(config_account);
-//         break;
-//       } catch (e) {}
-//     }
+    await initConfig(program, pythMintAccount.publicKey);
+  });
 
-//     pyth_mint_account = Keypair.fromSecretKey(
-//       new Uint8Array(
-//         JSON.parse(fs.readFileSync("./tests/pyth_mint_account.json").toString())
-//       )
-//     );
+  it("creates vested staking account", async () => {
+    const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
+        stakeAccountPositionSecret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-//     pyth_mint_authority = Keypair.fromSecretKey(
-//       new Uint8Array(
-//         JSON.parse(
-//           fs.readFileSync("./tests/pyth_mint_authority.json").toString()
-//         )
-//       )
-//     );
+    const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(CUSTODY_SEED),
+        stakeAccountPositionSecret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-//     user_ata = await Token.getAssociatedTokenAddress(
-//       ASSOCIATED_TOKEN_PROGRAM_ID,
-//       TOKEN_PROGRAM_ID,
-//       pyth_mint_account.publicKey,
-//       program.provider.wallet.publicKey
-//     );
+    const [authorityAccount, authorityBump] =
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(AUTHORITY_SEED),
+          stakeAccountPositionSecret.publicKey.toBuffer(),
+        ],
+        program.programId
+      );
 
-//     errMap = anchor.parseIdlErrors(program.idl);
-//   });
+    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        stakeAccountPositionSecret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
 
-//   it("creates vested staking account", async () => {
-//     const owner = program.provider.wallet.publicKey;
+    await createStakeAccount(
+      program,
+      stakeAccountPositionSecret,
+      pythMintAccount.publicKey
+    );
 
-//     const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
-//       [
-//         anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
-//         stake_account_positions_secret.publicKey.toBuffer(),
-//       ],
-//       program.programId
-//     );
+    const stake_account_metadata_data =
+      await program.account.stakeAccountMetadata.fetch(metadataAccount);
 
-//     const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
-//       [
-//         anchor.utils.bytes.utf8.encode(CUSTODY_SEED),
-//         stake_account_positions_secret.publicKey.toBuffer(),
-//       ],
-//       program.programId
-//     );
+    assert.equal(
+      JSON.stringify(stake_account_metadata_data),
+      JSON.stringify({
+        metadataBump,
+        custodyBump,
+        authorityBump,
+        voterBump,
+        owner,
+        lock: { fullyVested: {} },
+      })
+    );
+  });
 
-//     const [authorityAccount, authorityBump] =
-//       await PublicKey.findProgramAddress(
-//         [
-//           anchor.utils.bytes.utf8.encode(AUTHORITY_SEED),
-//           stake_account_positions_secret.publicKey.toBuffer(),
-//         ],
-//         program.programId
-//       );
+  it("deposits tokens", async () => {
+    const transaction = new Transaction();
+    const ix = await depositTokensInstruction(
+      program,
+      stakeAccountPositionSecret.publicKey,
+      pythMintAccount.publicKey,
+      101
+    );
+    transaction.add(ix);
+    const tx = await program.provider.send(transaction, [], {
+      skipPreflight: DEBUG,
+    });
 
-//     const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
-//       [
-//         anchor.utils.bytes.utf8.encode(VOTER_SEED),
-//         stake_account_positions_secret.publicKey.toBuffer(),
-//       ],
-//       program.programId
-//     );
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("custody"),
+          stakeAccountPositionSecret.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
 
-//     await createStakeAccount(
-//       program,
-//       stake_account_positions_secret,
-//       pyth_mint_account.publicKey
-//     );
+    const mint = new Token(
+      program.provider.connection,
+      pythMintAccount.publicKey,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    );
 
-//     const stake_account_metadata_data =
-//       await program.account.stakeAccountMetadata.fetch(metadataAccount);
+    assert.equal(
+      (await mint.getAccountInfo(to_account)).amount.toNumber(),
+      101
+    );
 
-//     assert.equal(
-//       JSON.stringify(stake_account_metadata_data),
-//       JSON.stringify({
-//         metadataBump,
-//         custodyBump,
-//         authorityBump,
-//         voterBump,
-//         owner,
-//         lock: { fullyVested: {} },
-//       })
-//     );
-//   });
+    assert.equal((await mint.getAccountInfo(owner_ata)).amount.toNumber(), 99);
+  });
 
-//   it("deposits tokens", async () => {
-//     const transaction = new Transaction();
-//     const ix = await depositTokensInstruction(
-//       program,
-//       stake_account_positions_secret.publicKey,
-//       pyth_mint_account.publicKey,
-//       101
-//     );
-//     transaction.add(ix);
-//     const tx = await program.provider.send(transaction, [], {
-//       skipPreflight: DEBUG,
-//     });
+  it("validates position", async () => {
+    const inbuf = await program.provider.connection.getAccountInfo(
+      stakeAccountPositionSecret.publicKey
+    );
+    const outbuffer = Buffer.alloc(10 * 1024);
+    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const positions = program.coder.accounts.decode("PositionData", outbuffer);
 
-//     const to_account = (
-//       await PublicKey.findProgramAddress(
-//         [
-//           anchor.utils.bytes.utf8.encode("custody"),
-//           stake_account_positions_secret.publicKey.toBuffer(),
-//         ],
-//         program.programId
-//       )
-//     )[0];
+    for (let index = 0; index < positions.positions.length; index++) {
+      assert.equal(positions.positions[index], null);
+    }
+  });
 
-//     const mint = new Token(
-//       program.provider.connection,
-//       pyth_mint_account.publicKey,
-//       TOKEN_PROGRAM_ID,
-//       new Keypair()
-//     );
+  it("withdraws full amount", async () => {
+    await program.methods
+      .withdrawStake(new BN(101))
+      .accounts({
+        stakeAccountPositions: stakeAccountPositionSecret.publicKey,
+        destination: owner_ata,
+      }).rpc();
 
-//     assert.equal(
-//       (await mint.getAccountInfo(to_account)).amount.toNumber(),
-//       101
-//     );
-//   });
-// });
+    const custody_account = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode("custody"),
+          stakeAccountPositionSecret.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
 
+    const mint = new Token(
+      program.provider.connection,
+      pythMintAccount.publicKey,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    );
+
+    assert.equal(
+      (await mint.getAccountInfo(custody_account)).amount.toNumber(),
+      0
+    );
+
+    assert.equal((await mint.getAccountInfo(owner_ata)).amount.toNumber(), 200);
+  });
+});

@@ -1,12 +1,11 @@
 import { utils } from "@project-serum/anchor";
 import { PublicKey, Keypair, Transaction, Connection } from "@solana/web3.js";
-import { createMint } from "./utils/before";
+import { createMint, startValidator } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
 import fs from "fs";
 import toml from "toml";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { startValidator } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
