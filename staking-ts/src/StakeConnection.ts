@@ -1,4 +1,4 @@
-import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
+import { Provider, Program, Wallet, utils, Coder, Idl } from "@project-serum/anchor";
 import {
   PublicKey,
   Connection,
@@ -16,8 +16,10 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  u64,
 } from "@solana/spl-token";
 import BN from "bn.js";
+import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 
 export class StakeConnection {
   program: Program;
@@ -86,7 +88,9 @@ export class StakeConnection {
   //   return;
   // }
 
-  async fetchPositionAccount(address: PublicKey) {
+  async fetchPositionAccount(
+    address: PublicKey
+  ): Promise<[wasm.WasmPositionData, any]> {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
@@ -97,17 +101,19 @@ export class StakeConnection {
       "PositionData",
       outBuffer
     );
-    return positions;
+    return [pd, positions];
   }
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
     const stake_account = new StakeAccount();
+    stake_account.config = this.config;
 
     stake_account.address = address;
-    stake_account.stake_account_positions = await this.fetchPositionAccount(
-      address
-    );
+    [
+      stake_account.stakeAccountPositionsWasm,
+      stake_account.stakeAccountPositionsJs,
+    ] = await this.fetchPositionAccount(address);
 
     const metadata_address = (
       await PublicKey.findProgramAddress(
@@ -118,6 +124,7 @@ export class StakeConnection {
 
     stake_account.stake_account_metadata =
       await this.program.account.stakeAccountMetadata.fetch(metadata_address);
+    stake_account.vestingSchedule = StakeAccount.serializeVesting(stake_account.stake_account_metadata.lock, this.program.idl);
 
     const custody_address = (
       await PublicKey.findProgramAddress(
@@ -303,13 +310,24 @@ export class StakeConnection {
     program: Program
   ) {}
 }
+export interface BalanceSummary {
+  withdrawable: BN;
+  // We may break this down into active, warmup, and cooldown in the future
+  locked: BN;
+  unvested: BN;
+}
 
 export class StakeAccount {
+
   address: PublicKey;
-  stake_account_positions;
+  stakeAccountPositionsWasm: wasm.WasmPositionData;
+  stakeAccountPositionsJs: any;
   stake_account_metadata;
-  token_balance;
+  token_balance: u64;
   authority_address;
+  vestingSchedule: Buffer; // Borsh serialized
+  config: any;
+
 
   // Withdrawable
 
@@ -320,8 +338,36 @@ export class StakeAccount {
 
   // Unvested
 
-  public getBalanceSummary() {}
+  public getBalanceSummary(unixTime: BN): BalanceSummary {
+    let unvestedBalance = wasm.getUnvestedBalance(this.vestingSchedule, BigInt(unixTime.toString()));
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    
+    const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
+      BigInt(this.token_balance.toString()),
+      unvestedBalance,
+      BigInt(currentEpoch.toString()),
+      unlockingDuration
+    );
+    const withdrawableBN = new BN(withdrawable.toString());
+    const unvestedBN = new BN(unvestedBalance.toString());
+    return {
+      withdrawable: withdrawableBN,
+      locked: this.token_balance.sub(withdrawableBN).sub(unvestedBN),
+      unvested: unvestedBN,
+    };
+  }
 
   // What is the best way to represent current vesting schedule in the UI
   public getVestingSchedule() {}
+
+  static serializeVesting(lock: any, idl: Idl): any {
+    const VESTING_SCHED_MAX_BORSH_LEN = 4*8+1;
+    let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
+
+    let idltype = idl.types.find(v => v.name === 'VestingSchedule');
+    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(idltype, idl.types);
+    const length =  vestingSchedLayout.encode(lock, buffer, 0);
+    return buffer.slice(0, length);
+  }
 }
