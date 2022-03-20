@@ -2,12 +2,12 @@ import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 
-const Home: NextPage = () => {
+const Governance: NextPage = () => {
   return (
     <Layout>
-      <SEO title={'App'} />
+      <SEO title={'Governance'} />
     </Layout>
   )
 }
 
-export default Home
+export default Governance

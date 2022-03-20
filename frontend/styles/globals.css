@@ -1,16 +1,34 @@
-html,
-body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.primary-btn {
+  @apply rounded-full bg-pythPurple;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.outlined-btn {
+  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white
 }
 
-* {
-  box-sizing: border-box;
+.nav-link {
+  @apply font-roboto text-white hover:text-pink;
+}
+
+.nav-link-active {
+  color: theme('textColor.pink');
+}
+
+.nav-link-active::before {
+  content: '';
+  position: absolute;
+  transform: translate(-13px, 10px);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: theme('textColor.pink');
+}
+
+.input-no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0px;
 }

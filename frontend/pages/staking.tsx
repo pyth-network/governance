@@ -1,178 +1,37 @@
-import type { NextPage } from 'next'
-import { makeStyles } from '@mui/styles'
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  FormControl,
-  Grid,
-  InputLabel,
-  Input,
-  Theme,
-  TableContainer,
-  Table,
-  TableCell,
-  TableHead,
-  TableRow,
-  TableBody,
-  tableCellClasses,
-  Tab,
-  Tabs,
-  Typography,
-  Chip,
-  Hidden,
-  Divider,
-} from '@mui/material'
-import Layout from '../components/Layout'
-import { colors } from '@components/muiTheme'
 import {
   useAnchorWallet,
   useConnection,
   useWallet,
 } from '@solana/wallet-adapter-react'
-import { WalletDialogButton } from '@solana/wallet-adapter-material-ui'
+import { Wallet, Provider } from '@project-serum/anchor'
+import type { NextPage } from 'next'
 import { ChangeEvent, useEffect, useState } from 'react'
-import { useSnackbar } from 'notistack'
-import { getPythTokenBalance } from './api/getPythTokenBalance'
+import Layout from '../components/Layout'
+import SEO from '../components/SEO'
 import { STAKING_PROGRAM } from '@components/constants'
-import { Wallet, Provider, getProvider } from '@project-serum/anchor'
 import {
   StakeAccount,
   StakeConnection,
 } from '../../staking-ts/src/StakeConnection'
+import { getPythTokenBalance } from './api/getPythTokenBalance'
+import { airdropPythToken } from './api/airdropPythToken'
 import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
 import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
-import { airdropPythToken } from './api/airdropPythToken'
-import Image from 'next/image'
+import toast from 'react-hot-toast'
+import { Tab } from '@headlessui/react'
+import {
+  WalletConnectButton,
+  WalletModalButton,
+} from '@solana/wallet-adapter-react-ui'
 
-const useStyles = makeStyles((theme: Theme) => ({
-  sectionContainer: {
-    paddingTop: 127,
-    paddingBottom: 127,
-  },
-  card: {
-    backgroundColor: theme.palette.primary.main,
-    maxWidth: 600,
-    margin: 'auto',
-  },
-  cardBlack: {
-    marginTop: 30,
-    maxWidth: 600,
-    margin: 'auto',
-  },
-  form: {
-    '& .MuiFormControl-root': { marginBottom: 30 },
-  },
-  amountInputLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    '& .MuiInputLabel-root': {
-      color: 'white',
-      '&.Mui-focused': {
-        color: colors.white,
-      },
-    },
-  },
-  amountInput: {
-    '& .MuiInput-input': {
-      border: `1px solid ${colors.lightGreyLines}`,
-      borderRadius: 100,
-      marginTop: 15,
-      padding: 15,
-      backgroundColor: '#835FCC',
-      fontWeight: 800,
-    },
-    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-      '-webkit-appearance': 'none',
-      margin: 0,
-    },
-    '& .MuiInput-underline:focus': {
-      borderBottomColor: colors.white,
-    },
-  },
-  button: {
-    paddingTop: 10,
-    paddingBottom: 10,
-    borderColor: colors.white,
-    color: colors.white,
-    '&:hover': {
-      backgroundColor: colors.white,
-      color: colors.headlineText,
-    },
-    '&:active': {
-      backgroundColor: colors.lightPurple,
-      borderColor: colors.lightPurple,
-      color: colors.headlineText,
-    },
-  },
-  buttonGroup: {
-    display: 'flex',
-    [theme.breakpoints.down('xs')]: {
-      display: 'block',
-    },
-  },
-  tabs: {
-    '& .MuiTabs-indicator': {
-      display: 'flex',
-      justifyContent: 'center',
-      backgroundColor: 'transparent',
-    },
-    '& .MuiTabs-indicatorSpan': {
-      maxWidth: 40,
-      width: '100%',
-      backgroundColor: colors.lightPurple,
-    },
-    marginBottom: 15,
-  },
-  tab: {
-    textTransform: 'none',
-    fontWeight: theme.typography.fontWeightRegular,
-    fontSize: theme.typography.pxToRem(15),
-    marginRight: theme.spacing(1),
-    color: 'rgba(255, 255, 255, 0.7)',
-    '&.Mui-selected': {
-      color: '#fff',
-    },
-    '&.Mui-focusVisible': {
-      backgroundColor: 'rgba(100, 95, 228, 0.32)',
-    },
-  },
-  amountBalanceGroup: {
-    display: 'flex',
-  },
-  balanceGroup: {
-    display: 'flex',
-    columnGap: '7px',
-    marginLeft: 'auto',
-    marginRight: 0,
-    alignItems: 'center',
-    '& .MuiTypography-root': {
-      fontSize: '14px',
-    },
-    '& .MuiChip-root': {
-      border: `1px solid ${colors.lightPurple}`,
-      backgroundColor: '#835FCC',
-    },
-  },
-  tokenLogoGroup: {
-    display: 'flex',
-    textAlign: 'center',
-    justifyContent: 'center',
-  },
-  amount: {
-    fontFamily: 'Inter',
-    fontWeight: 700,
-  },
-}))
+const classNames = (...classes: any) => {
+  return classes.filter(Boolean).join(' ')
+}
 
 const Staking: NextPage = () => {
-  const classes = useStyles()
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
   const { publicKey, connected, connecting } = useWallet()
-  const { enqueueSnackbar } = useSnackbar()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
   const [balance, setBalance] = useState<number>(0)
@@ -182,6 +41,8 @@ const Staking: NextPage = () => {
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
   const [currentTab, setCurrentTab] = useState<string>('Deposit')
+
+  const tabValues = ['Deposit', 'Unlock', 'Withdraw']
 
   // create stake connection when wallet is connected
   useEffect(() => {
@@ -248,36 +109,34 @@ const Staking: NextPage = () => {
     setAmount(parseFloat(event.target.value))
   }
 
-  //handler
+  // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const handleDeposit = async () => {
     if (stakeConnection && publicKey) {
       try {
         await stakeConnection.depositAndLockTokens(stakeAccount, amount)
-        enqueueSnackbar('deposit successful', { variant: 'success' })
+        toast.success('Deposit successful!')
       } catch (e) {
-        enqueueSnackbar(e.message, {
-          variant: 'error',
-        })
+        toast.error(e.message)
       }
       await refreshBalance()
     }
   }
 
+  // airdrop pyth token to user if they have no pyth token
   const handleClaimPyth = async () => {
     if (publicKey) {
       const provider = new Provider(connection, anchorWallet as Wallet, {})
       try {
         await airdropPythToken(provider, publicKey)
-        enqueueSnackbar('airdrop successful', { variant: 'success' })
+        toast.success('Airdrop successful!')
       } catch (e) {
-        enqueueSnackbar(e.message, {
-          variant: 'error',
-        })
+        toast.error(e.message)
       }
     }
     await refreshBalance()
   }
 
+  // refresh balance each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
@@ -290,235 +149,125 @@ const Staking: NextPage = () => {
     }
   }
 
-  const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
-    setCurrentTab(newValue)
+  // set current tab value when tab is clicked
+  const handleChangeTab = (index: number) => {
+    setCurrentTab(tabValues[index])
   }
 
+  // set input amount to half of pyth balance in wallet
   const handleHalfBalanceClick = () => {
     setAmount(balance / 2)
   }
 
+    // set input amount to max of pyth balance in wallet
   const handleMaxBalanceClick = () => {
     setAmount(balance)
   }
 
   return (
     <Layout>
-      <Container className={classes.sectionContainer}>
-        <Grid container justifyContent="center">
-          <Grid item xs={12}>
-            <Card className={classes.card}>
-              <CardContent>
-                <Tabs
-                  value={currentTab}
-                  onChange={handleChangeTab}
-                  className={classes.tabs}
-                  TabIndicatorProps={{
-                    children: <span className="MuiTabs-indicatorSpan" />,
-                  }}
-                  centered
-                >
+      <SEO title={'Staking'} />
+      <div className="flex flex-col items-center justify-center">
+        <div className="mt-20 mb-20 max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-20">
+          <div className="w-full max-w-lg py-8">
+            <Tab.Group onChange={handleChangeTab}>
+              <Tab.List className="mx-24 space-x-2">
+                {tabValues.map((v) => (
                   <Tab
-                    className={classes.tab}
-                    value="Deposit"
-                    label="Deposit"
-                    disableRipple
-                  />
-                  <Tab
-                    className={classes.tab}
-                    value="Unlock"
-                    label="Unlock"
-                    disableRipple
-                  />
-                  <Tab
-                    className={classes.tab}
-                    value="Withdraw"
-                    label="Withdraw"
-                    disableRipple
-                  />
-                </Tabs>
-                <Box
-                  component="form"
-                  noValidate
-                  autoComplete="off"
-                  className={classes.form}
-                >
-                  <FormControl fullWidth variant="standard">
-                    <div className={classes.amountBalanceGroup}>
-                      <div className={classes.amountInputLabel}>
-                        <Typography variant="body2">Amount (PYTH)</Typography>
+                    key={v}
+                    className={({ selected }) =>
+                      classNames(
+                        'py-2.5 px-5 text-sm font-medium text-scampi',
+
+                        selected
+                          ? 'primary-btn text-white'
+                          : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                      )
+                    }
+                  >
+                    {v}
+                  </Tab>
+                ))}
+              </Tab.List>
+              <Tab.Panels className="mt-16">
+                {tabValues.map((v, idx) => (
+                  <Tab.Panel key={idx}>
+                    <div className="col-span-12 font-inter text-xs">
+                      <div className="mb-4 flex items-center justify-between">
+                        <label htmlFor="amount" className="block text-white">
+                          Amount (PYTH)
+                        </label>
+                        <div className="ml-auto mr-0 flex items-center space-x-2">
+                          <p className="text-white">
+                            {currentTab === 'Deposit'
+                              ? 'Balance'
+                              : currentTab === 'Unlock'
+                              ? 'Locked Tokens'
+                              : 'Withdrawable'}
+                            : {balance}
+                          </p>
+                          <button
+                            className="outlined-btn"
+                            onClick={handleHalfBalanceClick}
+                          >
+                            Half
+                          </button>
+                          <button
+                            className="outlined-btn"
+                            onClick={handleMaxBalanceClick}
+                          >
+                            Max
+                          </button>
+                        </div>
                       </div>
-                      {/* <Hidden mdDown implementation="css"> */}
-                      <div className={classes.balanceGroup}>
-                        <Typography variant="body2">
-                          {currentTab === 'Deposit'
-                            ? 'Balance'
-                            : currentTab === 'Unlock'
-                            ? 'Locked Tokens'
-                            : 'Withdrawable'}
-                          : {balance}
-                        </Typography>
-                        <div style={{ flex: 1 }} />
-                        <Chip
-                          label="Half"
-                          variant="outlined"
-                          size="small"
-                          onClick={handleHalfBalanceClick}
-                        />
-                        <Chip
-                          label="Max"
-                          variant="outlined"
-                          size="small"
-                          onClick={handleMaxBalanceClick}
-                        />
-                      </div>
-                      {/* </Hidden> */}
-                    </div>
-                    <Input
-                      disableUnderline={true}
-                      id="amount-pyth-lock"
-                      type="number"
-                      className={classes.amountInput}
-                      onChange={handleAmountChange}
-                      value={amount?.toString()}
-                    />
-                  </FormControl>
-                </Box>
-                <Grid container spacing={1} justifyContent="center">
-                  <div className={classes.buttonGroup}>
-                    {connected ? (
-                      <Grid item xs={12}>
-                        {pythBalance === 0 ? (
-                          <Button
-                            variant="outlined"
-                            disableRipple
-                            className={classes.button}
+                      <input
+                        type="number"
+                        name="amount"
+                        id="amount"
+                        autoComplete="amount"
+                        value={amount}
+                        onChange={handleAmountChange}
+                        className=" input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
+                      />
+                      <div className="flex items-center justify-center">
+                        {!connected ? (
+                          <WalletModalButton
+                            className="primary-btn py-3 px-14"
+                            text-base
+                            font-semibold
+                          />
+                        ) : pythBalance === 0 ? (
+                          <button
+                            className="primary-btn py-3 px-14 text-base font-semibold text-white"
                             onClick={handleClaimPyth}
                           >
                             Claim $PYTH
-                          </Button>
+                          </button>
                         ) : currentTab === 'Deposit' ? (
-                          <Button
-                            variant="outlined"
-                            disableRipple
-                            className={classes.button}
+                          <button
+                            className="primary-btn py-4 px-14 text-base font-semibold text-white"
                             onClick={handleDeposit}
                           >
                             Deposit
-                          </Button>
+                          </button>
                         ) : currentTab === 'Unlock' ? (
-                          <Button
-                            variant="outlined"
-                            disableRipple
-                            className={classes.button}
-                          >
+                          <button className="primary-btn py-4 px-14 text-base font-semibold text-white">
                             Unlock
-                          </Button>
+                          </button>
                         ) : (
-                          <Button
-                            variant="outlined"
-                            disableRipple
-                            className={classes.button}
-                          >
+                          <button className="primary-btn py-4 px-14 text-base font-semibold text-white">
                             Withdraw
-                          </Button>
+                          </button>
                         )}
-                      </Grid>
-                    ) : (
-                      <Grid item xs={12}>
-                        <WalletDialogButton
-                          variant="outlined"
-                          disableRipple
-                          className={classes.button}
-                          disabled={connecting}
-                        >
-                          Connect Wallet
-                        </WalletDialogButton>
-                      </Grid>
-                    )}
-                  </div>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-        <Grid container justifyContent="center">
-          <Grid item xs={12}>
-            <Card className={classes.cardBlack}>
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={4}>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
-                      align="center"
-                    >
-                      Unlocked
-                    </Typography>
-                    <div className={classes.tokenLogoGroup}>
-                      <Typography variant="subtitle1">
-                        {' '}
-                        {connected ? unlockedPythBalance : '-'}
-                      </Typography>
-                      <div style={{ flex: 0.1 }} />
-                      <Image
-                        src="/images/pyth-coin-logo.svg"
-                        alt="Pyth logo"
-                        height={25}
-                        width={25}
-                      />
+                      </div>
                     </div>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
-                      align="center"
-                    >
-                      Locked
-                    </Typography>
-                    <div className={classes.tokenLogoGroup}>
-                      <Typography variant="subtitle1">
-                        {' '}
-                        {connected ? lockedPythBalance : '-'}
-                      </Typography>
-                      <div style={{ flex: 0.1 }} />
-                      <Image
-                        src="/images/pyth-coin-logo.svg"
-                        alt="Pyth logo"
-                        height={25}
-                        width={25}
-                      />
-                    </div>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ color: '#9CA3AF', marginBottom: 1 }}
-                      align="center"
-                    >
-                      Unvested
-                    </Typography>
-                    <div className={classes.tokenLogoGroup}>
-                      <Typography variant="subtitle1">
-                        {' '}
-                        {connected ? unvestedPythBalance : '-'}
-                      </Typography>
-                      <div style={{ flex: 0.1 }} />
-                      <Image
-                        src="/images/pyth-coin-logo.svg"
-                        alt="Pyth logo"
-                        height={25}
-                        width={25}
-                      />
-                    </div>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      </Container>
+                  </Tab.Panel>
+                ))}
+              </Tab.Panels>
+            </Tab.Group>
+          </div>
+        </div>
+      </div>
     </Layout>
   )
 }
