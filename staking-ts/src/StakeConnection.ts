@@ -13,7 +13,10 @@ import {
 const useNode =
   typeof process !== undefined && process.env.hasOwnProperty("_")
   && (!process.env._.includes("next"));
-// console.log("Using node WASM version? " + useNode);
+console.log("Using node WASM version? " + useNode);
+async function potentially_await(promise) {
+  return await promise;
+}
 let wasm;
 if (useNode) {
   // This needs to be sufficiently complicated that the bundler can't compute its value
@@ -21,9 +24,12 @@ if (useNode) {
   // because it doesn't understand that it will never encounter a case in which useNode is true.
   // When normal node is running, it doesn't care that this is an expression.
   const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
-  wasm = await require(path);
+  wasm = require(path);
 } else {
-  wasm = await require("../../staking/wasm/bundle/staking");
+  const f = async () => {
+    wasm = await require("../../staking/wasm/bundle/staking");
+  };
+  f();
 }
 
 import { sha256 } from "js-sha256";
