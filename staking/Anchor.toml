@@ -12,7 +12,11 @@ cluster = "localnet"
 wallet = "./tests/default_wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/staking.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [validator]
 ledger_dir = "./.anchor/test-ledger"
+
+[path]
+idl_path = "./target/idl/staking.json"
+binary_path = "./target/deploy/staking.so"
