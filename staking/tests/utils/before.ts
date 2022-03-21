@@ -10,6 +10,7 @@ import {
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
+import * as wasm from "../../wasm/node/staking";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -157,7 +158,7 @@ export async function requestPythAirdrop(
   );
 
   if ((await connection.getAccountInfo(destinationAta)) == null) {
-    const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
+    const createAtaIx = Token.createAssociatedTokenAccountInstruction(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount,
@@ -165,10 +166,10 @@ export async function requestPythAirdrop(
       destination,
       pythMintAuthority.publicKey
     );
-    transaction.add(create_ata_ix);
+    transaction.add(createAtaIx);
   }
 
-  const mint_ix = Token.createMintToInstruction(
+  const mintIx = Token.createMintToInstruction(
     TOKEN_PROGRAM_ID,
     pythMintAccount,
     destinationAta,
@@ -176,7 +177,7 @@ export async function requestPythAirdrop(
     [],
     amount
   );
-  transaction.add(mint_ix);
+  transaction.add(mintIx);
 
   await connection.sendTransaction(transaction, [pythMintAuthority], {
     skipPreflight: true,
@@ -228,7 +229,7 @@ export async function createMint(
 
 export async function initConfig(program: Program, pythMintAccount: PublicKey) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
-    [utils.bytes.utf8.encode("config")],
+    [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     program.programId
   );
 

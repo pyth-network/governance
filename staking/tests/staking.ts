@@ -1,7 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Spl } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
-import { positions_account_size } from "./utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -13,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint, expect_fail } from "./utils/utils";
+import { createMint, expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -159,9 +158,9 @@ describe("staking", async () => {
           fromPubkey: provider.wallet.publicKey,
           newAccountPubkey: stake_account_positions_secret.publicKey,
           lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            positions_account_size
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
-          space: positions_account_size,
+          space:  wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
           programId: program.programId,
         }),
       ])
@@ -218,7 +217,7 @@ describe("staking", async () => {
     const to_account = (
       await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode("custody"),
+          anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
           stake_account_positions_secret.publicKey.toBuffer(),
         ],
         program.programId
@@ -281,7 +280,7 @@ describe("staking", async () => {
   });
 
   it("creates a position that's too big", async () => {
-    expect_fail(
+    expectFail(
       program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(102))
         .accounts({
@@ -346,7 +345,7 @@ describe("staking", async () => {
   });
 
   it("creates position with 0 principal", async () => {
-    expect_fail(
+    expectFail(
       program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(0))
         .accounts({
@@ -393,7 +392,7 @@ describe("staking", async () => {
     });
 
     // Now create 101, which is supposed to fail
-    expect_fail(
+    expectFail(
       program.methods
         .createPosition(zero_pubkey, zero_pubkey, new BN(1))
         .accounts({
