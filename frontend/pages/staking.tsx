@@ -19,14 +19,9 @@ import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
 import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
 import toast from 'react-hot-toast'
 import { Tab } from '@headlessui/react'
-import {
-  WalletConnectButton,
-  WalletModalButton,
-} from '@solana/wallet-adapter-react-ui'
-
-const classNames = (...classes: any) => {
-  return classes.filter(Boolean).join(' ')
-}
+import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
+import { classNames } from 'utils/classNames'
+import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 const Staking: NextPage = () => {
   const { connection } = useConnection()
@@ -47,12 +42,16 @@ const Staking: NextPage = () => {
   // create stake connection when wallet is connected
   useEffect(() => {
     const createStakeConnection = async () => {
-      const sc = await StakeConnection.createStakeConnection(
-        connection,
-        anchorWallet as Wallet,
-        STAKING_PROGRAM
-      )
-      setStakeConnection(sc)
+      try {
+        const sc = await StakeConnection.createStakeConnection(
+          connection,
+          anchorWallet as Wallet,
+          STAKING_PROGRAM
+        )
+        setStakeConnection(sc)
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
     }
     if (!connected) {
       setStakeConnection(undefined)
@@ -116,7 +115,7 @@ const Staking: NextPage = () => {
         await stakeConnection.depositAndLockTokens(stakeAccount, amount)
         toast.success('Deposit successful!')
       } catch (e) {
-        toast.error(e.message)
+        toast.error(capitalizeFirstLetter(e.message))
       }
       await refreshBalance()
     }
@@ -130,7 +129,7 @@ const Staking: NextPage = () => {
         await airdropPythToken(provider, publicKey)
         toast.success('Airdrop successful!')
       } catch (e) {
-        toast.error(e.message)
+        toast.error(capitalizeFirstLetter(e.message))
       }
     }
     await refreshBalance()

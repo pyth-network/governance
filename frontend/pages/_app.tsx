@@ -53,7 +53,15 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <Component {...pageProps} />
-          <Toaster position="bottom-left" reverseOrder={false} />
+          <Toaster
+            position="bottom-left"
+            toastOptions={{
+              style: {
+                wordBreak: 'break-all',
+              },
+            }}
+            reverseOrder={false}
+          />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

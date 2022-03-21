@@ -24,6 +24,7 @@ module.exports = {
       blueGem: '#4E2F92',
       valhalla: '#2E2E49',
       mediumSlateBlue: '#8246FA',
+      hoverGray: 'rgba(255, 255, 255, 0.08)',
     },
     fontFamily: {
       arboria: 'arboria, sans-serif',
