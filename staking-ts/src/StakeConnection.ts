@@ -1,4 +1,4 @@
-import { Provider, Program, Wallet, utils, Coder, Idl } from "@project-serum/anchor";
+import { Provider, Program, Wallet, utils, Coder, Idl, IdlAccounts, IdlTypes } from "@project-serum/anchor";
 import {
   PublicKey,
   Connection,
@@ -19,10 +19,16 @@ import {
 } from "@solana/spl-token";
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
+import { Staking } from "../../staking/target/types/staking";
+
+type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
+type PositionData = IdlAccounts<Staking>["positionData"];
+type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
+type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 
 export class StakeConnection {
-  program: Program;
-  config;
+  program: Program<Staking>;
+  config: GlobalConfig;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -34,7 +40,7 @@ export class StakeConnection {
     const stake_connection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
     const idl = await Program.fetchIdl(address, provider);
-    stake_connection.program = new Program(idl, address, provider);
+    stake_connection.program = new Program(idl, address, provider) as Program<Staking>;
 
     const config_address = (
       await PublicKey.findProgramAddress(
@@ -89,7 +95,7 @@ export class StakeConnection {
 
   async fetchPositionAccount(
     address: PublicKey
-  ): Promise<[wasm.WasmPositionData, any]> {
+  ): Promise<[wasm.WasmPositionData, PositionData]> {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
@@ -122,7 +128,7 @@ export class StakeConnection {
     )[0];
 
     stake_account.stake_account_metadata =
-      await this.program.account.stakeAccountMetadata.fetch(metadata_address);
+      await this.program.account.stakeAccountMetadata.fetch(metadata_address) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
     stake_account.vestingSchedule = StakeAccount.serializeVesting(stake_account.stake_account_metadata.lock, this.program.idl);
 
     const custody_address = (
@@ -320,12 +326,12 @@ export class StakeAccount {
 
   address: PublicKey;
   stakeAccountPositionsWasm: wasm.WasmPositionData;
-  stakeAccountPositionsJs: any;
-  stake_account_metadata;
+  stakeAccountPositionsJs: PositionData;
+  stake_account_metadata: StakeAccountMetadata;
   token_balance: u64;
-  authority_address;
+  authority_address: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
-  config: any;
+  config: GlobalConfig;
 
 
   // Withdrawable
@@ -360,7 +366,7 @@ export class StakeAccount {
   // What is the best way to represent current vesting schedule in the UI
   public getVestingSchedule() {}
 
-  static serializeVesting(lock: any, idl: Idl): any {
+  static serializeVesting(lock: VestingSchedule, idl: Idl): Buffer {
     const VESTING_SCHED_MAX_BORSH_LEN = 4*8+1;
     let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
 
