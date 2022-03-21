@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+module.exports = {
   reactStrictMode: true,
   experimental: {
     externalDir: true,
@@ -9,5 +9,3 @@ const nextConfig = {
     return config
   },
 }
-
-module.exports = nextConfig

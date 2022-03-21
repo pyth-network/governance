@@ -14,10 +14,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "incremental": true,
     "paths": {
       "@components/*": ["components/*"],
     },
-    "incremental": true,
     "useUnknownInCatchVariables": false
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
