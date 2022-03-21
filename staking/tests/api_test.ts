@@ -4,7 +4,7 @@ import {
 } from "@solana/web3.js";
 import assert from 'assert';
 import { StakeConnection } from "../app";
-import {requestPythAirdrop, startValidator, createMint, readAnchorConfig, getPortNumber} from "./utils/before"
+import {requestPythAirdrop, startValidator, createMint, readAnchorConfig, getPortNumber, initConfig} from "./utils/before"
 import { Wallet, Provider } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
@@ -24,7 +24,7 @@ describe("api", async () => {
 
   const config = readAnchorConfig("./Anchor.toml")
 
-  let stake_connection;
+  let stakeConnection;
 
   let setupProgram;
   let controller;
@@ -32,7 +32,6 @@ describe("api", async () => {
   after(async () => {
     controller.abort();
   });
-
 
   it("deploy program", async () => {
     ({ controller, program : setupProgram } = await startValidator(portNumber, config)); 
@@ -51,15 +50,7 @@ describe("api", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    await setupProgram.methods
-      .initConfig({
-        governanceAuthority: setupProgram.provider.wallet.publicKey,
-        pythTokenMint: pythMintAccount.publicKey,
-        unlockingDuration: 2,
-        // Epoch time set to 1 second
-        epochDuration: new BN(1),
-      })
-      .rpc();
+    await initConfig(setupProgram, pythMintAccount.publicKey)
   });
 
   it("alice receive tokens", async () => {
@@ -70,7 +61,7 @@ describe("api", async () => {
 
     const connection = new Connection(`http://localhost:${portNumber}`, Provider.defaultOptions().commitment);
 
-    stake_connection = await StakeConnection.createStakeConnection(
+    stakeConnection = await StakeConnection.createStakeConnection(
       connection,
       new Wallet(alice),
       config.programs.localnet.staking
@@ -78,11 +69,11 @@ describe("api", async () => {
   });
 
   it("alice create deposit and lock", async () =>{
-    await stake_connection.depositAndLockTokens(undefined, 600);
+    await stakeConnection.depositAndLockTokens(undefined, 600);
   })
 
   it("find and parse stake accounts", async () => {
-    const res = await stake_connection.getStakeAccounts(alice.publicKey);
+    const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     
     assert.equal(res.length, 1);
     assert.equal(res[0].stakeAccountPositionsJs.owner.toBase58(), alice.publicKey.toBase58());
@@ -94,9 +85,9 @@ describe("api", async () => {
     assert.equal(beforeBalSummary.unvested.toNumber(), 0);
     assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
 
-    await stake_connection.depositAndLockTokens(res[0], 100);
+    await stakeConnection.depositAndLockTokens(res[0], 100);
 
-    const after = await stake_connection.getStakeAccounts(alice.publicKey);
+    const after = await stakeConnection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);
     assert.equal(after[0].stakeAccountPositionsJs.positions[1].amount.toNumber(), 100);
     assert.equal(after[0].token_balance.toNumber(), 700)
