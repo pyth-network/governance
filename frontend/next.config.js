@@ -5,7 +5,7 @@ module.exports = {
     externalDir: true,
   },
   webpack: (config) => {
-    config.experiments = { asyncWebAssembly: true }
+    config.experiments = { asyncWebAssembly: true, topLevelAwait: true }
     return config
   },
 }

@@ -9,24 +9,22 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 
-import * as wasm from "../../staking/wasm/bundle/staking";
-
-// // This seems to work for now, but I am not sure how fragile it is.
-// const useNode =
-//   typeof process !== undefined && process.env.hasOwnProperty("_")
-//   && (!process.env._.includes("next"));
+// This seems to work for now, but I am not sure how fragile it is.
+const useNode =
+  typeof process !== undefined && process.env.hasOwnProperty("_")
+  && (!process.env._.includes("next"));
 // console.log("Using node WASM version? " + useNode);
-// let wasm;
-// if (useNode) {
-//   // This needs to be sufficiently complicated that the bundler can't compute its value
-//   // It means the bundler will give us a warning "the request of a dependency is an expression"
-//   // because it doesn't understand that it will never encounter a case in which useNode is true.
-//   // When normal node is running, it doesn't care that this is an expression.
-//   const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
-//   wasm = require(path);
-// } else {
-//   wasm = require("../../staking/wasm/bundle/staking");
-// }
+let wasm;
+if (useNode) {
+  // This needs to be sufficiently complicated that the bundler can't compute its value
+  // It means the bundler will give us a warning "the request of a dependency is an expression"
+  // because it doesn't understand that it will never encounter a case in which useNode is true.
+  // When normal node is running, it doesn't care that this is an expression.
+  const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
+  wasm = await require(path);
+} else {
+  wasm = await require("../../staking/wasm/bundle/staking");
+}
 
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
