@@ -1,12 +1,13 @@
 import * as anchor from "@project-serum/anchor";
 import { exec } from "child_process";
+import { mkdtemp } from "fs/promises";
 import {
   PublicKey,
   Connection,
   Keypair,
   Transaction,
   SystemProgram,
-  TransactionInstruction
+  TransactionInstruction,
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
@@ -20,17 +21,38 @@ import shell from "shelljs";
 import { positions_account_size } from "./constant";
 import BN from "bn.js";
 import toml from "toml";
+import path from "path";
+import os from "os";
 
-export async function readAnchorConfig(pathToAnchorToml : string){
-  const config = toml.parse(fs.readFileSync(pathToAnchorToml).toString());
+interface AnchorConfig {
+  path: {
+    idl_path: string;
+    binary_path: string;
+  };
+  provider: {
+    cluster: string;
+    wallet: string;
+  };
+}
 
-  config.path = Object.keys(toml.path)
+export function readAnchorConfig(pathToStakingDir: string) {
+  const config: AnchorConfig = toml.parse(
+    fs.readFileSync(pathToStakingDir + "./Anchor.toml").toString()
+  );
+
+  for (let key of Object.keys(config.path)) {
+    config.path[key] = pathToStakingDir + config.path[key];
+  }
+
+  config.provider.wallet = pathToStakingDir + config.provider.wallet;
+
+  return config;
 }
 
 /**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
- * 
+ *
  * ```const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());```
  */
 export async function startValidator(portNumber: number, config: any) {
@@ -42,10 +64,10 @@ export async function startValidator(portNumber: number, config: any) {
   const controller: AbortController = new AbortController();
   const { signal } = controller;
 
-  const ledgerDir = config.validator.ledger_dir;
+  const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
   const programAddress = new PublicKey(config.programs.localnet.staking);
-  const idlPath = config.build.idl_path;
-  const binaryPath = config.build.binary_path;
+  const idlPath = config.path.idl_path;
+  const binaryPath = config.path.binary_path;
 
   const user = Keypair.fromSecretKey(
     new Uint8Array(
@@ -54,7 +76,7 @@ export async function startValidator(portNumber: number, config: any) {
   );
 
   exec(
-    `mkdir -p ${ledgerDir}/${portNumber} && solana-test-validator --ledger ${ledgerDir}/${portNumber} --rpc-port ${portNumber} --mint ${
+    `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
       user.publicKey
     } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --faucet-port ${
       portNumber + 101
@@ -242,7 +264,7 @@ export async function depositTokensInstruction(
   stakeAccountPositionsAddress: PublicKey,
   pyth_mint_account: PublicKey,
   amount: number
-) : Promise<TransactionInstruction> {
+): Promise<TransactionInstruction> {
   const from_account = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,

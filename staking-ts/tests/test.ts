@@ -5,15 +5,13 @@ import {
 } from "@solana/web3.js";
 import assert from 'assert';
 import { StakeConnection } from "../src";
-import {requestPythAirdrop, startValidator} from "../../staking/tests/utils/before"
+import {requestPythAirdrop, startValidator, createMint, readAnchorConfig} from "../../staking/tests/utils/before"
 import { Wallet, Provider } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { createMint } from "../../staking/tests/utils/before";
+import {  } from "../../staking/tests/utils/before";
 import BN from "bn.js";
-import fs from 'fs';
-import toml from "toml";
 
 const portNumber = 8903;
 
@@ -24,7 +22,7 @@ describe("api", async () => {
   
   const alice = new Keypair();
 
-  const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
+  const config = readAnchorConfig("../staking/")
 
   let stake_connection;
 
