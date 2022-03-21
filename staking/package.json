@@ -15,7 +15,8 @@
         "chai": "^4.3.4",
         "mocha": "^9.0.3",
         "shelljs": "^0.8.5",
-        "ts-mocha": "^8.0.0"
+        "ts-mocha": "^8.0.0",
+        "wasm-pack": "^0.10.2"
     },
     "scripts": {
         "test": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force && ./wasm/build_wasm.sh && anchor test  -- --features mock-clock",
