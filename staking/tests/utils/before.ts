@@ -54,8 +54,12 @@ export function readAnchorConfig(pathToStakingDir: string) {
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
  *
  * ```const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());```
+ * 
+ * returns a `{controller, program}` struct. Users of this method have to terminate the 
+ * validator by calling :
+ * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: any) {
+export async function startValidator(portNumber: number, config: any){
   const connection: Connection = new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
@@ -123,6 +127,7 @@ export async function requestPythAirdrop(
   amount: number,
   connection: Connection
 ) {
+  // Testnet airdrop to ensure that the pyth authority can pay for gas
   await connection.requestAirdrop(pythMintAuthority.publicKey, 1_000_000_000);
 
   const transaction = new Transaction();
