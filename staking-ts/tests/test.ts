@@ -83,20 +83,6 @@ describe("api", async () => {
 
   it("find and parse stake accounts", async () => {
     const res = await stake_connection.getStakeAccounts(alice.publicKey);
-
-    
-    assert.equal(res.length, 1);
-    assert.equal(res[0].stake_account_positions.owner.toBase58(), alice.publicKey.toBase58());
-    assert.equal(res[0].stake_account_metadata.owner.toBase58(), alice.publicKey.toBase58());
-    assert.equal(res[0].stake_account_positions.positions[0].amount.toNumber(), 600);
-    assert.equal(res[0].token_balance.toNumber(), 600)
-
-    await stake_connection.depositAndLockTokens(res[0], 100);
-
-    const after = await stake_connection.getStakeAccounts(alice.publicKey);
-    assert.equal(after.length, 1);
-    assert.equal(after[0].stake_account_positions.positions[1].amount.toNumber(), 100);
-    assert.equal(after[0].token_balance.toNumber(), 700)
     
     assert.equal(res.length, 1);
     assert.equal(res[0].stakeAccountPositionsJs.owner.toBase58(), alice.publicKey.toBase58());
