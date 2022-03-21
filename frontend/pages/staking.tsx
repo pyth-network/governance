@@ -167,17 +167,17 @@ const Staking: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Staking'} />
-      <div className="flex flex-col items-center justify-center">
-        <div className="mt-20 max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-20">
+      <div className="mb-20 flex flex-col items-center px-10">
+        <div className="mt-10 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
           <div className="w-full py-8">
             <Tab.Group onChange={handleChangeTab}>
-              <Tab.List className="mx-24 space-x-2">
+              <Tab.List className="flex justify-center space-x-2">
                 {tabValues.map((v) => (
                   <Tab
                     key={v}
                     className={({ selected }) =>
                       classNames(
-                        'py-2.5 px-5 text-sm font-medium text-scampi',
+                        'py-2.5 px-5 text-xs font-medium text-scampi sm:text-sm',
 
                         selected
                           ? 'primary-btn text-white'
@@ -189,10 +189,26 @@ const Staking: NextPage = () => {
                   </Tab>
                 ))}
               </Tab.List>
-              <Tab.Panels className="mt-16">
+              <Tab.Panels className="mt-8 sm:mt-16">
                 {tabValues.map((v, idx) => (
                   <Tab.Panel key={idx}>
                     <div className="col-span-12 font-inter text-xs">
+                      <div className="mb-2 flex">
+                        <div className="ml-auto mr-0 space-x-2 sm:hidden">
+                          <button
+                            className="outlined-btn"
+                            onClick={handleHalfBalanceClick}
+                          >
+                            Half
+                          </button>
+                          <button
+                            className="outlined-btn"
+                            onClick={handleMaxBalanceClick}
+                          >
+                            Max
+                          </button>
+                        </div>
+                      </div>
                       <div className="mb-4 flex items-center justify-between">
                         <label htmlFor="amount" className="block text-white">
                           Amount (PYTH)
@@ -206,18 +222,20 @@ const Staking: NextPage = () => {
                               : 'Withdrawable'}
                             : {balance}
                           </p>
-                          <button
-                            className="outlined-btn"
-                            onClick={handleHalfBalanceClick}
-                          >
-                            Half
-                          </button>
-                          <button
-                            className="outlined-btn"
-                            onClick={handleMaxBalanceClick}
-                          >
-                            Max
-                          </button>
+                          <div className="hidden space-x-2 sm:flex">
+                            <button
+                              className="outlined-btn"
+                              onClick={handleHalfBalanceClick}
+                            >
+                              Half
+                            </button>
+                            <button
+                              className="outlined-btn"
+                              onClick={handleMaxBalanceClick}
+                            >
+                              Max
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <input
@@ -266,30 +284,30 @@ const Staking: NextPage = () => {
               </Tab.Panels>
             </Tab.Group>
           </div>
-          <div className="mt-5 mb-10 grid w-full max-w-lg grid-cols-3">
-            <div className="grid grid-cols-3 text-white">
-              <div className="mr-2 flex h-10 content-center">
-                <img src="/pyth-coin-logo.svg" />
+          <div className="mx-auto mt-5 mb-10 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
+            <div className="text-white sm:grid sm:grid-cols-3">
+              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
-              <div className="col-span-2 my-auto flex flex-col">
+              <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold text-white">Locked</div>
                 <div className="text-sm text-scampi">{lockedPythBalance}</div>
               </div>
             </div>
-            <div className="grid grid-cols-3 text-white">
-              <div className="mr-2 flex h-10 content-center">
-                <img src="/pyth-coin-logo.svg" />
+            <div className="text-white sm:grid sm:grid-cols-3 ">
+              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
-              <div className="col-span-2 my-auto flex flex-col">
+              <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold text-white">Unlocked</div>
                 <div className="text-sm text-scampi">{unlockedPythBalance}</div>
               </div>
             </div>
-            <div className="grid grid-cols-3 text-white">
-              <div className="mr-2 flex h-10 content-center">
-                <img src="/pyth-coin-logo.svg" />
+            <div className="text-white sm:grid sm:grid-cols-3 ">
+              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
-              <div className="col-span-2 my-auto flex flex-col">
+              <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold text-white">Unvested</div>
                 <div className="text-sm text-scampi">{unvestedPythBalance}</div>
               </div>
