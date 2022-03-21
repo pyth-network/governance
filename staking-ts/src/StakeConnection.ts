@@ -11,7 +11,6 @@ import {
 import * as wasm from "../../staking/wasm/node/staking";
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
-import { positions_account_size } from "../../staking/tests/utils/constant";
 import {
   Token,
   TOKEN_PROGRAM_ID,
@@ -218,9 +217,9 @@ export class StakeConnection {
         newAccountPubkey: stake_account_keypair.publicKey,
         lamports:
           await this.program.provider.connection.getMinimumBalanceForRentExemption(
-            positions_account_size
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
-        space: positions_account_size,
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
         programId: this.program.programId,
       })
     );
