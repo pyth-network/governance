@@ -13,7 +13,7 @@ import {
 import {  } from "../../staking/tests/utils/before";
 import BN from "bn.js";
 
-const portNumber = 8903;
+const portNumber = 8899;
 
 describe("api", async () => {
 

@@ -1,5 +1,4 @@
 import * as anchor from "@project-serum/anchor";
-import toml from "toml";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -9,22 +8,26 @@ import {
   startValidator,
   createMint,
   requestPythAirdrop,
-  depositTokensInstruction,
-  createStakeAccount,
   initConfig,
+  readAnchorConfig,
+  getPortNumber
 } from "./utils/before";
 import {
   PublicKey,
   Keypair,
   Transaction,
+  Connection,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import * as wasm from "../wasm/node/staking";
-import BN from 'bn.js'
+import BN from "bn.js";
 import assert from "assert";
-import fs from "fs";
+import { StakeConnection } from "../../staking-ts/";
+import path from 'path';
 
 const DEBUG = true;
-const portNumber = 8905;
+const portNumber = getPortNumber(path.basename(__filename));
+console.log(portNumber);
 
 describe("create_stake_account", async () => {
   const CONFIG_SEED = "config";
@@ -37,15 +40,17 @@ describe("create_stake_account", async () => {
   const pythMintAuthority = new Keypair();
   const zeroPubkey = new PublicKey(0);
 
-  const stakeAccountPositionSecret = new Keypair();
+  let stakeAccountPositionSecret: Keypair;
 
-  const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
+  const config = readAnchorConfig("./");
 
   let program;
   let controller;
 
   let owner;
   let owner_ata;
+
+  let stakeConnection: StakeConnection;
 
   after(async () => {
     controller.abort();
@@ -81,9 +86,33 @@ describe("create_stake_account", async () => {
     );
 
     await initConfig(program, pythMintAccount.publicKey);
+
+    const connection = new Connection(
+      `http://localhost:${portNumber}`,
+      anchor.Provider.defaultOptions().commitment
+    );
+
+    stakeConnection = await StakeConnection.createStakeConnection(
+      connection,
+      program.provider.wallet,
+      config.programs.localnet.staking
+    );
   });
 
   it("creates vested staking account", async () => {
+    const tx = new Transaction();
+    const ixs: TransactionInstruction[] = [];
+
+    stakeAccountPositionSecret = await stakeConnection.withCreateAccount(
+      ixs,
+      owner
+    );
+
+    tx.add(...ixs);
+    await program.provider.send(tx, [stakeAccountPositionSecret], {
+      skipPreflight: DEBUG,
+    });
+
     const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
@@ -117,12 +146,6 @@ describe("create_stake_account", async () => {
       program.programId
     );
 
-    await createStakeAccount(
-      program,
-      stakeAccountPositionSecret,
-      pythMintAccount.publicKey
-    );
-
     const stake_account_metadata_data =
       await program.account.stakeAccountMetadata.fetch(metadataAccount);
 
@@ -140,17 +163,20 @@ describe("create_stake_account", async () => {
   });
 
   it("deposits tokens", async () => {
-    const transaction = new Transaction();
-    const ix = await depositTokensInstruction(
-      program,
+    const tx = new Transaction();
+    const ixs: TransactionInstruction[] = [];
+
+    await stakeConnection.withDepositTokens(
+      ixs,
       stakeAccountPositionSecret.publicKey,
-      pythMintAccount.publicKey,
       101
     );
-    transaction.add(ix);
-    const tx = await program.provider.send(transaction, [], {
+
+    tx.add(...ixs);
+    await program.provider.send(tx, [], {
       skipPreflight: DEBUG,
     });
+
 
     const to_account = (
       await PublicKey.findProgramAddress(
@@ -196,7 +222,8 @@ describe("create_stake_account", async () => {
       .accounts({
         stakeAccountPositions: stakeAccountPositionSecret.publicKey,
         destination: owner_ata,
-      }).rpc();
+      })
+      .rpc();
 
     const custody_account = (
       await PublicKey.findProgramAddress(

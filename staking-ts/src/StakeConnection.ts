@@ -159,7 +159,43 @@ export class StakeConnection {
     program: Program
   ) {}
 
-  private async withCreateAccount(
+
+  public async withDepositTokens(
+    instructions : TransactionInstruction[],
+    stakeAccountPositionsAddress: PublicKey,
+    amount: number
+  ){
+
+    const from_account = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode("custody"),
+          stakeAccountPositionsAddress.toBuffer(),
+        ],
+        this.program.programId
+      )
+    )[0];
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      from_account,
+      to_account,
+      this.program.provider.wallet.publicKey,
+      [],
+      amount
+    );
+
+    instructions.push(ix);
+  }
+
+  public async withCreateAccount(
     instructions: TransactionInstruction[],
     owner: PublicKey
   ): Promise<Keypair> {

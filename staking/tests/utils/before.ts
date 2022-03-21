@@ -23,6 +23,8 @@ import BN from "bn.js";
 import toml from "toml";
 import path from "path";
 import os from "os";
+import net from "net";
+import portscanner from 'portscanner'
 
 interface AnchorConfig {
   path: {
@@ -32,6 +34,15 @@ interface AnchorConfig {
   provider: {
     cluster: string;
     wallet: string;
+  };
+  programs: {
+    localnet: {
+      staking: PublicKey;
+    };
+  };
+  validator: {
+    port: number;
+    ledger_dir: string;
   };
 }
 
@@ -50,16 +61,26 @@ export function readAnchorConfig(pathToStakingDir: string) {
 }
 
 /**
+ * Deterministically determines the port for deploying the validator basing of the index of the testfile in the sorted
+ * list of all testsfiles.
+ * Two ports are needed (one for RPC and another one for websocket)
+ */
+export function getPortNumber(filename : string){
+  const index = fs.readdirSync("./tests/").sort().indexOf(filename);
+  const portNumber = 8899 + 2 * index;
+  return portNumber
+}
+/**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
  *
  * ```const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());```
- * 
- * returns a `{controller, program}` struct. Users of this method have to terminate the 
+ *
+ * returns a `{controller, program}` struct. Users of this method have to terminate the
  * validator by calling :
  * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: any){
+export async function startValidator(portNumber: number, config: any) {
   const connection: Connection = new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
@@ -228,97 +249,35 @@ export async function initConfig(program: Program, pythMintAccount: PublicKey) {
     });
 }
 
-/**
- * Create a stake account. This is a wrapper around the anchor syntax.
- */
-export async function createStakeAccount(
-  program: Program,
-  stakeAccountPositionsSecret: Keypair,
-  pythMintAccount: PublicKey
-) {
-  const tx = await program.methods
-    .createStakeAccount(program.provider.wallet.publicKey, { fullyVested: {} })
-    .preInstructions([
-      SystemProgram.createAccount({
-        fromPubkey: program.provider.wallet.publicKey,
-        newAccountPubkey: stakeAccountPositionsSecret.publicKey,
-        lamports:
-          await program.provider.connection.getMinimumBalanceForRentExemption(
-            positions_account_size
-          ),
-        space: positions_account_size,
-        programId: program.programId,
-      }),
-    ])
-    .accounts({
-      stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-      mint: pythMintAccount,
-    })
-    .signers([stakeAccountPositionsSecret])
-    .rpc({
-      skipPreflight: false,
-    });
-  return tx;
-}
-
-/**
- * Returns the intruction to deposit tokens to a stake account
- */
-export async function depositTokensInstruction(
-  program: Program,
-  stakeAccountPositionsAddress: PublicKey,
-  pyth_mint_account: PublicKey,
-  amount: number
-): Promise<TransactionInstruction> {
-  const from_account = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    pyth_mint_account,
-    program.provider.wallet.publicKey
-  );
-
-  const to_account = (
-    await PublicKey.findProgramAddress(
-      [
-        utils.bytes.utf8.encode("custody"),
-        stakeAccountPositionsAddress.toBuffer(),
-      ],
-      program.programId
-    )
-  )[0];
-
-  const ix = Token.createTransferInstruction(
-    TOKEN_PROGRAM_ID,
-    from_account,
-    to_account,
-    program.provider.wallet.publicKey,
-    [],
-    amount
-  );
-
-  return ix;
-}
-
-/**
- * Wrapper around ```depositTokensInstruction``` that takes the intruction and executes a transaction with it
- */
-export async function depositTokens(
-  program: Program,
-  stakeAccountPositionsAddress: PublicKey,
-  pythMintAccount: PublicKey,
-  amount: number
-) {
-  const transaction = new Transaction();
-  const ix = await depositTokensInstruction(
-    program,
-    stakeAccountPositionsAddress,
-    pythMintAccount,
-    amount
-  );
-  transaction.add(ix);
-  const tx = await program.provider.send(transaction, [], {
-    skipPreflight: true,
-  });
-
-  return ix;
-}
+// /**
+//  * Create a stake account. This is a wrapper around the anchor syntax.
+//  */
+// export async function createStakeAccount(
+//   program: Program,
+//   stakeAccountPositionsSecret: Keypair,
+//   pythMintAccount: PublicKey
+// ) {
+//   const tx = await program.methods
+//     .createStakeAccount(program.provider.wallet.publicKey, { fullyVested: {} })
+//     .preInstructions([
+//       SystemProgram.createAccount({
+//         fromPubkey: program.provider.wallet.publicKey,
+//         newAccountPubkey: stakeAccountPositionsSecret.publicKey,
+//         lamports:
+//           await program.provider.connection.getMinimumBalanceForRentExemption(
+//             positions_account_size
+//           ),
+//         space: positions_account_size,
+//         programId: program.programId,
+//       }),
+//     ])
+//     .accounts({
+//       stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+//       mint: pythMintAccount,
+//     })
+//     .signers([stakeAccountPositionsSecret])
+//     .rpc({
+//       skipPreflight: false,
+//     });
+//   return tx;
+// }

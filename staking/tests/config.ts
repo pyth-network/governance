@@ -1,17 +1,15 @@
 import { utils } from "@project-serum/anchor";
 import { PublicKey, Keypair, Transaction, Connection } from "@solana/web3.js";
-import { createMint, startValidator } from "./utils/before";
+import { createMint, startValidator, readAnchorConfig, getPortNumber } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
-import fs from "fs";
-import toml from "toml";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-
+import path from 'path'
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
 const DEBUG = true;
-const portNumber = 8899;
+const portNumber = getPortNumber(path.basename(__filename));
 
 describe("config", async () => {
   const CONFIG_SEED = "config";
@@ -20,7 +18,7 @@ describe("config", async () => {
   const pythMintAuthority = new Keypair();
   const zeroPubkey = new PublicKey(0);
 
-  const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
+  const config = readAnchorConfig("./");
 
   let program;
   let controller;
