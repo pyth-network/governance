@@ -12,7 +12,7 @@ const Header = () => {
   return (
     <div className="mb-3 grid grid-cols-12 bg-black">
       <div className="col-span-12 flex h-24 items-center justify-between px-4 md:px-8 xl:col-span-10 xl:col-start-2">
-        <div className="flex cursor-pointer items-center md:w-1/6">
+        <div className="flex cursor-pointer items-center md:w-36">
           <Link href="/">
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
           </Link>
@@ -39,7 +39,7 @@ const Header = () => {
             </a>
           </Link>
         </div>
-        <div className="flex items-center justify-end space-x-2 md:w-1/6">
+        <div className="flex items-center justify-end space-x-2">
           <WalletMultiButton className="primary-btn" />
           <div className="md:hidden">
             <button
