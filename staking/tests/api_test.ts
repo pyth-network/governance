@@ -7,7 +7,7 @@ import {
 } from "@solana/web3.js";
 import { Wallet, Provider } from "@project-serum/anchor";
 import assert from 'assert';
-import { StakeConnection } from "../src";
+import { StakeConnection } from "../app";
 
 // let's try to get rid of this magic constant
 const staking_program = new PublicKey(
@@ -16,14 +16,14 @@ const staking_program = new PublicKey(
 
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { Staking } from "../../staking/target/types/staking";
-import { positions_account_size } from "../../staking/tests/utils/constant";
+import { Staking } from "../target/types/staking";
+import { positions_account_size } from "./utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { createMint } from "../../staking/tests/utils/utils";
+import { createMint } from "./utils/utils";
 import BN from "bn.js";
 
 describe("api", async () => {

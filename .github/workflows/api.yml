@@ -39,6 +39,6 @@ jobs:
       working-directory: ./staking
       run: yarn start &
     - name : Test api
-      working-directory: ./staking-ts
-      run: yarn test
+      working-directory: ./staking
+      run: yarn test_api
 
