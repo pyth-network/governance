@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  REMOTE_TEST_VALIDATOR: http://13.40.33.111:8899
+  DEFAULT_PROGRAM_ADDRESS : Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS
+  DEPLOYER_KEYPAIR_PATH : ./tests/default_wallet.json
+  PROGRAM_KEYPAIR_PATH : ./tests/program.json
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,31 +36,31 @@ jobs:
         run: npm i -g @project-serum/anchor-cli
       - name: Generate a keypair for the program
         working-directory: ./staking
-        run: solana-keygen new -o ./tests/program.json --no-bip39-passphrase --force
+        run: solana-keygen new -o $PROGRAM_KEYPAIR_PATH --no-bip39-passphrase --force
       - name: Generate a keypair for the deployer
         working-directory: ./staking
-        run: solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force
+        run: solana-keygen new -o $DEPLOYER_KEYPAIR_PATH --no-bip39-passphrase --force
       - name: Connect to the test network
         working-directory: ./staking
-        run: solana config set --url http://13.40.33.111:8899 --keypair ./tests/default_wallet.json
+        run: solana config set --url $REMOTE_TEST_VALIDATOR --keypair $DEPLOYER_KEYPAIR_PATH
       - name: Airdrop sol
         working-directory: ./staking
         run: solana airdrop 1000
       - name: Setup program pubkey as environment variable
         working-directory: ./staking
-        run: echo "PROGRAM_KEY=$(solana-keygen pubkey ./tests/program.json)" >> $GITHUB_ENV
+        run: echo "PROGRAM_KEY=$(solana-keygen pubkey $PROGRAM_KEYPAIR_PATH)" >> $GITHUB_ENV
       - name: Update program address declaration
         working-directory: ./staking
         run: |
-          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}/' programs/staking/src/lib.rs
-          sed -i 's/Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS/${{ env.PROGRAM_KEY }}/' ./Anchor.toml
-          sed -i 's,"localnet","http://13.40.33.111:8899",' ./Anchor.toml
+          sed -i 's/$DEFAULT_PROGRAM_ADDRESS/${{ env.PROGRAM_KEY }}/' programs/staking/src/lib.rs
+          sed -i 's/$DEFAULT_PROGRAM_ADDRESS/${{ env.PROGRAM_KEY }}/' ./Anchor.toml
+          sed -i 's,"localnet","$REMOTE_TEST_VALIDATOR",' ./Anchor.toml
       - name: Anchor build
         working-directory: ./staking
         run: anchor build
       - name : Anchor deploy
         working-directory: ./staking
-        run: solana program deploy ./target/deploy/staking.so --program-id ./tests/program.json
+        run: solana program deploy ./target/deploy/staking.so --program-id $PROGRAM_KEYPAIR_PATH
       - name : Initialize idl
         working-directory: ./staking
         run : anchor idl init ${{ env.PROGRAM_KEY }} -f ./target/idl/staking.json

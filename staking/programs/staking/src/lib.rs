@@ -18,7 +18,7 @@ mod utils;
 #[cfg(feature="wasm")]
 pub mod wasm;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("LAX2F56h4syzVQDUxFdaYmkCeRoq1yf19Qv5RRuv3gz");
 
 #[program]
 pub mod staking {
