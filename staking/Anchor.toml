@@ -17,6 +17,6 @@ test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 [validator]
 ledger_dir = "./.anchor/test-ledger"
 
-[build]
+[path]
 idl_path = "./target/idl/staking.json"
 binary_path = "./target/deploy/staking.so"

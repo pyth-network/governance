@@ -19,6 +19,13 @@ import { MintLayout } from "@solana/spl-token";
 import shell from "shelljs";
 import { positions_account_size } from "./constant";
 import BN from "bn.js";
+import toml from "toml";
+
+export async function readAnchorConfig(pathToAnchorToml : string){
+  const config = toml.parse(fs.readFileSync(pathToAnchorToml).toString());
+
+  config.path = Object.keys(toml.path)
+}
 
 /**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
