@@ -5,6 +5,7 @@ import {
   startValidator,
   readAnchorConfig,
   getPortNumber,
+  ANCHOR_CONFIG_PATH
 } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
@@ -22,7 +23,7 @@ describe("config", async () => {
   const pythMintAuthority = new Keypair();
   const zeroPubkey = new PublicKey(0);
 
-  const config = readAnchorConfig("./Anchor.toml");
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
   let program;
   let controller;

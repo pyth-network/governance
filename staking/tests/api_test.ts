@@ -4,7 +4,7 @@ import {
 } from "@solana/web3.js";
 import assert from 'assert';
 import { StakeConnection } from "../app";
-import {requestPythAirdrop, startValidator, createMint, readAnchorConfig, getPortNumber, initConfig} from "./utils/before"
+import {requestPythAirdrop, startValidator, createMint, readAnchorConfig, getPortNumber, initConfig, ANCHOR_CONFIG_PATH} from "./utils/before"
 import { Wallet, Provider } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
@@ -23,7 +23,7 @@ describe("api", async () => {
   
   const alice = new Keypair();
 
-  const config = readAnchorConfig("./Anchor.toml")
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH)
 
   let stakeConnection;
 
