@@ -227,11 +227,10 @@ export class StakeConnection {
     return stakeAccountKeypair;
   }
 
-  private async withDepositTokens(
-    instructions: TransactionInstruction[],
+  private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: number
-  ) {
+  ) : Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -258,7 +257,7 @@ export class StakeConnection {
       amount
     );
 
-    instructions.push(ix);
+    return ix;
   }
 
   public async depositTokens(
@@ -286,13 +285,13 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    await this.withDepositTokens(ixs, stakeAccountAddress, amount);
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
 
     const tx = new Transaction();
     tx.add(...ixs);
     await this.program.provider.send(tx, []);
   }
-  
+
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
     amount: number
@@ -318,7 +317,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    await this.withDepositTokens(ixs, stakeAccountAddress, amount);
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
 
     await this.program.methods
       .createPosition(null, null, new BN(amount))
