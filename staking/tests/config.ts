@@ -35,11 +35,9 @@ describe("config", async () => {
     controller.abort();
   });
 
-  it("deploy program", async () => {
+  before(async () => {
     ({ controller, program } = await startValidator(portNumber, config));
-  });
 
-  it("creates mint", async () => {
     await createMint(
       program.provider,
       pythMintAccount,
