@@ -225,10 +225,23 @@ export class StakeConnection {
     return stakeAccountKeypair;
   }
 
+  private async buildCloseInstruction(
+    stakeAccountPositionsAddress: PublicKey,
+    index: number,
+    amount: BN
+  ) {
+    return await this.program.methods
+      .closePosition(index, amount)
+      .accounts({
+        stakeAccountPositions: stakeAccountPositionsAddress,
+      })
+      .rpc();
+  }
+
   private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: number
-  ) : Promise<TransactionInstruction> {
+  ): Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,

@@ -192,9 +192,31 @@ describe("position_lifecycle", async () => {
     );
   });
 
-  it("three epoch pass, try withdrawing", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(3))).rpc();
-    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(3)));
+  it("two epoch pass, still locked", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
+    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(2)));
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      currentTime
+    );
+
+    expectFail(
+      await program.methods.withdrawStake(new BN(11)).accounts({
+        stakeAccountPositions: stakeAccountAddress,
+        destination: ownerAta,
+      }),
+      "Insufficient balance to cover the withdrawal",
+      errMap
+    );
+
+  });
+
+  it("one epoch pass, try withdrawing", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(1)));
 
     await assertBalanceMatches(
       stakeConnection,

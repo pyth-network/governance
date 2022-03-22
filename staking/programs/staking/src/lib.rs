@@ -136,6 +136,8 @@ pub mod staking {
         let current_position =
             &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
 
+        let original_amount = current_position.amount;
+
         let remaining_amount = current_position
             .amount
             .checked_sub(amount)
@@ -147,29 +149,50 @@ pub mod staking {
                 if remaining_amount == 0 {
                     current_position.unlocking_start = Some(current_epoch + 1);
                     stake_account_positions.positions[i] = Some(*current_position);
-                // Otherwise leave remaining amount in the current position and
-                // create another position with the rest. The newly created position
-                // will unlock after unlocking_duration epochs.
+                    // Otherwise leave remaining amount in the current position and
+                    // create another position with the rest. The newly created position
+                    // will unlock after unlocking_duration epochs.
+
+                    assert_eq!(
+                        original_amount,
+                        stake_account_positions.positions[i]
+                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                            .amount
+                    );
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
 
                     match PositionData::get_unused_index(stake_account_positions) {
                         Err(x) => return Err(x),
-                        Ok(i) => {
-                            stake_account_positions.positions[i] = Some(Position {
+                        Ok(j) => {
+                            stake_account_positions.positions[j] = Some(Position {
                                 amount: amount,
                                 product: current_position.product,
                                 publisher: current_position.publisher,
                                 activation_epoch: current_position.activation_epoch,
                                 unlocking_start: Some(current_epoch + 1),
                             });
+
+                            assert_ne!(i, j);
+                            assert_eq!(
+                                original_amount,
+                                stake_account_positions.positions[i]
+                                    .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                    .amount
+                                    .checked_add(
+                                        stake_account_positions.positions[j]
+                                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                            .amount
+                                    )
+                                    .ok_or(ErrorCode::Other)?
+                            );
                         }
                     }
                 }
             }
 
-            // For this case, we don't need to create new positions because the "closed" 
+            // For this case, we don't need to create new positions because the "closed"
             // tokens become "free"
             PositionState::LOCKING | PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
@@ -179,7 +202,6 @@ pub mod staking {
                     stake_account_positions.positions[i] = Some(*current_position);
                 }
             }
-            
             PositionState::UNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
             }
