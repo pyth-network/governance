@@ -33,6 +33,7 @@ import { Staking } from "../../staking/target/types/staking";
 
 type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
+type Position = IdlTypes<Staking>["Position"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 
@@ -201,11 +202,21 @@ export class StakeConnection {
   }
 
   //unlock a provided token balance
-  public async unlockTokens(
-    stakeAccount: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+  public async unlockTokens(stakeAccount: StakeAccount, amount: number) {
+    let positions = stakeAccount.stakeAccountPositionsJs
+      .positions as Position[];
+    let positionsWithIndex = positions
+      .map((value, index) => {
+        return { index, value };
+      })
+      // .filter((value: Position) => value) // position not null
+      // .filter((value: Position) => !value.unlockingStart) // position locking or locked / can we use a better notation for this or a wasm
+
+      // .sort((a : Position, b : Position) => { a.actiavtion}){
+
+      // }
+    console.log(positionsWithIndex);
+  }
 
   private async withCreateAccount(
     instructions: TransactionInstruction[],
@@ -245,7 +256,7 @@ export class StakeConnection {
   private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: number
-  ) : Promise<TransactionInstruction> {
+  ): Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,

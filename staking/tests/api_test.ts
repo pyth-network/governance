@@ -98,4 +98,12 @@ describe("api", async () => {
     assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 
+  it("alice unlock", async () =>{
+
+    const res = await stakeConnection.getStakeAccounts(alice.publicKey);
+    const stakeAccount = res[0];
+
+    await stakeConnection.unlockTokens(stakeAccount, 600);
+  })
+
 });
