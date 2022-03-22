@@ -54,13 +54,13 @@ export async function createMint(
 
 /**
  * Sends the rpc call and check whether the error message matches the provided string
- * @param rpc_call : anchor rpc call
+ * @param rpcCall : anchor rpc call
  * @param error : expected string
  * @param idlErrors : mapping from error code to error message
  */
-export async function expect_fail(rpc_call , error : string, idlErrors : Map<number,string>){
+export async function expectFail(rpcCall , error : string, idlErrors : Map<number,string>){
   try {
-    const tx = await rpc_call.rpc();
+    const tx = await rpcCall.rpc();
     assert(false, "Transaction should fail");
   } catch (err) {
     if (err instanceof ProgramError) {
