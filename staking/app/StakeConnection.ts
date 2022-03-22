@@ -3,7 +3,6 @@ import {
   Program,
   Wallet,
   utils,
-  Coder,
   Idl,
   IdlAccounts,
   IdlTypes,
@@ -16,7 +15,6 @@ import {
   TransactionInstruction,
   Signer,
   Transaction,
-  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import * as wasm from "../wasm/node/staking";
 import { sha256 } from "js-sha256";

@@ -1,12 +1,17 @@
-import { utils, parseIdlErrors } from "@project-serum/anchor";
+import { parseIdlErrors } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { readAnchorConfig, getPortNumber, standardSetup } from "./utils/before";
-import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
-import * as wasm from "../wasm/node/staking";
+import {
+  readAnchorConfig,
+  getPortNumber,
+  standardSetup,
+  ANCHOR_CONFIG_PATH,
+} from "./utils/before";
+import { assertBalanceMatches } from "./utils/api_utils";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
 import { StakeConnection } from "../app";
@@ -22,8 +27,9 @@ describe("position_lifecycle", async () => {
 
   let errMap: Map<number, string>;
 
-  const config = readAnchorConfig("./Anchor.toml");
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
+  let EPOCH_DURATION: BN;
   let stakeAccountAddress;
 
   let program;
@@ -33,6 +39,9 @@ describe("position_lifecycle", async () => {
   let ownerAta: PublicKey;
 
   let stakeConnection: StakeConnection;
+
+  // Time is recorded manually until we implement a new StakeConnection function to get the current time
+  // that @ptaffet is working on
   let currentTime = new BN(10);
 
   after(async () => {
@@ -57,19 +66,22 @@ describe("position_lifecycle", async () => {
     );
 
     errMap = parseIdlErrors(program.idl);
+    EPOCH_DURATION = stakeConnection.config.epochDuration;
   });
 
   it("deposits tokens and locks", async () => {
     await stakeConnection.depositAndLockTokens(undefined, 200);
+
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
-
     stakeAccountAddress = res[0].address;
 
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-    assert.equal(beforeBalSummary.locked.toNumber(), 200);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
+      currentTime
+    );
   });
 
   it("try to withdraw", async () => {
@@ -83,7 +95,7 @@ describe("position_lifecycle", async () => {
     );
   });
 
-  it("try closing a posiiton for more than the positions principal", async () => {
+  it("try closing a position for more than the position's principal", async () => {
     expectFail(
       await program.methods.closePosition(0, new BN(201)).accounts({
         stakeAccountPositions: stakeAccountAddress,
@@ -111,12 +123,12 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-    assert.equal(beforeBalSummary.locked.toNumber(), 0);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 200);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      currentTime
+    );
   });
 
   it("open a new position", async () => {
@@ -128,12 +140,12 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-    assert.equal(beforeBalSummary.locked.toNumber(), 200);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
+      currentTime
+    );
   });
 
   it("first close some", async () => {
@@ -146,16 +158,24 @@ describe("position_lifecycle", async () => {
 
     const res = await stakeConnection.getStakeAccounts(owner);
 
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-    assert.equal(beforeBalSummary.locked.toNumber(), 190);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 10);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      currentTime
+    );
   });
 
   it("one epoch passes, try closing", async () => {
-    await program.methods.advanceClock(new BN(3600)).rpc();
-    currentTime = currentTime = currentTime.add(new BN(3600));
+    await program.methods.advanceClock(EPOCH_DURATION).rpc();
+    currentTime = currentTime.add(EPOCH_DURATION);
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      currentTime
+    );
 
     await program.methods
       .closePosition(0, new BN(50))
@@ -164,18 +184,24 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-
-    assert.equal(beforeBalSummary.locked.toNumber(), 190);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 10);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      currentTime
+    );
   });
 
-  it("three epoch passes, try withdrawing", async () => {
-    await program.methods.advanceClock(new BN(3600 * 3)).rpc();
-    currentTime = currentTime.add(new BN(3600 * 3));
+  it("three epoch pass, try withdrawing", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(3))).rpc();
+    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(3)));
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
+      currentTime
+    );
 
     await program.methods
       .closePosition(1, new BN(50))
@@ -191,13 +217,12 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-
-    assert.equal(beforeBalSummary.locked.toNumber(), 140);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 60);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
+      currentTime
+    );
 
     expectFail(
       await program.methods.withdrawStake(new BN(61)).accounts({
@@ -209,9 +234,16 @@ describe("position_lifecycle", async () => {
     );
   });
 
-  it("three epoch passes, complete unlock", async () => {
-    await program.methods.advanceClock(new BN(3600 * 3)).rpc();
-    currentTime.add(new BN(3600 * 3));
+  it("three epoch pass, complete unlock", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(3))).rpc();
+    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(3)));
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      currentTime
+    );
 
     await program.methods
       .closePosition(0, new BN(140))
@@ -224,23 +256,28 @@ describe("position_lifecycle", async () => {
     assert.equal(res.length, 1);
     const beforeBalSummary = res[0].getBalanceSummary(currentTime);
 
-    assert.equal(beforeBalSummary.locked.toNumber(), 0);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 200);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      currentTime
+    );
   });
 
   it("withdraws everything", async () => {
-    await program.methods.withdrawStake(new BN(200)).accounts({
-      stakeAccountPositions: stakeAccountAddress,
-      destination: ownerAta,
-    });
+    await program.methods
+      .withdrawStake(new BN(200))
+      .accounts({
+        stakeAccountPositions: stakeAccountAddress,
+        destination: ownerAta,
+      })
+      .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-
-    assert.equal(beforeBalSummary.locked.toNumber(), 0);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 200);
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(0) },
+      currentTime
+    );
   });
 });
