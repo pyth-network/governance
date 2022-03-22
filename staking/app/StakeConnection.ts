@@ -308,7 +308,7 @@ export class StakeConnection {
     stakeAccountPositionsAddress: PublicKey,
     amount: number
   ): Promise<TransactionInstruction> {
-    const from_account = await Token.getAssociatedTokenAddress(
+    const fromAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
@@ -327,7 +327,7 @@ export class StakeConnection {
 
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
-      from_account,
+      fromAccount,
       toAccount,
       this.program.provider.wallet.publicKey,
       [],
@@ -409,9 +409,23 @@ export class StakeConnection {
   //withdraw tokens
   public async withdrawTokens(
     stakeAccount: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+    amount: BN,
+  ) {
+    const toAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    await this.program.methods
+    .withdrawStake(amount)
+    .accounts({
+      stakeAccountPositions: stakeAccount.address,
+      destination: toAccount,
+    })
+    .rpc();
+  }
 }
 export interface BalanceSummary {
   withdrawable: BN;
