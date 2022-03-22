@@ -15,6 +15,7 @@ import {
   SystemProgram,
   TransactionInstruction,
   Signer,
+  Transaction,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import * as wasm from "../wasm/node/staking";
@@ -225,6 +226,74 @@ export class StakeConnection {
 
     return stakeAccountKeypair;
   }
+
+  private async withDepositTokens(
+    instructions: TransactionInstruction[],
+    stakeAccountPositionsAddress: PublicKey,
+    amount: number
+  ) {
+    const from_account = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    const to_account = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode("custody"),
+          stakeAccountPositionsAddress.toBuffer(),
+        ],
+        this.program.programId
+      )
+    )[0];
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      from_account,
+      to_account,
+      this.program.provider.wallet.publicKey,
+      [],
+      amount
+    );
+
+    instructions.push(ix);
+  }
+
+  //deposit tokens
+  public async depositTokens(
+    stakeAccount: StakeAccount | undefined,
+    amount: number
+  ) {
+    let stakeAccountAddress: PublicKey;
+    const owner = this.program.provider.wallet.publicKey;
+
+    const ata = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      owner
+    );
+
+    const ixs: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+
+    if (!stakeAccount) {
+      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
+      signers.push(stakeAccountKeypair);
+      stakeAccountAddress = stakeAccountKeypair.publicKey;
+    } else {
+      stakeAccountAddress = stakeAccount.address;
+    }
+
+    await this.withDepositTokens(ixs, stakeAccountAddress, amount);
+
+    const tx = new Transaction();
+    tx.add(...ixs);
+    await this.program.provider.send(tx, []);
+  }
+
   //deposit tokens
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
@@ -251,26 +320,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    const toAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-          stakeAccountAddress.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    ixs.push(
-      Token.createTransferInstruction(
-        TOKEN_PROGRAM_ID,
-        ata,
-        toAccount,
-        owner,
-        [],
-        amount
-      )
-    );
+    await this.withDepositTokens(ixs, stakeAccountAddress, amount);
 
     await this.program.methods
       .createPosition(null, null, new BN(amount))

@@ -1,4 +1,3 @@
-import * as anchor from "@project-serum/anchor";
 import { exec } from "child_process";
 import { mkdtemp } from "fs/promises";
 import {
@@ -22,9 +21,9 @@ import BN from "bn.js";
 import toml from "toml";
 import path from "path";
 import os from "os";
+import { StakeConnection } from "../../app";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
-
 interface AnchorConfig {
   path: {
     idl_path: string;
@@ -49,7 +48,7 @@ export function readAnchorConfig(pathToAnchorToml: string) {
   const config: AnchorConfig = toml.parse(
     fs.readFileSync(pathToAnchorToml).toString()
   );
-  
+
   return config;
 }
 
@@ -58,10 +57,10 @@ export function readAnchorConfig(pathToAnchorToml: string) {
  * list of all testsfiles.
  * Two ports are needed (one for RPC and another one for websocket)
  */
-export function getPortNumber(filename : string){
+export function getPortNumber(filename: string) {
   const index = fs.readdirSync("./tests/").sort().indexOf(filename);
   const portNumber = 8899 + 2 * index;
-  return portNumber
+  return portNumber;
 }
 /**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
@@ -115,7 +114,7 @@ export async function startValidator(portNumber: number, config: any) {
   }
 
   const provider = new Provider(connection, new Wallet(user), {});
-  const program: Program = new Program(
+  const program = new Program(
     JSON.parse(fs.readFileSync(idlPath).toString()),
     programAddress,
     provider
@@ -125,7 +124,7 @@ export async function startValidator(portNumber: number, config: any) {
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
 
-  return { controller, program };
+  return { controller, program};
 }
 
 export function getConnection(portNumber : number){
@@ -189,7 +188,7 @@ export async function requestPythAirdrop(
  * Creates new spl-token at a random keypair
  */
 export async function createMint(
-  provider: anchor.Provider,
+  provider: Provider,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -245,4 +244,47 @@ export async function initConfig(program: Program, pythMintAccount: PublicKey) {
     .rpc({
       skipPreflight: true,
     });
+}
+
+export async function standardSetup(
+  portNumber: number,
+  config: AnchorConfig,
+  pythMintAccount: Keypair,
+  pythMintAuthority: Keypair,
+) {
+  const { controller, program } = await startValidator(portNumber, config);
+
+  await createMint(
+    program.provider,
+    pythMintAccount,
+    pythMintAuthority.publicKey,
+    null,
+    0,
+    TOKEN_PROGRAM_ID
+  );
+
+  const user = program.provider.wallet.publicKey;
+
+  await requestPythAirdrop(
+    user,
+    pythMintAccount.publicKey,
+    pythMintAuthority,
+    200,
+    program.provider.connection
+  );
+
+  await initConfig(program, pythMintAccount.publicKey);
+
+  const connection = new Connection(
+    `http://localhost:${portNumber}`,
+    Provider.defaultOptions().commitment
+  );
+
+  const stakeConnection = await StakeConnection.createStakeConnection(
+    connection,
+    program.provider.wallet,
+    config.programs.localnet.staking
+  );
+
+  return { controller, stakeConnection };
 }
