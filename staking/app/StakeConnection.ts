@@ -239,10 +239,10 @@ export class StakeConnection {
       this.program.provider.wallet.publicKey
     );
 
-    const to_account = (
+    const toAccount = (
       await PublicKey.findProgramAddress(
         [
-          utils.bytes.utf8.encode("custody"),
+          utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
           stakeAccountPositionsAddress.toBuffer(),
         ],
         this.program.programId
@@ -252,7 +252,7 @@ export class StakeConnection {
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
       from_account,
-      to_account,
+      toAccount,
       this.program.provider.wallet.publicKey,
       [],
       amount
@@ -261,7 +261,6 @@ export class StakeConnection {
     instructions.push(ix);
   }
 
-  //deposit tokens
   public async depositTokens(
     stakeAccount: StakeAccount | undefined,
     amount: number
@@ -293,8 +292,7 @@ export class StakeConnection {
     tx.add(...ixs);
     await this.program.provider.send(tx, []);
   }
-
-  //deposit tokens
+  
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
     amount: number
