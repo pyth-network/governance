@@ -23,6 +23,7 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 
+export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 
 interface AnchorConfig {
   path: {
@@ -66,7 +67,7 @@ export function getPortNumber(filename : string){
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
  *
- * ```const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());```
+ * ```const config = readAnchorConfig(ANCHOR_CONFIG_PATH)```
  *
  * returns a `{controller, program}` struct. Users of this method have to terminate the
  * validator by calling :
