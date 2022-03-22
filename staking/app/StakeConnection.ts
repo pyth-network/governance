@@ -197,53 +197,6 @@ export class StakeConnection {
   ): Promise<Keypair> {
     const stakeAccountKeypair = new Keypair();
 
-    const stakeAccountMetadata = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.STAKE_ACCOUNT_METADATA_SEED()),
-          stakeAccountKeypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const stakeAccountCustody = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-          stakeAccountKeypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const custodyAuthority = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
-          stakeAccountKeypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const voterRecord = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-          stakeAccountKeypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const config = (
-      await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
-        this.program.programId
-      )
-    )[0];
-
     instructions.push(
       SystemProgram.createAccount({
         fromPubkey: owner,
@@ -258,25 +211,16 @@ export class StakeConnection {
     );
 
     instructions.push(
-      this.program.instruction.createStakeAccount(
-        owner,
-        { fullyVested: {} },
-        {
-          accounts: {
-            payer: owner,
-            stakeAccountMetadata,
-            stakeAccountCustody,
-            stakeAccountPositions: stakeAccountKeypair.publicKey,
-            custodyAuthority,
-            mint: this.config.pythTokenMint,
-            voterRecord,
-            config,
-            rent: SYSVAR_RENT_PUBKEY,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      )
+      await this.program.methods
+        .createStakeAccount(this.program.provider.wallet.publicKey, {
+          fullyVested: {},
+        })
+        .accounts({
+          stakeAccountPositions: stakeAccountKeypair.publicKey,
+          mint: this.config.pythTokenMint,
+        })
+        .signers([stakeAccountKeypair])
+        .instruction()
     );
 
     return stakeAccountKeypair;
