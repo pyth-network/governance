@@ -3,7 +3,6 @@ import {
   Program,
   Wallet,
   utils,
-  Coder,
   Idl,
   IdlAccounts,
   IdlTypes,
