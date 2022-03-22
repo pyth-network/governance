@@ -7,7 +7,7 @@
 }
 
 .outlined-btn {
-  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white
+  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white;
 }
 
 .nav-link {
@@ -31,4 +31,8 @@
 .input-no-spin::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0px;
+}
+
+h1 {
+  @apply font-inter text-2xl font-bold text-fullWhite;
 }

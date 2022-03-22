@@ -12,9 +12,12 @@ module.exports = {
       xl: '1440px',
     },
     textColor: {
+      fullWhite: '#FFFFFF',
       white: 'rgba(255,255,255,.87)',
       pink: '#D7A5FF',
       scampi: '#696890',
+      green: '#78C46C',
+      melrose: '#BEAEE5',
     },
     colors: {
       pythPurple: '#6633CC',
@@ -25,6 +28,7 @@ module.exports = {
       valhalla: '#2E2E49',
       mediumSlateBlue: '#8246FA',
       hoverGray: 'rgba(255, 255, 255, 0.08)',
+      darkSlateBlue: '#42428E',
     },
     fontFamily: {
       arboria: 'arboria, sans-serif',

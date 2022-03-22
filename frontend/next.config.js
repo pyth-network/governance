@@ -13,4 +13,13 @@ module.exports = {
     config.experiments = { asyncWebAssembly: true, topLevelAwait: true }
     return config
   },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/governance',
+        permanent: true,
+      },
+    ]
+  },
 }
