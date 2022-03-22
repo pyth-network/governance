@@ -18,6 +18,8 @@ module.exports = {
       scampi: '#696890',
       green: '#78C46C',
       melrose: '#BEAEE5',
+      lavenderGray: '#BABAD2',
+      mediumSlateBlue: '#8246FA',
     },
     colors: {
       pythPurple: '#6633CC',

@@ -36,3 +36,7 @@
 h1 {
   @apply font-inter text-2xl font-bold text-fullWhite;
 }
+
+.default-transition {
+  @apply transition-all duration-300;
+}
