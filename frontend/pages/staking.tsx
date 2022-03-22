@@ -3,7 +3,7 @@ import {
   useConnection,
   useWallet,
 } from '@solana/wallet-adapter-react'
-import { Wallet, Provider } from '@project-serum/anchor'
+import { Wallet, Provider, BN } from '@project-serum/anchor'
 import type { NextPage } from 'next'
 import { ChangeEvent, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
@@ -12,7 +12,7 @@ import { STAKING_PROGRAM } from '@components/constants'
 import {
   StakeAccount,
   StakeConnection,
-} from '../../staking-ts/src/StakeConnection'
+} from '../../staking/app/StakeConnection'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import { airdropPythToken } from './api/airdropPythToken'
 import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
@@ -61,21 +61,9 @@ const Staking: NextPage = () => {
     }
   }, [connected])
 
-  // get stake accounts when stake connection is set
+  // update stake account and refresh balances when stake connection is set
   useEffect(() => {
-    if (stakeConnection && publicKey) {
-      stakeConnection
-        ?.getStakeAccounts(publicKey)
-        .then((sa) => {
-          if (sa.length > 0) {
-            setStakeAccount(sa[0])
-            setLockedPythBalance(sa[0].token_balance.toString())
-          }
-        })
-        .then(() => {
-          refreshBalance()
-        })
-    }
+    refreshBalance()
   }, [stakeConnection])
 
   // set ui balance amount whenever current tab changes
@@ -135,16 +123,24 @@ const Staking: NextPage = () => {
     await refreshBalance()
   }
 
-  // refresh balance each time balances change
+  // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
-      setLockedPythBalance(
-        await getLockedPythTokenBalance(stakeConnection, publicKey)
-      )
-      setUnlockedPythBalance(
-        await getUnlockedPythTokenBalance(stakeConnection, publicKey)
-      )
+      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
+      if (stakeAccounts.length > 0) {
+        setStakeAccount(stakeAccounts[0])
+        const { withdrawable, locked, unvested } =
+          stakeAccounts[0].getBalanceSummary(new BN(Date.now()))
+        console.log(
+          withdrawable.toNumber(),
+          locked.toNumber(),
+          unvested.toNumber()
+        )
+        setLockedPythBalance(locked.toNumber())
+        setUnlockedPythBalance(withdrawable.toNumber())
+        setUnvestedPythBalance(unvested.toNumber())
+      }
     }
   }
 

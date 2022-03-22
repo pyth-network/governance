@@ -22,16 +22,13 @@ jobs:
     - name: Yarn install everything else
       working-directory: ./staking
       run: yarn install
-    - name: Yarn install everything api
-      working-directory: ./staking-ts
-      run: yarn install
     - name: Install Solana 
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.9.1/install)"
         echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
     - name: Install Anchor
       working-directory: ./staking
-      run: npm i -g @project-serum/anchor-cli
+      run: npm i -g @project-serum/anchor-cli@0.22.0
     - name: Compile wasms
       working-directory: ./staking
       run: yarn build_wasm
@@ -39,6 +36,6 @@ jobs:
       working-directory: ./staking
       run: yarn start &
     - name : Test api
-      working-directory: ./staking-ts
-      run: yarn test
+      working-directory: ./staking
+      run: yarn test-api
 

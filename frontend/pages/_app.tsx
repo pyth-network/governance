@@ -20,6 +20,7 @@ import { clusterApiUrl } from '@solana/web3.js'
 import { Toaster } from 'react-hot-toast'
 import { FC, useMemo } from 'react'
 
+
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
@@ -51,7 +52,11 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   )
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
+    <ConnectionProvider
+      endpoint={
+        process.env.ENDPOINT || clusterApiUrl(WalletAdapterNetwork.Devnet)
+      }
+    >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <Component {...pageProps} />

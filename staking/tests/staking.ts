@@ -31,16 +31,6 @@ describe("staking", async () => {
   let bump: number;
   let errMap: Map<number, string>;
 
-
-
-  const CONFIG_SEED = "config";
-  const STAKE_ACCOUNT_METADATA_SEED = "stake_metadata";
-  const CUSTODY_SEED = "custody";
-  const AUTHORITY_SEED = "authority";
-  const VOTER_SEED = "voter_weight";
-
-
-
   const provider = anchor.Provider.local();
 
   const stake_account_positions_secret = new Keypair();
@@ -60,13 +50,13 @@ describe("staking", async () => {
     program = anchor.workspace.Staking as Program<Staking>;
 
     [config_account, bump] = await PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode(CONFIG_SEED)],
+      [anchor.utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
       program.programId
     );
     let voterBump = 0;
     [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -91,7 +81,7 @@ describe("staking", async () => {
         pythTokenMint: pyth_mint_account.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        mockClockTime: new BN(10)
+        mockClockTime: new BN(10),
       })
       .rpc({
         skipPreflight: DEBUG,
@@ -110,20 +100,18 @@ describe("staking", async () => {
         pythGovernanceRealm: zero_pubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        mockClockTime: new BN(10)
+        mockClockTime: new BN(10),
       })
     );
   });
-  it("advances clock", async() => {
+  it("advances clock", async () => {
     await program.methods
-    .advanceClock(new BN(5))
-    .accounts(
-      {   
+      .advanceClock(new BN(5))
+      .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
         mint: pyth_mint_account.publicKey,
-      }
-    )
-    .rpc({ skipPreflight: DEBUG });
+      })
+      .rpc({ skipPreflight: DEBUG });
   });
 
   it("creates vested staking account", async () => {
@@ -131,7 +119,9 @@ describe("staking", async () => {
 
     const [metadataAccount, metadataBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(STAKE_ACCOUNT_METADATA_SEED),
+        anchor.utils.bytes.utf8.encode(
+          wasm.Constants.STAKE_ACCOUNT_METADATA_SEED()
+        ),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -139,7 +129,7 @@ describe("staking", async () => {
 
     const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(CUSTODY_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -148,7 +138,7 @@ describe("staking", async () => {
     const [authorityAccount, authorityBump] =
       await PublicKey.findProgramAddress(
         [
-          anchor.utils.bytes.utf8.encode(AUTHORITY_SEED),
+          anchor.utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
           stake_account_positions_secret.publicKey.toBuffer(),
         ],
         program.programId
@@ -156,7 +146,7 @@ describe("staking", async () => {
 
     const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(VOTER_SEED),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
       ],
       program.programId
@@ -257,8 +247,9 @@ describe("staking", async () => {
       })
       .rpc({ skipPreflight: DEBUG });
 
-    
-    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
+    const voter_record = await program.account.voterWeightRecord.fetch(
+      voterAccount
+    );
     // Haven't locked anything, so no voter weight
     assert.equal(voter_record.voterWeight.toNumber(), 0);
   });
@@ -276,9 +267,13 @@ describe("staking", async () => {
   });
 
   it("parses positions", async () => {
-    const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
-    const outbuffer = Buffer.alloc(10*1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const inbuf = await program.provider.connection.getAccountInfo(
+      stake_account_positions_secret.publicKey
+    );
+
+    const pd = new wasm.WasmPositionData(inbuf.data);
+    const outbuffer = Buffer.alloc(pd.borshLength);
+    pd.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
     for (let index = 0; index < positions.positions.length; index++) {
       assert.equal(positions.positions[index], null);
@@ -309,13 +304,19 @@ describe("staking", async () => {
   });
 
   it("validates position", async () => {
-    const inbuf = await program.provider.connection.getAccountInfo(stake_account_positions_secret.publicKey);
-    const outbuffer = Buffer.alloc(10*1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const inbuf = await program.provider.connection.getAccountInfo(
+      stake_account_positions_secret.publicKey
+    );
+    let wPositions = new wasm.WasmPositionData(inbuf.data);
+    const outbuffer = Buffer.alloc(wPositions.borshLength);
+    wPositions.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
 
     // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
-    assert.equal(positions.positions[0].amount.toNumber(), new BN(1).toNumber());
+    assert.equal(
+      positions.positions[0].amount.toNumber(),
+      new BN(1).toNumber()
+    );
     assert.equal(positions.positions[0].product, null);
     assert.equal(positions.positions[0].publisher, null);
     assert.equal(positions.positions[0].unlockingStart, null);
@@ -326,7 +327,7 @@ describe("staking", async () => {
 
   it("updates voter weight again", async () => {
     await program.methods
-      .advanceClock(new BN(5*3600))
+      .advanceClock(new BN(5 * 3600))
       .accounts()
       .rpc({ skipPreflight: DEBUG });
 
@@ -337,9 +338,10 @@ describe("staking", async () => {
       })
       .rpc({ skipPreflight: DEBUG });
 
-    
-    const voter_record = await program.account.voterWeightRecord.fetch(voterAccount);
-    // Locked in 1 token, so voter weight is 1  
+    const voter_record = await program.account.voterWeightRecord.fetch(
+      voterAccount
+    );
+    // Locked in 1 token, so voter weight is 1
     assert.equal(voter_record.voterWeight.toNumber(), 1);
   });
 
@@ -365,9 +367,9 @@ describe("staking", async () => {
 
     // We are starting with 1 position and want to create 99 more
     let budgetRemaining = 200_000;
-    let ixCost = 19100;
+    let ixCost = 19200;
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 510; // adding more positions increases the cost
+    let deltaCost = 520; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 99; numPositions++) {

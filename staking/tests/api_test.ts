@@ -7,7 +7,7 @@ import {
 } from "@solana/web3.js";
 import { Wallet, Provider } from "@project-serum/anchor";
 import assert from 'assert';
-import { StakeConnection } from "../src";
+import { StakeConnection } from "../app";
 
 // let's try to get rid of this magic constant
 const staking_program = new PublicKey(
@@ -16,14 +16,14 @@ const staking_program = new PublicKey(
 
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
-import { Staking } from "../../staking/target/types/staking";
-import { positions_account_size } from "../../staking/tests/utils/constant";
+import { Staking } from "../target/types/staking";
+import { positions_account_size } from "./utils/constant";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { createMint } from "../../staking/tests/utils/utils";
+import { createMint } from "./utils/utils";
 import BN from "bn.js";
 
 describe("api", async () => {
@@ -47,7 +47,7 @@ describe("api", async () => {
     "http://localhost:8899",
     Provider.defaultOptions().commitment
   );
-  let stake_connection;
+  let stake_connection : StakeConnection;
   const setupProvider = new Provider(connection, new Wallet(alice), {});
   // const provider = stake_connection.program.provider;
 
@@ -138,18 +138,25 @@ describe("api", async () => {
 
     
     assert.equal(res.length, 1);
-    assert.equal(res[0].stake_account_positions.owner.toBase58(), alice.publicKey.toBase58());
+    assert.equal(res[0].stakeAccountPositionsJs.owner.toBase58(), alice.publicKey.toBase58());
     assert.equal(res[0].stake_account_metadata.owner.toBase58(), alice.publicKey.toBase58());
-    assert.equal(res[0].stake_account_positions.positions[0].amount.toNumber(), 600);
+    assert.equal(res[0].stakeAccountPositionsJs.positions[0].amount.toNumber(), 600);
     assert.equal(res[0].token_balance.toNumber(), 600)
+    const beforeBalSummary = res[0].getBalanceSummary(new BN(1));
+    assert.equal(beforeBalSummary.locked.toNumber(), 600);
+    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
+    assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
 
     await stake_connection.depositAndLockTokens(res[0], 100);
 
     const after = await stake_connection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);
-    assert.equal(after[0].stake_account_positions.positions[1].amount.toNumber(), 100);
+    assert.equal(after[0].stakeAccountPositionsJs.positions[1].amount.toNumber(), 100);
     assert.equal(after[0].token_balance.toNumber(), 700)
-    
+    const afterBalSummary = after[0].getBalanceSummary(new BN(1));
+    assert.equal(afterBalSummary.locked.toNumber(), 700);
+    assert.equal(afterBalSummary.unvested.toNumber(), 0);
+    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 
 });

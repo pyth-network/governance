@@ -1,4 +1,13 @@
-import { Provider, Program, Wallet, utils } from "@project-serum/anchor";
+import {
+  Provider,
+  Program,
+  Wallet,
+  utils,
+  Coder,
+  Idl,
+  IdlAccounts,
+  IdlTypes,
+} from "@project-serum/anchor";
 import {
   PublicKey,
   Connection,
@@ -9,7 +18,6 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 
-
 // To prevent a potential race condition, prior to using the variable wasm,
 // you need to run:
 //        if (wasm == undefined)
@@ -18,8 +26,9 @@ import {
 
 // This seems to work for now, but I am not sure how fragile it is.
 const useNode =
-  typeof process !== undefined && process.env.hasOwnProperty("_")
-  && (!process.env._.includes("next"));
+  typeof process !== undefined &&
+  process.env.hasOwnProperty("_") &&
+  !process.env._.includes("next");
 // console.log("Using node WASM version? " + useNode);
 let wasm;
 let ensureWasmLoaded: Promise<void>;
@@ -40,17 +49,24 @@ if (useNode) {
 
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
-import { positions_account_size } from "../../staking/tests/utils/constant";
 import {
   Token,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  u64,
 } from "@solana/spl-token";
 import BN from "bn.js";
+import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
+import { Staking } from "../../staking/target/types/staking";
+
+type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
+type PositionData = IdlAccounts<Staking>["positionData"];
+type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
+type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 
 export class StakeConnection {
-  program: Program;
-  config;
+  program: Program<Staking>;
+  config: GlobalConfig;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -62,7 +78,11 @@ export class StakeConnection {
     const stake_connection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
     const idl = await Program.fetchIdl(address, provider);
-    stake_connection.program = new Program(idl, address, provider);
+    stake_connection.program = new Program(
+      idl,
+      address,
+      provider
+    ) as Program<Staking>;
 
     const config_address = (
       await PublicKey.findProgramAddress(
@@ -115,28 +135,30 @@ export class StakeConnection {
   // }
 
   async fetchPositionAccount(address: PublicKey) {
-    if (wasm == undefined)
-      await ensureWasmLoaded;
+    if (wasm == undefined) await ensureWasmLoaded;
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
-    const outbuffer = Buffer.alloc(10 * 1024);
-    wasm.convert_positions_account(inbuf.data, outbuffer);
+    const pd = new wasm.WasmPositionData(inbuf.data);
+    const outBuffer = Buffer.alloc(pd.borshLength);
+    pd.asBorsh(outBuffer);
     const positions = this.program.coder.accounts.decode(
       "PositionData",
-      outbuffer
+      outBuffer
     );
-    return positions;
+    return [pd, positions];
   }
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
     const stake_account = new StakeAccount();
+    stake_account.config = this.config;
 
     stake_account.address = address;
-    stake_account.stake_account_positions = await this.fetchPositionAccount(
-      address
-    );
+    [
+      stake_account.stakeAccountPositionsWasm,
+      stake_account.stakeAccountPositionsJs,
+    ] = await this.fetchPositionAccount(address);
 
     const metadata_address = (
       await PublicKey.findProgramAddress(
@@ -146,7 +168,13 @@ export class StakeConnection {
     )[0];
 
     stake_account.stake_account_metadata =
-      await this.program.account.stakeAccountMetadata.fetch(metadata_address);
+      (await this.program.account.stakeAccountMetadata.fetch(
+        metadata_address
+      )) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
+    stake_account.vestingSchedule = StakeAccount.serializeVesting(
+      stake_account.stake_account_metadata.lock,
+      this.program.idl
+    );
 
     const custody_address = (
       await PublicKey.findProgramAddress(
@@ -240,9 +268,9 @@ export class StakeConnection {
         newAccountPubkey: stake_account_keypair.publicKey,
         lamports:
           await this.program.provider.connection.getMinimumBalanceForRentExemption(
-            positions_account_size
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
-        space: positions_account_size,
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
         programId: this.program.programId,
       })
     );
@@ -332,13 +360,22 @@ export class StakeConnection {
     program: Program
   ) {}
 }
+export interface BalanceSummary {
+  withdrawable: BN;
+  // We may break this down into active, warmup, and cooldown in the future
+  locked: BN;
+  unvested: BN;
+}
 
 export class StakeAccount {
   address: PublicKey;
-  stake_account_positions;
-  stake_account_metadata;
-  token_balance;
-  authority_address;
+  stakeAccountPositionsWasm: wasm.WasmPositionData;
+  stakeAccountPositionsJs: PositionData;
+  stake_account_metadata: StakeAccountMetadata;
+  token_balance: u64;
+  authority_address: PublicKey;
+  vestingSchedule: Buffer; // Borsh serialized
+  config: GlobalConfig;
 
   // Withdrawable
 
@@ -349,8 +386,39 @@ export class StakeAccount {
 
   // Unvested
 
-  public getBalanceSummary() {}
+  public getBalanceSummary(unixTime: BN): BalanceSummary {
+    let unvestedBalance = wasm.getUnvestedBalance(
+      this.vestingSchedule,
+      BigInt(unixTime.toString())
+    );
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+
+    const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
+      BigInt(this.token_balance.toString()),
+      unvestedBalance,
+      BigInt(currentEpoch.toString()),
+      unlockingDuration
+    );
+    const withdrawableBN = new BN(withdrawable.toString());
+    const unvestedBN = new BN(unvestedBalance.toString());
+    return {
+      withdrawable: withdrawableBN,
+      locked: this.token_balance.sub(withdrawableBN).sub(unvestedBN),
+      unvested: unvestedBN,
+    };
+  }
 
   // What is the best way to represent current vesting schedule in the UI
   public getVestingSchedule() {}
+
+  static serializeVesting(lock: VestingSchedule, idl: Idl): Buffer {
+    const VESTING_SCHED_MAX_BORSH_LEN = 4 * 8 + 1;
+    let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
+
+    let idltype = idl.types.find((v) => v.name === "VestingSchedule");
+    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(idltype, idl.types);
+    const length = vestingSchedLayout.encode(lock, buffer, 0);
+    return buffer.slice(0, length);
+  }
 }
