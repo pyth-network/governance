@@ -147,15 +147,16 @@ pub mod staking {
                     stake_account_positions.positions[i] = None;
                 } else {
                     current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
                 }
             }
             PositionState::LOCKED => {
-                // This hasn't been tested
                 if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
                     current_position.unlocking_start = Some(current_epoch + 1);
+                    stake_account_positions.positions[i] = Some(*current_position);
                 } else {
                     current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
 
                     match PositionData::get_unused_index(stake_account_positions) {
                         Err(x) => return Err(x),
