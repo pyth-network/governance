@@ -3,6 +3,9 @@ import { PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
 
+/**
+ * Asserts that `owner` has 1 single stake account and its balance summary is equal to an `expected` value
+ */
 export async function assertBalanceMatches(
   stakeConnection: StakeConnection,
   owner: PublicKey,

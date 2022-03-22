@@ -142,18 +142,14 @@ pub mod staking {
             .ok_or(error!(ErrorCode::AmountBiggerThanPosition))?;
 
         match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
-            PositionState::LOCKING | PositionState::UNLOCKED => {
-                if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
-                } else {
-                    current_position.amount = remaining_amount;
-                    stake_account_positions.positions[i] = Some(*current_position);
-                }
-            }
             PositionState::LOCKED => {
+                // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
                     current_position.unlocking_start = Some(current_epoch + 1);
                     stake_account_positions.positions[i] = Some(*current_position);
+                // Otherwise leave remaining amount in the current position and
+                // create another position with the rest. The newly created position
+                // will unlock after unlocking_duration epochs.
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -172,6 +168,18 @@ pub mod staking {
                     }
                 }
             }
+
+            // For this case, we don't need to create new positions because the "closed" 
+            // tokens become "free"
+            PositionState::LOCKING | PositionState::UNLOCKED => {
+                if remaining_amount == 0 {
+                    stake_account_positions.positions[i] = None;
+                } else {
+                    current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
+                }
+            }
+            
             PositionState::UNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
             }
