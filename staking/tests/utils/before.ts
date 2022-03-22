@@ -72,10 +72,7 @@ export function getPortNumber(filename : string){
  * ```controller.abort()```
  */
 export async function startValidator(portNumber: number, config: any) {
-  const connection: Connection = new Connection(
-    `http://localhost:${portNumber}`,
-    Provider.defaultOptions().commitment
-  );
+  const connection: Connection = getConnection(portNumber);
 
   const controller: AbortController = new AbortController();
   const { signal } = controller;
@@ -127,6 +124,14 @@ export async function startValidator(portNumber: number, config: any) {
   );
 
   return { controller, program };
+}
+
+export function getConnection(portNumber : number){
+  return new Connection(
+    `http://localhost:${portNumber}`,
+    Provider.defaultOptions().commitment
+  );
+
 }
 
 /**

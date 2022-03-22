@@ -12,6 +12,7 @@ import {
 import {  } from "../../staking/tests/utils/before";
 import BN from "bn.js";
 import path from 'path'
+import { getConnection } from "./utils/before";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -59,7 +60,7 @@ describe("api", async () => {
 
   it("creates StakeConnection", async () => {
 
-    const connection = new Connection(`http://localhost:${portNumber}`, Provider.defaultOptions().commitment);
+    const connection = getConnection(portNumber);
 
     stakeConnection = await StakeConnection.createStakeConnection(
       connection,
