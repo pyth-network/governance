@@ -246,6 +246,14 @@ export async function initConfig(program: Program, pythMintAccount: PublicKey) {
     });
 }
 
+/**
+ * Standard setup for test, this function :
+ * - Launches at validator at `portNumber`
+ * - Creates a Pyth token in the localnet environment
+ * - Airdrops Pyth token to the currently connected wallet
+ * - Initializes the global config of the Pyth staking program to some default values
+ * - Creates a connection de the localnet Pyth staking program
+ * */
 export async function standardSetup(
   portNumber: number,
   config: AnchorConfig,
