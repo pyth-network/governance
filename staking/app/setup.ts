@@ -15,7 +15,7 @@ import {
 } from "@solana/web3.js";
 import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
-import fs from "fs"
+import fs from "fs";
 
 describe("setup", async () => {
   let program: Program<Staking>;
@@ -46,16 +46,26 @@ describe("setup", async () => {
   const provider = anchor.Provider.local();
 
   before(async () => {
-    
     // Drop keypairs in format compatible with Phantom Wallet
-    fs.writeFileSync(`./app/keypairs/alice.json`, `[${alice.secretKey.toString()}]`);
-    fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
-    fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pythMintAccount.publicKey.toBase58()));
+    fs.writeFileSync(
+      `./app/keypairs/alice.json`,
+      `[${alice.secretKey.toString()}]`
+    );
+    fs.writeFileSync(
+      `./app/keypairs/bob.json`,
+      `[${bob.secretKey.toString()}]`
+    );
+    fs.writeFileSync(
+      `./app/keypairs/pyth_mint.json`,
+      JSON.stringify(pythMintAccount.publicKey.toBase58())
+    );
 
     program = anchor.workspace.Staking as Program<Staking>;
 
-    await provider.connection.requestAirdrop(provider.wallet.publicKey, 1_000_000_000_000);
-
+    await provider.connection.requestAirdrop(
+      provider.wallet.publicKey,
+      1_000_000_000_000
+    );
   });
 
   it("initializes config", async () => {
@@ -126,16 +136,10 @@ describe("setup", async () => {
       const tx = await program.methods
         .createStakeAccount(user.owner, { fullyVested: {} })
         .preInstructions([
-          SystemProgram.createAccount({
-            fromPubkey: provider.wallet.publicKey,
-            newAccountPubkey: user.stakeAccount.publicKey,
-            lamports:
-              await provider.connection.getMinimumBalanceForRentExemption(
-                wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-              ),
-            space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-            programId: program.programId,
-          }),
+          await program.account.positionData.createInstruction(
+            user.stakeAccount,
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+          ),
         ])
         .accounts({
           stakeAccountPositions: user.stakeAccount.publicKey,
