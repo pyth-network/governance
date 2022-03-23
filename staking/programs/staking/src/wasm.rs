@@ -1,5 +1,5 @@
 use crate::state::positions::{PositionData};
-use anchor_lang::{prelude::{Error, Clock}, AccountDeserialize, Discriminator, AnchorDeserialize};
+use anchor_lang::{prelude::{Error, Clock, error}, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
 use std::io::Write;
 use crate::{VestingSchedule, PositionState};

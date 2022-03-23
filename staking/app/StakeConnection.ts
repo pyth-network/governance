@@ -196,11 +196,15 @@ export class StakeConnection {
   public async getTime() : Promise<BN> {
     if ('mockClockTime' in this.config) {
       // On chain program using mock clock, so get that time
-      const updatedConfig = await this.program.account.globalConfig.fetch(this.configAddress);
+      const updatedConfig = await this.program.account.globalConfig.fetch(
+        this.configAddress
+      );
       return updatedConfig.mockClockTime;
     } else {
       // Using Sysvar clock
-      const clockBuf = await this.program.provider.connection.getAccountInfo(SYSVAR_CLOCK_PUBKEY);
+      const clockBuf = await this.program.provider.connection.getAccountInfo(
+        SYSVAR_CLOCK_PUBKEY
+      );
       return new BN(wasm.getUnixTime(clockBuf.data).toString());
     }
   }
@@ -209,12 +213,24 @@ export class StakeConnection {
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
+
+    const time = await this.getTime();
+    const currentEpoch = time.div(this.config.epochDuration);
+
     const sortPositions = positions
       .map((value, index) => {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
-      .filter((el) => !el.value.unlockingStart) // position locking or locked / can we use a better notation for this or a wasm
+      .filter((el) =>
+        ["LOCKING", "LOCKED"].includes(
+          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+            el.index,
+            BigInt(currentEpoch.toString()),
+            this.config.unlockingDuration
+          )
+        )
+      ) // position locking or locked 
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
@@ -224,11 +240,17 @@ export class StakeConnection {
     const toClose: closingItem[] = [];
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
-      if (sortPositions[i].value.amount >= amountBeforeFinishing) {
-        toClose.push({ index: sortPositions[i].index, amount: amountBeforeFinishing });
+      if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
+        toClose.push({
+          index: sortPositions[i].index,
+          amount: amountBeforeFinishing,
+        });
         amountBeforeFinishing = new BN(0);
       } else {
-        toClose.push({ index: sortPositions[i].index, amount: sortPositions[i].value.amount });
+        toClose.push({
+          index: sortPositions[i].index,
+          amount: sortPositions[i].value.amount,
+        });
         amountBeforeFinishing = amountBeforeFinishing.sub(
           sortPositions[i].value.amount
         );
