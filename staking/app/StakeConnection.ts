@@ -194,8 +194,8 @@ export class StakeConnection {
   }
 
   // Gets the current unix time, as would be perceived by the on-chain program
-  public async getTime() : Promise<BN> {
-    if ('mockClockTime' in this.config) {
+  public async getTime(): Promise<BN> {
+    if ("mockClockTime" in this.config) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(
         this.configAddress
@@ -244,7 +244,7 @@ export class StakeConnection {
             this.config.unlockingDuration
           )
         )
-      ) 
+      )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
@@ -433,11 +433,22 @@ export class StakeConnection {
   }
 
   //withdraw tokens
-  public async withdrawTokens(
-    stakeAccount: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+  public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
+    const toAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    await this.program.methods
+      .withdrawStake(amount)
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        destination: toAccount,
+      })
+      .rpc();
+  }
 }
 export interface BalanceSummary {
   withdrawable: BN;
