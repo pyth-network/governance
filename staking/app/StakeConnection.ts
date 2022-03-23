@@ -15,6 +15,7 @@ import {
   TransactionInstruction,
   Signer,
   Transaction,
+  SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
 import * as wasm from "../wasm/node/staking";
 import { sha256 } from "js-sha256";
@@ -37,6 +38,7 @@ type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
+  private configAddress: PublicKey;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -60,6 +62,7 @@ export class StakeConnection {
         stakeConnection.program.programId
       )
     )[0];
+    stakeConnection.configAddress = configAddress;
 
     stakeConnection.config =
       await stakeConnection.program.account.globalConfig.fetch(configAddress);
@@ -181,6 +184,19 @@ export class StakeConnection {
       await mint.getAccountInfo(custodyAddress)
     ).amount;
     return stakeAccount;
+  }
+
+  // Gets the current unix time, as would be perceived by the on-chain program
+  public async getTime() : Promise<BN> {
+    if ('mockClockTime' in this.config) {
+      // On chain program using mock clock, so get that time
+      const updatedConfig = await this.program.account.globalConfig.fetch(this.configAddress);
+      return updatedConfig.mockClockTime;
+    } else {
+      // Using Sysvar clock
+      const clockBuf = await this.program.provider.connection.getAccountInfo(SYSVAR_CLOCK_PUBKEY);
+      return new BN(wasm.getUnixTime(clockBuf.data).toString());
+    }
   }
 
   //unlock a provided token balance

@@ -25,7 +25,7 @@ describe("api", async () => {
 
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH)
 
-  let stakeConnection;
+  let stakeConnection : StakeConnection;
 
   let setupProgram;
   let controller;
@@ -81,7 +81,7 @@ describe("api", async () => {
     assert.equal(res[0].stakeAccountMetadata.owner.toBase58(), alice.publicKey.toBase58());
     assert.equal(res[0].stakeAccountPositionsJs.positions[0].amount.toNumber(), 600);
     assert.equal(res[0].tokenBalance.toNumber(), 600)
-    const beforeBalSummary = res[0].getBalanceSummary(new BN(1));
+    const beforeBalSummary = res[0].getBalanceSummary(await stakeConnection.getTime());
     assert.equal(beforeBalSummary.locked.toNumber(), 600);
     assert.equal(beforeBalSummary.unvested.toNumber(), 0);
     assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
@@ -92,7 +92,7 @@ describe("api", async () => {
     assert.equal(after.length, 1);
     assert.equal(after[0].stakeAccountPositionsJs.positions[1].amount.toNumber(), 100);
     assert.equal(after[0].tokenBalance.toNumber(), 700)
-    const afterBalSummary = after[0].getBalanceSummary(new BN(1));
+    const afterBalSummary = after[0].getBalanceSummary(await stakeConnection.getTime());
     assert.equal(afterBalSummary.locked.toNumber(), 700);
     assert.equal(afterBalSummary.unvested.toNumber(), 0);
     assert.equal(afterBalSummary.withdrawable.toNumber(), 0);

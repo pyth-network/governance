@@ -1,10 +1,11 @@
 use crate::state::positions::{PositionData};
-use anchor_lang::{prelude::Error, AccountDeserialize, Discriminator, AnchorDeserialize};
+use anchor_lang::{prelude::{Error, Clock}, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
 use std::io::Write;
 use crate::VestingSchedule;
 use anchor_lang::solana_program::borsh::get_packed_len;
 use borsh::BorshSerialize;
+
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
@@ -80,6 +81,18 @@ fn get_unvested_balance_impl(vesting_sched_borsh: &[u8], current_time: i64) -> a
     let mut ptr = vesting_sched_borsh;
     let vs = VestingSchedule::deserialize(&mut ptr)?;
     vs.get_unvested_balance(current_time)
+}
+
+
+#[wasm_bindgen(js_name=getUnixTime)]
+/// Deserializes the contents of the SYSVAR_CLOCK account (onChainSerialized), returning the 
+/// Unix time field
+pub fn get_unix_time(onChainSerialized: &[u8]) -> Result<i64, JsValue> {
+    convert_error(get_unix_time_impl(onChainSerialized))
+}
+fn get_unix_time_impl(on_chain_serialized: &[u8]) -> anchor_lang::Result<i64> {
+    let clock : Clock = bincode::deserialize(on_chain_serialized).map_err(|_| anchor_lang::error::ErrorCode::AccountDidNotDeserialize)?;
+    Ok(clock.unix_timestamp)
 }
 
 /// Most of the Rust code returns anchor_lang::Result<T>, which is core::result::Result<T, anchor_lang::error::Error>
