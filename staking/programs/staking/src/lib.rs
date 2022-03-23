@@ -1,5 +1,6 @@
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::log;
 use anchor_spl::token::transfer;
 use context::*;
 use state::{
@@ -8,14 +9,13 @@ use state::{
     vesting::VestingSchedule,
 };
 use utils::clock::get_current_epoch;
-use anchor_lang::solana_program::log;
 
 mod constants;
 mod context;
 mod error;
 mod state;
 mod utils;
-#[cfg(feature="wasm")]
+#[cfg(feature = "wasm")]
 pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -33,7 +33,9 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         #[cfg(feature = "mock-clock")]
-        { config_account.mock_clock_time = global_config.mock_clock_time; }
+        {
+            config_account.mock_clock_time = global_config.mock_clock_time;
+        }
 
         if global_config.epoch_duration == 0 {
             return Err(error!(ErrorCode::ZeroEpochDuration));
@@ -125,23 +127,80 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>, index: u8) -> Result<()> {
+    pub fn close_position(ctx: Context<ClosePosition>, index: u8, amount: u64) -> Result<()> {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
-        match stake_account_positions.positions[i]
-            .ok_or(error!(ErrorCode::PositionNotInUse))?
-            .get_current_position(current_epoch, config.unlocking_duration)?
-        {
-            PositionState::LOCKING | PositionState::UNLOCKED => {
-                stake_account_positions.positions[i] = None;
-            }
+        let current_position =
+            &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
+
+        let original_amount = current_position.amount;
+
+        let remaining_amount = current_position
+            .amount
+            .checked_sub(amount)
+            .ok_or(error!(ErrorCode::AmountBiggerThanPosition))?;
+
+        match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
             PositionState::LOCKED => {
-                // This hasn't been tested
-                let current_position = &mut stake_account_positions.positions[i].unwrap();
-                current_position.unlocking_start = Some(current_epoch + 1);
+                // If remaining amount is 0 keep only 1 position
+                if remaining_amount == 0 {
+                    current_position.unlocking_start = Some(current_epoch + 1);
+                    stake_account_positions.positions[i] = Some(*current_position);
+                    // Otherwise leave remaining amount in the current position and
+                    // create another position with the rest. The newly created position
+                    // will unlock after unlocking_duration epochs.
+
+                    assert_eq!(
+                        original_amount,
+                        stake_account_positions.positions[i]
+                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                            .amount
+                    );
+                } else {
+                    current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
+
+                    match PositionData::get_unused_index(stake_account_positions) {
+                        Err(x) => return Err(x),
+                        Ok(j) => {
+                            stake_account_positions.positions[j] = Some(Position {
+                                amount: amount,
+                                product: current_position.product,
+                                publisher: current_position.publisher,
+                                activation_epoch: current_position.activation_epoch,
+                                unlocking_start: Some(current_epoch + 1),
+                            });
+
+                            assert_ne!(i, j);
+                            assert_eq!(
+                                original_amount,
+                                stake_account_positions.positions[i]
+                                    .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                    .amount
+                                    .checked_add(
+                                        stake_account_positions.positions[j]
+                                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                            .amount
+                                    )
+                                    .ok_or(ErrorCode::Other)?
+                            );
+                        }
+                    }
+                }
+            }
+
+            // For this case, we don't need to create new positions because the "closed"
+            // tokens become "free"
+            PositionState::LOCKING | PositionState::UNLOCKED => {
+                if remaining_amount == 0 {
+                    stake_account_positions.positions[i] = None;
+                } else {
+                    current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
+                }
             }
             PositionState::UNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
@@ -248,8 +307,7 @@ pub mod staking {
                             voter_weight = voter_weight.checked_add(position.amount).unwrap();
                         }
                     }
-                    _ => {
-                    }
+                    _ => {}
                 }
             }
         }
@@ -257,28 +315,23 @@ pub mod staking {
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
-    pub fn split_position(ctx: Context<SplitPosition>) -> Result<()> {
-        Ok(())
-    }
 
     pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
         Ok(())
     }
-
 
     // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
     // so we have to keep it, but make it a no-op.
     pub fn advance_clock(ctx: Context<AdvanceClock>, seconds: i64) -> Result<()> {
         #[cfg(feature = "mock-clock")]
         {
-        let config = &mut ctx.accounts.config;
-        config.mock_clock_time = config.mock_clock_time.checked_add(seconds).unwrap();
-        Ok(())
+            let config = &mut ctx.accounts.config;
+            config.mock_clock_time = config.mock_clock_time.checked_add(seconds).unwrap();
+            Ok(())
         }
         #[cfg(not(feature = "mock-clock"))]
         {
             return Err(error!(ErrorCode::DebuggingOnly));
         }
     }
-
 }
