@@ -22,3 +22,13 @@ export async function assertBalanceMatches(
     expected.withdrawable.toNumber()
   );
 }
+
+export async function loadAndUnlock(
+  stakeConnection: StakeConnection,
+  owner: PublicKey,
+  amount: BN
+) {
+  const res = await stakeConnection.getStakeAccounts(owner);
+  assert.equal(res.length, 1);
+  await stakeConnection.unlockTokens(res[0], amount);
+}
