@@ -96,17 +96,23 @@ pub mod staking {
         if product.is_none() != publisher.is_none() {
             return Err(error!(ErrorCode::InvalidPosition));
         }
+        let new_position = Position {
+            amount: amount,
+            product: product,
+            publisher: publisher,
+            activation_epoch: current_epoch + 1,
+            unlocking_start: None,
+        };
+        // For now, restrict positions to voting position
+        // This could be combined with the previous check, but the following check is temporary
+        if !new_position.is_voting() {
+            return Err(error!(ErrorCode::NotImplemented));
+        }
 
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = Some(Position {
-                    amount: amount,
-                    product: product,
-                    publisher: publisher,
-                    activation_epoch: current_epoch + 1,
-                    unlocking_start: None,
-                });
+                stake_account_positions.positions[i] = Some(new_position);
             }
         }
 

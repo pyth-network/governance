@@ -282,7 +282,7 @@ describe("staking", async () => {
   it("creates a position that's too big", async () => {
     expectFail(
       program.methods
-        .createPosition(zero_pubkey, zero_pubkey, new BN(102))
+        .createPosition(null, null, new BN(102))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         }),
@@ -347,7 +347,7 @@ describe("staking", async () => {
   it("creates position with 0 principal", async () => {
     expectFail(
       program.methods
-        .createPosition(zero_pubkey, zero_pubkey, new BN(0))
+        .createPosition(null, null, new BN(0))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         }),
@@ -356,9 +356,21 @@ describe("staking", async () => {
     );
   });
 
+  it("creates a non-voting position", async () => {
+    expectFail(
+      program.methods
+        .createPosition(zero_pubkey, zero_pubkey, new BN(10))
+        .accounts({
+          stakeAccountPositions: stake_account_positions_secret.publicKey,
+        }),
+      "Not implemented",
+      errMap
+    );
+  });
+
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+      .createPosition(null, null, new BN(1))
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
@@ -394,7 +406,7 @@ describe("staking", async () => {
     // Now create 101, which is supposed to fail
     expectFail(
       program.methods
-        .createPosition(zero_pubkey, zero_pubkey, new BN(1))
+        .createPosition(null, null, new BN(1))
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         }),
