@@ -8,20 +8,26 @@
   "dependencies": {
     "@headlessui/react": "^1.5.0",
     "@heroicons/react": "^1.0.6",
+    "@nfteyez/sol-rayz": "^0.8.0",
     "@project-serum/anchor": "^0.22.1",
+    "@solana/spl-governance": "^0.0.34",
     "@solana/spl-token": "^0.1.8",
+    "@solana/spl-token-registry": "^0.2.1733",
     "@solana/wallet-adapter-base": "^0.9.5",
     "@solana/wallet-adapter-react": "^0.15.4",
     "@solana/wallet-adapter-react-ui": "^0.9.6",
     "@solana/wallet-adapter-wallets": "^0.15.5",
     "@solana/web3.js": "^1.36.0",
     "@tippyjs/react": "^4.2.6",
+    "dayjs": "^1.10.7",
     "dotenv": "^16.0.0",
+    "immer": "^9.0.1",
     "next": "latest",
     "prop-types": "^15.8.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-hot-toast": "^2.2.0"
+    "react-hot-toast": "^2.2.0",
+    "zustand": "^3.4.1"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",

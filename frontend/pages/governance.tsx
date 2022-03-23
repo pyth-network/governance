@@ -4,6 +4,8 @@ import { useState } from 'react'
 import Layout from '../components/Layout'
 import Tabs from '../components/Tabs'
 import SEO from '../components/SEO'
+import ApproveAllBtn from '@components/ApproveAllBtn'
+import NewProposalBtn from '@components/NewProposalBtn'
 
 const Governance: NextPage = () => {
   const [filteredProposals, setFilteredProposals] = useState([])
@@ -28,14 +30,14 @@ const Governance: NextPage = () => {
                 <>
                   <div className="flex items-center justify-between pb-3">
                     <h4 className="text-fgd-2 mb-0 font-normal">{`${filteredProposals.length} Proposals`}</h4>
-                    {/* <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-4">
                       <ApproveAllBtn />
                       <NewProposalBtn />
-                      <ProposalFilter
+                      {/* <ProposalFilter
                         filters={filters}
                         setFilters={setFilters}
-                      />
-                    </div> */}
+                      /> */}
+                    </div>
                   </div>
                   {/* <div className="space-y-3">
                     {filteredProposals.length > 0 ? (
