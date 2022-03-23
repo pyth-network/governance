@@ -1,4 +1,4 @@
-import { getPortNumber, readAnchorConfig, standardSetup } from "./utils/before";
+import { ANCHOR_CONFIG_PATH, getPortNumber, readAnchorConfig, standardSetup } from "./utils/before";
 import path from "path";
 import { Keypair } from "@solana/web3.js";
 import { StakeConnection } from "../app";
@@ -14,10 +14,10 @@ describe("clock_api", async () => {
   let stakeConnection: StakeConnection;
   let controller: AbortController;
 
-  const CUTOFF_SECONDS = 5;
+  const CLOCK_TOLERANCE_SECONDS = 5;
 
   before(async () => {
-    const config = readAnchorConfig("./Anchor.toml");
+    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -45,10 +45,12 @@ describe("clock_api", async () => {
     delete stakeConnection.config.mockClockTime;
     let sysTime = Date.now()/1000;
     let solanaTime = (await stakeConnection.getTime()).toNumber();
-    assert.ok(Math.abs(sysTime - solanaTime) < CUTOFF_SECONDS);
+    assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);
 
     await new Promise((resolve) => setTimeout(resolve, 10000));
-    assert.ok(Math.abs(sysTime - solanaTime) < CUTOFF_SECONDS);
+    sysTime = Date.now()/1000;
+    solanaTime = (await stakeConnection.getTime()).toNumber();
+    assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);
   });
 
   after(async () => {

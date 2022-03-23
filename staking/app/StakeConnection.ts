@@ -188,7 +188,7 @@ export class StakeConnection {
 
   // Gets the current unix time, as would be perceived by the on-chain program
   public async getTime() : Promise<BN> {
-    if ('mockClockTime' in this.config && this.config.mockClockTime.gtn(0)) {
+    if ('mockClockTime' in this.config) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(this.configAddress);
       return updatedConfig.mockClockTime;

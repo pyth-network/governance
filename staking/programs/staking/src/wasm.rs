@@ -85,6 +85,8 @@ fn get_unvested_balance_impl(vesting_sched_borsh: &[u8], current_time: i64) -> a
 
 
 #[wasm_bindgen(js_name=getUnixTime)]
+/// Deserializes the contents of the SYSVAR_CLOCK account (onChainSerialized), returning the 
+/// Unix time field
 pub fn get_unix_time(onChainSerialized: &[u8]) -> Result<i64, JsValue> {
     convert_error(get_unix_time_impl(onChainSerialized))
 }
