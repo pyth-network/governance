@@ -54,11 +54,12 @@ import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   u64,
+  MintInfo,
 } from "@solana/spl-token";
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
-import assert from "assert"
+import assert from "assert";
 
 interface ClosingItem {
   amount: BN;
@@ -75,6 +76,7 @@ export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
   private configAddress: PublicKey;
+  private pythMint: MintInfo;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -102,6 +104,14 @@ export class StakeConnection {
 
     stakeConnection.config =
       await stakeConnection.program.account.globalConfig.fetch(configAddress);
+
+    stakeConnection.pythMint = await new Token(
+      stakeConnection.program.provider.connection,
+      stakeConnection.config.pythTokenMint,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    ).getMintInfo();
+
     return stakeConnection;
   }
 
@@ -210,6 +220,9 @@ export class StakeConnection {
     stakeAccount.tokenBalance = (
       await mint.getAccountInfo(custodyAddress)
     ).amount;
+
+    stakeAccount.decimals = this.pythMint.decimals;
+
     return stakeAccount;
   }
 
@@ -230,12 +243,13 @@ export class StakeConnection {
     }
   }
 
-  // Unlock a provided token balance
-  public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
+  //unlock a provided token balance
+  public async unlockTokens(stakeAccount: StakeAccount, amount: number) {
+    if (amount > stakeAccount.getBalanceSummary(await this.getTime()).locked) {
       throw new Error("Amount greater than locked amount");
-    };
+    }
+
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
@@ -248,28 +262,33 @@ export class StakeConnection {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
-      .filter((el) => // position is voting
-        stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
-          el.index,
-          BigInt(currentEpoch.toString()),
-          this.config.unlockingDuration
-        
-      )
-    ) 
-      .filter((el) => // position locking or locked 
-        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+      .filter(
+        (
+          el // position is voting
+        ) =>
+          stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
             el.index,
             BigInt(currentEpoch.toString()),
             this.config.unlockingDuration
           )
-        )
+      )
+      .filter(
+        (
+          el // position locking or locked
+        ) =>
+          [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+            stakeAccount.stakeAccountPositionsWasm.getPositionState(
+              el.index,
+              BigInt(currentEpoch.toString()),
+              this.config.unlockingDuration
+            )
+          )
       )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
 
-    let amountBeforeFinishing = amount;
+    let amountBeforeFinishing = integerAmount;
     let i = 0;
     const toClose: ClosingItem[] = [];
 
@@ -289,9 +308,9 @@ export class StakeConnection {
           sortPositions[i].value.amount
         );
       }
-      i++; 
+      i++;
     }
-    
+
     for (let el of toClose) {
       await this.program.methods
         .closePosition(el.index, el.amount)
@@ -352,7 +371,7 @@ export class StakeConnection {
 
   private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
-    amount: number
+    amount: BN
   ): Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -377,7 +396,7 @@ export class StakeConnection {
       toAccount,
       this.program.provider.wallet.publicKey,
       [],
-      amount
+      amount.toNumber()
     );
 
     return ix;
@@ -387,6 +406,7 @@ export class StakeConnection {
     stakeAccount: StakeAccount | undefined,
     amount: number
   ) {
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
 
@@ -408,7 +428,9 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(
+      await this.buildTransferInstruction(stakeAccountAddress, integerAmount)
+    );
 
     const tx = new Transaction();
     tx.add(...ixs);
@@ -419,6 +441,8 @@ export class StakeConnection {
     stakeAccount: StakeAccount | undefined,
     amount: number
   ) {
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
+
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
 
@@ -440,10 +464,12 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(
+      await this.buildTransferInstruction(stakeAccountAddress, integerAmount)
+    );
 
     await this.program.methods
-      .createPosition(null, null, new BN(amount))
+      .createPosition(null, null, integerAmount)
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
@@ -453,12 +479,14 @@ export class StakeConnection {
   }
 
   //withdraw tokens
-  public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable)){
+  public async withdrawTokens(stakeAccount: StakeAccount, amount: number) {
+    if (
+      amount > stakeAccount.getBalanceSummary(await this.getTime()).withdrawable
+    ) {
       throw new Error("Amount exceeds withdrawable");
     }
 
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -467,19 +495,23 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .withdrawStake(amount)
+      .withdrawStake(integerAmount)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
       })
       .rpc();
   }
+
+  public getDecimals(): number {
+    return this.pythMint.decimals;
+  }
 }
 export interface BalanceSummary {
-  withdrawable: BN;
+  withdrawable: number;
   // We may break this down into active, warmup, and cooldown in the future
-  locked: BN;
-  unvested: BN;
+  locked: number;
+  unvested: number;
 }
 
 export class StakeAccount {
@@ -491,6 +523,7 @@ export class StakeAccount {
   authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
   config: GlobalConfig;
+  decimals: number;
 
   // Withdrawable
 
@@ -518,9 +551,12 @@ export class StakeAccount {
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
     return {
-      withdrawable: withdrawableBN,
-      locked: this.tokenBalance.sub(withdrawableBN).sub(unvestedBN),
-      unvested: unvestedBN,
+      withdrawable: amountBnToNumber(withdrawableBN, this.decimals),
+      locked: amountBnToNumber(
+        this.tokenBalance.sub(withdrawableBN).sub(unvestedBN),
+        this.decimals
+      ),
+      unvested: amountBnToNumber(unvestedBN, this.decimals),
     };
   }
 
@@ -536,4 +572,12 @@ export class StakeAccount {
     const length = vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
   }
+}
+
+function amountBnToNumber(amount: BN, decimals: number): number {
+  return amount.toNumber() * 10 ** -decimals;
+}
+
+export function amountNumberToBn(amount: number, decimals: number): BN {
+  return new BN(amount).mul(new BN(10).pow(new BN(decimals)));
 }

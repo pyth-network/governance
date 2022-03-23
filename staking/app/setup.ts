@@ -74,7 +74,7 @@ describe("setup", async () => {
       pythMintAccount,
       pythMintAuthority.publicKey,
       null,
-      0,
+      6,
       TOKEN_PROGRAM_ID
     );
 

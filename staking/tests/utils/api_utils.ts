@@ -15,18 +15,18 @@ export async function assertBalanceMatches(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getBalanceSummary(currentTime);
-  assert.equal(actual.locked.toNumber(), expected.locked.toNumber());
-  assert.equal(actual.unvested.toNumber(), expected.unvested.toNumber());
+  assert.equal(actual.locked, expected.locked);
+  assert.equal(actual.unvested, expected.unvested);
   assert.equal(
-    actual.withdrawable.toNumber(),
-    expected.withdrawable.toNumber()
+    actual.withdrawable,
+    expected.withdrawable
   );
 }
 
 export async function loadAndUnlock(
   stakeConnection: StakeConnection,
   owner: PublicKey,
-  amount: BN
+  amount: number
 ) {
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);

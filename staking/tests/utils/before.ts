@@ -22,6 +22,7 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 import { StakeConnection } from "../../app";
+import { amountNumberToBn } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 interface AnchorConfig {
@@ -124,15 +125,14 @@ export async function startValidator(portNumber: number, config: any) {
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
 
-  return { controller, program};
+  return { controller, program };
 }
 
-export function getConnection(portNumber : number){
+export function getConnection(portNumber: number) {
   return new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
   );
-
 }
 
 /**
@@ -149,6 +149,15 @@ export async function requestPythAirdrop(
   await connection.requestAirdrop(pythMintAuthority.publicKey, 1_000_000_000);
 
   const transaction = new Transaction();
+
+  const decimals = (await new Token(
+    connection,
+    pythMintAccount,
+    TOKEN_PROGRAM_ID,
+    new Keypair()
+  ).getMintInfo()).decimals;
+
+  const integerAmount = amountNumberToBn(amount, decimals);
 
   const destinationAta = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -175,7 +184,7 @@ export async function requestPythAirdrop(
     destinationAta,
     pythMintAuthority.publicKey,
     [],
-    amount
+    integerAmount.toNumber()
   );
   transaction.add(mintIx);
 
@@ -258,7 +267,7 @@ export async function standardSetup(
   portNumber: number,
   config: AnchorConfig,
   pythMintAccount: Keypair,
-  pythMintAuthority: Keypair,
+  pythMintAuthority: Keypair
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -267,7 +276,7 @@ export async function standardSetup(
     pythMintAccount,
     pythMintAuthority.publicKey,
     null,
-    0,
+    6,
     TOKEN_PROGRAM_ID
   );
 

@@ -280,7 +280,7 @@ describe("staking", async () => {
   });
 
   it("creates a position that's too big", async () => {
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(102))
         .accounts({
@@ -345,7 +345,7 @@ describe("staking", async () => {
   });
 
   it("creates position with 0 principal", async () => {
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(0))
         .accounts({
@@ -404,7 +404,7 @@ describe("staking", async () => {
     });
 
     // Now create 101, which is supposed to fail
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(1))
         .accounts({
