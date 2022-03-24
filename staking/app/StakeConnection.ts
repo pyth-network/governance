@@ -30,7 +30,7 @@ import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
 
-interface closingItem {
+interface ClosingItem {
   amount: BN;
   index: number;
 }
@@ -222,6 +222,7 @@ export class StakeConnection {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
+      .filter((el) => el.value.publisher == null && el.value.product == null) // voting positions
       .filter((el) =>
         ["LOCKING", "LOCKED"].includes(
           stakeAccount.stakeAccountPositionsWasm.getPositionState(
@@ -237,7 +238,7 @@ export class StakeConnection {
 
     let amountBeforeFinishing = amount;
     let i = 0;
-    const toClose: closingItem[] = [];
+    const toClose: ClosingItem[] = [];
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
       if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
