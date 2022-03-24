@@ -131,11 +131,29 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await stakeConnection.unlockTokens(stakeAccount, new BN(600));
+
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(stakeAccount.address);
+    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+      await stakeConnection.getTime()
+    );
+    assert.equal(afterBalSummary.locked.toNumber(), 100);
+    assert.equal(afterBalSummary.unvested.toNumber(), 0);
+    assert.equal(afterBalSummary.withdrawable.toNumber(), 600);
+
   });
 
   it("alice withdraw", async () => {
     const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     const stakeAccount = res[0];
     await stakeConnection.withdrawTokens(stakeAccount, new BN(600));
+
+
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(stakeAccount.address);
+    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+      await stakeConnection.getTime()
+    );
+    assert.equal(afterBalSummary.locked.toNumber(), 100);
+    assert.equal(afterBalSummary.unvested.toNumber(), 0);
+    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 });
