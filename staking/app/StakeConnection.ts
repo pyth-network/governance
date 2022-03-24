@@ -434,6 +434,9 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
+
+    assert(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable.gte(amount));
+
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
