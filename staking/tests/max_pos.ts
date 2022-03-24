@@ -123,12 +123,23 @@ describe("fills a stake account with positions", async () => {
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
       .instruction();
+    let testTransaction = new Transaction();
+    testTransaction.add(createPosIx);
+    testTransaction.add(createPosIx);
+    const simulationResults = await provider.simulate(testTransaction);
+    let costs = [];
+    const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
+    for (const logline of simulationResults.value.logs) {
+      const m = logline.match(regex);
+      if (m != null)
+        costs.push(parseInt(m.groups['consumed']));
+    }
 
 
     let budgetRemaining = 200_000;
-    let ixCost = 19200;
+    let ixCost = costs[0];
     let maxInstructions = 10; // Based on txn size
-    let deltaCost = 520; // adding more positions increases the cost
+    let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
 
     let transaction = new Transaction();
     for (let numPositions = 0; numPositions < 100; numPositions++) {
