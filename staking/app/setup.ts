@@ -103,7 +103,7 @@ describe("setup", async () => {
       );
       transaction.add(createAtaIx);
 
-      // Mint 1000 tokens.
+      // Mint 2000 tokens.
       const mintIx = Token.createMintToInstruction(
         TOKEN_PROGRAM_ID,
         pythMintAccount.publicKey,
