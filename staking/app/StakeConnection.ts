@@ -29,6 +29,7 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
+import assert from "assert"
 
 interface ClosingItem {
   amount: BN;
@@ -209,8 +210,12 @@ export class StakeConnection {
     }
   }
 
-  //unlock a provided token balance
+  // Unlock a provided token balance
+  // If amount requested to unlock bigger the locked amount, we will close all positions
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
+
+    assert(stakeAccount.getBalanceSummary(await this.getTime()).locked.gte(amount));
+
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
 
@@ -222,8 +227,15 @@ export class StakeConnection {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
-      .filter((el) => el.value.publisher == null && el.value.product == null) // voting positions
-      .filter((el) =>
+      .filter((el) => // position is voting
+        stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
+          el.index,
+          BigInt(currentEpoch.toString()),
+          this.config.unlockingDuration
+        
+      )
+    ) 
+      .filter((el) => // position locking or locked 
         [1,2].includes(
           stakeAccount.stakeAccountPositionsWasm.getPositionState(
             el.index,
@@ -231,7 +243,7 @@ export class StakeConnection {
             this.config.unlockingDuration
           )
         )
-      ) // position locking or locked 
+      ) 
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
@@ -256,9 +268,9 @@ export class StakeConnection {
           sortPositions[i].value.amount
         );
       }
-      i++;
+      i++; 
     }
-
+    
     for (let el of toClose) {
       await this.program.methods
         .closePosition(el.index, el.amount)
