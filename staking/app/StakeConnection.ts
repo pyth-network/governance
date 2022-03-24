@@ -23,6 +23,9 @@ import {
 //        if (wasm == undefined)
 //           await ensureWasmLoaded;
 // (it's also okay to do it unconditionally)
+// We do this anytime a StakeConnection is created, which means any method in
+// stake connection is protected. You also can't make a StakeAccount without
+// making a StakeConnection, so StakeAccount is protected too.
 
 // This seems to work for now, but I am not sure how fragile it is.
 const useNode =
@@ -91,6 +94,8 @@ export class StakeConnection {
       address,
       provider
     ) as Program<Staking>;
+    if (wasm == undefined) 
+      await ensureWasmLoaded;
 
     const configAddress = (
       await PublicKey.findProgramAddress(
@@ -137,7 +142,6 @@ export class StakeConnection {
   // }
 
   async fetchPositionAccount(address: PublicKey) {
-    if (wasm == undefined) await ensureWasmLoaded;
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
