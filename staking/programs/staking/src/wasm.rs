@@ -29,12 +29,12 @@ impl WasmPositionData {
     }
 
     #[wasm_bindgen(js_name=getPositionState)]
-    pub fn get_position_state(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<u8, JsValue> {
+    pub fn get_position_state(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<PositionState, JsValue> {
         convert_error(self.get_position_state_impl(index, current_epoch, unlocking_duration))
     }
-    fn get_position_state_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<u8> {
+    fn get_position_state_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<PositionState> {
         match self.wrapped.positions[index as usize] {
-            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)? as u8),
+            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
             None => Err(error!(ErrorCode::PositionNotInUse))
         }
     }

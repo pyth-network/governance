@@ -1,5 +1,5 @@
 use crate::error::ErrorCode;
-use anchor_lang::prelude::{*, borsh::BorshSchema};
+use anchor_lang::{prelude::{*, borsh::BorshSchema}, solana_program::wasm_bindgen};
 use crate::borsh::BorshSerialize;
 use std::fmt::{self, Debug, Display};
 
@@ -88,6 +88,7 @@ impl Position {
 
 /// The core states that a position can be in
 #[repr(u8)]
+#[wasm_bindgen]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
     UNLOCKED,
