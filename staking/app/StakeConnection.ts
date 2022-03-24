@@ -58,7 +58,7 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
-import assert from "assert"
+import assert from "assert";
 
 interface ClosingItem {
   amount: BN;
@@ -232,10 +232,11 @@ export class StakeConnection {
 
   // Unlock a provided token balance
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
+    if (
+      amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)
+    ) {
       throw new Error("Amount greater than locked amount");
-    };
+    }
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
@@ -248,22 +249,27 @@ export class StakeConnection {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
-      .filter((el) => // position is voting
-        stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
-          el.index,
-          BigInt(currentEpoch.toString()),
-          this.config.unlockingDuration
-        
-      )
-    ) 
-      .filter((el) => // position locking or locked 
-        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+      .filter(
+        (
+          el // position is voting
+        ) =>
+          stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
             el.index,
             BigInt(currentEpoch.toString()),
             this.config.unlockingDuration
           )
-        )
+      )
+      .filter(
+        (
+          el // position locking or locked
+        ) =>
+          [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+            stakeAccount.stakeAccountPositionsWasm.getPositionState(
+              el.index,
+              BigInt(currentEpoch.toString()),
+              this.config.unlockingDuration
+            )
+          )
       )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
@@ -289,9 +295,9 @@ export class StakeConnection {
           sortPositions[i].value.amount
         );
       }
-      i++; 
+      i++;
     }
-    
+
     for (let el of toClose) {
       await this.program.methods
         .closePosition(el.index, el.amount)
@@ -454,8 +460,11 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable)){
+    if (
+      amount.gt(
+        stakeAccount.getBalanceSummary(await this.getTime()).withdrawable
+      )
+    ) {
       throw new Error("Amount exceeds withdrawable");
     }
 
