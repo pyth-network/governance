@@ -15,18 +15,22 @@ import {
 } from '../../staking/app/StakeConnection'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import { airdropPythToken } from './api/airdropPythToken'
-import { getLockedPythTokenBalance } from './api/getLockedPythTokenBalance'
-import { getUnlockedPythTokenBalance } from './api/getUnlockedPythTokenBalance'
 import toast from 'react-hot-toast'
 import { Tab } from '@headlessui/react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
+enum TabEnum {
+  Deposit,
+  Unlock,
+  Withdraw,
+}
+
 const Staking: NextPage = () => {
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
-  const { publicKey, connected, connecting } = useWallet()
+  const { publicKey, connected } = useWallet()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
   const [balance, setBalance] = useState<number>(0)
@@ -35,9 +39,7 @@ const Staking: NextPage = () => {
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
-  const [currentTab, setCurrentTab] = useState<string>('Deposit')
-
-  const tabValues = ['Deposit', 'Unlock', 'Withdraw']
+  const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Deposit)
 
   // create stake connection when wallet is connected
   useEffect(() => {
@@ -70,13 +72,13 @@ const Staking: NextPage = () => {
   useEffect(() => {
     if (connected) {
       switch (currentTab) {
-        case 'Deposit':
+        case TabEnum.Deposit:
           setBalance(pythBalance)
           break
-        case 'Unlock':
+        case TabEnum.Unlock:
           setBalance(lockedPythBalance)
           break
-        case 'Withdraw':
+        case TabEnum.Withdraw:
           setBalance(unlockedPythBalance)
           break
       }
@@ -146,7 +148,7 @@ const Staking: NextPage = () => {
 
   // set current tab value when tab is clicked
   const handleChangeTab = (index: number) => {
-    setCurrentTab(tabValues[index])
+    setCurrentTab(index as TabEnum)
   }
 
   // set input amount to half of pyth balance in wallet
@@ -167,57 +169,32 @@ const Staking: NextPage = () => {
           <div className="w-full py-8">
             <Tab.Group onChange={handleChangeTab}>
               <Tab.List className="flex justify-center space-x-2">
-                {tabValues.map((v) => (
-                  <Tab
-                    key={v}
-                    className={({ selected }) =>
-                      classNames(
-                        'py-2.5 px-5 text-xs font-medium text-scampi sm:text-sm',
+                {Object.values(TabEnum)
+                  .slice(3)
+                  .map((v) => (
+                    <Tab
+                      key={v}
+                      className={({ selected }) =>
+                        classNames(
+                          'py-2.5 px-5 text-xs font-medium text-scampi sm:text-sm',
 
-                        selected
-                          ? 'primary-btn text-white'
-                          : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
-                      )
-                    }
-                  >
-                    {v}
-                  </Tab>
-                ))}
+                          selected
+                            ? 'primary-btn text-white'
+                            : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                        )
+                      }
+                    >
+                      {TabEnum[v as keyof typeof TabEnum]}
+                    </Tab>
+                  ))}
               </Tab.List>
               <Tab.Panels className="mt-8 sm:mt-16">
-                {tabValues.map((v, idx) => (
-                  <Tab.Panel key={idx}>
-                    <div className="col-span-12 font-inter text-xs">
-                      <div className="mb-2 flex">
-                        <div className="ml-auto mr-0 space-x-2 sm:hidden">
-                          <button
-                            className="outlined-btn"
-                            onClick={handleHalfBalanceClick}
-                          >
-                            Half
-                          </button>
-                          <button
-                            className="outlined-btn"
-                            onClick={handleMaxBalanceClick}
-                          >
-                            Max
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mb-4 flex items-center justify-between">
-                        <label htmlFor="amount" className="block text-white">
-                          Amount (PYTH)
-                        </label>
-                        <div className="ml-auto mr-0 flex items-center space-x-2">
-                          <p className="text-white">
-                            {currentTab === 'Deposit'
-                              ? 'Balance'
-                              : currentTab === 'Unlock'
-                              ? 'Locked Tokens'
-                              : 'Withdrawable'}
-                            : {balance}
-                          </p>
-                          <div className="hidden space-x-2 sm:flex">
+                {(Object.keys(TabEnum) as Array<keyof typeof TabEnum>).map(
+                  (v, idx) => (
+                    <Tab.Panel key={idx}>
+                      <div className="col-span-12 font-inter text-xs">
+                        <div className="mb-2 flex">
+                          <div className="ml-auto mr-0 space-x-2 sm:hidden">
                             <button
                               className="outlined-btn"
                               onClick={handleHalfBalanceClick}
@@ -232,50 +209,79 @@ const Staking: NextPage = () => {
                             </button>
                           </div>
                         </div>
+                        <div className="mb-4 flex items-center justify-between">
+                          <label htmlFor="amount" className="block text-white">
+                            Amount (PYTH)
+                          </label>
+                          <div className="ml-auto mr-0 flex items-center space-x-2">
+                            <p className="text-white">
+                              {currentTab === TabEnum.Deposit
+                                ? 'Balance'
+                                : currentTab === TabEnum.Unlock
+                                ? 'Locked Tokens'
+                                : 'Withdrawable'}
+                              : {balance}
+                            </p>
+                            <div className="hidden space-x-2 sm:flex">
+                              <button
+                                className="outlined-btn"
+                                onClick={handleHalfBalanceClick}
+                              >
+                                Half
+                              </button>
+                              <button
+                                className="outlined-btn"
+                                onClick={handleMaxBalanceClick}
+                              >
+                                Max
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <input
+                          type="number"
+                          name="amount"
+                          id="amount"
+                          autoComplete="amount"
+                          value={amount}
+                          onChange={handleAmountChange}
+                          className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
+                        />
+                        <div className="flex items-center justify-center">
+                          {!connected ? (
+                            <WalletModalButton
+                              className="primary-btn py-3 px-14"
+                              text-base
+                              font-semibold
+                            />
+                          ) : pythBalance === 0 ? (
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleClaimPyth}
+                            >
+                              Claim $PYTH
+                            </button>
+                          ) : currentTab === TabEnum.Deposit ? (
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleDeposit}
+                            >
+                              Deposit
+                            </button>
+                          ) : currentTab === TabEnum.Unlock ? (
+                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                              Unlock
+                            </button>
+                          ) : (
+                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                              Withdraw
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <input
-                        type="number"
-                        name="amount"
-                        id="amount"
-                        autoComplete="amount"
-                        value={amount}
-                        onChange={handleAmountChange}
-                        className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
-                      />
-                      <div className="flex items-center justify-center">
-                        {!connected ? (
-                          <WalletModalButton
-                            className="primary-btn py-3 px-14"
-                            text-base
-                            font-semibold
-                          />
-                        ) : pythBalance === 0 ? (
-                          <button
-                            className="primary-btn py-3 px-14 text-base font-semibold text-white"
-                            onClick={handleClaimPyth}
-                          >
-                            Claim $PYTH
-                          </button>
-                        ) : currentTab === 'Deposit' ? (
-                          <button
-                            className="primary-btn py-3 px-14 text-base font-semibold text-white"
-                            onClick={handleDeposit}
-                          >
-                            Deposit
-                          </button>
-                        ) : currentTab === 'Unlock' ? (
-                          <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
-                            Unlock
-                          </button>
-                        ) : (
-                          <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
-                            Withdraw
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </Tab.Panel>
-                ))}
+                    </Tab.Panel>
+                  )
+                )}
               </Tab.Panels>
             </Tab.Group>
           </div>
