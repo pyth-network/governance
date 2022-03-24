@@ -48,16 +48,24 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
+<<<<<<< HEAD
       { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(0) },
       await stakeConnection.getTime()
     );
 
     await loadAndUnlock(stakeConnection, owner, new BN(50));
+=======
+      { locked: 100, unvested: 0, withdrawable: 0 },
+      await stakeConnection.getTime()
+    );
+
+    await loadAndUnlock(stakeConnection, owner, 50);
+>>>>>>> a99b218 (add unlock api tests)
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(50), unvested: new BN(0), withdrawable: new BN(50) },
+      { locked: 50, unvested: 0, withdrawable: 50 },
       await stakeConnection.getTime()
     );
 
@@ -68,7 +76,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(50), unvested: new BN(0), withdrawable: new BN(50) },
+      { locked: 50, unvested: 0, withdrawable: 50 },
       await stakeConnection.getTime()
     );
   });
@@ -82,16 +90,16 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(150), unvested: new BN(0), withdrawable: new BN(50) },
+      { locked: 150, unvested: 0, withdrawable: 50 },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, 50);
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(150), unvested: new BN(0), withdrawable: new BN(50) },
+      { locked: 150, unvested: 0, withdrawable: 50 },
       await stakeConnection.getTime()
     );
 
@@ -100,7 +108,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(100) },
+      { locked: 100, unvested: 0, withdrawable: 100 },
       await stakeConnection.getTime()
     );
   });
@@ -113,16 +121,16 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(50), unvested: new BN(0), withdrawable: new BN(150) },
+      { locked: 50, unvested: 0, withdrawable: 150 },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, 50);
 
     await assertBalanceMatches(
         stakeConnection,
         owner,
-        { locked: new BN(50), unvested: new BN(0), withdrawable: new BN(150)},
+        { locked: 50, unvested: 0, withdrawable: 150 },
         await stakeConnection.getTime()
       );
 
@@ -136,7 +144,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
         stakeConnection,
         owner,
-        { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+        { locked: 0, unvested: 0, withdrawable: 200 },
         await stakeConnection.getTime()
       );
 
