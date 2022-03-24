@@ -211,10 +211,11 @@ export class StakeConnection {
   }
 
   // Unlock a provided token balance
-  // If amount requested to unlock bigger the locked amount, we will close all positions
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
 
-    assert(stakeAccount.getBalanceSummary(await this.getTime()).locked.gte(amount));
+    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
+      return new Error("Amount greater than locked amount");
+    };
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
