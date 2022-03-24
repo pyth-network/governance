@@ -13,22 +13,11 @@ const Header = () => {
     <div className="mb-3 grid grid-cols-12 bg-black">
       <div className="col-span-12 flex h-24 items-center justify-between px-4 md:px-8 xl:col-span-10 xl:col-start-2">
         <div className="flex cursor-pointer items-center md:w-36">
-          <Link href="/">
+          <Link href="/staking">
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
           </Link>
         </div>
         <div className="hidden space-x-20 md:flex">
-          <Link href="/governance">
-            <a
-              className={
-                router.pathname == '/governance'
-                  ? 'nav-link-active'
-                  : 'nav-link'
-              }
-            >
-              Governance
-            </a>
-          </Link>
           <Link href="/staking">
             <a
               className={
@@ -36,6 +25,33 @@ const Header = () => {
               }
             >
               Staking
+            </a>
+          </Link>
+          <Link href="https://realms.today/realms">
+            <a
+              className={
+                router.pathname == '/governance'
+                  ? 'nav-link-active'
+                  : 'nav-link'
+              }
+            >
+              <div className="flex">
+                Governance{' '}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="my-auto ml-1 h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </div>
             </a>
           </Link>
         </div>
@@ -72,18 +88,6 @@ const Header = () => {
               </button>
             </div>
             <div className="griw-rows-2 grid space-y-8 text-center">
-              <Link href="/governance">
-                <a
-                  className={classNames(
-                    'font-arboria text-4xl',
-                    router.pathname == '/governance'
-                      ? 'text-pink'
-                      : 'text-white'
-                  )}
-                >
-                  Governance
-                </a>
-              </Link>
               <Link href="/staking">
                 <a
                   className={classNames(
@@ -92,6 +96,34 @@ const Header = () => {
                   )}
                 >
                   Staking
+                </a>
+              </Link>
+              <Link href="https://realms.today/realms">
+                <a
+                  className={classNames(
+                    'font-arboria text-4xl',
+                    router.pathname == '/governance'
+                      ? 'text-pink'
+                      : 'text-white'
+                  )}
+                >
+                  <div className="flex justify-center">
+                    <div className="my-auto">Governance</div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mt-auto mb-1 ml-1 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </div>
                 </a>
               </Link>
             </div>
