@@ -3,7 +3,6 @@ import {
   Program,
   Wallet,
   utils,
-  Coder,
   Idl,
   IdlAccounts,
   IdlTypes,
@@ -15,7 +14,8 @@ import {
   SystemProgram,
   TransactionInstruction,
   Signer,
-  SYSVAR_RENT_PUBKEY,
+  Transaction,
+  SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
 
 // To prevent a potential race condition, prior to using the variable wasm,
@@ -67,6 +67,7 @@ type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
+  private configAddress: PublicKey;
 
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
@@ -75,25 +76,26 @@ export class StakeConnection {
     wallet: Wallet,
     address: PublicKey
   ): Promise<StakeConnection> {
-    const stake_connection = new StakeConnection();
+    const stakeConnection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
     const idl = await Program.fetchIdl(address, provider);
-    stake_connection.program = new Program(
+    stakeConnection.program = new Program(
       idl,
       address,
       provider
     ) as Program<Staking>;
 
-    const config_address = (
+    const configAddress = (
       await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("config")],
-        stake_connection.program.programId
+        [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
+        stakeConnection.program.programId
       )
     )[0];
+    stakeConnection.configAddress = configAddress;
 
-    stake_connection.config =
-      await stake_connection.program.account.globalConfig.fetch(config_address);
-    return stake_connection;
+    stakeConnection.config =
+      await stakeConnection.program.account.globalConfig.fetch(configAddress);
+    return stakeConnection;
   }
 
   //gets a users stake accounts
@@ -151,41 +153,50 @@ export class StakeConnection {
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
-    const stake_account = new StakeAccount();
-    stake_account.config = this.config;
+    const stakeAccount = new StakeAccount();
+    stakeAccount.config = this.config;
 
-    stake_account.address = address;
+    stakeAccount.address = address;
     [
-      stake_account.stakeAccountPositionsWasm,
-      stake_account.stakeAccountPositionsJs,
+      stakeAccount.stakeAccountPositionsWasm,
+      stakeAccount.stakeAccountPositionsJs,
     ] = await this.fetchPositionAccount(address);
 
-    const metadata_address = (
+    const metadataAddress = (
       await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("stake_metadata"), address.toBuffer()],
+        [
+          utils.bytes.utf8.encode(wasm.Constants.STAKE_ACCOUNT_METADATA_SEED()),
+          address.toBuffer(),
+        ],
         this.program.programId
       )
     )[0];
 
-    stake_account.stake_account_metadata =
+    stakeAccount.stakeAccountMetadata =
       (await this.program.account.stakeAccountMetadata.fetch(
-        metadata_address
+        metadataAddress
       )) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
-    stake_account.vestingSchedule = StakeAccount.serializeVesting(
-      stake_account.stake_account_metadata.lock,
+    stakeAccount.vestingSchedule = StakeAccount.serializeVesting(
+      stakeAccount.stakeAccountMetadata.lock,
       this.program.idl
     );
 
-    const custody_address = (
+    const custodyAddress = (
       await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("custody"), address.toBuffer()],
+        [
+          utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
+          address.toBuffer(),
+        ],
         this.program.programId
       )
     )[0];
 
-    stake_account.authority_address = (
+    stakeAccount.authorityAddress = (
       await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("authority"), address.toBuffer()],
+        [
+          utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
+          address.toBuffer(),
+        ],
         this.program.programId
       )
     )[0];
@@ -196,15 +207,28 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       new Keypair()
     );
-    stake_account.token_balance = (
-      await mint.getAccountInfo(custody_address)
+    stakeAccount.tokenBalance = (
+      await mint.getAccountInfo(custodyAddress)
     ).amount;
-    return stake_account;
+    return stakeAccount;
+  }
+
+  // Gets the current unix time, as would be perceived by the on-chain program
+  public async getTime() : Promise<BN> {
+    if ('mockClockTime' in this.config) {
+      // On chain program using mock clock, so get that time
+      const updatedConfig = await this.program.account.globalConfig.fetch(this.configAddress);
+      return updatedConfig.mockClockTime;
+    } else {
+      // Using Sysvar clock
+      const clockBuf = await this.program.provider.connection.getAccountInfo(SYSVAR_CLOCK_PUBKEY);
+      return new BN(wasm.getUnixTime(clockBuf.data).toString());
+    }
   }
 
   //unlock a provided token balance
   public async unlockTokens(
-    stake_account: StakeAccount,
+    stakeAccount: StakeAccount,
     amount: number,
     program: Program
   ) {}
@@ -213,59 +237,12 @@ export class StakeConnection {
     instructions: TransactionInstruction[],
     owner: PublicKey
   ): Promise<Keypair> {
-    const stake_account_keypair = new Keypair();
-
-    const stakeAccountMetadata = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode("stake_metadata"),
-          stake_account_keypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const stakeAccountCustody = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode("custody"),
-          stake_account_keypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const custodyAuthority = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode("authority"),
-          stake_account_keypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const voterRecord = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode("voter_weight"),
-          stake_account_keypair.publicKey.toBuffer(),
-        ],
-        this.program.programId
-      )
-    )[0];
-
-    const config = (
-      await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("config")],
-        this.program.programId
-      )
-    )[0];
+    const stakeAccountKeypair = new Keypair();
 
     instructions.push(
       SystemProgram.createAccount({
         fromPubkey: owner,
-        newAccountPubkey: stake_account_keypair.publicKey,
+        newAccountPubkey: stakeAccountKeypair.publicKey,
         lamports:
           await this.program.provider.connection.getMinimumBalanceForRentExemption(
             wasm.Constants.POSITIONS_ACCOUNT_SIZE()
@@ -276,35 +253,72 @@ export class StakeConnection {
     );
 
     instructions.push(
-      this.program.instruction.createStakeAccount(
-        owner,
-        { fullyVested: {} },
-        {
-          accounts: {
-            payer: owner,
-            stakeAccountMetadata,
-            stakeAccountCustody,
-            stakeAccountPositions: stake_account_keypair.publicKey,
-            custodyAuthority,
-            mint: this.config.pythTokenMint,
-            voterRecord,
-            config,
-            rent: SYSVAR_RENT_PUBKEY,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          },
-        }
-      )
+      await this.program.methods
+        .createStakeAccount(this.program.provider.wallet.publicKey, {
+          fullyVested: {},
+        })
+        .accounts({
+          stakeAccountPositions: stakeAccountKeypair.publicKey,
+          mint: this.config.pythTokenMint,
+        })
+        .signers([stakeAccountKeypair])
+        .instruction()
     );
 
-    return stake_account_keypair;
+    return stakeAccountKeypair;
   }
-  //deposit tokens
-  public async depositAndLockTokens(
-    stake_account: StakeAccount | undefined,
+
+  private async buildCloseInstruction(
+    stakeAccountPositionsAddress: PublicKey,
+    index: number,
+    amount: BN
+  ) {
+    return await this.program.methods
+      .closePosition(index, amount)
+      .accounts({
+        stakeAccountPositions: stakeAccountPositionsAddress,
+      })
+      .rpc();
+  }
+
+  private async buildTransferInstruction(
+    stakeAccountPositionsAddress: PublicKey,
+    amount: number
+  ): Promise<TransactionInstruction> {
+    const from_account = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    const toAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
+          stakeAccountPositionsAddress.toBuffer(),
+        ],
+        this.program.programId
+      )
+    )[0];
+
+    const ix = Token.createTransferInstruction(
+      TOKEN_PROGRAM_ID,
+      from_account,
+      toAccount,
+      this.program.provider.wallet.publicKey,
+      [],
+      amount
+    );
+
+    return ix;
+  }
+
+  public async depositTokens(
+    stakeAccount: StakeAccount | undefined,
     amount: number
   ) {
-    let stake_account_address: PublicKey;
+    let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
 
     const ata = await Token.getAssociatedTokenAddress(
@@ -317,37 +331,53 @@ export class StakeConnection {
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
 
-    if (!stake_account) {
-      const stake_account_keypair = await this.withCreateAccount(ixs, owner);
-      signers.push(stake_account_keypair);
-      stake_account_address = stake_account_keypair.publicKey;
+    if (!stakeAccount) {
+      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
+      signers.push(stakeAccountKeypair);
+      stakeAccountAddress = stakeAccountKeypair.publicKey;
     } else {
-      stake_account_address = stake_account.address;
+      stakeAccountAddress = stakeAccount.address;
     }
 
-    const toAccount = (
-      await PublicKey.findProgramAddress(
-        [utils.bytes.utf8.encode("custody"), stake_account_address.toBuffer()],
-        this.program.programId
-      )
-    )[0];
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
 
-    ixs.push(
-      Token.createTransferInstruction(
-        TOKEN_PROGRAM_ID,
-        ata,
-        toAccount,
-        owner,
-        [],
-        amount
-      )
+    const tx = new Transaction();
+    tx.add(...ixs);
+    await this.program.provider.send(tx, []);
+  }
+
+  public async depositAndLockTokens(
+    stakeAccount: StakeAccount | undefined,
+    amount: number
+  ) {
+    let stakeAccountAddress: PublicKey;
+    const owner = this.program.provider.wallet.publicKey;
+
+    const ata = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      owner
     );
+
+    const ixs: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+
+    if (!stakeAccount) {
+      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
+      signers.push(stakeAccountKeypair);
+      stakeAccountAddress = stakeAccountKeypair.publicKey;
+    } else {
+      stakeAccountAddress = stakeAccount.address;
+    }
+
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
 
     await this.program.methods
       .createPosition(null, null, new BN(amount))
       .preInstructions(ixs)
       .accounts({
-        stakeAccountPositions: stake_account_address,
+        stakeAccountPositions: stakeAccountAddress,
       })
       .signers(signers)
       .rpc({ skipPreflight: true });
@@ -355,7 +385,7 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(
-    stake_account: StakeAccount,
+    stakeAccount: StakeAccount,
     amount: number,
     program: Program
   ) {}
@@ -371,9 +401,9 @@ export class StakeAccount {
   address: PublicKey;
   stakeAccountPositionsWasm: wasm.WasmPositionData;
   stakeAccountPositionsJs: PositionData;
-  stake_account_metadata: StakeAccountMetadata;
-  token_balance: u64;
-  authority_address: PublicKey;
+  stakeAccountMetadata: StakeAccountMetadata;
+  tokenBalance: u64;
+  authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
   config: GlobalConfig;
 
@@ -395,7 +425,7 @@ export class StakeAccount {
     let unlockingDuration = this.config.unlockingDuration;
 
     const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
-      BigInt(this.token_balance.toString()),
+      BigInt(this.tokenBalance.toString()),
       unvestedBalance,
       BigInt(currentEpoch.toString()),
       unlockingDuration
@@ -404,7 +434,7 @@ export class StakeAccount {
     const unvestedBN = new BN(unvestedBalance.toString());
     return {
       withdrawable: withdrawableBN,
-      locked: this.token_balance.sub(withdrawableBN).sub(unvestedBN),
+      locked: this.tokenBalance.sub(withdrawableBN).sub(unvestedBN),
       unvested: unvestedBN,
     };
   }

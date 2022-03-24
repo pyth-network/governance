@@ -1,7 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
-import { positions_account_size } from "../tests/utils/constant";
+import * as wasm from "../wasm/node/staking";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -20,26 +20,26 @@ import fs from "fs";
 describe("setup", async () => {
   let program: Program<Staking>;
 
-  const pyth_mint_account = new Keypair();
-  const pyth_mint_authority = new Keypair();
+  const pythMintAccount = new Keypair();
+  const pythMintAuthority = new Keypair();
 
   const alice = new Keypair();
   const bob = new Keypair();
 
-  const alice_stake_account = new Keypair();
-  const bob_stake_account = new Keypair();
+  const aliceStakeAccount = new Keypair();
+  const bobStakeAccount = new Keypair();
 
-  const alice_ata = await Token.getAssociatedTokenAddress(
+  const aliceAta = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
-    pyth_mint_account.publicKey,
+    pythMintAccount.publicKey,
     alice.publicKey
   );
 
-  const bob_ata = await Token.getAssociatedTokenAddress(
+  const bobAta = await Token.getAssociatedTokenAddress(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
-    pyth_mint_account.publicKey,
+    pythMintAccount.publicKey,
     bob.publicKey
   );
 
@@ -47,22 +47,9 @@ describe("setup", async () => {
 
   before(async () => {
     // Drop keypairs in format compatible with Phantom Wallet
-    fs.writeFileSync(
-      `./app/keypairs/alice.json`,
-      `[${alice.secretKey.toString()}]`
-    );
-    fs.writeFileSync(
-      `./app/keypairs/bob.json`,
-      `[${bob.secretKey.toString()}]`
-    );
-    fs.writeFileSync(
-      `./app/keypairs/pyth_mint_account.json`,
-      JSON.stringify(pyth_mint_account.publicKey.toBase58())
-    );
-    fs.writeFileSync(
-      `./app/keypairs/pyth_mint_authority.json`,
-      `[${pyth_mint_authority.secretKey.toString()}]`
-    );
+    fs.writeFileSync(`./app/keypairs/alice.json`, `[${alice.secretKey.toString()}]`);
+    fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
+    fs.writeFileSync(`./app/keypairs/pyth_mint.json`, JSON.stringify(pythMintAccount.publicKey.toBase58()));
 
     program = anchor.workspace.Staking as Program<Staking>;
 
@@ -75,8 +62,8 @@ describe("setup", async () => {
   it("initializes config", async () => {
     await createMint(
       provider,
-      pyth_mint_account,
-      pyth_mint_authority.publicKey,
+      pythMintAccount,
+      pythMintAuthority.publicKey,
       null,
       0,
       TOKEN_PROGRAM_ID
@@ -85,7 +72,7 @@ describe("setup", async () => {
     await program.methods
       .initConfig({
         governanceAuthority: provider.wallet.publicKey,
-        pythTokenMint: pyth_mint_account.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
         unlockingDuration: 2,
         // Epoch time set to 1 second
         epochDuration: new BN(1),
@@ -102,60 +89,60 @@ describe("setup", async () => {
   it("alice and bob receive tokens", async () => {
     const transaction = new Transaction();
 
-    for (let [owner, to_account] of [
-      [alice.publicKey, alice_ata],
-      [bob.publicKey, bob_ata],
+    for (let [owner, toAccount] of [
+      [alice.publicKey, aliceAta],
+      [bob.publicKey, bobAta],
     ]) {
-      const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
+      const createAtaIx = Token.createAssociatedTokenAccountInstruction(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
-        pyth_mint_account.publicKey,
-        to_account,
+        pythMintAccount.publicKey,
+        toAccount,
         owner,
         provider.wallet.publicKey
       );
-      transaction.add(create_ata_ix);
+      transaction.add(createAtaIx);
 
       // Mint 1000 tokens.
-      const mint_ix = Token.createMintToInstruction(
+      const mintIx = Token.createMintToInstruction(
         TOKEN_PROGRAM_ID,
-        pyth_mint_account.publicKey,
-        to_account,
-        pyth_mint_authority.publicKey,
+        pythMintAccount.publicKey,
+        toAccount,
+        pythMintAuthority.publicKey,
         [],
         2000
       );
 
-      transaction.add(mint_ix);
+      transaction.add(mintIx);
     }
 
-    const tx = await provider.send(transaction, [pyth_mint_authority]);
+    const tx = await provider.send(transaction, [pythMintAuthority]);
   });
 
   it("alice and bob get staking accounts", async () => {
     for (let user of [
-      { owner: alice.publicKey, stake_account: alice_stake_account },
-      { owner: bob.publicKey, stake_account: bob_stake_account },
+      { owner: alice.publicKey, stakeAccount: aliceStakeAccount },
+      { owner: bob.publicKey, stakeAccount: bobStakeAccount },
     ]) {
       const tx = await program.methods
         .createStakeAccount(user.owner, { fullyVested: {} })
         .preInstructions([
           SystemProgram.createAccount({
             fromPubkey: provider.wallet.publicKey,
-            newAccountPubkey: user.stake_account.publicKey,
+            newAccountPubkey: user.stakeAccount.publicKey,
             lamports:
               await provider.connection.getMinimumBalanceForRentExemption(
-                positions_account_size
+                wasm.Constants.POSITIONS_ACCOUNT_SIZE()
               ),
-            space: positions_account_size,
+            space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
             programId: program.programId,
           }),
         ])
         .accounts({
-          stakeAccountPositions: user.stake_account.publicKey,
-          mint: pyth_mint_account.publicKey,
+          stakeAccountPositions: user.stakeAccount.publicKey,
+          mint: pythMintAccount.publicKey,
         })
-        .signers([user.stake_account])
+        .signers([user.stakeAccount])
         .rpc();
     }
   });
@@ -164,22 +151,22 @@ describe("setup", async () => {
     for (let user of [
       {
         owner: alice,
-        stake_account: alice_stake_account,
-        from_account: alice_ata,
+        stakeAccount: aliceStakeAccount,
+        fromAccount: aliceAta,
       },
       {
         owner: bob,
-        stake_account: bob_stake_account,
-        from_account: bob_ata,
+        stakeAccount: bobStakeAccount,
+        fromAccount: bobAta,
       },
     ]) {
       const transaction = new Transaction();
 
-      const to_account = (
+      const toAccount = (
         await PublicKey.findProgramAddress(
           [
-            anchor.utils.bytes.utf8.encode("custody"),
-            user.stake_account.publicKey.toBuffer(),
+            anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
+            user.stakeAccount.publicKey.toBuffer(),
           ],
           program.programId
         )
@@ -187,8 +174,8 @@ describe("setup", async () => {
 
       const ix = Token.createTransferInstruction(
         TOKEN_PROGRAM_ID,
-        user.from_account,
-        to_account,
+        user.fromAccount,
+        toAccount,
         user.owner.publicKey,
         [],
         1000
@@ -202,20 +189,20 @@ describe("setup", async () => {
     for (let user of [
       {
         owner: alice,
-        stake_account: alice_stake_account,
-        from_account: alice_ata,
+        stakeAccount: aliceStakeAccount,
+        fromAccount: aliceAta,
       },
       {
         owner: bob,
-        stake_account: bob_stake_account,
-        from_account: bob_ata,
+        stakeAccount: bobStakeAccount,
+        fromAccount: bobAta,
       },
     ]) {
       const tx = await program.methods
         .createPosition(null, null, new BN(1))
         .accounts({
           payer: user.owner.publicKey,
-          stakeAccountPositions: user.stake_account.publicKey,
+          stakeAccountPositions: user.stakeAccount.publicKey,
         })
         .signers([user.owner])
         .rpc();
