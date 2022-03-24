@@ -177,20 +177,7 @@ describe("staking", async () => {
     });
   });
 
-  it("updates voter weight", async () => {
-    await program.methods
-      .updateVoterWeight()
-      .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-      })
-      .rpc({ skipPreflight: DEBUG });
-
-    const voter_record = await program.account.voterWeightRecord.fetch(
-      voterAccount
-    );
-    // Haven't locked anything, so no voter weight
-    assert.equal(voter_record.voterWeight.toNumber(), 0);
-  });
+ 
 
   it("withdraws tokens", async () => {
     const to_account = userAta;
@@ -264,25 +251,7 @@ describe("staking", async () => {
     }
   });
 
-  it("updates voter weight again", async () => {
-    await program.methods
-      .advanceClock(EPOCH_DURATION.muln(5))
-      .accounts()
-      .rpc({ skipPreflight: DEBUG });
-
-    await program.methods
-      .updateVoterWeight()
-      .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-      })
-      .rpc({ skipPreflight: DEBUG });
-
-    const voter_record = await program.account.voterWeightRecord.fetch(
-      voterAccount
-    );
-    // Locked in 1 token, so voter weight is 1
-    assert.equal(voter_record.voterWeight.toNumber(), 1);
-  });
+  
 
   it("creates position with 0 principal", async () => {
     expectFail(

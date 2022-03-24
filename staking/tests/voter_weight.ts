@@ -1,5 +1,11 @@
 import * as anchor from "@project-serum/anchor";
-import { IdlAccounts, IdlTypes, parseIdlErrors, Program, Spl } from "@project-serum/anchor";
+import {
+  IdlAccounts,
+  IdlTypes,
+  parseIdlErrors,
+  Program,
+  Spl,
+} from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -16,8 +22,16 @@ import { createMint, expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
-import path from 'path'
-import { readAnchorConfig, ANCHOR_CONFIG_PATH, startValidator, initConfig, requestPythAirdrop, standardSetup, getPortNumber } from "./utils/before";
+import path from "path";
+import {
+  readAnchorConfig,
+  ANCHOR_CONFIG_PATH,
+  startValidator,
+  initConfig,
+  requestPythAirdrop,
+  standardSetup,
+  getPortNumber,
+} from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -26,12 +40,12 @@ const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("fills a stake account with positions", async () => {
-
   let program: Program<Staking>;
 
   let errMap: Map<number, string>;
 
   let provider: anchor.Provider;
+  let voterAccount: PublicKey;
 
   const stake_account_positions_secret = new Keypair();
   const pythMintAccount = new Keypair();
@@ -87,7 +101,7 @@ describe("fills a stake account with positions", async () => {
           lamports: await provider.connection.getMinimumBalanceForRentExemption(
             wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
-          space:  wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
           programId: program.programId,
         }),
       ])
@@ -98,8 +112,8 @@ describe("fills a stake account with positions", async () => {
           custodyAccount,
           provider.wallet.publicKey,
           [],
-          102 // So that making 101 positions of size 1 doesn't hit the balance limits
-        )
+          100
+        ),
       ])
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
@@ -109,63 +123,54 @@ describe("fills a stake account with positions", async () => {
       .rpc({
         skipPreflight: DEBUG,
       });
+
+    voterAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
+          stake_account_positions_secret.publicKey.toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
+  });
+  async function assertVoterWeight(expectedValue: number) {
+    await program.methods
+      .updateVoterWeight()
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({ skipPreflight: DEBUG });
+
+    const voter_record = await program.account.voterWeightRecord.fetch(
+      voterAccount
+    );
+
+    assert.equal(voter_record.voterWeight.toNumber(), expectedValue);
+  }
+  it("updates voter weight", async () => {
+    // Haven't locked anything, so no voter weight
+    await assertVoterWeight(0);
   });
 
-
-  it("creates too many positions", async () => {
-    let createPosIx = await program.methods
+  it("create a position and then update voter weight again", async () => {
+    const tx = await program.methods
       .createPosition(null, null, new BN(1))
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
       })
-      .instruction();
-    let testTransaction = new Transaction();
-    testTransaction.add(createPosIx);
-    testTransaction.add(createPosIx);
-    const simulationResults = await provider.simulate(testTransaction);
-    let costs = [];
-    const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
-    for (const logline of simulationResults.value.logs) {
-      const m = logline.match(regex);
-      if (m != null)
-        costs.push(parseInt(m.groups['consumed']));
-    }
+      .rpc({
+        skipPreflight: DEBUG,
+      });
+    // Time hasn't passed yet, so still no weight
+    await assertVoterWeight(0);
 
+    await program.methods
+      .advanceClock(EPOCH_DURATION.muln(5))
+      .accounts()
+      .rpc({ skipPreflight: DEBUG });
 
-    let budgetRemaining = 200_000;
-    let ixCost = costs[0];
-    let maxInstructions = 10; // Based on txn size
-    let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
-
-    let transaction = new Transaction();
-    for (let numPositions = 0; numPositions < 100; numPositions++) {
-      if (
-        budgetRemaining < ixCost ||
-        transaction.instructions.length == maxInstructions
-      ) {
-        let txHash = await provider.send(transaction, [], {
-          skipPreflight: DEBUG,
-        });
-        transaction = new Transaction();
-        budgetRemaining = 200_000;
-      }
-      transaction.instructions.push(createPosIx);
-      budgetRemaining -= ixCost;
-      ixCost += deltaCost;
-    }
-    await provider.send(transaction, [], {
-      skipPreflight: DEBUG,
-    });
-
-    // Now create 101, which is supposed to fail
-    expectFail(
-      program.methods
-        .createPosition(null, null, new BN(1))
-        .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
-        }),
-      "Number of position limit reached",
-      errMap
-    );
+    // Locked in 1 token, so voter weight is 1
+    await assertVoterWeight(1);
   });
 });
