@@ -214,7 +214,7 @@ export class StakeConnection {
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
 
     if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
-      return new Error("Amount greater than locked amount");
+      throw new Error("Amount greater than locked amount");
     };
 
     const positions = stakeAccount.stakeAccountPositionsJs
@@ -435,7 +435,7 @@ export class StakeConnection {
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
 
-    if (stakeAccount.getBalanceSummary(await this.getTime()).withdrawable.lt(amount)){
+    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable)){
       throw new Error("Amount exceeds withdrawable");
     }
 

@@ -85,11 +85,7 @@ export async function expectFailApi(promise: Promise<any>, error: string) {
     await promise;
     assert(false, "Operation should fail");
   } catch (err) {
-    if (err instanceof ProgramError) {
-      assert.equal(err.message, error);
-    } else {
-      throw err;
-    }
+    assert.equal(err.message, error);
   }
 }
 

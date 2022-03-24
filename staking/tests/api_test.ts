@@ -127,6 +127,26 @@ describe("api", async () => {
     assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 
+  it("alice unlock too much", async () => {
+    const res = await stakeConnection.getStakeAccounts(alice.publicKey);
+    const stakeAccount = res[0];
+
+    await expectFailApi(
+      stakeConnection.unlockTokens(stakeAccount, new BN(701)),
+      "Amount greater than locked amount"
+    );
+
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(
+      stakeAccount.address
+    );
+    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+      await stakeConnection.getTime()
+    );
+    assert.equal(afterBalSummary.locked.toNumber(), 700);
+    assert.equal(afterBalSummary.unvested.toNumber(), 0);
+    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
+  });
+
   it("alice unlock", async () => {
     const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     const stakeAccount = res[0];
@@ -148,7 +168,7 @@ describe("api", async () => {
     const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     const stakeAccount = res[0];
 
-    expectFailApi(
+    await expectFailApi(
       stakeConnection.withdrawTokens(stakeAccount, new BN(601)),
       "Amount exceeds withdrawable"
     );
