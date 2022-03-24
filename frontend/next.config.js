@@ -1,6 +1,25 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-}
+require("dotenv").config()
 
-module.exports = nextConfig
+/** @type {import('next').NextConfig} */
+module.exports = {
+  reactStrictMode: true,
+  experimental: {
+    externalDir: true,
+  },
+  env: {
+    ENDPOINT: process.env.ENDPOINT,
+  },
+  webpack: (config) => {
+    config.experiments = { asyncWebAssembly: true, topLevelAwait: true }
+    return config
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/staking',
+        permanent: true,
+      },
+    ]
+  },
+}

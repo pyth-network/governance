@@ -1,3 +1,4 @@
+#![feature(trivial_bounds)]
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log;

@@ -15,7 +15,7 @@ import {
 } from "@solana/web3.js";
 import { createMint } from "../tests/utils/utils";
 import BN from "bn.js";
-import fs from "fs"
+import fs from "fs";
 
 describe("setup", async () => {
   let program: Program<Staking>;
@@ -46,7 +46,6 @@ describe("setup", async () => {
   const provider = anchor.Provider.local();
 
   before(async () => {
-    
     // Drop keypairs in format compatible with Phantom Wallet
     fs.writeFileSync(`./app/keypairs/alice.json`, `[${alice.secretKey.toString()}]`);
     fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
@@ -54,8 +53,10 @@ describe("setup", async () => {
 
     program = anchor.workspace.Staking as Program<Staking>;
 
-    await provider.connection.requestAirdrop(provider.wallet.publicKey, 1_000_000_000_000);
-
+    await provider.connection.requestAirdrop(
+      provider.wallet.publicKey,
+      1_000_000_000_000
+    );
   });
 
   it("initializes config", async () => {
@@ -109,7 +110,7 @@ describe("setup", async () => {
         toAccount,
         pythMintAuthority.publicKey,
         [],
-        1000
+        2000
       );
 
       transaction.add(mintIx);
