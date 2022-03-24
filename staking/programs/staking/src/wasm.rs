@@ -29,12 +29,22 @@ impl WasmPositionData {
     }
 
     #[wasm_bindgen(js_name=getPositionState)]
-    pub fn get_position_state(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<String, JsValue> {
+    pub fn get_position_state(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<u8, JsValue> {
         convert_error(self.get_position_state_impl(index, current_epoch, unlocking_duration))
     }
-    fn get_position_state_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<String> {
+    fn get_position_state_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<u8> {
         match self.wrapped.positions[index as usize] {
-            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?.to_string()),
+            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)? as u8),
+            None => Err(error!(ErrorCode::PositionNotInUse))
+        }
+    }
+    #[wasm_bindgen(js_name=isPositionVoting)]
+    pub fn is_position_voting(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<bool, JsValue> {
+        convert_error(self.is_position_voting_impl(index, current_epoch, unlocking_duration))
+    }
+    fn is_position_voting_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<bool> {
+        match self.wrapped.positions[index as usize] {
+            Some(pos) => Ok(pos.is_voting()),
             None => Err(error!(ErrorCode::PositionNotInUse))
         }
     }

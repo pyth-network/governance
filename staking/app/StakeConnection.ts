@@ -224,7 +224,7 @@ export class StakeConnection {
       .filter((el) => el.value) // position not null
       .filter((el) => el.value.publisher == null && el.value.product == null) // voting positions
       .filter((el) =>
-        ["LOCKING", "LOCKED"].includes(
+        [1,2].includes(
           stakeAccount.stakeAccountPositionsWasm.getPositionState(
             el.index,
             BigInt(currentEpoch.toString()),
