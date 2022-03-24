@@ -231,10 +231,11 @@ export class StakeConnection {
   }
 
   // Unlock a provided token balance
-  // If amount requested to unlock bigger the locked amount, we will close all positions
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
 
-    assert(stakeAccount.getBalanceSummary(await this.getTime()).locked.gte(amount));
+    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
+      throw new Error("Amount greater than locked amount");
+    };
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
@@ -263,7 +264,7 @@ export class StakeConnection {
             this.config.unlockingDuration
           )
         )
-      ) 
+      )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
@@ -452,11 +453,27 @@ export class StakeConnection {
   }
 
   //withdraw tokens
-  public async withdrawTokens(
-    stakeAccount: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+  public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
+
+    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable)){
+      throw new Error("Amount exceeds withdrawable");
+    }
+
+    const toAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      this.config.pythTokenMint,
+      this.program.provider.wallet.publicKey
+    );
+
+    await this.program.methods
+      .withdrawStake(amount)
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        destination: toAccount,
+      })
+      .rpc();
+  }
 }
 export interface BalanceSummary {
   withdrawable: BN;
