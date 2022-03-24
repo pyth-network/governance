@@ -135,17 +135,12 @@ reexport_seed_const!(VOTER_RECORD_SEED);
 #[wasm_bindgen]
 impl Constants {
     #[wasm_bindgen]
-    pub fn ANCHOR_DISCRIMINATOR_SIZE() -> usize {
-        //anchor_lang::Discriminator::discriminator().len()
-        8
-    }
-    #[wasm_bindgen]
     pub fn MAX_POSITIONS() -> usize {
         crate::state::positions::MAX_POSITIONS
     }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
-        Constants::ANCHOR_DISCRIMINATOR_SIZE() + std::mem::size_of::<PositionData>()
+        PositionData::discriminator().len() + std::mem::size_of::<PositionData>()
     }
 }
 

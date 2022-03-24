@@ -100,20 +100,13 @@ export class StakeConnection {
 
   //gets a users stake accounts
   public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
-    const discriminator = Buffer.from(
-      sha256.digest(`account:PositionData`)
-    ).slice(0, 8);
-
     const res = await this.program.provider.connection.getProgramAccounts(
       this.program.programId,
       {
         encoding: "base64",
         filters: [
           {
-            memcmp: {
-              offset: 0,
-              bytes: bs58.encode(discriminator),
-            },
+            memcmp: this.program.coder.accounts.memcmp("PositionData"),
           },
           {
             memcmp: {
@@ -214,14 +207,18 @@ export class StakeConnection {
   }
 
   // Gets the current unix time, as would be perceived by the on-chain program
-  public async getTime() : Promise<BN> {
-    if ('mockClockTime' in this.config) {
+  public async getTime(): Promise<BN> {
+    if ("mockClockTime" in this.config) {
       // On chain program using mock clock, so get that time
-      const updatedConfig = await this.program.account.globalConfig.fetch(this.configAddress);
+      const updatedConfig = await this.program.account.globalConfig.fetch(
+        this.configAddress
+      );
       return updatedConfig.mockClockTime;
     } else {
       // Using Sysvar clock
-      const clockBuf = await this.program.provider.connection.getAccountInfo(SYSVAR_CLOCK_PUBKEY);
+      const clockBuf = await this.program.provider.connection.getAccountInfo(
+        SYSVAR_CLOCK_PUBKEY
+      );
       return new BN(wasm.getUnixTime(clockBuf.data).toString());
     }
   }
