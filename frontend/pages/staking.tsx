@@ -14,7 +14,6 @@ import {
   StakeConnection,
 } from '../../staking/app/StakeConnection'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
-import { airdropPythToken } from './api/airdropPythToken'
 import toast from 'react-hot-toast'
 import { Tab } from '@headlessui/react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
@@ -25,6 +24,15 @@ enum TabEnum {
   Deposit,
   Unlock,
   Withdraw,
+}
+
+const tabDescriptions = {
+  Deposit:
+    'Deposit CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
+  Unlock:
+    'Unlock CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
+  Withdraw:
+    'Withdraw CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
 }
 
 const Staking: NextPage = () => {
@@ -111,20 +119,6 @@ const Staking: NextPage = () => {
     }
   }
 
-  // airdrop pyth token to user if they have no pyth token
-  const handleClaimPyth = async () => {
-    if (publicKey) {
-      const provider = new Provider(connection, anchorWallet as Wallet, {})
-      try {
-        await airdropPythToken(provider, publicKey)
-        toast.success('Airdrop successful!')
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-    }
-    await refreshBalance()
-  }
-
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
@@ -164,7 +158,7 @@ const Staking: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Staking'} />
-      <div className="flex flex-col items-center px-10">
+      <div className="mb-20 flex flex-col items-center px-10">
         <div className="mt-10 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
           <SEO title={'Staking'} />
           <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
@@ -197,8 +191,6 @@ const Staking: NextPage = () => {
             </div>
           </div>
         </div>
-      </div>
-      <div className="mb-20 flex flex-col items-center px-10">
         <div className="mt-5 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14 md:px-20">
           <div className="w-full py-8">
             <Tab.Group onChange={handleChangeTab}>
@@ -210,11 +202,11 @@ const Staking: NextPage = () => {
                       key={v}
                       className={({ selected }) =>
                         classNames(
-                          'py-2.5 px-5 text-xs font-medium text-scampi sm:text-sm',
+                          'py-2.5 px-5 text-xs font-medium sm:text-sm',
 
                           selected
                             ? 'primary-btn text-white'
-                            : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                            : 'text-blue-100 hover:bg-white/[0.12] text-scampi hover:text-white'
                         )
                       }
                     >
@@ -222,11 +214,15 @@ const Staking: NextPage = () => {
                     </Tab>
                   ))}
               </Tab.List>
-              <Tab.Panels className="mt-8 sm:mt-16">
-                {(Object.keys(TabEnum) as Array<keyof typeof TabEnum>).map(
-                  (v, idx) => (
+              <Tab.Panels className="mt-8 sm:mt-12">
+                {Object.keys(TabEnum)
+                  .slice(3)
+                  .map((v, idx) => (
                     <Tab.Panel key={idx}>
                       <div className="col-span-12 font-inter text-xs">
+                        <div className="mb-8 text-white sm:mb-12">
+                          {tabDescriptions[v as keyof typeof TabEnum]}
+                        </div>
                         <div className="mb-2 flex">
                           <div className="ml-auto mr-0 space-x-2 sm:hidden">
                             <button
@@ -288,13 +284,6 @@ const Staking: NextPage = () => {
                               text-base
                               font-semibold
                             />
-                          ) : pythBalance === 0 ? (
-                            <button
-                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
-                              onClick={handleClaimPyth}
-                            >
-                              Claim $PYTH
-                            </button>
                           ) : currentTab === TabEnum.Deposit ? (
                             <button
                               className="primary-btn py-3 px-14 text-base font-semibold text-white"
@@ -314,11 +303,10 @@ const Staking: NextPage = () => {
                         </div>
                       </div>
                     </Tab.Panel>
-                  )
-                )}
+                  ))}
               </Tab.Panels>
             </Tab.Group>
-          </div> 
+          </div>
         </div>
       </div>
     </Layout>
