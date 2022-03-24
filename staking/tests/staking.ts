@@ -286,7 +286,7 @@ describe("staking", async () => {
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         }),
-      "Insufficient balance to take on a new position",
+      "Too much exposure to product",
       errMap
     );
   });
