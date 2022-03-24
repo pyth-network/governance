@@ -48,19 +48,11 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-<<<<<<< HEAD
-      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(0) },
-      await stakeConnection.getTime()
-    );
-
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
-=======
       { locked: 100, unvested: 0, withdrawable: 0 },
       await stakeConnection.getTime()
     );
 
     await loadAndUnlock(stakeConnection, owner, 50);
->>>>>>> a99b218 (add unlock api tests)
 
     await assertBalanceMatches(
       stakeConnection,
@@ -103,7 +95,7 @@ describe("unlock_api", async () => {
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(100));
+    await loadAndUnlock(stakeConnection, owner, 100);
 
     await assertBalanceMatches(
       stakeConnection,

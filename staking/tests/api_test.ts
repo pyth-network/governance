@@ -132,7 +132,7 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await expectFailApi(
-      stakeConnection.unlockTokens(stakeAccount, new BN(701)),
+      stakeConnection.unlockTokens(stakeAccount, 701),
       "Amount greater than locked amount"
     );
 
@@ -142,9 +142,9 @@ describe("api", async () => {
     const afterBalSummary = afterStakeAccount.getBalanceSummary(
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 700);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
+    assert.equal(afterBalSummary.locked, 700);
+    assert.equal(afterBalSummary.unvested, 0);
+    assert.equal(afterBalSummary.withdrawable, 0);
   });
 
   it("alice unlock", async () => {

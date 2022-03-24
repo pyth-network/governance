@@ -286,7 +286,7 @@ describe("staking", async () => {
         .accounts({
           stakeAccountPositions: stake_account_positions_secret.publicKey,
         }),
-      "Too much exposure to product",
+      "Too much exposure to governance",
       errMap
     );
   });
