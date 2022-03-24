@@ -14,13 +14,13 @@ no-idl = []
 no-log-ix-name = []
 cpi = ["no-entrypoint"]
 mock-clock = []
-wasm = ["no-entrypoint", "wasm-bindgen", "js-sys", "bincode"]
+wasm = ["no-entrypoint", "js-sys", "bincode"]
 default = []
 
 [dependencies]
 borsh = {version = "0.9.3", features = ["const-generics"]}
 anchor-lang = "0.22.0"
 anchor-spl = "0.22.0"
-wasm-bindgen = { version = "0.2.79", optional = true}
+wasm-bindgen = "0.2.79"
 js-sys = { version = "0.3.56", optional = true }
 bincode = { version = "1.3.3", optional = true }

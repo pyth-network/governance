@@ -58,9 +58,16 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
+import assert from "assert"
+
+interface ClosingItem {
+  amount: BN;
+  index: number;
+}
 
 type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
+type Position = IdlTypes<Staking>["Position"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 
@@ -223,12 +230,76 @@ export class StakeConnection {
     }
   }
 
-  //unlock a provided token balance
-  public async unlockTokens(
-    stakeAccount: StakeAccount,
-    amount: number,
-    program: Program
-  ) {}
+  // Unlock a provided token balance
+  // If amount requested to unlock bigger the locked amount, we will close all positions
+  public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
+
+    assert(stakeAccount.getBalanceSummary(await this.getTime()).locked.gte(amount));
+
+    const positions = stakeAccount.stakeAccountPositionsJs
+      .positions as Position[];
+
+    const time = await this.getTime();
+    const currentEpoch = time.div(this.config.epochDuration);
+
+    const sortPositions = positions
+      .map((value, index) => {
+        return { index, value };
+      })
+      .filter((el) => el.value) // position not null
+      .filter((el) => // position is voting
+        stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
+          el.index,
+          BigInt(currentEpoch.toString()),
+          this.config.unlockingDuration
+        
+      )
+    ) 
+      .filter((el) => // position locking or locked 
+        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+            el.index,
+            BigInt(currentEpoch.toString()),
+            this.config.unlockingDuration
+          )
+        )
+      ) 
+      .sort(
+        (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
+      );
+
+    let amountBeforeFinishing = amount;
+    let i = 0;
+    const toClose: ClosingItem[] = [];
+
+    while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
+      if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
+        toClose.push({
+          index: sortPositions[i].index,
+          amount: amountBeforeFinishing,
+        });
+        amountBeforeFinishing = new BN(0);
+      } else {
+        toClose.push({
+          index: sortPositions[i].index,
+          amount: sortPositions[i].value.amount,
+        });
+        amountBeforeFinishing = amountBeforeFinishing.sub(
+          sortPositions[i].value.amount
+        );
+      }
+      i++; 
+    }
+    
+    for (let el of toClose) {
+      await this.program.methods
+        .closePosition(el.index, el.amount)
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+        })
+        .rpc();
+    }
+  }
 
   private async withCreateAccount(
     instructions: TransactionInstruction[],

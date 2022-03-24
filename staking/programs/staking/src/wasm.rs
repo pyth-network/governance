@@ -1,10 +1,12 @@
 use crate::state::positions::{PositionData};
-use anchor_lang::{prelude::{Error, Clock}, AccountDeserialize, Discriminator, AnchorDeserialize};
+use anchor_lang::{prelude::{Error, Clock, error}, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
 use std::io::Write;
-use crate::VestingSchedule;
+use crate::{VestingSchedule, PositionState};
 use anchor_lang::solana_program::borsh::get_packed_len;
 use borsh::BorshSerialize;
+use crate::ErrorCode;
+
 
 
 #[wasm_bindgen]
@@ -24,6 +26,27 @@ impl WasmPositionData {
         Ok(WasmPositionData {
             wrapped: position_data,
         })
+    }
+
+    #[wasm_bindgen(js_name=getPositionState)]
+    pub fn get_position_state(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<PositionState, JsValue> {
+        convert_error(self.get_position_state_impl(index, current_epoch, unlocking_duration))
+    }
+    fn get_position_state_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<PositionState> {
+        match self.wrapped.positions[index as usize] {
+            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
+            None => Err(error!(ErrorCode::PositionNotInUse))
+        }
+    }
+    #[wasm_bindgen(js_name=isPositionVoting)]
+    pub fn is_position_voting(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> Result<bool, JsValue> {
+        convert_error(self.is_position_voting_impl(index, current_epoch, unlocking_duration))
+    }
+    fn is_position_voting_impl(&self, index: u16, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<bool> {
+        match self.wrapped.positions[index as usize] {
+            Some(pos) => Ok(pos.is_voting()),
+            None => Err(error!(ErrorCode::PositionNotInUse))
+        }
     }
 
     #[wasm_bindgen(getter, js_name=borshLength)]

@@ -1,6 +1,7 @@
 use crate::error::ErrorCode;
-use anchor_lang::prelude::{*, borsh::BorshSchema};
+use anchor_lang::{prelude::{*, borsh::BorshSchema}, solana_program::wasm_bindgen};
 use crate::borsh::BorshSerialize;
+use std::fmt::{self, Debug, Display};
 
 
 pub const MAX_POSITIONS: usize = 100;
@@ -87,6 +88,7 @@ impl Position {
 
 /// The core states that a position can be in
 #[repr(u8)]
+#[wasm_bindgen]
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
 pub enum PositionState {
     UNLOCKED,
@@ -94,6 +96,13 @@ pub enum PositionState {
     LOCKED,
     UNLOCKING,
 }
+
+impl std::fmt::Display for PositionState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 
 #[cfg(test)]
 pub mod tests {
