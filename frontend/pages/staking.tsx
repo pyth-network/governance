@@ -3,7 +3,7 @@ import {
   useConnection,
   useWallet,
 } from '@solana/wallet-adapter-react'
-import { Wallet, Provider, BN } from '@project-serum/anchor'
+import { Wallet } from '@project-serum/anchor'
 import type { NextPage } from 'next'
 import { ChangeEvent, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
@@ -127,12 +127,7 @@ const Staking: NextPage = () => {
       if (stakeAccounts.length > 0) {
         setStakeAccount(stakeAccounts[0])
         const { withdrawable, locked, unvested } =
-          stakeAccounts[0].getBalanceSummary(new BN(Date.now()))
-        console.log(
-          withdrawable.toNumber(),
-          locked.toNumber(),
-          unvested.toNumber()
-        )
+          stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
         setLockedPythBalance(locked.toNumber())
         setUnlockedPythBalance(withdrawable.toNumber())
         setUnvestedPythBalance(unvested.toNumber())
