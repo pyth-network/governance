@@ -173,4 +173,24 @@ describe("fills a stake account with positions", async () => {
     // Locked in 1 token, so voter weight is 1
     await assertVoterWeight(1);
   });
+
+  it("unlocks and checks voter weight", async () => {
+    await program.methods
+      .closePosition(0, new BN(1))
+      .accounts({
+        stakeAccountPositions: stake_account_positions_secret.publicKey,
+      })
+      .rpc({
+        skipPreflight: DEBUG,
+      });
+    // Still have weight until the end of the epoch
+    await assertVoterWeight(1);
+
+    await program.methods
+      .advanceClock(EPOCH_DURATION.muln(1))
+      .accounts()
+      .rpc({ skipPreflight: DEBUG });
+
+    await assertVoterWeight(0);
+  });
 });
