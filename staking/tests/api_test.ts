@@ -16,6 +16,7 @@ import {} from "../../staking/tests/utils/before";
 import BN from "bn.js";
 import path from "path";
 import { getConnection } from "./utils/before";
+import { expectFail, expectFailApi } from "./utils/utils";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -132,14 +133,35 @@ describe("api", async () => {
 
     await stakeConnection.unlockTokens(stakeAccount, new BN(600));
 
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(stakeAccount.address);
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(
+      stakeAccount.address
+    );
     const afterBalSummary = afterStakeAccount.getBalanceSummary(
       await stakeConnection.getTime()
     );
     assert.equal(afterBalSummary.locked.toNumber(), 100);
     assert.equal(afterBalSummary.unvested.toNumber(), 0);
     assert.equal(afterBalSummary.withdrawable.toNumber(), 600);
+  });
 
+  it("alice withdraw too much", async () => {
+    const res = await stakeConnection.getStakeAccounts(alice.publicKey);
+    const stakeAccount = res[0];
+
+    expectFailApi(
+      stakeConnection.withdrawTokens(stakeAccount, new BN(601)),
+      "Amount exceeds withdrawable"
+    );
+
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(
+      stakeAccount.address
+    );
+    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+      await stakeConnection.getTime()
+    );
+    assert.equal(afterBalSummary.locked.toNumber(), 100);
+    assert.equal(afterBalSummary.unvested.toNumber(), 0);
+    assert.equal(afterBalSummary.withdrawable.toNumber(), 600);
   });
 
   it("alice withdraw", async () => {
@@ -147,8 +169,9 @@ describe("api", async () => {
     const stakeAccount = res[0];
     await stakeConnection.withdrawTokens(stakeAccount, new BN(600));
 
-
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(stakeAccount.address);
+    const afterStakeAccount = await stakeConnection.loadStakeAccount(
+      stakeAccount.address
+    );
     const afterBalSummary = afterStakeAccount.getBalanceSummary(
       await stakeConnection.getTime()
     );

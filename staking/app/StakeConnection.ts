@@ -435,7 +435,9 @@ export class StakeConnection {
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
 
-    assert(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable.gte(amount));
+    if (stakeAccount.getBalanceSummary(await this.getTime()).withdrawable.lt(amount)){
+      throw new Error("Amount exceeds withdrawable");
+    }
 
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,

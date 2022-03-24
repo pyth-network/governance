@@ -6,7 +6,7 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
-import {ProgramError } from "@project-serum/anchor";
+import { ProgramError } from "@project-serum/anchor";
 import assert from "assert";
 
 /**
@@ -58,29 +58,45 @@ export async function createMint(
  * @param error : expected string
  * @param idlErrors : mapping from error code to error message
  */
-export async function expectFail(rpcCall , error : string, idlErrors : Map<number,string>){
+export async function expectFail(
+  rpcCall,
+  error: string,
+  idlErrors: Map<number, string>
+) {
   try {
     const tx = await rpcCall.rpc();
     assert(false, "Transaction should fail");
   } catch (err) {
     if (err instanceof ProgramError) {
-      assert.equal(
-        parseErrorMessage(err, idlErrors),
-        error
-      );
+      assert.equal(parseErrorMessage(err, idlErrors), error);
     } else {
       throw err;
     }
   }
 }
 
+/**
+ * Awaits the api request and checks whether the error message matches the provided string
+ * @param promise : api promise
+ * @param error : expected string
+ */
+export async function expectFailApi(promise: Promise<any>, error: string) {
+  try {
+    await promise;
+    assert(false, "Operation should fail");
+  } catch (err) {
+    if (err instanceof ProgramError) {
+      assert.equal(err.message, error);
+    } else {
+      throw err;
+    }
+  }
+}
 
 /**
  * Parses an error message from solana into a human-readable message
  */
 export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
-  if (err.msg)
-    return err.msg;
-  if (err.code)
-    return idlErrors[err.code];
+  if (err.msg) return err.msg;
+  if (err.code) return idlErrors[err.code];
 }
