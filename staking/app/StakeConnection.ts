@@ -247,7 +247,7 @@ export class StakeConnection {
 
     const sortPositions = positions
       .map((value, index) => {
-        return { index, value };
+        return { index, value }
       })
       .filter((el) => el.value) // position not null
       .filter(
@@ -264,6 +264,7 @@ export class StakeConnection {
         (
           el // position locking or locked
         ) =>
+
 
 
 
