@@ -153,7 +153,7 @@ const Staking: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Staking'} />
-      <div className="mb-20 flex flex-col items-center px-10">
+      <div className="mb-20 flex flex-col items-center px-8">
         <div className="mt-10 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
           <SEO title={'Staking'} />
           <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
