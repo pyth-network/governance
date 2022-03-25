@@ -124,6 +124,7 @@ export class StakeConnection {
         ],
       }
     );
+
     return await Promise.all(
       res.map(async (account) => {
         return await this.loadStakeAccount(account.pubkey);
@@ -277,7 +278,7 @@ export class StakeConnection {
 
     let amountBeforeFinishing = amount;
     let i = 0;
-    const toClose: ClosingItem[] = [];
+    const toClose: ClosingItem[] = []    ;
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
       if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
@@ -287,10 +288,11 @@ export class StakeConnection {
         });
         amountBeforeFinishing = new BN(0);
       } else {
+        
         toClose.push({
           index: sortPositions[i].index,
           amount: sortPositions[i].value.amount,
-        });
+        })     ;
         amountBeforeFinishing = amountBeforeFinishing.sub(
           sortPositions[i].value.amount
         );
