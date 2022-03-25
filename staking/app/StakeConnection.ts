@@ -264,6 +264,10 @@ export class StakeConnection {
         (
           el // position locking or locked
         ) =>
+
+
+
+        
           [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
             stakeAccount.stakeAccountPositionsWasm.getPositionState(
               el.index,

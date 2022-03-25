@@ -9,15 +9,24 @@
         "@solana/spl-token": "^0.1.8",
         "@solana/web3.js": "^1.36.0",
         "encoding": "^0.1.13",
+        "lint-staged": "^12.3.7",
+        "prettier": "^2.6.1",
         "typescript": "^4.3.5"
     },
     "devDependencies": {
         "@types/mocha": "^9.0.0",
         "chai": "^4.3.4",
+        "husky": "^7.0.4",
         "mocha": "^9.0.3",
         "shelljs": "^0.8.5",
         "ts-mocha": "^8.0.0",
         "wasm-pack": "^0.10.2"
+    },
+    "lint-staged": {
+        "{app,tests}/**/*.ts": [
+            "prettier --c",
+            "git add"
+        ]
     },
     "scripts": {
         "test": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force && ./wasm/build_wasm.sh && anchor test  -- --features mock-clock",
