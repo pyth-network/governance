@@ -24,8 +24,7 @@
   },
   "lint-staged": {
     "{app,tests}/**/*.ts": [
-      "prettier --c",
-      "git add"
+      "prettier --c"
     ]
   },
   "scripts": {
