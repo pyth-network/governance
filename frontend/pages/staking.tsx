@@ -186,7 +186,7 @@ const Staking: NextPage = () => {
             </div>
           </div>
         </div>
-        <div className="mt-5 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14 md:px-20">
+        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14 md:px-20">
           <div className="w-full py-8">
             <Tab.Group onChange={handleChangeTab}>
               <Tab.List className="flex justify-center space-x-2">
