@@ -19,6 +19,7 @@ import { Tab } from '@headlessui/react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import BN from 'bn.js'
 
 enum TabEnum {
   Deposit,
@@ -112,6 +113,32 @@ const Staking: NextPage = () => {
       try {
         await stakeConnection.depositAndLockTokens(stakeAccount, amount)
         toast.success('Deposit successful!')
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
+      await refreshBalance()
+    }
+  }
+
+  //
+  const handleUnlock = async () => {
+    if (stakeConnection && publicKey && stakeAccount) {
+      try {
+        await stakeConnection.unlockTokens(stakeAccount, new BN(amount))
+        toast.success('Unlock successful!')
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
+      await refreshBalance()
+    }
+  }
+
+  //
+  const handleWithdraw = async () => {
+    if (stakeConnection && publicKey && stakeAccount) {
+      try {
+        await stakeConnection.withdrawTokens(stakeAccount, new BN(amount))
+        toast.success('Withdraw successful!')
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
@@ -287,11 +314,17 @@ const Staking: NextPage = () => {
                               Deposit
                             </button>
                           ) : currentTab === TabEnum.Unlock ? (
-                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleUnlock}
+                            >
                               Unlock
                             </button>
                           ) : (
-                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleWithdraw}
+                            >
                               Withdraw
                             </button>
                           )}

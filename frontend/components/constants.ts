@@ -5,7 +5,7 @@ export const STAKING_PROGRAM = new PublicKey(
 )
 
 export const PYTH_MINT_ACCOUNT_PUBKEY = new PublicKey(
-  '2qF1zgC38b6LRa51G2NndLn8dxtE9AUassGyUJuw5nWh'
+  '5TpVTwbDVUWD2MXBFrmFfNQRHPNHknWXvfHvG7ZQvqYM'
 )
 
 export const STAKE_ACCOUNT_METADATA_SEED = 'stake_metadata'
