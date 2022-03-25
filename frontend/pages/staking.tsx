@@ -28,11 +28,11 @@ enum TabEnum {
 
 const tabDescriptions = {
   Deposit:
-    'Deposit CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
+    'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.' ,
   Unlock:
-    'Unlock CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
+    'Unlock PYTH. Unlocking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unlocked tokens cannot participate in governance.',
   Withdraw:
-    'Withdraw CRV. By staking cvxCRV, you’re earning the usual rewards from veCRV (3crv governance fee distribution from Curve + any airdrop), plus a share of 10% of the Convex LPs’ boosted CRV earnings, and CVX tokens on top of that.',
+    'Withdraw PYTH. Transfer any unlocked tokens from the program to your wallet.',
 }
 
 const Staking: NextPage = () => {
