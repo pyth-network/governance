@@ -11,7 +11,7 @@ const Header = () => {
 
   return (
     <div className="mb-3 grid grid-cols-12">
-      <div className="col-span-12 flex h-24 items-center justify-between px-4 md:px-8 xl:col-span-10 xl:col-start-2">
+      <div className="col-span-12 flex h-24 items-center justify-between px-8 md:px-8 xl:col-span-10 xl:col-start-2">
         <div className="flex cursor-pointer items-center md:w-36">
           <Link href="/staking">
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />

@@ -47,7 +47,7 @@
   );
 }
 
-@responsive {
+@layer components {
   .background-right {
     position: absolute;
     left: 68.79%;
