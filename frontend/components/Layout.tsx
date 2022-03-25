@@ -6,7 +6,11 @@ const Layout: React.FC<{}> = ({ children }) => {
   return (
     <>
       <Header />
-      <main>{children}</main>
+      <main>
+        {children}
+        <div className="background-left z-[-1]" />
+        <div className="sm:background-right z-[-1]" />
+      </main>
     </>
   )
 }

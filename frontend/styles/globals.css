@@ -7,7 +7,7 @@
 }
 
 .outlined-btn {
-  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white
+  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white;
 }
 
 .nav-link {
@@ -31,4 +31,34 @@
 .input-no-spin::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0px;
+}
+
+.background-left {
+  position: absolute;
+  left: -69.93%;
+  right: 30.07%;
+  top: -78.82%;
+  bottom: 21.18%;
+
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(130, 70, 250, 0.41) 0%,
+    rgba(16, 14, 33, 0) 100%
+  );
+}
+
+@responsive {
+  .background-right {
+    position: absolute;
+    left: 68.79%;
+    right: -50.64%;
+    top: -2.58%;
+    bottom: 10.31%;
+
+    background: radial-gradient(
+      50% 50% at 50% 50%,
+      rgba(71, 131, 250, 0.26) 0%,
+      rgba(41, 93, 195, 0) 100%
+    );
+  }
 }
