@@ -40,6 +40,9 @@ module.exports = {
       borderRadius: {
         '4xl': '2rem',
       },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--gradient-color-stops))',
+      }
     },
   },
   plugins: [],

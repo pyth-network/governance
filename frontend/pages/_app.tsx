@@ -19,6 +19,7 @@ import {
 import { clusterApiUrl } from '@solana/web3.js'
 import { Toaster } from 'react-hot-toast'
 import { FC, useMemo } from 'react'
+import Footer from '@components/Footer'
 
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
@@ -31,7 +32,10 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // You can also provide a custom RPC endpoint
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
-  const endpoint = process.env.ENDPOINT
+  const endpoint =
+    process.env.ENDPOINT && process.env.ENDPOINT === 'devnet'
+      ? clusterApiUrl(WalletAdapterNetwork.Devnet)
+      : process.env.ENDPOINT
 
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
@@ -52,9 +56,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
 
   return (
     <ConnectionProvider
-      endpoint={
-        endpoint || clusterApiUrl(WalletAdapterNetwork.Devnet)
-      }
+      endpoint={endpoint || clusterApiUrl(WalletAdapterNetwork.Devnet)}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
