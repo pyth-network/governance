@@ -22,14 +22,13 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import BN from 'bn.js'
 
 enum TabEnum {
-  Deposit,
+  Lock,
   Unlock,
   Withdraw,
 }
 
 const tabDescriptions = {
-  Deposit:
-    'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
+  Lock: 'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
   Unlock:
     'Unlock PYTH. Unlocking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unlocked tokens cannot participate in governance.',
   Withdraw:
@@ -48,7 +47,7 @@ const Staking: NextPage = () => {
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
-  const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Deposit)
+  const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
   // create stake connection when wallet is connected
   useEffect(() => {
@@ -81,7 +80,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     if (connected) {
       switch (currentTab) {
-        case TabEnum.Deposit:
+        case TabEnum.Lock:
           setBalance(pythBalance)
           break
         case TabEnum.Unlock:
@@ -112,7 +111,7 @@ const Staking: NextPage = () => {
     if (stakeConnection && publicKey) {
       try {
         await stakeConnection.depositAndLockTokens(stakeAccount, amount)
-        toast.success('Deposit successful!')
+        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
@@ -181,7 +180,7 @@ const Staking: NextPage = () => {
     <Layout>
       <SEO title={'Staking'} />
       <div className="mb-20 flex flex-col items-center px-8">
-        <div className="mt-10 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
+        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-12 sm:px-14 md:px-20">
           <SEO title={'Staking'} />
           <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -236,13 +235,13 @@ const Staking: NextPage = () => {
                     </Tab>
                   ))}
               </Tab.List>
-              <Tab.Panels className="mt-8 sm:mt-12">
+              <Tab.Panels className="mt-4 sm:mt-12">
                 {Object.keys(TabEnum)
                   .slice(3)
                   .map((v, idx) => (
                     <Tab.Panel key={idx}>
                       <div className="col-span-12 font-inter text-xs">
-                        <div className="mb-8 text-white sm:mb-12">
+                        <div className="mb-4 text-white sm:mb-12">
                           {tabDescriptions[v as keyof typeof TabEnum]}
                         </div>
                         <div className="mb-2 flex">
@@ -267,7 +266,7 @@ const Staking: NextPage = () => {
                           </label>
                           <div className="ml-auto mr-0 flex items-center space-x-2">
                             <p className="text-white">
-                              {currentTab === TabEnum.Deposit
+                              {currentTab === TabEnum.Lock
                                 ? 'Balance'
                                 : currentTab === TabEnum.Unlock
                                 ? 'Locked Tokens'
@@ -306,12 +305,12 @@ const Staking: NextPage = () => {
                               text-base
                               font-semibold
                             />
-                          ) : currentTab === TabEnum.Deposit ? (
+                          ) : currentTab === TabEnum.Lock ? (
                             <button
                               className="primary-btn py-3 px-14 text-base font-semibold text-white"
                               onClick={handleDeposit}
                             >
-                              Deposit
+                              Lock
                             </button>
                           ) : currentTab === TabEnum.Unlock ? (
                             <button

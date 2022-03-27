@@ -5,7 +5,7 @@ import Footer from './Footer'
 
 const Layout: React.FC<{}> = ({ children }) => {
   return (
-    <>
+    <div className="flex flex-col justify-between h-screen">
       <Header />
       <main>
         {children}
@@ -13,7 +13,7 @@ const Layout: React.FC<{}> = ({ children }) => {
         <div className="sm:background-right z-[-1]" />
       </main>
       <Footer />
-    </>
+    </div>
   )
 }
 
