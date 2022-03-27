@@ -4,7 +4,7 @@ import SiteIcon from './icons/SiteIcon'
 
 const Footer = () => {
   return (
-    <div className="bottom-0 flex h-20 w-full flex-row justify-between gap-y-8 border-t border-mediumSlateBlue bg-jaguar px-8 md:gap-y-0">
+    <div className="bottom-0 flex w-full flex-row justify-between gap-y-8 border-t border-mediumSlateBlue bg-jaguar px-8 py-8 md:gap-y-0">
       <div className="flex items-center gap-x-5 md:w-36 md:gap-x-6">
         <a
           rel="noreferrer"
