@@ -34,7 +34,7 @@
 }
 
 .background-left {
-  position: absolute;
+  position: fixed;
   left: -69.93%;
   right: 30.07%;
   top: -78.82%;
@@ -49,7 +49,7 @@
 
 @layer components {
   .background-right {
-    position: absolute;
+    position: fixed;
     left: 68.79%;
     right: -50.64%;
     top: -2.58%;

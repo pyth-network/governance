@@ -27,8 +27,7 @@ enum TabEnum {
 }
 
 const tabDescriptions = {
-  Lock:
-    'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
+  Lock: 'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
   Unlock:
     'Unlock PYTH. Unlocking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unlocked tokens cannot participate in governance.',
   Withdraw:
@@ -154,7 +153,7 @@ const Staking: NextPage = () => {
     <Layout>
       <SEO title={'Staking'} />
       <div className="mb-20 flex flex-col items-center px-8">
-        <div className="mt-10 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
+        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-20 sm:px-14 md:px-20">
           <SEO title={'Staking'} />
           <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -209,13 +208,13 @@ const Staking: NextPage = () => {
                     </Tab>
                   ))}
               </Tab.List>
-              <Tab.Panels className="mt-8 sm:mt-12">
+              <Tab.Panels className="mt-4 sm:mt-12">
                 {Object.keys(TabEnum)
                   .slice(3)
                   .map((v, idx) => (
                     <Tab.Panel key={idx}>
                       <div className="col-span-12 font-inter text-xs">
-                        <div className="mb-8 text-white sm:mb-12">
+                        <div className="mb-4 text-white sm:mb-12">
                           {tabDescriptions[v as keyof typeof TabEnum]}
                         </div>
                         <div className="mb-2 flex">
