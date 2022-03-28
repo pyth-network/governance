@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
+    "serve": "serve out",
     "start": "next start"
   },
   "dependencies": {
@@ -20,7 +21,8 @@
     "prop-types": "^15.8.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-hot-toast": "^2.2.0"
+    "react-hot-toast": "^2.2.0",
+    "serve": "13.0.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",

@@ -28,9 +28,9 @@ import {
 const useNode =
   typeof process !== undefined &&
   process.env.hasOwnProperty("_") &&
-  !process.env._.includes("next");
+  !process.env._?.includes("next");
 // console.log("Using node WASM version? " + useNode);
-let wasm;
+let wasm: any;
 let ensureWasmLoaded: Promise<void>;
 if (useNode) {
   // This needs to be sufficiently complicated that the bundler can't compute its value
@@ -39,13 +39,17 @@ if (useNode) {
   // When normal node is running, it doesn't care that this is an expression.
   const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
   wasm = require(path);
+  console.log(typeof wasm);
   ensureWasmLoaded = Promise.resolve();
 } else {
   const f = async () => {
     wasm = await require("../../staking/wasm/bundle/staking");
+    console.log(typeof wasm);
   };
   ensureWasmLoaded = f();
 }
+
+// import * as wasm from "../../staking/wasm/bundle/staking";
 
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
@@ -58,7 +62,8 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
-import assert from "assert"
+import assert from "assert";
+import { token } from "@project-serum/anchor/dist/cjs/utils";
 
 interface ClosingItem {
   amount: BN;
@@ -76,6 +81,16 @@ export class StakeConnection {
   config: GlobalConfig;
   private configAddress: PublicKey;
 
+  private constructor(
+    program: Program<Staking>,
+    config: GlobalConfig,
+    configAddress: PublicKey
+  ) {
+    this.program = program;
+    this.config = config;
+    this.configAddress = configAddress;
+  }
+
   // creates a program connection and loads the staking config
   // the constructor cannot be async so we use a static method
   public static async createStakeConnection(
@@ -83,26 +98,23 @@ export class StakeConnection {
     wallet: Wallet,
     address: PublicKey
   ): Promise<StakeConnection> {
-    const stakeConnection = new StakeConnection();
     const provider = new Provider(connection, wallet, {});
-    const idl = await Program.fetchIdl(address, provider);
-    stakeConnection.program = new Program(
+    const idl = (await Program.fetchIdl(address, provider))!;
+    const program = new Program(
       idl,
       address,
       provider
-    ) as Program<Staking>;
+    ) as unknown as Program<Staking>;
 
     const configAddress = (
       await PublicKey.findProgramAddress(
         [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
-        stakeConnection.program.programId
+        program.programId
       )
     )[0];
-    stakeConnection.configAddress = configAddress;
 
-    stakeConnection.config =
-      await stakeConnection.program.account.globalConfig.fetch(configAddress);
-    return stakeConnection;
+    const config = await program.account.globalConfig.fetch(configAddress);
+    return new StakeConnection(program, config, configAddress);
   }
 
   //gets a users stake accounts
@@ -141,7 +153,7 @@ export class StakeConnection {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
-    const pd = new wasm.WasmPositionData(inbuf.data);
+    const pd = new wasm.WasmPositionData(inbuf!.data);
     const outBuffer = Buffer.alloc(pd.borshLength);
     pd.asBorsh(outBuffer);
     const positions = this.program.coder.accounts.decode(
@@ -153,14 +165,8 @@ export class StakeConnection {
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
-    const stakeAccount = new StakeAccount();
-    stakeAccount.config = this.config;
-
-    stakeAccount.address = address;
-    [
-      stakeAccount.stakeAccountPositionsWasm,
-      stakeAccount.stakeAccountPositionsJs,
-    ] = await this.fetchPositionAccount(address);
+    const [stakeAccountPositionsWasm, stakeAccountPositionsJs] =
+      await this.fetchPositionAccount(address);
 
     const metadataAddress = (
       await PublicKey.findProgramAddress(
@@ -172,12 +178,12 @@ export class StakeConnection {
       )
     )[0];
 
-    stakeAccount.stakeAccountMetadata =
+    const stakeAccountMetadata =
       (await this.program.account.stakeAccountMetadata.fetch(
         metadataAddress
       )) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
-    stakeAccount.vestingSchedule = StakeAccount.serializeVesting(
-      stakeAccount.stakeAccountMetadata.lock,
+    const vestingSchedule = StakeAccount.serializeVesting(
+      stakeAccountMetadata.lock,
       this.program.idl
     );
 
@@ -191,7 +197,7 @@ export class StakeConnection {
       )
     )[0];
 
-    stakeAccount.authorityAddress = (
+    const authorityAddress = (
       await PublicKey.findProgramAddress(
         [
           utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
@@ -207,10 +213,17 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       new Keypair()
     );
-    stakeAccount.tokenBalance = (
-      await mint.getAccountInfo(custodyAddress)
-    ).amount;
-    return stakeAccount;
+    const tokenBalance = (await mint.getAccountInfo(custodyAddress)).amount;
+    return new StakeAccount(
+      address,
+      stakeAccountPositionsWasm,
+      stakeAccountPositionsJs,
+      stakeAccountMetadata,
+      tokenBalance,
+      authorityAddress,
+      vestingSchedule,
+      this.config
+    );
   }
 
   // Gets the current unix time, as would be perceived by the on-chain program
@@ -226,16 +239,17 @@ export class StakeConnection {
       const clockBuf = await this.program.provider.connection.getAccountInfo(
         SYSVAR_CLOCK_PUBKEY
       );
-      return new BN(wasm.getUnixTime(clockBuf.data).toString());
+      return new BN(wasm.getUnixTime(clockBuf!.data).toString());
     }
   }
 
   // Unlock a provided token balance
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)) {
+    if (
+      amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)
+    ) {
       throw new Error("Amount greater than locked amount");
-    };
+    }
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
@@ -248,26 +262,33 @@ export class StakeConnection {
         return { index, value };
       })
       .filter((el) => el.value) // position not null
-      .filter((el) => // position is voting
-        stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
-          el.index,
-          BigInt(currentEpoch.toString()),
-          this.config.unlockingDuration
-        
-      )
-    ) 
-      .filter((el) => // position locking or locked 
-        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+      .filter(
+        (
+          el // position is voting
+        ) =>
+          stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
             el.index,
             BigInt(currentEpoch.toString()),
             this.config.unlockingDuration
           )
-        )
+      )
+      .filter(
+        (
+          el // position locking or locked
+        ) =>
+          [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+            stakeAccount.stakeAccountPositionsWasm.getPositionState(
+              el.index,
+              BigInt(currentEpoch.toString()),
+              this.config.unlockingDuration
+            )
+          )
       )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
+
+    console.log(sortPositions);
 
     let amountBeforeFinishing = amount;
     let i = 0;
@@ -289,9 +310,9 @@ export class StakeConnection {
           sortPositions[i].value.amount
         );
       }
-      i++; 
+      i++;
     }
-    
+
     for (let el of toClose) {
       await this.program.methods
         .closePosition(el.index, el.amount)
@@ -454,8 +475,11 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
-
-    if (amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).withdrawable)){
+    if (
+      amount.gt(
+        stakeAccount.getBalanceSummary(await this.getTime()).withdrawable
+      )
+    ) {
       throw new Error("Amount exceeds withdrawable");
     }
 
@@ -484,13 +508,33 @@ export interface BalanceSummary {
 
 export class StakeAccount {
   address: PublicKey;
-  stakeAccountPositionsWasm: wasm.WasmPositionData;
+  stakeAccountPositionsWasm: any;
   stakeAccountPositionsJs: PositionData;
   stakeAccountMetadata: StakeAccountMetadata;
   tokenBalance: u64;
   authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
   config: GlobalConfig;
+
+  constructor(
+    address: PublicKey,
+    stakeAccountPositionsWasm: any,
+    stakeAccountPositionsJs: PositionData,
+    stakeAccountMetadata: StakeAccountMetadata,
+    tokenBalance: u64,
+    authorityAddress: PublicKey,
+    vestingSchedule: Buffer, // Borsh serialized
+    config: GlobalConfig
+  ) {
+    this.address = address;
+    this.stakeAccountPositionsWasm = stakeAccountPositionsWasm;
+    this.stakeAccountPositionsJs = stakeAccountPositionsJs;
+    this.stakeAccountMetadata = stakeAccountMetadata;
+    this.tokenBalance = tokenBalance;
+    this.authorityAddress = authorityAddress;
+    this.vestingSchedule = vestingSchedule;
+    this.config = config;
+  }
 
   // Withdrawable
 
@@ -531,8 +575,11 @@ export class StakeAccount {
     const VESTING_SCHED_MAX_BORSH_LEN = 4 * 8 + 1;
     let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
 
-    let idltype = idl.types.find((v) => v.name === "VestingSchedule");
-    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(idltype, idl.types);
+    let idltype = idl?.types?.find((v) => v.name === "VestingSchedule");
+    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(
+      idltype!,
+      idl.types
+    );
     const length = vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
   }
