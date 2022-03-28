@@ -241,7 +241,7 @@ const Staking: NextPage = () => {
                   .map((v, idx) => (
                     <Tab.Panel key={idx}>
                       <div className="col-span-12 font-inter text-xs">
-                        <div className="mb-4 text-white sm:mb-12">
+                        <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
                           {tabDescriptions[v as keyof typeof TabEnum]}
                         </div>
                         <div className="mb-2 flex">
