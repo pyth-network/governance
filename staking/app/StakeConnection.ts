@@ -39,17 +39,13 @@ if (useNode) {
   // When normal node is running, it doesn't care that this is an expression.
   const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
   wasm = require(path);
-  console.log(typeof wasm);
   ensureWasmLoaded = Promise.resolve();
 } else {
   const f = async () => {
     wasm = await require("../../staking/wasm/bundle/staking");
-    console.log(typeof wasm);
   };
   ensureWasmLoaded = f();
 }
-
-// import * as wasm from "../../staking/wasm/bundle/staking";
 
 import { sha256 } from "js-sha256";
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
@@ -62,8 +58,6 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
-import assert from "assert";
-import { token } from "@project-serum/anchor/dist/cjs/utils";
 
 interface ClosingItem {
   amount: BN;
@@ -287,8 +281,6 @@ export class StakeConnection {
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
-
-    console.log(sortPositions);
 
     let amountBeforeFinishing = amount;
     let i = 0;
