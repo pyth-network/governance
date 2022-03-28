@@ -6,5 +6,6 @@ mkdir -p ../../wasm/node
 ls ../../wasm/
 echo "##"
 ls *
+rustc --version
 wasm-pack build  -d ../../wasm/bundle -- --features wasm
 wasm-pack build  -d ../../wasm/node -t nodejs -- --features wasm
