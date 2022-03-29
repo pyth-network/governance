@@ -197,11 +197,13 @@ const Staking: NextPage = () => {
                 </div>
                 <div className="mx-auto flex text-sm sm:m-0">
                   {lockedPythBalance}{' '}
-                  <div className="ml-1">
-                    <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                      <div className="text-scampi">(+{warmUpBalance})</div>
-                    </Tooltip>
-                  </div>
+                  {warmUpBalance > 0 ? (
+                    <div className="ml-1">
+                      <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                        <div className="text-scampi">(+{warmUpBalance})</div>
+                      </Tooltip>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -215,11 +217,13 @@ const Staking: NextPage = () => {
                 </div>
                 <div className="mx-auto flex text-sm sm:m-0">
                   {unlockedPythBalance}{' '}
-                  <div className="ml-1">
-                    <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                      <div className="text-scampi">(+{coolDownBalance})</div>
-                    </Tooltip>
-                  </div>
+                  {coolDownBalance > 0 ? (
+                    <div className="ml-1">
+                      <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
+                        <div className="text-scampi">(+{coolDownBalance})</div>
+                      </Tooltip>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -229,7 +233,7 @@ const Staking: NextPage = () => {
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold">Unvested</div>
-                <div className="text-sm text-scampi">{unvestedPythBalance}</div>
+                <div className="text-sm">{unvestedPythBalance}</div>
               </div>
             </div>
           </div>
