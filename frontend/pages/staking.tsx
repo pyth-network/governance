@@ -192,16 +192,16 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="flex text-sm font-bold text-white">
+                <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Locked{' '}
-                  <div className="my-auto ml-1">
-                    <Tooltip content="Tokens are in warm-up position before the beginning of the next epoch.">
-                      <InfoIcon />
+                </div>
+                <div className="mx-auto flex text-sm sm:m-0">
+                  {lockedPythBalance}{' '}
+                  <div className="ml-1">
+                    <Tooltip content="Tokens are in warm-up position and will be locked from the beginning of the next epoch.">
+                      <div className="text-scampi">(+{warmUpBalance})</div>
                     </Tooltip>
                   </div>
-                </div>
-                <div className="text-sm text-scampi">
-                  {lockedPythBalance} (+{warmUpBalance})
                 </div>
               </div>
             </div>
@@ -210,16 +210,16 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="flex text-sm font-bold text-white">
+                <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Unlocked{' '}
-                  <div className="my-auto ml-1">
+                </div>
+                <div className="mx-auto flex text-sm sm:m-0">
+                  {unlockedPythBalance}{' '}
+                  <div className="ml-1">
                     <Tooltip content="Tokens are in cool-down position for 2 epochs before they are able to be withdrawn.">
-                      <InfoIcon />
+                      <div className="text-scampi">(+{coolDownBalance})</div>
                     </Tooltip>
                   </div>
-                </div>
-                <div className="text-sm text-scampi">
-                  {unlockedPythBalance} (+{coolDownBalance})
                 </div>
               </div>
             </div>
@@ -228,7 +228,7 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Unvested</div>
+                <div className="text-sm font-bold">Unvested</div>
                 <div className="text-sm text-scampi">{unvestedPythBalance}</div>
               </div>
             </div>
