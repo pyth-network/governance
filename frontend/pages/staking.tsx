@@ -20,6 +20,8 @@ import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import BN from 'bn.js'
+import Tooltip from '@components/Tooltip'
+import InfoIcon from '@components/icons/InfoIcon'
 
 enum TabEnum {
   Lock,
@@ -46,6 +48,8 @@ const Staking: NextPage = () => {
   const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
+  const [warmUpBalance, setWarmUpBalance] = useState<number>(0)
+  const [coolDownBalance, setCoolDownBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
@@ -188,8 +192,17 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Locked</div>
-                <div className="text-sm text-scampi">{lockedPythBalance}</div>
+                <div className="flex text-sm font-bold text-white">
+                  Locked{' '}
+                  <div className="my-auto ml-1">
+                    <Tooltip content="Tokens are in warm-up position before the beginning of the next epoch.">
+                      <InfoIcon />
+                    </Tooltip>
+                  </div>
+                </div>
+                <div className="text-sm text-scampi">
+                  {lockedPythBalance} (+{warmUpBalance})
+                </div>
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -197,8 +210,17 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Unlocked</div>
-                <div className="text-sm text-scampi">{unlockedPythBalance}</div>
+                <div className="flex text-sm font-bold text-white">
+                  Unlocked{' '}
+                  <div className="my-auto ml-1">
+                    <Tooltip content="Tokens are in cool-down position for 2 epochs before they are able to be withdrawn.">
+                      <InfoIcon />
+                    </Tooltip>
+                  </div>
+                </div>
+                <div className="text-sm text-scampi">
+                  {unlockedPythBalance} (+{coolDownBalance})
+                </div>
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
