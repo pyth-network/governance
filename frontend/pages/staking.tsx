@@ -198,7 +198,7 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm sm:m-0">
                   {lockedPythBalance}{' '}
                   <div className="ml-1">
-                    <Tooltip content="Tokens are in warm-up position and will be locked from the beginning of the next epoch.">
+                    <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
                       <div className="text-scampi">(+{warmUpBalance})</div>
                     </Tooltip>
                   </div>
@@ -216,7 +216,7 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm sm:m-0">
                   {unlockedPythBalance}{' '}
                   <div className="ml-1">
-                    <Tooltip content="Tokens are in cool-down position for 2 epochs before they are able to be withdrawn.">
+                    <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
                       <div className="text-scampi">(+{coolDownBalance})</div>
                     </Tooltip>
                   </div>

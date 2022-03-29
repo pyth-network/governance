@@ -22,7 +22,7 @@ const Tooltip = ({
       animation="scale"
       placement={placement}
       appendTo={() => document.body}
-      maxWidth="20rem"
+      maxWidth="15rem"
       interactive
       content={
         <div
