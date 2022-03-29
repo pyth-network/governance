@@ -1,7 +1,13 @@
 import { Provider } from "@project-serum/anchor";
 import { TransactionInstruction, Transaction } from "@solana/web3.js";
-import { Test } from "mocha";
 
+/** Simulates an instruction and returns it's compute unit cost
+ * This function is greatly inspired by 
+ * https://github.com/project-serum/anchor/blob/v0.22.0/ts/src/provider.ts
+ * We needed to fork because the anchor function wouldn't support
+ * disabling signatures, which we need to be able to simulate 
+ * a big number of transactions without user approval
+ */ 
 async function simulateInstruction(
   ix: TransactionInstruction,
   provider: Provider
@@ -36,10 +42,15 @@ async function simulateInstruction(
   }
 }
 
+/**
+ * Takes the input instructions and returns an array of transaction that 
+ * contain the instructions in the same order as provided
+ * such that the number of transactions is minimal
+ */
 export async function batchInstructions(
   ixs: TransactionInstruction[],
   provider: Provider
-) {
+) : Promise<Transaction[]> {
   let budgetRemaining = 200_000;
   const transactions: Transaction[] = [];
   let transaction = new Transaction();
