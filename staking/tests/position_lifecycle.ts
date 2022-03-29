@@ -75,7 +75,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: {locking: new BN(200)} },
       await stakeConnection.getTime()
     );
   });
@@ -122,7 +122,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      { withdrawable: new BN(200) },
       await stakeConnection.getTime()
     );
   });
@@ -139,7 +139,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: { locking: new BN(200) } },
       await stakeConnection.getTime()
     );
   });
@@ -157,7 +157,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      { locked: {locking: new BN(190)}, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
   });
@@ -168,7 +168,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
 
@@ -179,10 +179,11 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
+    // No time has passed, so still locked until the end of the epoch
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
   });
@@ -193,7 +194,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
+      { locked: {locked: new BN(140), unlocking: new BN(50)}, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
 
@@ -214,10 +215,11 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
+      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
       await stakeConnection.getTime()
     );
 
+    
     await program.methods
       .closePosition(1, new BN(50))
       .accounts({
@@ -235,7 +237,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
+      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
       await stakeConnection.getTime()
     );
 
@@ -255,7 +257,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      { withdrawable: new BN(200) },
       await stakeConnection.getTime()
     );
 
@@ -269,7 +271,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
+      { withdrawable: new BN(200) },
       await stakeConnection.getTime()
     );
   });
@@ -286,7 +288,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(0) },
+      { },
       await stakeConnection.getTime()
     );
   });
