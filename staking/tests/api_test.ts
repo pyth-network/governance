@@ -107,7 +107,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(600), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: { locking: new BN(600) } },
       await stakeConnection.getTime()
     );
 
@@ -124,7 +124,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(700), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: { locking: new BN(700) } },
       await stakeConnection.getTime()
     );
   });
@@ -141,7 +141,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(700), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: { locking: new BN(700) } },
       await stakeConnection.getTime()
     );
   });
@@ -155,7 +155,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(600) },
+      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
       await stakeConnection.getTime()
     );
   });
@@ -172,7 +172,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(600) },
+      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
       await stakeConnection.getTime()
     );
   });
@@ -185,7 +185,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(0) },
+      { locked: { locking: new BN(100) } },
       await stakeConnection.getTime()
     );
   });

@@ -247,8 +247,9 @@ export class StakeConnection {
 
   // Unlock a provided token balance
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
+    let lockedSummary = stakeAccount.getBalanceSummary(await this.getTime()).locked;
     if (
-      amount.gt(stakeAccount.getBalanceSummary(await this.getTime()).locked)
+      amount.gt(lockedSummary.locked.add(lockedSummary.locking))
     ) {
       throw new Error("Amount greater than locked amount");
     }
@@ -502,7 +503,11 @@ export class StakeConnection {
 export interface BalanceSummary {
   withdrawable: BN;
   // We may break this down into active, warmup, and cooldown in the future
-  locked: BN;
+  locked: {
+    locking: BN;
+    locked: BN;
+    unlocking: BN;
+  };
   unvested: BN;
 }
 
@@ -552,18 +557,24 @@ export class StakeAccount {
     );
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
+    let currentEpochBI = BigInt(currentEpoch.toString());
 
     const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
       BigInt(this.tokenBalance.toString()),
       unvestedBalance,
-      BigInt(currentEpoch.toString()),
+      currentEpochBI,
       unlockingDuration
     );
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
+    const lockedSummaryBI = this.stakeAccountPositionsWasm.getLockedBalanceSummary(currentEpochBI, unlockingDuration);
     return {
       withdrawable: withdrawableBN,
-      locked: this.tokenBalance.sub(withdrawableBN).sub(unvestedBN),
+      locked: {
+        locking: new BN(lockedSummaryBI.locking.toString()),
+        locked: new BN(lockedSummaryBI.locked.toString()),
+        unlocking: new BN(lockedSummaryBI.unlocking.toString())
+      },
       unvested: unvestedBN,
     };
   }

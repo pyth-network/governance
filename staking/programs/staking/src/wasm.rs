@@ -1,17 +1,23 @@
-use crate::state::positions::{PositionData};
-use anchor_lang::{prelude::{Error, Clock, error}, AccountDeserialize, Discriminator, AnchorDeserialize};
+use crate::state::positions::{PositionData, PositionState};
+use anchor_lang::{prelude::{error, Error, Clock}, AccountDeserialize, Discriminator, AnchorDeserialize};
 use wasm_bindgen::prelude::*;
 use std::io::Write;
-use crate::{VestingSchedule, PositionState};
+use crate::{VestingSchedule, error::ErrorCode};
 use anchor_lang::solana_program::borsh::get_packed_len;
 use borsh::BorshSerialize;
-use crate::ErrorCode;
 
 
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
     wrapped: PositionData,
+}
+
+#[wasm_bindgen]
+pub struct LockedBalanceSummary {
+    pub locking: u64,
+    pub locked: u64,
+    pub unlocking: u64
 }
 
 #[wasm_bindgen]
@@ -64,14 +70,41 @@ impl WasmPositionData {
         self.wrapped.serialize(&mut writer)?;
         Ok(())
     }
-    #[wasm_bindgen(js_name=getUnlocked)]
-    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64, JsValue> {
-        convert_error(self.wrapped.get_unlocked(current_epoch))
+    /// Adds up the balance of positions grouped by position state: locking, locked, and unlocking.
+    /// This way of computing balances only makes sense in the pre-data staking world, but it's helpful 
+    /// for now.
+    #[wasm_bindgen(js_name=getLockedBalanceSummary)]
+    pub fn get_locked_balance_summary(&self, current_epoch: u64, unlocking_duration: u8) -> Result<LockedBalanceSummary, JsValue> {
+        convert_error(self.get_locked_balance_summary_impl(current_epoch, unlocking_duration))
     }
-    #[wasm_bindgen(js_name=getLocked)]
-    pub fn get_locked(&self, current_epoch: u64) -> Result<u64, JsValue> {
-        convert_error(self.wrapped.get_locked(current_epoch))
+    fn get_locked_balance_summary_impl(&self, current_epoch: u64, unlocking_duration: u8) -> anchor_lang::Result<LockedBalanceSummary> {
+        let mut locking: u64 = 0;
+        let mut locked: u64 = 0;
+        let mut unlocking: u64 = 0;
+
+        for i in 0..crate::MAX_POSITIONS {
+            if let Some(position) = self.wrapped.positions[i] {
+                match position.get_current_position(current_epoch, unlocking_duration)? {
+                    PositionState::LOCKING => {
+                        locking = locking.checked_add(position.amount).ok_or(error!(ErrorCode::GenericOverflow))?;
+                    }
+                    PositionState::LOCKED => {
+                        locked = locked.checked_add(position.amount).ok_or(error!(ErrorCode::GenericOverflow))?;
+                    }
+                    PositionState::UNLOCKING => {
+                        unlocking = unlocking.checked_add(position.amount).ok_or(error!(ErrorCode::GenericOverflow))?;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(LockedBalanceSummary {
+            locking,
+            locked,
+            unlocking
+        })
     }
+
     #[wasm_bindgen(js_name=getWithdrawable)]
     pub fn get_widthdrawable(
         &self,

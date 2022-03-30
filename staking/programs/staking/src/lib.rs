@@ -191,7 +191,7 @@ pub mod staking {
                                             .ok_or(error!(ErrorCode::PositionNotInUse))?
                                             .amount
                                     )
-                                    .ok_or(ErrorCode::Other)?
+                                    .ok_or(error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }
