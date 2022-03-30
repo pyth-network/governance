@@ -61,6 +61,7 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
+import { batchInstructions } from "./transaction";
 
 interface ClosingItem {
   amount: BN;
@@ -314,14 +315,27 @@ export class StakeConnection {
       i++;
     }
 
-    for (let el of toClose) {
-      await this.program.methods
-        .closePosition(el.index, el.amount)
-        .accounts({
-          stakeAccountPositions: stakeAccount.address,
-        })
-        .rpc();
-    }
+    const instructions = await Promise.all(
+      toClose.map((el) =>
+        this.program.methods
+          .closePosition(el.index, el.amount)
+          .accounts({
+            stakeAccountPositions: stakeAccount.address,
+          })
+          .instruction()
+      )
+    );
+
+    const transactions = await batchInstructions(
+      instructions,
+      this.program.provider
+    );
+
+    await this.program.provider.sendAll(
+      transactions.map((tx) => {
+        return { tx, signers: [] };
+      })
+    );
   }
 
   private async withCreateAccount(
