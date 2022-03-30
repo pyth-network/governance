@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program, Spl } from "@project-serum/anchor";
+import { IdlAccounts, IdlTypes, parseIdlErrors, Program, Spl } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -16,101 +16,61 @@ import { createMint, expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
+import path from 'path'
+import { readAnchorConfig, ANCHOR_CONFIG_PATH, startValidator, initConfig, requestPythAirdrop, standardSetup, getPortNumber } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
 const DEBUG = true;
+type Position = IdlTypes<Staking>["Position"];
+const portNumber = getPortNumber(path.basename(__filename));
 
 describe("staking", async () => {
+
   let program: Program<Staking>;
 
-  let config_account: PublicKey;
   let voterAccount: PublicKey;
-  let bump: number;
   let errMap: Map<number, string>;
 
-  const provider = anchor.Provider.local();
+  let provider: anchor.Provider;
 
   const stake_account_positions_secret = new Keypair();
-  const pyth_mint_account = new Keypair();
-  const pyth_mint_authority = new Keypair();
+  const pythMintAccount = new Keypair();
+  const pythMintAuthority = new Keypair();
   const zero_pubkey = new PublicKey(0);
+  let EPOCH_DURATION: BN;
 
-  const user_ata = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    pyth_mint_account.publicKey,
-    provider.wallet.publicKey
-  );
+  let userAta: PublicKey;
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
+
+
+  let setupProgram;
+  let controller;
+
+  after(async () => {
+    controller.abort();
+  });
   before(async () => {
-    anchor.setProvider(anchor.Provider.env());
-    program = anchor.workspace.Staking as Program<Staking>;
-
-    [config_account, bump] = await PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
-      program.programId
-    );
-    let voterBump = 0;
-    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-        stake_account_positions_secret.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
-
-    errMap = anchor.parseIdlErrors(program.idl);
-  });
-
-  it("initializes config", async () => {
-    await createMint(
-      provider,
-      pyth_mint_account,
-      pyth_mint_authority.publicKey,
-      null,
-      0,
-      TOKEN_PROGRAM_ID
+    let stakeConnection;
+    ({ controller, stakeConnection } = await standardSetup(
+      portNumber,
+      config,
+      pythMintAccount,
+      pythMintAuthority
+    ));
+    program = stakeConnection.program;
+    provider = stakeConnection.program.provider;
+    userAta = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pythMintAccount.publicKey,
+      program.provider.wallet.publicKey
     );
 
-    await program.methods
-      .initConfig({
-        governanceAuthority: provider.wallet.publicKey,
-        pythTokenMint: pyth_mint_account.publicKey,
-        unlockingDuration: 2,
-        epochDuration: new BN(3600),
-        mockClockTime: new BN(10),
-      })
-      .rpc({
-        skipPreflight: DEBUG,
-      });
-
-    const config_account_data = await program.account.globalConfig.fetch(
-      config_account
-    );
-
-    assert.equal(
-      JSON.stringify(config_account_data),
-      JSON.stringify({
-        bump,
-        governanceAuthority: provider.wallet.publicKey,
-        pythTokenMint: pyth_mint_account.publicKey,
-        pythGovernanceRealm: zero_pubkey,
-        unlockingDuration: 2,
-        epochDuration: new BN(3600),
-        mockClockTime: new BN(10),
-      })
-    );
-  });
-  it("advances clock", async () => {
-    await program.methods
-      .advanceClock(new BN(5))
-      .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-        mint: pyth_mint_account.publicKey,
-      })
-      .rpc({ skipPreflight: DEBUG });
+    errMap = parseIdlErrors(program.idl);
+    EPOCH_DURATION = stakeConnection.config.epochDuration;
   });
 
   it("creates vested staking account", async () => {
@@ -142,8 +102,8 @@ describe("staking", async () => {
         ],
         program.programId
       );
-
-    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+    let voterBump: number;
+    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stake_account_positions_secret.publicKey.toBuffer(),
@@ -166,7 +126,7 @@ describe("staking", async () => {
       ])
       .accounts({
         stakeAccountPositions: stake_account_positions_secret.publicKey,
-        mint: pyth_mint_account.publicKey,
+        mint: pythMintAccount.publicKey,
       })
       .signers([stake_account_positions_secret])
       .rpc({
@@ -191,28 +151,7 @@ describe("staking", async () => {
 
   it("deposits tokens", async () => {
     const transaction = new Transaction();
-    const from_account = user_ata;
-
-    const create_ata_ix = Token.createAssociatedTokenAccountInstruction(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      pyth_mint_account.publicKey,
-      from_account,
-      provider.wallet.publicKey,
-      provider.wallet.publicKey
-    );
-    transaction.add(create_ata_ix);
-
-    // Mint 1000 tokens. We'll send 101 to the custody wallet and save 899 for later.
-    const mint_ix = Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      pyth_mint_account.publicKey,
-      from_account,
-      pyth_mint_authority.publicKey,
-      [],
-      1000
-    );
-    transaction.add(mint_ix);
+    const from_account = userAta;
 
     const to_account = (
       await PublicKey.findProgramAddress(
@@ -233,7 +172,7 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
-    const tx = await provider.send(transaction, [pyth_mint_authority], {
+    const tx = await provider.send(transaction, [], {
       skipPreflight: DEBUG,
     });
   });
@@ -254,7 +193,7 @@ describe("staking", async () => {
   });
 
   it("withdraws tokens", async () => {
-    const to_account = user_ata;
+    const to_account = userAta;
 
     await program.methods
       .withdrawStake(new BN(1))
@@ -310,15 +249,16 @@ describe("staking", async () => {
     const outbuffer = Buffer.alloc(wPositions.borshLength);
     wPositions.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
-
-    // TODO: Once we merge the mock clock branch and control the activationEpoch, replace with struct equality
     assert.equal(
-      positions.positions[0].amount.toNumber(),
-      new BN(1).toNumber()
+      JSON.stringify(positions.positions[0]),
+      JSON.stringify({
+        amount: new BN(1),
+        activationEpoch: new BN(1),
+        unlockingStart: null,
+        product: null,
+        publisher: null,
+      })
     );
-    assert.equal(positions.positions[0].product, null);
-    assert.equal(positions.positions[0].publisher, null);
-    assert.equal(positions.positions[0].unlockingStart, null);
     for (let index = 1; index < positions.positions.length; index++) {
       assert.equal(positions.positions[index], null);
     }
@@ -326,7 +266,7 @@ describe("staking", async () => {
 
   it("updates voter weight again", async () => {
     await program.methods
-      .advanceClock(new BN(5 * 3600))
+      .advanceClock(EPOCH_DURATION.muln(5))
       .accounts()
       .rpc({ skipPreflight: DEBUG });
 

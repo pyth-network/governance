@@ -1,6 +1,6 @@
 import { Keypair, Connection } from "@solana/web3.js";
 import assert from "assert";
-import { StakeConnection } from "../app";
+import { StakeConnection, BalanceSummary } from "../app/StakeConnection";
 import {
   requestPythAirdrop,
   startValidator,
@@ -17,6 +17,7 @@ import BN from "bn.js";
 import path from "path";
 import { getConnection } from "./utils/before";
 import { expectFail, expectFailApi } from "./utils/utils";
+import { assertBalanceMatches } from "./utils/api_utils";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -103,12 +104,12 @@ describe("api", async () => {
       600
     );
     assert.equal(res[0].tokenBalance.toNumber(), 600);
-    const beforeBalSummary = res[0].getBalanceSummary(
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(600), unvested: new BN(0), withdrawable: new BN(0) },
       await stakeConnection.getTime()
     );
-    assert.equal(beforeBalSummary.locked.toNumber(), 600);
-    assert.equal(beforeBalSummary.unvested.toNumber(), 0);
-    assert.equal(beforeBalSummary.withdrawable.toNumber(), 0);
 
     await stakeConnection.depositAndLockTokens(res[0], 100);
 
@@ -119,12 +120,13 @@ describe("api", async () => {
       100
     );
     assert.equal(after[0].tokenBalance.toNumber(), 700);
-    const afterBalSummary = after[0].getBalanceSummary(
+    // No time has passed, but LOCKING tokens count as locked for the balance summary, so it shows as 700
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(700), unvested: new BN(0), withdrawable: new BN(0) },
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 700);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 
   it("alice unlock too much", async () => {
@@ -136,15 +138,12 @@ describe("api", async () => {
       "Amount greater than locked amount"
     );
 
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(
-      stakeAccount.address
-    );
-    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(700), unvested: new BN(0), withdrawable: new BN(0) },
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 700);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 
   it("alice unlock", async () => {
@@ -153,15 +152,12 @@ describe("api", async () => {
 
     await stakeConnection.unlockTokens(stakeAccount, new BN(600));
 
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(
-      stakeAccount.address
-    );
-    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(600) },
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 100);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 600);
   });
 
   it("alice withdraw too much", async () => {
@@ -173,15 +169,12 @@ describe("api", async () => {
       "Amount exceeds withdrawable"
     );
 
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(
-      stakeAccount.address
-    );
-    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(600) },
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 100);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 600);
   });
 
   it("alice withdraw", async () => {
@@ -189,14 +182,11 @@ describe("api", async () => {
     const stakeAccount = res[0];
     await stakeConnection.withdrawTokens(stakeAccount, new BN(600));
 
-    const afterStakeAccount = await stakeConnection.loadStakeAccount(
-      stakeAccount.address
-    );
-    const afterBalSummary = afterStakeAccount.getBalanceSummary(
+    await assertBalanceMatches(
+      stakeConnection,
+      alice.publicKey,
+      { locked: new BN(100), unvested: new BN(0), withdrawable: new BN(0) },
       await stakeConnection.getTime()
     );
-    assert.equal(afterBalSummary.locked.toNumber(), 100);
-    assert.equal(afterBalSummary.unvested.toNumber(), 0);
-    assert.equal(afterBalSummary.withdrawable.toNumber(), 0);
   });
 });
