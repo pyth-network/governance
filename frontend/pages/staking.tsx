@@ -112,40 +112,58 @@ const Staking: NextPage = () => {
 
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const handleDeposit = async () => {
-    if (stakeConnection && publicKey) {
-      try {
-        await stakeConnection.depositAndLockTokens(stakeAccount, amount)
-        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.depositAndLockTokens(stakeAccount, amount)
+          toast.success(`Deposit and locked ${amount} PYTH tokens!`)
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
       }
-      await refreshBalance()
+    } else {
+      toast.error('Amount must be greater than 0.')
     }
   }
 
   // TODO: unlock is buggy now in the sense that you have to unlock twice before it gets unlocked -- will be fixed in subsequent PR
   const handleUnlock = async () => {
-    if (stakeConnection && publicKey && stakeAccount) {
-      try {
-        await stakeConnection.unlockTokens(stakeAccount, new BN(amount))
-        toast.success('Unlock successful!')
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.unlockTokens(stakeAccount, new BN(amount))
+          toast.success('Unlock successful!')
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
       }
-      await refreshBalance()
+    } else {
+      toast.error('Amount must be greater than 0.')
     }
   }
 
   // withdraw unlocked PYTH tokens to wallet
   const handleWithdraw = async () => {
-    if (stakeConnection && publicKey && stakeAccount) {
-      try {
-        await stakeConnection.withdrawTokens(stakeAccount, new BN(amount))
-        toast.success('Withdraw successful!')
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.withdrawTokens(stakeAccount, new BN(amount))
+          toast.success('Withdraw successful!')
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
       }
-      await refreshBalance()
+    } else {
+      toast.error('Amount must be greater than 0.')
     }
   }
 
