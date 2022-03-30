@@ -40,10 +40,6 @@ describe("position_lifecycle", async () => {
 
   let stakeConnection: StakeConnection;
 
-  // Time is recorded manually until we implement a new StakeConnection function to get the current time
-  // that @ptaffet is working on
-  let currentTime = new BN(10);
-
   after(async () => {
     controller.abort();
   });
@@ -80,7 +76,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
@@ -127,7 +123,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
@@ -144,7 +140,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(200), unvested: new BN(0), withdrawable: new BN(0) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
@@ -162,19 +158,18 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
   it("one epoch passes, try closing", async () => {
     await program.methods.advanceClock(EPOCH_DURATION).rpc();
-    currentTime = currentTime.add(EPOCH_DURATION);
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
-      currentTime
+      await stakeConnection.getTime()
     );
 
     await program.methods
@@ -188,19 +183,18 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
   it("two epoch pass, still locked", async () => {
     await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
-    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(2)));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       { locked: new BN(190), unvested: new BN(0), withdrawable: new BN(10) },
-      currentTime
+      await stakeConnection.getTime()
     );
 
     expectFail(
@@ -216,13 +210,12 @@ describe("position_lifecycle", async () => {
 
   it("one epoch pass, try withdrawing", async () => {
     await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
-    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(1)));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
-      currentTime
+      await stakeConnection.getTime()
     );
 
     await program.methods
@@ -243,7 +236,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(140), unvested: new BN(0), withdrawable: new BN(60) },
-      currentTime
+      await stakeConnection.getTime()
     );
 
     expectFail(
@@ -258,13 +251,12 @@ describe("position_lifecycle", async () => {
 
   it("three epoch pass, complete unlock", async () => {
     await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(3))).rpc();
-    currentTime = currentTime.add(EPOCH_DURATION.mul(new BN(3)));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
-      currentTime
+      await stakeConnection.getTime()
     );
 
     await program.methods
@@ -274,15 +266,11 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    const beforeBalSummary = res[0].getBalanceSummary(currentTime);
-
     await assertBalanceMatches(
       stakeConnection,
       owner,
       { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(200) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 
@@ -299,7 +287,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       { locked: new BN(0), unvested: new BN(0), withdrawable: new BN(0) },
-      currentTime
+      await stakeConnection.getTime()
     );
   });
 });
