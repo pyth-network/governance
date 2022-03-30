@@ -23,6 +23,9 @@ import {
 //        if (wasm == undefined)
 //           await ensureWasmLoaded;
 // (it's also okay to do it unconditionally)
+// We do this anytime a StakeConnection is created, which means any method in
+// stake connection is protected. You also can't make a StakeAccount without
+// making a StakeConnection, so StakeAccount is protected too.
 
 // This seems to work for now, but I am not sure how fragile it is.
 const useNode =
@@ -99,6 +102,9 @@ export class StakeConnection {
       address,
       provider
     ) as unknown as Program<Staking>;
+    if (wasm == undefined) 
+      await ensureWasmLoaded;
+
 
     const configAddress = (
       await PublicKey.findProgramAddress(
@@ -143,7 +149,6 @@ export class StakeConnection {
   // }
 
   async fetchPositionAccount(address: PublicKey) {
-    if (wasm == undefined) await ensureWasmLoaded;
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
@@ -222,7 +227,10 @@ export class StakeConnection {
 
   // Gets the current unix time, as would be perceived by the on-chain program
   public async getTime(): Promise<BN> {
-    if ("mockClockTime" in this.config) {
+    // The Idl contains mockClockTime even when we build it with mock-clock feature disabled.
+    // Therefore if the field doesn't exist it gets parsed as 0.
+    // Thus, if mockClockTime is 0 we need to use real time.
+    if (("mockClockTime" in this.config) && (this.config.mockClockTime.gtn(0))) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(
         this.configAddress
