@@ -48,8 +48,8 @@ const Staking: NextPage = () => {
   const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
-  const [warmUpBalance, setWarmUpBalance] = useState<number>(0)
-  const [coolDownBalance, setCoolDownBalance] = useState<number>(0)
+  const [lockingPythBalance, setLockingPythBalance] = useState<number>(0)
+  const [unlockingPythBalance, setUnlockingPythBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
@@ -176,7 +176,9 @@ const Staking: NextPage = () => {
         setStakeAccount(stakeAccounts[0])
         const { withdrawable, locked, unvested } =
           stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
-        setLockedPythBalance(locked.toNumber())
+        setLockingPythBalance(locked.locking.toNumber())
+        setLockedPythBalance(locked.locked.toNumber())
+        setUnlockingPythBalance(locked.unlocking.toNumber())
         setUnlockedPythBalance(withdrawable.toNumber())
         setUnvestedPythBalance(unvested.toNumber())
       }
@@ -215,10 +217,12 @@ const Staking: NextPage = () => {
                 </div>
                 <div className="mx-auto flex text-sm sm:m-0">
                   {lockedPythBalance}{' '}
-                  {warmUpBalance > 0 ? (
+                  {lockingPythBalance > 0 ? (
                     <div className="ml-1">
                       <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                        <div className="text-scampi">(+{warmUpBalance})</div>
+                        <div className="text-scampi">
+                          (+{lockingPythBalance})
+                        </div>
                       </Tooltip>
                     </div>
                   ) : null}
@@ -235,10 +239,12 @@ const Staking: NextPage = () => {
                 </div>
                 <div className="mx-auto flex text-sm sm:m-0">
                   {unlockedPythBalance}{' '}
-                  {coolDownBalance > 0 ? (
+                  {unlockingPythBalance > 0 ? (
                     <div className="ml-1">
                       <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                        <div className="text-scampi">(+{coolDownBalance})</div>
+                        <div className="text-scampi">
+                          (+{unlockingPythBalance})
+                        </div>
                       </Tooltip>
                     </div>
                   ) : null}
