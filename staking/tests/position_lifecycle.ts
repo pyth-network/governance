@@ -17,6 +17,7 @@ import assert from "assert";
 import { StakeConnection } from "../app";
 import path from "path";
 import { expectFail } from "./utils/utils";
+import { amountNumberToBn } from "../app/token_decimals";
 
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
@@ -24,6 +25,7 @@ const portNumber = getPortNumber(path.basename(__filename));
 describe("position_lifecycle", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
+  let decimals : number;
 
   let errMap: Map<number, string>;
 
@@ -63,6 +65,7 @@ describe("position_lifecycle", async () => {
 
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
+    decimals = stakeConnection.pythMint.decimals;
   });
 
   it("deposits tokens and locks", async () => {
@@ -75,14 +78,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(200)} },
+      { locked: {locking: 200} },
       await stakeConnection.getTime()
     );
   });
 
   it("try to withdraw", async () => {
-    expectFail(
-      await program.methods.withdrawStake(new BN(101)).accounts({
+    await expectFail(
+      program.methods.withdrawStake(amountNumberToBn(101, decimals)).accounts({
         stakeAccountPositions: stakeAccountAddress,
         destination: ownerAta,
       }),
@@ -92,8 +95,8 @@ describe("position_lifecycle", async () => {
   });
 
   it("try closing a position for more than the position's principal", async () => {
-    expectFail(
-      await program.methods.closePosition(0, new BN(201)).accounts({
+    await expectFail(
+      program.methods.closePosition(0, amountNumberToBn(201, decimals)).accounts({
         stakeAccountPositions: stakeAccountAddress,
       }),
       "Amount to unlock bigger than position",
@@ -102,8 +105,8 @@ describe("position_lifecycle", async () => {
   });
 
   it("close null position", async () => {
-    expectFail(
-      await program.methods.closePosition(1, new BN(200)).accounts({
+    await expectFail(
+      program.methods.closePosition(1, amountNumberToBn(200, decimals)).accounts({
         stakeAccountPositions: stakeAccountAddress,
       }),
       "Position not in use",
@@ -113,7 +116,7 @@ describe("position_lifecycle", async () => {
 
   it("close position instantly", async () => {
     await program.methods
-      .closePosition(0, new BN(200))
+      .closePosition(0, amountNumberToBn(200, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -122,14 +125,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: 200 },
       await stakeConnection.getTime()
     );
   });
 
   it("open a new position", async () => {
     await program.methods
-      .createPosition(null, null, new BN(200))
+      .createPosition(null, null, amountNumberToBn(200, decimals))
       .accounts({
         payer: owner,
         stakeAccountPositions: stakeAccountAddress,
@@ -139,14 +142,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(200) } },
+      { locked: { locking: 200} },
       await stakeConnection.getTime()
     );
   });
 
   it("first close some", async () => {
     await program.methods
-      .closePosition(0, new BN(10))
+      .closePosition(0, amountNumberToBn(10, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -157,7 +160,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(190)}, withdrawable: new BN(10) },
+      { locked: {locking: 190}, withdrawable: 10 },
       await stakeConnection.getTime()
     );
   });
@@ -168,12 +171,12 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
+      { locked: {locked: 190}, withdrawable: 10 },
       await stakeConnection.getTime()
     );
 
     await program.methods
-      .closePosition(0, new BN(50))
+      .closePosition(0, amountNumberToBn(50, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -183,7 +186,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
+      { locked: {locked: 190}, withdrawable: 10 },
       await stakeConnection.getTime()
     );
   });
@@ -194,12 +197,12 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140), unlocking: new BN(50)}, withdrawable: new BN(10) },
+      { locked: {locked: 140, unlocking: 50}, withdrawable: 10 },
       await stakeConnection.getTime()
     );
 
-    expectFail(
-      await program.methods.withdrawStake(new BN(11)).accounts({
+    await expectFail(
+      program.methods.withdrawStake(amountNumberToBn(11, decimals)).accounts({
         stakeAccountPositions: stakeAccountAddress,
         destination: ownerAta,
       }),
@@ -215,20 +218,20 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
+      { locked: {locked: 140}, withdrawable: 60 },
       await stakeConnection.getTime()
     );
 
     
     await program.methods
-      .closePosition(1, new BN(50))
+      .closePosition(1, amountNumberToBn(50, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
 
     await program.methods
-      .closePosition(0, new BN(140))
+      .closePosition(0, amountNumberToBn(140, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -237,12 +240,12 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
+      { locked: {locked: 140}, withdrawable: 60 },
       await stakeConnection.getTime()
     );
 
-    expectFail(
-      await program.methods.withdrawStake(new BN(61)).accounts({
+    await expectFail(
+      program.methods.withdrawStake(amountNumberToBn(61, decimals)).accounts({
         stakeAccountPositions: stakeAccountAddress,
         destination: ownerAta,
       }),
@@ -257,12 +260,12 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: 200 },
       await stakeConnection.getTime()
     );
 
     await program.methods
-      .closePosition(0, new BN(140))
+      .closePosition(0, amountNumberToBn(140, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -271,14 +274,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: 200 },
       await stakeConnection.getTime()
     );
   });
 
   it("withdraws everything", async () => {
     await program.methods
-      .withdrawStake(new BN(200))
+      .withdrawStake(amountNumberToBn(200, decimals))
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
         destination: ownerAta,

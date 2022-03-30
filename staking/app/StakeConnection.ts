@@ -49,19 +49,18 @@ if (useNode) {
   };
   ensureWasmLoaded = f();
 }
-
-import { sha256 } from "js-sha256";
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import {
   Token,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   u64,
+  MintInfo,
 } from "@solana/spl-token";
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../../staking/target/types/staking";
 import { batchInstructions } from "./transaction";
+import {amountBnToNumber, amountNumberToBn} from "./token_decimals"
 
 interface ClosingItem {
   amount: BN;
@@ -78,15 +77,18 @@ export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
   private configAddress: PublicKey;
+  pythMint : MintInfo;
 
   private constructor(
     program: Program<Staking>,
     config: GlobalConfig,
-    configAddress: PublicKey
+    configAddress: PublicKey,
+    pythMint : MintInfo
   ) {
     this.program = program;
     this.config = config;
     this.configAddress = configAddress;
+    this.pythMint = pythMint;
   }
 
   // creates a program connection and loads the staking config
@@ -115,7 +117,15 @@ export class StakeConnection {
     )[0];
 
     const config = await program.account.globalConfig.fetch(configAddress);
-    return new StakeConnection(program, config, configAddress);
+
+    const pythMint = await new Token(
+      program.provider.connection,
+      config.pythTokenMint,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    ).getMintInfo();
+    
+    return new StakeConnection(program, config, configAddress, pythMint);
   }
 
   //gets a users stake accounts
@@ -222,7 +232,8 @@ export class StakeConnection {
       tokenBalance,
       authorityAddress,
       vestingSchedule,
-      this.config
+      this.config,
+      this.pythMint.decimals
     );
   }
 
@@ -247,13 +258,16 @@ export class StakeConnection {
   }
 
   // Unlock a provided token balance
-  public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
+  public async unlockTokens(stakeAccount: StakeAccount, amount: number) {
     let lockedSummary = stakeAccount.getBalanceSummary(await this.getTime()).locked;
+    
     if (
-      amount.gt(lockedSummary.locked.add(lockedSummary.locking))
-    ) {
+      amount > lockedSummary.locked + lockedSummary.locking)
+     {
       throw new Error("Amount greater than locked amount");
     }
+
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
 
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
@@ -292,7 +306,7 @@ export class StakeConnection {
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
 
-    let amountBeforeFinishing = amount;
+    let amountBeforeFinishing = integerAmount;
     let i = 0;
     const toClose: ClosingItem[] = [];
 
@@ -388,7 +402,7 @@ export class StakeConnection {
 
   private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
-    amount: number
+    amount: BN
   ): Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -413,7 +427,7 @@ export class StakeConnection {
       toAccount,
       this.program.provider.wallet.publicKey,
       [],
-      amount
+      amount.toNumber()
     );
 
     return ix;
@@ -423,8 +437,11 @@ export class StakeConnection {
     stakeAccount: StakeAccount | undefined,
     amount: number
   ) {
+    
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
+
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
 
     const ata = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -444,7 +461,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, integerAmount));
 
     const tx = new Transaction();
     tx.add(...ixs);
@@ -458,6 +475,8 @@ export class StakeConnection {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
 
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
+
     const ata = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -476,10 +495,10 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, integerAmount));
 
     await this.program.methods
-      .createPosition(null, null, new BN(amount))
+      .createPosition(null, null, integerAmount)
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
@@ -489,14 +508,16 @@ export class StakeConnection {
   }
 
   //withdraw tokens
-  public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
+  public async withdrawTokens(stakeAccount: StakeAccount, amount: number) {
     if (
-      amount.gt(
+      amount >
         stakeAccount.getBalanceSummary(await this.getTime()).withdrawable
       )
-    ) {
+     {
       throw new Error("Amount exceeds withdrawable");
     }
+
+    const integerAmount = amountNumberToBn(amount, this.pythMint.decimals);
 
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -506,7 +527,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .withdrawStake(amount)
+      .withdrawStake(integerAmount)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
@@ -515,14 +536,14 @@ export class StakeConnection {
   }
 }
 export interface BalanceSummary {
-  withdrawable: BN;
+  withdrawable: number;
   // We may break this down into active, warmup, and cooldown in the future
   locked: {
-    locking: BN;
-    locked: BN;
-    unlocking: BN;
+    locking: number;
+    locked: number;
+    unlocking: number;
   };
-  unvested: BN;
+  unvested: number;
 }
 
 export class StakeAccount {
@@ -534,6 +555,7 @@ export class StakeAccount {
   authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
   config: GlobalConfig;
+  decimals: number;
 
   constructor(
     address: PublicKey,
@@ -543,7 +565,8 @@ export class StakeAccount {
     tokenBalance: u64,
     authorityAddress: PublicKey,
     vestingSchedule: Buffer, // Borsh serialized
-    config: GlobalConfig
+    config: GlobalConfig,
+    decimals: number
   ) {
     this.address = address;
     this.stakeAccountPositionsWasm = stakeAccountPositionsWasm;
@@ -553,6 +576,7 @@ export class StakeAccount {
     this.authorityAddress = authorityAddress;
     this.vestingSchedule = vestingSchedule;
     this.config = config;
+    this.decimals = decimals;
   }
 
   // Withdrawable
@@ -583,13 +607,13 @@ export class StakeAccount {
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI = this.stakeAccountPositionsWasm.getLockedBalanceSummary(currentEpochBI, unlockingDuration);
     return {
-      withdrawable: withdrawableBN,
+      withdrawable: amountBnToNumber(withdrawableBN, this.decimals),
       locked: {
-        locking: new BN(lockedSummaryBI.locking.toString()),
-        locked: new BN(lockedSummaryBI.locked.toString()),
-        unlocking: new BN(lockedSummaryBI.unlocking.toString())
+        locking: amountBnToNumber(new BN(lockedSummaryBI.locking.toString()), this.decimals),
+        locked: amountBnToNumber(new BN(lockedSummaryBI.locked.toString()), this.decimals),
+        unlocking: amountBnToNumber(new BN(lockedSummaryBI.unlocking.toString()), this.decimals)
       },
-      unvested: unvestedBN,
+      unvested: amountBnToNumber(unvestedBN, this.decimals),
     };
   }
 

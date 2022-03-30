@@ -100,14 +100,14 @@ describe("api", async () => {
       alice.publicKey.toBase58()
     );
     assert.equal(
-      res[0].stakeAccountPositionsJs.positions[0].amount.toNumber(),
+      res[0].stakeAccountPositionsJs.positions[0].amount,
       600
     );
     assert.equal(res[0].tokenBalance.toNumber(), 600);
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(600) } },
+      { locked: { locking: 600 } },
       await stakeConnection.getTime()
     );
 
@@ -116,7 +116,7 @@ describe("api", async () => {
     const after = await stakeConnection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);
     assert.equal(
-      after[0].stakeAccountPositionsJs.positions[1].amount.toNumber(),
+      after[0].stakeAccountPositionsJs.positions[1].amount,
       100
     );
     assert.equal(after[0].tokenBalance.toNumber(), 700);
@@ -124,7 +124,7 @@ describe("api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(700) } },
+      { locked: { locking: 700 } },
       await stakeConnection.getTime()
     );
   });
@@ -134,14 +134,14 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await expectFailApi(
-      stakeConnection.unlockTokens(stakeAccount, new BN(701)),
+      stakeConnection.unlockTokens(stakeAccount, 701),
       "Amount greater than locked amount"
     );
 
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(700) } },
+      { locked: { locking: 700 } },
       await stakeConnection.getTime()
     );
   });
@@ -150,12 +150,12 @@ describe("api", async () => {
     const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     const stakeAccount = res[0];
 
-    await stakeConnection.unlockTokens(stakeAccount, new BN(600));
+    await stakeConnection.unlockTokens(stakeAccount, 600);
 
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
+      { locked: { locking: 100 }, withdrawable: 600 },
       await stakeConnection.getTime()
     );
   });
@@ -165,14 +165,14 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await expectFailApi(
-      stakeConnection.withdrawTokens(stakeAccount, new BN(601)),
+      stakeConnection.withdrawTokens(stakeAccount, 601),
       "Amount exceeds withdrawable"
     );
 
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
+      { locked: { locking: 100 }, withdrawable: 600 },
       await stakeConnection.getTime()
     );
   });
@@ -180,12 +180,12 @@ describe("api", async () => {
   it("alice withdraw", async () => {
     const res = await stakeConnection.getStakeAccounts(alice.publicKey);
     const stakeAccount = res[0];
-    await stakeConnection.withdrawTokens(stakeAccount, new BN(600));
+    await stakeConnection.withdrawTokens(stakeAccount, 600);
 
     await assertBalanceMatches(
       stakeConnection,
       alice.publicKey,
-      { locked: { locking: new BN(100) } },
+      { locked: { locking: 100 } },
       await stakeConnection.getTime()
     );
   });

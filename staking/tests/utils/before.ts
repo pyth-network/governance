@@ -22,6 +22,7 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 import { StakeConnection } from "../../app";
+import { amountNumberToBn } from "../../app/token_decimals";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 interface AnchorConfig {
@@ -145,6 +146,15 @@ export async function requestPythAirdrop(
   amount: number,
   connection: Connection
 ) {
+  const decimals = (await new Token(
+    connection,
+    pythMintAccount,
+    TOKEN_PROGRAM_ID,
+    new Keypair()
+  ).getMintInfo()).decimals;
+
+  const integerAmount = amountNumberToBn(amount, decimals);
+  
   // Testnet airdrop to ensure that the pyth authority can pay for gas
   await connection.requestAirdrop(pythMintAuthority.publicKey, 1_000_000_000);
 
@@ -175,7 +185,7 @@ export async function requestPythAirdrop(
     destinationAta,
     pythMintAuthority.publicKey,
     [],
-    amount
+    integerAmount.toNumber()
   );
   transaction.add(mintIx);
 
@@ -267,7 +277,7 @@ export async function standardSetup(
     pythMintAccount,
     pythMintAuthority.publicKey,
     null,
-    0,
+    6,
     TOKEN_PROGRAM_ID
   );
 

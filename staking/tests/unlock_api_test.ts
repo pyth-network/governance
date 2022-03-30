@@ -48,16 +48,16 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(100)} },
+      { locked: {locking: 100} },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, 50);
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(50)}, withdrawable: new BN(50) },
+      { locked: {locking: 50}, withdrawable: 50 },
       await stakeConnection.getTime()
     );
 
@@ -68,7 +68,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked:{ locked: new BN(50)}, withdrawable: new BN(50) },
+      { locked:{ locked: 50}, withdrawable: 50 },
       await stakeConnection.getTime()
     );
   });
@@ -82,27 +82,27 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(100), locked: new BN(50)}, withdrawable: new BN(50) },
+      { locked: {locking: 100, locked: 50}, withdrawable: 50 },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, 50);
 
     // The tokens remain locked until the end of the epoch
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(100), locked: new BN(50)}, withdrawable: new BN(50) },
+      { locked: {locking: 100, locked: 50}, withdrawable: 50 },
       await stakeConnection.getTime()
     );
     // That means that unlocking again is a no-op for that position
     // TODO: This seems very strange. Change this.
-    await loadAndUnlock(stakeConnection, owner, new BN(100));
+    await loadAndUnlock(stakeConnection, owner, 100);
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(50), locked: new BN(50)}, withdrawable: new BN(100) },
+      { locked: {locking: 50, locked: 50}, withdrawable: 100 },
       await stakeConnection.getTime()
     );
   });
@@ -115,7 +115,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(50), unlocking: new BN(50)}, withdrawable: new BN(100) },
+      { locked: {locked: 50, unlocking: 50}, withdrawable: 100 },
       await stakeConnection.getTime()
     );
 
@@ -126,16 +126,16 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked:{locked: new BN(50)}, withdrawable: new BN(150) },
+      { locked:{locked: 50}, withdrawable: 150 },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, 50);
 
     await assertBalanceMatches(
         stakeConnection,
         owner,
-        { locked: {locked: new BN(50)}, withdrawable: new BN(150)},
+        { locked: {locked: 50}, withdrawable: 150},
         await stakeConnection.getTime()
       );
 
@@ -149,7 +149,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
         stakeConnection,
         owner,
-        { withdrawable: new BN(200) },
+        { withdrawable: 200 },
         await stakeConnection.getTime()
       );
 
