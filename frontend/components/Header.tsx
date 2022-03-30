@@ -74,7 +74,7 @@ const Header = () => {
       <Dialog open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
         <div className="flex min-h-screen justify-center">
           <Dialog.Overlay className="fixed inset-0 bg-black" />
-          <div className="height-screen fixed top-0 mx-auto w-full rounded py-6 px-4">
+          <div className="height-screen fixed top-0 mx-auto w-full rounded py-6 px-8">
             <div className="flex items-center justify-end space-x-2">
               <button
                 className="rounded-full p-2 hover:bg-hoverGray"

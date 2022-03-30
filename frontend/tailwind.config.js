@@ -15,6 +15,8 @@ module.exports = {
       white: 'rgba(255,255,255,.87)',
       pink: '#D7A5FF',
       scampi: '#696890',
+      darkSlateBlue: '#42428E',
+      lavenderGray: '#BABAD2',
     },
     colors: {
       pythPurple: '#6633CC',
@@ -24,6 +26,7 @@ module.exports = {
       blueGem: '#4E2F92',
       valhalla: '#2E2E49',
       mediumSlateBlue: '#8246FA',
+      darkSlateBlue: '#42428E',
       hoverGray: 'rgba(255, 255, 255, 0.08)',
     },
     fontFamily: {
