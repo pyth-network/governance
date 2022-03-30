@@ -47,6 +47,17 @@ export async function assertBalanceMatches(
   );
 }
 
+export async function assertVoterWeightEquals(
+  stakeConnection: StakeConnection,
+  owner: PublicKey,
+  expected: number,
+) {
+  const res = await stakeConnection.getStakeAccounts(owner);
+  assert.equal(res.length, 1);
+  const actual = res[0].getVoterWeight(await stakeConnection.getTime());
+  assert.equal(actual.toNumber(), expected);
+}
+
 export async function loadAndUnlock(
   stakeConnection: StakeConnection,
   owner: PublicKey,
