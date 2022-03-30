@@ -19,6 +19,9 @@ import { Tab } from '@headlessui/react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import BN from 'bn.js'
+import Tooltip from '@components/Tooltip'
+import InfoIcon from '@components/icons/InfoIcon'
 
 enum TabEnum {
   Lock,
@@ -45,6 +48,8 @@ const Staking: NextPage = () => {
   const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
   const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
+  const [warmUpBalance, setWarmUpBalance] = useState<number>(0)
+  const [coolDownBalance, setCoolDownBalance] = useState<number>(0)
   const [amount, setAmount] = useState<number>(0)
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
@@ -107,14 +112,58 @@ const Staking: NextPage = () => {
 
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const handleDeposit = async () => {
-    if (stakeConnection && publicKey) {
-      try {
-        await stakeConnection.depositAndLockTokens(stakeAccount, amount)
-        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.depositAndLockTokens(stakeAccount, amount)
+          toast.success(`Deposit and locked ${amount} PYTH tokens!`)
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
       }
-      await refreshBalance()
+    } else {
+      toast.error('Amount must be greater than 0.')
+    }
+  }
+
+  // TODO: unlock is buggy now in the sense that you have to unlock twice before it gets unlocked -- will be fixed in subsequent PR
+  const handleUnlock = async () => {
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.unlockTokens(stakeAccount, new BN(amount))
+          toast.success('Unlock successful!')
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
+      }
+    } else {
+      toast.error('Amount must be greater than 0.')
+    }
+  }
+
+  // withdraw unlocked PYTH tokens to wallet
+  const handleWithdraw = async () => {
+    if (amount > 0) {
+      if (stakeAccount) {
+        try {
+          await stakeConnection?.withdrawTokens(stakeAccount, new BN(amount))
+          toast.success('Withdraw successful!')
+        } catch (e) {
+          toast.error(capitalizeFirstLetter(e.message))
+        }
+        await refreshBalance()
+      } else {
+        toast.error('Stake account is undefined.')
+      }
+    } else {
+      toast.error('Amount must be greater than 0.')
     }
   }
 
@@ -161,8 +210,19 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Locked</div>
-                <div className="text-sm text-scampi">{lockedPythBalance}</div>
+                <div className="mx-auto flex text-sm font-bold sm:m-0">
+                  Locked{' '}
+                </div>
+                <div className="mx-auto flex text-sm sm:m-0">
+                  {lockedPythBalance}{' '}
+                  {warmUpBalance > 0 ? (
+                    <div className="ml-1">
+                      <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                        <div className="text-scampi">(+{warmUpBalance})</div>
+                      </Tooltip>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -170,8 +230,19 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Unlocked</div>
-                <div className="text-sm text-scampi">{unlockedPythBalance}</div>
+                <div className="mx-auto flex text-sm font-bold sm:m-0">
+                  Unlocked{' '}
+                </div>
+                <div className="mx-auto flex text-sm sm:m-0">
+                  {unlockedPythBalance}{' '}
+                  {coolDownBalance > 0 ? (
+                    <div className="ml-1">
+                      <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
+                        <div className="text-scampi">(+{coolDownBalance})</div>
+                      </Tooltip>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -179,8 +250,8 @@ const Staking: NextPage = () => {
                 <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold text-white">Unvested</div>
-                <div className="text-sm text-scampi">{unvestedPythBalance}</div>
+                <div className="text-sm font-bold">Unvested</div>
+                <div className="text-sm">{unvestedPythBalance}</div>
               </div>
             </div>
           </div>
@@ -214,7 +285,7 @@ const Staking: NextPage = () => {
                   .map((v, idx) => (
                     <Tab.Panel key={idx}>
                       <div className="col-span-12 font-inter text-xs">
-                        <div className="mb-4 text-white sm:mb-12">
+                        <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
                           {tabDescriptions[v as keyof typeof TabEnum]}
                         </div>
                         <div className="mb-2 flex">
@@ -286,11 +357,17 @@ const Staking: NextPage = () => {
                               Lock
                             </button>
                           ) : currentTab === TabEnum.Unlock ? (
-                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleUnlock}
+                            >
                               Unlock
                             </button>
                           ) : (
-                            <button className="primary-btn py-3 px-14 text-base font-semibold text-white">
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white"
+                              onClick={handleWithdraw}
+                            >
                               Withdraw
                             </button>
                           )}
