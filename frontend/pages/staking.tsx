@@ -123,7 +123,7 @@ const Staking: NextPage = () => {
     }
   }
 
-  //
+  // TODO: unlock is buggy now in the sense that you have to unlock twice before it gets unlocked -- will be fixed in subsequent PR
   const handleUnlock = async () => {
     if (stakeConnection && publicKey && stakeAccount) {
       try {
@@ -136,7 +136,7 @@ const Staking: NextPage = () => {
     }
   }
 
-  //
+  // withdraw unlocked PYTH tokens to wallet
   const handleWithdraw = async () => {
     if (stakeConnection && publicKey && stakeAccount) {
       try {
