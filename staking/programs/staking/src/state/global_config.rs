@@ -12,6 +12,6 @@ pub struct GlobalConfig {
     pub unlocking_duration: u8,
     pub epoch_duration : u64, // epoch duration in seconds
     #[cfg(feature = "mock-clock")]
-    pub mock_clock_time: i64, 
+    pub mock_clock_time: i64, // this field needs to be greater than 0 otherwise the API will use real time
 }
 
