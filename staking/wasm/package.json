@@ -1,0 +1,18 @@
+{
+  "name": "pyth-staking-wasm",
+  "description": "Web Assembly files for Pyth staking",
+  "version": "0.1.0",
+  "files": [
+    "bundle/staking_bg.wasm",
+    "bundle/staking.js",
+    "bundle/staking_bg.js",
+    "bundle/staking.d.ts",
+    "node/staking_bg.wasm",
+    "node/staking.js",
+    "node/staking.d.ts"
+  ],
+  "main": "./node/staking.js",
+  "browser": "./bundle/staking.js",
+  "module": "./bundle/staking.js",
+  "types": "./node/staking.d.ts"
+}

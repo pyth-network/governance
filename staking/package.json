@@ -1,32 +1,39 @@
 {
-    "name": "@pythnetwork/staking-ts",
-    "version": "1.0.0",
-    "description": "SDK for pyth token staking",
-    "main": "app/index.ts",
-    "license": "MIT",
-    "dependencies": {
-        "@project-serum/anchor": "0.22.0",
-        "@solana/spl-token": "^0.1.8",
-        "@solana/web3.js": "^1.36.0",
-        "encoding": "^0.1.13",
-        "typescript": "^4.3.5"
-    },
-    "devDependencies": {
-        "@types/mocha": "^9.0.0",
-        "chai": "^4.3.4",
-        "mocha": "^9.2.2",
-        "shelljs": "^0.8.5",
-        "ts-mocha": "^9.0.2",
-        "wasm-pack": "^0.10.2"
-    },
-    "scripts": {
-        "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/staking.ts",
-        "setup": "export ANCHOR_WALLET='./tests/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/setup.ts",
-        "build_wasm": "./wasm/build_wasm.sh",
-        "docker_build": "docker build -f docker/Dockerfile -t governance .",
-        "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
-        "start": "yarn ts-node ./docker/validator.ts",
-        "test-api": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/api_test.ts tests/config.ts tests/create_account.ts tests/clock_api_test.ts tests/position_lifecycle.ts tests/unlock_api_test.ts",
-        "generate_keypair": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force"
-    }
+  "name": "pyth-staking-api",
+  "version": "1.0.7",
+  "description": "SDK for pyth token staking",
+  "main": "app/index.js",
+  "types": "app/index.d.ts",
+  "license": "MIT",
+  "files": [
+    "app/index.{js,d.ts}",
+    "app/StakeConnection.{js,d.ts}",
+    "app/transaction.{js,d.ts}"
+  ],
+  "dependencies": {
+    "@project-serum/anchor": "0.22.0",
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.36.0",
+    "encoding": "^0.1.13",
+    "pyth-staking-wasm": "0.1.0",
+    "typescript": "^4.3.5",
+    "wasm-pack": "^0.10.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^9.0.0",
+    "chai": "^4.3.4",
+    "mocha": "^9.2.2",
+    "shelljs": "^0.8.5",
+    "ts-mocha": "^9.0.2"
+  },
+  "scripts": {
+    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/staking.ts",
+    "setup": "export ANCHOR_WALLET='./tests/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/setup.ts",
+    "build_wasm": "./wasm/build_wasm.sh",
+    "docker_build": "docker build -f docker/Dockerfile -t governance .",
+    "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
+    "start": "yarn ts-node ./docker/validator.ts",
+    "test-api": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/api_test.ts tests/config.ts tests/create_account.ts tests/clock_api_test.ts tests/position_lifecycle.ts tests/unlock_api_test.ts",
+    "generate_keypair": "solana-keygen new -o ./tests/default_wallet.json --no-bip39-passphrase --force"
+  }
 }
