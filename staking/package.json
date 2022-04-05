@@ -16,7 +16,7 @@
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
     "pyth-staking-wasm": "0.1.0",
-    "typescript": "^4.3.5",
+    "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
