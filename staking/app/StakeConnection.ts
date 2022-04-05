@@ -448,7 +448,7 @@ export class StakeConnection {
 
     const tx = new Transaction();
     tx.add(...ixs);
-    await this.program.provider.send(tx, []);
+    await this.program.provider.send(tx, signers);
   }
 
   public async depositAndLockTokens(
