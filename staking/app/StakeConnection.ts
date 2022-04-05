@@ -17,41 +17,7 @@ import {
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
-
-// To prevent a potential race condition, prior to using the variable wasm,
-// you need to run:
-//        if (wasm == undefined)
-//           await ensureWasmLoaded;
-// (it's also okay to do it unconditionally)
-// We do this anytime a StakeConnection is created, which means any method in
-// stake connection is protected. You also can't make a StakeAccount without
-// making a StakeConnection, so StakeAccount is protected too.
-
-// This seems to work for now, but I am not sure how fragile it is.
-const useNode =
-  typeof process !== undefined &&
-  process.env.hasOwnProperty("_") &&
-  !process.env._?.includes("next");
-// console.log("Using node WASM version? " + useNode);
-let wasm: any;
-let ensureWasmLoaded: Promise<void>;
-if (useNode) {
-  // This needs to be sufficiently complicated that the bundler can't compute its value
-  // It means the bundler will give us a warning "the request of a dependency is an expression"
-  // because it doesn't understand that it will never encounter a case in which useNode is true.
-  // When normal node is running, it doesn't care that this is an expression.
-  const path = useNode ? "../../staking/wasm/" + "node" + "/staking" : "BAD";
-  wasm = require(path);
-  ensureWasmLoaded = Promise.resolve();
-} else {
-  const f = async () => {
-    wasm = await require("../../staking/wasm/bundle/staking");
-  };
-  ensureWasmLoaded = f();
-}
-
-import { sha256 } from "js-sha256";
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
+import * as wasm2 from "pyth-staking-wasm";
 import {
   Token,
   TOKEN_PROGRAM_ID,
@@ -60,8 +26,9 @@ import {
 } from "@solana/spl-token";
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
-import { Staking } from "../../staking/target/types/staking";
+import { Staking } from "../target/types/staking";
 import { batchInstructions } from "./transaction";
+let wasm = wasm2;
 
 interface ClosingItem {
   amount: BN;
@@ -103,9 +70,11 @@ export class StakeConnection {
       address,
       provider
     ) as unknown as Program<Staking>;
-    if (wasm == undefined) 
-      await ensureWasmLoaded;
-
+    // Sometimes in the browser, the import returns a promise.
+    // Don't fully understand, but this workaround is not terrible
+    if (wasm.hasOwnProperty('default')) {
+      wasm = await (wasm as any).default;
+    }
 
     const configAddress = (
       await PublicKey.findProgramAddress(

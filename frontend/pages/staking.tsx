@@ -12,7 +12,7 @@ import { STAKING_PROGRAM } from '@components/constants'
 import {
   StakeAccount,
   StakeConnection,
-} from '../../staking/app/StakeConnection'
+} from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
 import { Tab } from '@headlessui/react'

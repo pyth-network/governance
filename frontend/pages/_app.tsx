@@ -76,9 +76,4 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   )
 }
 
-;(function () {
-  import('../../staking/wasm/bundle/staking_bg.wasm')
-  // Import which .wasm files you need here
-})
-
 export default App
