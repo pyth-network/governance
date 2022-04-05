@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
-    "setup": "export ANCHOR_WALLET='./tests/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/scripts/setup.ts",
+    "setup": "export ANCHOR_WALLET='./tests/keypairs/default_wallet.json' && yarn run ts-mocha -p ./tsconfig.json -t 1000000 app/scripts/setup.ts",
     "build_wasm": "./wasm/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
