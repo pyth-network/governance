@@ -5,7 +5,7 @@ import {
   startValidator,
   readAnchorConfig,
   getPortNumber,
-  ANCHOR_CONFIG_PATH
+  ANCHOR_CONFIG_PATH,
 } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";

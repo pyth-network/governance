@@ -28,9 +28,18 @@ export async function assertBalanceMatches(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getBalanceSummary(currentTime);
-  assert.equal(actual.locked.locking.toNumber(), expected.locked?.locking?.toNumber() || 0);
-  assert.equal(actual.locked.locked.toNumber(), expected.locked?.locked?.toNumber() || 0);
-  assert.equal(actual.locked.unlocking.toNumber(), expected.locked?.unlocking?.toNumber() || 0);
+  assert.equal(
+    actual.locked.locking.toNumber(),
+    expected.locked?.locking?.toNumber() || 0
+  );
+  assert.equal(
+    actual.locked.locked.toNumber(),
+    expected.locked?.locked?.toNumber() || 0
+  );
+  assert.equal(
+    actual.locked.unlocking.toNumber(),
+    expected.locked?.unlocking?.toNumber() || 0
+  );
   assert.equal(actual.unvested.toNumber(), expected.unvested?.toNumber() || 0);
   assert.equal(
     actual.withdrawable.toNumber(),
