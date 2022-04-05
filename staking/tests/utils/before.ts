@@ -268,7 +268,8 @@ export async function standardSetup(
   config: AnchorConfig,
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
-  globalConfig?: GlobalConfig
+  globalConfig?: GlobalConfig,
+  amount?: number
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -287,7 +288,7 @@ export async function standardSetup(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    new BN(200),
+    new BN(amount ? amount : 200),
     program.provider.connection
   );
 
