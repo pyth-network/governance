@@ -23,6 +23,7 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 import { StakeConnection } from "../../app";
+import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 interface AnchorConfig {
@@ -125,15 +126,14 @@ export async function startValidator(portNumber: number, config: any) {
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
 
-  return { controller, program};
+  return { controller, program };
 }
 
-export function getConnection(portNumber : number){
+export function getConnection(portNumber: number) {
   return new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
   );
-
 }
 
 /**
@@ -228,20 +228,28 @@ export async function createMint(
   });
 }
 
-export async function initConfig(program: Program, pythMintAccount: PublicKey) {
+export async function initConfig(
+  program: Program,
+  pythMintAccount: PublicKey,
+  globalConfig?: GlobalConfig
+) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
     [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     program.programId
   );
 
   await program.methods
-    .initConfig({
-      governanceAuthority: program.provider.wallet.publicKey,
-      pythTokenMint: pythMintAccount,
-      unlockingDuration: 2,
-      epochDuration: new BN(3600),
-      mockClockTime: new BN(10),
-    })
+    .initConfig(
+      globalConfig
+        ? globalConfig
+        : {
+            governanceAuthority: program.provider.wallet.publicKey,
+            pythTokenMint: pythMintAccount,
+            unlockingDuration: 2,
+            epochDuration: new BN(3600),
+            mockClockTime: new BN(10),
+          }
+    )
     .rpc({
       skipPreflight: true,
     });
@@ -260,6 +268,7 @@ export async function standardSetup(
   config: AnchorConfig,
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
+  globalConfig?: GlobalConfig
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -278,11 +287,11 @@ export async function standardSetup(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    200,
+    new BN(200),
     program.provider.connection
   );
 
-  await initConfig(program, pythMintAccount.publicKey);
+  await initConfig(program, pythMintAccount.publicKey, globalConfig);
 
   const connection = new Connection(
     `http://localhost:${portNumber}`,
@@ -291,7 +300,7 @@ export async function standardSetup(
 
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
-    program.provider.wallet,
+    program.provider.wallet as Wallet,
     config.programs.localnet.staking
   );
 

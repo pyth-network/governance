@@ -35,7 +35,7 @@ interface ClosingItem {
   index: number;
 }
 
-type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
+export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
 type Position = IdlTypes<Staking>["Position"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];

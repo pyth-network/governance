@@ -1,24 +1,50 @@
 import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import { Staking } from "../../target/types/staking";
-import * as wasm from "../../wasm/node/staking";
+import BN from "bn.js";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  SystemProgram,
+  Keypair, PublicKey,
 } from "@solana/web3.js";
-import { createMint } from "../../tests/utils/utils";
-import BN from "bn.js";
+import { readAnchorConfig, standardSetup, ANCHOR_CONFIG_PATH, getPortNumber, requestPythAirdrop} from "../../tests/utils/before"
+import path from "path";
+import { StakeConnection } from "..";
 import fs from "fs";
+import os from "os";
 
-describe("setup", async () => {
-  let program: Program<Staking>;
+const FRONTEND_ENV_FILE = "../frontend/.env"
+const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample"
+
+//https://stackoverflow.com/questions/53360535/how-to-save-changes-in-env-file-in-node-js
+const readEnvVars = (path) => fs.readFileSync(path, "utf-8").split(os.EOL);
+
+//https://stackoverflow.com/questions/53360535/how-to-save-changes-in-env-file-in-node-js
+const setEnvValue = (key, value, path) => {
+  const envVars = readEnvVars(path);
+  const targetLine = envVars.find((line) => line.split("=")[0] === key);
+  if (targetLine !== undefined) {
+    // update existing line
+    const targetLineIndex = envVars.indexOf(targetLine);
+    // replace the key/value with the new value
+    envVars.splice(targetLineIndex, 1, `${key}="${value}"`);
+  } else {
+    // create new key value
+    envVars.push(`${key}=${value}`);
+  }
+  // write everything back to the file system
+  fs.writeFileSync(FRONTEND_ENV_FILE, envVars.join(os.EOL));
+};
+
+
+const portNumber = getPortNumber(path.basename(__filename));
+async function main(){
+
+  let stakeConnection : StakeConnection;
+  let controller : AbortController;
 
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
@@ -26,189 +52,65 @@ describe("setup", async () => {
   const alice = new Keypair();
   const bob = new Keypair();
 
-  const aliceStakeAccount = new Keypair();
-  const bobStakeAccount = new Keypair();
-
-  const aliceAta = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    pythMintAccount.publicKey,
-    alice.publicKey
+  fs.writeFileSync(
+    `./app/keypairs/alice.json`,
+    `[${alice.secretKey.toString()}]`
+  );
+  fs.writeFileSync(
+    `./app/keypairs/bob.json`,
+    `[${bob.secretKey.toString()}]`
+  );
+  fs.writeFileSync(
+    `./app/keypairs/pyth_mint.json`,
+    JSON.stringify(pythMintAccount.publicKey.toBase58())
   );
 
-  const bobAta = await Token.getAssociatedTokenAddress(
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    pythMintAccount.publicKey,
-    bob.publicKey
+  console.log("Validator at port ", portNumber);
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+  ({ controller, stakeConnection } = await standardSetup(
+    portNumber,
+    config,
+    pythMintAccount,
+    pythMintAuthority, 
+    {
+      bump : 0,
+      governanceAuthority: new PublicKey(0),
+      pythGovernanceRealm : new PublicKey(0),
+      pythTokenMint: pythMintAccount.publicKey,
+      unlockingDuration: 2,
+      epochDuration: new BN(1),
+      mockClockTime: new BN(10),
+    }
+  ));
+  
+  for (let owner of [alice.publicKey, bob.publicKey]) {
+    await stakeConnection.program.provider.connection.requestAirdrop(owner, 1_000_000_000_000);
+    await requestPythAirdrop(owner, pythMintAccount.publicKey, pythMintAuthority, new BN(1000), stakeConnection.program.provider.connection)
+  }
+
+
+  const aliceStakeConnection = await StakeConnection.createStakeConnection(
+    stakeConnection.program.provider.connection,
+    new anchor.Wallet(alice),
+    stakeConnection.program.programId
   );
 
-  const provider = anchor.Provider.local();
+  const bobStakeConnection = await StakeConnection.createStakeConnection(
+    stakeConnection.program.provider.connection,
+    new anchor.Wallet(bob),
+    stakeConnection.program.programId
+  );
 
-  before(async () => {
-    // Drop keypairs in format compatible with Phantom Wallet
-    fs.writeFileSync(
-      `./app/keypairs/alice.json`,
-      `[${alice.secretKey.toString()}]`
-    );
-    fs.writeFileSync(
-      `./app/keypairs/bob.json`,
-      `[${bob.secretKey.toString()}]`
-    );
-    fs.writeFileSync(
-      `./app/keypairs/pyth_mint.json`,
-      JSON.stringify(pythMintAccount.publicKey.toBase58())
-    );
+  for (let connection of [aliceStakeConnection, bobStakeConnection]){
+    await connection.depositAndLockTokens(undefined, new BN(500));
+  }
 
-    program = anchor.workspace.Staking as Program<Staking>;
 
-    await provider.connection.requestAirdrop(
-      provider.wallet.publicKey,
-      1_000_000_000_000
-    );
-  });
+  setEnvValue("LOCALNET_PYTH_MINT", pythMintAccount.publicKey.toBase58(), fs.existsSync(FRONTEND_ENV_FILE) ? FRONTEND_ENV_FILE : FRONTEND_SAMPLE_FILE);
+  
+  while (true){
 
-  it("initializes config", async () => {
-    await createMint(
-      provider,
-      pythMintAccount,
-      pythMintAuthority.publicKey,
-      null,
-      0,
-      TOKEN_PROGRAM_ID
-    );
+  }
+}
 
-    await program.methods
-      .initConfig({
-        governanceAuthority: provider.wallet.publicKey,
-        pythTokenMint: pythMintAccount.publicKey,
-        unlockingDuration: 2,
-        // Epoch time set to 1 second
-        epochDuration: new BN(1),
-      })
-      .rpc();
-  });
-
-  it("alice and bob receive sol", async () => {
-    for (let owner of [alice.publicKey, bob.publicKey]) {
-      await provider.connection.requestAirdrop(owner, 1_000_000_000_000);
-    }
-  });
-
-  it("alice and bob receive tokens", async () => {
-    const transaction = new Transaction();
-
-    for (let [owner, toAccount] of [
-      [alice.publicKey, aliceAta],
-      [bob.publicKey, bobAta],
-    ]) {
-      const createAtaIx = Token.createAssociatedTokenAccountInstruction(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        pythMintAccount.publicKey,
-        toAccount,
-        owner,
-        provider.wallet.publicKey
-      );
-      transaction.add(createAtaIx);
-
-      // Mint 1000 tokens.
-      const mintIx = Token.createMintToInstruction(
-        TOKEN_PROGRAM_ID,
-        pythMintAccount.publicKey,
-        toAccount,
-        pythMintAuthority.publicKey,
-        [],
-        2000
-      );
-
-      transaction.add(mintIx);
-    }
-
-    const tx = await provider.send(transaction, [pythMintAuthority]);
-  });
-
-  it("alice and bob get staking accounts", async () => {
-    for (let user of [
-      { owner: alice.publicKey, stakeAccount: aliceStakeAccount },
-      { owner: bob.publicKey, stakeAccount: bobStakeAccount },
-    ]) {
-      const tx = await program.methods
-        .createStakeAccount(user.owner, { fullyVested: {} })
-        .preInstructions([
-          await program.account.positionData.createInstruction(
-            user.stakeAccount,
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-        ])
-        .accounts({
-          stakeAccountPositions: user.stakeAccount.publicKey,
-          mint: pythMintAccount.publicKey,
-        })
-        .signers([user.stakeAccount])
-        .rpc();
-    }
-  });
-
-  it("alice and bob deposit tokens", async () => {
-    for (let user of [
-      {
-        owner: alice,
-        stakeAccount: aliceStakeAccount,
-        fromAccount: aliceAta,
-      },
-      {
-        owner: bob,
-        stakeAccount: bobStakeAccount,
-        fromAccount: bobAta,
-      },
-    ]) {
-      const transaction = new Transaction();
-
-      const toAccount = (
-        await PublicKey.findProgramAddress(
-          [
-            anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-            user.stakeAccount.publicKey.toBuffer(),
-          ],
-          program.programId
-        )
-      )[0];
-
-      const ix = Token.createTransferInstruction(
-        TOKEN_PROGRAM_ID,
-        user.fromAccount,
-        toAccount,
-        user.owner.publicKey,
-        [],
-        1000
-      );
-      transaction.add(ix);
-      const tx = await provider.send(transaction, [user.owner]);
-    }
-  });
-
-  it("alice and bob lock their tokens", async () => {
-    for (let user of [
-      {
-        owner: alice,
-        stakeAccount: aliceStakeAccount,
-        fromAccount: aliceAta,
-      },
-      {
-        owner: bob,
-        stakeAccount: bobStakeAccount,
-        fromAccount: bobAta,
-      },
-    ]) {
-      const tx = await program.methods
-        .createPosition(null, null, new BN(1))
-        .accounts({
-          payer: user.owner.publicKey,
-          stakeAccountPositions: user.stakeAccount.publicKey,
-        })
-        .signers([user.owner])
-        .rpc();
-    }
-  });
-});
+main();
