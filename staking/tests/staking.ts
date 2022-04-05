@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { IdlAccounts, IdlTypes, parseIdlErrors, Program, Spl } from "@project-serum/anchor";
+import {IdlTypes, parseIdlErrors, Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -12,12 +12,13 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { createMint, expectFail } from "./utils/utils";
+import { expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
 import path from 'path'
-import { readAnchorConfig, ANCHOR_CONFIG_PATH, startValidator, initConfig, requestPythAirdrop, standardSetup, getPortNumber } from "./utils/before";
+import { readAnchorConfig, ANCHOR_CONFIG_PATH, standardSetup, getPortNumber } from "./utils/before";
+import { StakeConnection } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -35,25 +36,23 @@ describe("staking", async () => {
 
   let provider: anchor.Provider;
 
-  const stake_account_positions_secret = new Keypair();
+  const stakeAccountPositionsSecret = new Keypair();
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-  const zero_pubkey = new PublicKey(0);
+  const zeroPubkey = new PublicKey(0);
   let EPOCH_DURATION: BN;
 
   let userAta: PublicKey;
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-
-
-  let setupProgram;
-  let controller;
+  let controller : AbortController;
+  let stakeConnection : StakeConnection;
 
   after(async () => {
     controller.abort();
   });
   before(async () => {
-    let stakeConnection;
+    
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -81,7 +80,7 @@ describe("staking", async () => {
         anchor.utils.bytes.utf8.encode(
           wasm.Constants.STAKE_ACCOUNT_METADATA_SEED()
         ),
-        stake_account_positions_secret.publicKey.toBuffer(),
+        stakeAccountPositionsSecret.publicKey.toBuffer(),
       ],
       program.programId
     );
@@ -89,7 +88,7 @@ describe("staking", async () => {
     const [custodyAccount, custodyBump] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-        stake_account_positions_secret.publicKey.toBuffer(),
+        stakeAccountPositionsSecret.publicKey.toBuffer(),
       ],
       program.programId
     );
@@ -98,7 +97,7 @@ describe("staking", async () => {
       await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode(wasm.Constants.AUTHORITY_SEED()),
-          stake_account_positions_secret.publicKey.toBuffer(),
+          stakeAccountPositionsSecret.publicKey.toBuffer(),
         ],
         program.programId
       );
@@ -106,7 +105,7 @@ describe("staking", async () => {
     [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-        stake_account_positions_secret.publicKey.toBuffer(),
+        stakeAccountPositionsSecret.publicKey.toBuffer(),
       ],
       program.programId
     );
@@ -116,7 +115,7 @@ describe("staking", async () => {
       .preInstructions([
         SystemProgram.createAccount({
           fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stake_account_positions_secret.publicKey,
+          newAccountPubkey: stakeAccountPositionsSecret.publicKey,
           lamports: await provider.connection.getMinimumBalanceForRentExemption(
             wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
@@ -125,10 +124,10 @@ describe("staking", async () => {
         }),
       ])
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         mint: pythMintAccount.publicKey,
       })
-      .signers([stake_account_positions_secret])
+      .signers([stakeAccountPositionsSecret])
       .rpc({
         skipPreflight: DEBUG,
       });
@@ -153,11 +152,11 @@ describe("staking", async () => {
     const transaction = new Transaction();
     const from_account = userAta;
 
-    const to_account = (
+    const toAccount = (
       await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-          stake_account_positions_secret.publicKey.toBuffer(),
+          stakeAccountPositionsSecret.publicKey.toBuffer(),
         ],
         program.programId
       )
@@ -166,7 +165,7 @@ describe("staking", async () => {
     const ix = Token.createTransferInstruction(
       TOKEN_PROGRAM_ID,
       from_account,
-      to_account,
+      toAccount,
       provider.wallet.publicKey,
       [],
       101
@@ -180,20 +179,20 @@ describe("staking", async () => {
  
 
   it("withdraws tokens", async () => {
-    const to_account = userAta;
+    const toAccount = userAta;
 
     await program.methods
       .withdrawStake(new BN(1))
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-        destination: to_account,
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        destination: toAccount,
       })
       .rpc({ skipPreflight: DEBUG });
   });
 
   it("parses positions", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
-      stake_account_positions_secret.publicKey
+      stakeAccountPositionsSecret.publicKey
     );
 
     const pd = new wasm.WasmPositionData(inbuf.data);
@@ -206,22 +205,22 @@ describe("staking", async () => {
   });
 
   it("creates a position that's too big", async () => {
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(102))
         .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Insufficient balance to take on a new position",
+      "Too much exposure to governance",
       errMap
     );
   });
 
   it("creates a position", async () => {
-    const tx = await program.methods
+    await program.methods
       .createPosition(null, null, new BN(1))
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
         skipPreflight: DEBUG,
@@ -230,7 +229,7 @@ describe("staking", async () => {
 
   it("validates position", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
-      stake_account_positions_secret.publicKey
+      stakeAccountPositionsSecret.publicKey
     );
     let wPositions = new wasm.WasmPositionData(inbuf.data);
     const outbuffer = Buffer.alloc(wPositions.borshLength);
@@ -254,11 +253,11 @@ describe("staking", async () => {
   
 
   it("creates position with 0 principal", async () => {
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(0))
         .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
       errMap
@@ -266,11 +265,11 @@ describe("staking", async () => {
   });
 
   it("creates a non-voting position", async () => {
-    expectFail(
+    await expectFail(
       program.methods
-        .createPosition(zero_pubkey, zero_pubkey, new BN(10))
+        .createPosition(zeroPubkey, zeroPubkey, new BN(10))
         .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Not implemented",
       errMap

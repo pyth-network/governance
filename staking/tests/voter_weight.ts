@@ -1,10 +1,7 @@
 import * as anchor from "@project-serum/anchor";
 import {
-  IdlAccounts,
-  IdlTypes,
   parseIdlErrors,
   Program,
-  Spl,
 } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
@@ -15,10 +12,7 @@ import {
 import {
   PublicKey,
   Keypair,
-  Transaction,
-  SystemProgram,
 } from "@solana/web3.js";
-import { createMint, expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -26,12 +20,10 @@ import path from "path";
 import {
   readAnchorConfig,
   ANCHOR_CONFIG_PATH,
-  startValidator,
-  initConfig,
-  requestPythAirdrop,
   standardSetup,
   getPortNumber,
 } from "./utils/before";
+import { StakeConnection } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -39,30 +31,30 @@ import {
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
-describe("fills a stake account with positions", async () => {
+describe("voter_weight", async () => {
   let program: Program<Staking>;
-
   let errMap: Map<number, string>;
 
   let provider: anchor.Provider;
-  let voterAccount: PublicKey;
+  let voterAccount : PublicKey;
 
-  const stake_account_positions_secret = new Keypair();
+  let stakeAccountAddress : PublicKey;
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-  const zero_pubkey = new PublicKey(0);
+
   let EPOCH_DURATION: BN;
 
   let userAta: PublicKey;
-  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-  let controller;
+  let controller : AbortController;
+  let stakeConnection : StakeConnection;
 
   after(async () => {
     controller.abort();
   });
   before(async () => {
-    let stakeConnection;
+    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+    
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -81,64 +73,25 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    const owner = provider.wallet.publicKey;
-    const custodyAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-          stake_account_positions_secret.publicKey.toBuffer(),
-        ],
-        program.programId
-      )
-    )[0];
-
-    await program.methods
-      .createStakeAccount(owner, { fullyVested: {} })
-      .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stake_account_positions_secret.publicKey,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-          programId: program.programId,
-        }),
-      ])
-      .postInstructions([
-        Token.createTransferInstruction(
-          TOKEN_PROGRAM_ID,
-          userAta,
-          custodyAccount,
-          provider.wallet.publicKey,
-          [],
-          100
-        ),
-      ])
-      .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-        mint: pythMintAccount.publicKey,
-      })
-      .signers([stake_account_positions_secret])
-      .rpc({
-        skipPreflight: DEBUG,
-      });
+    await stakeConnection.depositTokens(undefined, 100);
+    stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
 
     voterAccount = (
       await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-          stake_account_positions_secret.publicKey.toBuffer(),
+          stakeAccountAddress.toBuffer(),
         ],
         program.programId
       )
     )[0];
   });
+
   async function assertVoterWeight(expectedValue: number) {
     await program.methods
       .updateVoterWeight()
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountAddress,
       })
       .rpc({ skipPreflight: DEBUG });
 
@@ -148,6 +101,7 @@ describe("fills a stake account with positions", async () => {
 
     assert.equal(voter_record.voterWeight.toNumber(), expectedValue);
   }
+
   it("updates voter weight", async () => {
     // Haven't locked anything, so no voter weight
     await assertVoterWeight(0);
@@ -157,7 +111,7 @@ describe("fills a stake account with positions", async () => {
     const tx = await program.methods
       .createPosition(null, null, new BN(1))
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountAddress,
       })
       .rpc({
         skipPreflight: DEBUG,
@@ -178,7 +132,7 @@ describe("fills a stake account with positions", async () => {
     await program.methods
       .closePosition(0, new BN(1))
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountAddress,
       })
       .rpc({
         skipPreflight: DEBUG,

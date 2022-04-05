@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { IdlAccounts, IdlTypes, parseIdlErrors, Program, Spl } from "@project-serum/anchor";
+import { parseIdlErrors, Program, Spl } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -10,14 +10,12 @@ import {
   PublicKey,
   Keypair,
   Transaction,
-  SystemProgram,
 } from "@solana/web3.js";
-import { createMint, expectFail } from "./utils/utils";
+import { expectFail } from "./utils/utils";
 import BN from "bn.js";
-import assert from "assert";
-import * as wasm from "../wasm/node/staking";
 import path from 'path'
-import { readAnchorConfig, ANCHOR_CONFIG_PATH, startValidator, initConfig, requestPythAirdrop, standardSetup, getPortNumber } from "./utils/before";
+import { StakeConnection } from "../app";
+import { readAnchorConfig, ANCHOR_CONFIG_PATH, standardSetup, getPortNumber } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -26,29 +24,26 @@ const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("fills a stake account with positions", async () => {
-
-  let program: Program<Staking>;
-
-  let errMap: Map<number, string>;
-
-  let provider: anchor.Provider;
-
-  const stake_account_positions_secret = new Keypair();
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-  const zero_pubkey = new PublicKey(0);
+
   let EPOCH_DURATION: BN;
 
-  let userAta: PublicKey;
-  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+  let program: Program<Staking>;
+  let errMap: Map<number, string>;
+  let provider: anchor.Provider;
 
-  let controller;
+  let stakeAccountAddress : PublicKey;
+  let userAta: PublicKey;
+
+  let stakeConnection: StakeConnection;
+  let controller: AbortController;
 
   after(async () => {
     controller.abort();
   });
   before(async () => {
-    let stakeConnection;
+    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -67,48 +62,9 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    const owner = provider.wallet.publicKey;
-    const custodyAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          anchor.utils.bytes.utf8.encode(wasm.Constants.CUSTODY_SEED()),
-          stake_account_positions_secret.publicKey.toBuffer(),
-        ],
-        program.programId
-      )
-    )[0];
+    await stakeConnection.depositTokens(undefined, 102);
+    stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
 
-    await program.methods
-      .createStakeAccount(owner, { fullyVested: {} })
-      .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stake_account_positions_secret.publicKey,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-          space:  wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-          programId: program.programId,
-        }),
-      ])
-      .postInstructions([
-        Token.createTransferInstruction(
-          TOKEN_PROGRAM_ID,
-          userAta,
-          custodyAccount,
-          provider.wallet.publicKey,
-          [],
-          102 // So that making 101 positions of size 1 doesn't hit the balance limits
-        )
-      ])
-      .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
-        mint: pythMintAccount.publicKey,
-      })
-      .signers([stake_account_positions_secret])
-      .rpc({
-        skipPreflight: DEBUG,
-      });
   });
 
 
@@ -116,7 +72,7 @@ describe("fills a stake account with positions", async () => {
     let createPosIx = await program.methods
       .createPosition(null, null, new BN(1))
       .accounts({
-        stakeAccountPositions: stake_account_positions_secret.publicKey,
+        stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
     let testTransaction = new Transaction();
@@ -143,7 +99,7 @@ describe("fills a stake account with positions", async () => {
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
-        let txHash = await provider.send(transaction, [], {
+        await provider.send(transaction, [], {
           skipPreflight: DEBUG,
         });
         transaction = new Transaction();
@@ -158,11 +114,11 @@ describe("fills a stake account with positions", async () => {
     });
 
     // Now create 101, which is supposed to fail
-    expectFail(
+    await expectFail(
       program.methods
         .createPosition(null, null, new BN(1))
         .accounts({
-          stakeAccountPositions: stake_account_positions_secret.publicKey,
+          stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached",
       errMap
