@@ -21,7 +21,10 @@
   "devDependencies": {
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
+    "husky": "^7.0.4",
+    "lint-staged": "^12.3.7",
     "mocha": "^9.2.2",
+    "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
     "wasm-pack": "^0.10.2"
@@ -33,6 +36,13 @@
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
     "start": "yarn ts-node ./docker/validator.ts",
-    "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force"
+    "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
+    "prepare": "cd .. && husky install staking/.husky"
+  },
+
+  "lint-staged": {
+    "{app,tests}/**/*.ts": [
+      "prettier --c"
+    ]
   }
 }

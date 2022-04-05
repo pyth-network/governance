@@ -1,0 +1,2 @@
+cd staking/
+yarn lint-staged
