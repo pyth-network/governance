@@ -357,7 +357,7 @@ export class StakeConnection {
 
   private async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
-    amount: number
+    amount: BN
   ): Promise<TransactionInstruction> {
     const from_account = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -382,7 +382,7 @@ export class StakeConnection {
       toAccount,
       this.program.provider.wallet.publicKey,
       [],
-      amount
+      new u64(amount.toString())
     );
 
     return ix;
@@ -390,7 +390,7 @@ export class StakeConnection {
 
   public async depositTokens(
     stakeAccount: StakeAccount | undefined,
-    amount: number
+    amount: BN
   ) {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
@@ -422,7 +422,7 @@ export class StakeConnection {
 
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
-    amount: number
+    amount: BN
   ) {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
@@ -448,7 +448,7 @@ export class StakeConnection {
     ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
 
     await this.program.methods
-      .createPosition(null, null, new BN(amount))
+      .createPosition(null, null, amount)
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,

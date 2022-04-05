@@ -62,7 +62,7 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    await stakeConnection.depositTokens(undefined, 102);
+    await stakeConnection.depositTokens(undefined, new BN(102));
     stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
 
   });
