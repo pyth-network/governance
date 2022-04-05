@@ -2,6 +2,8 @@ import BN from "bn.js";
 import assert from "assert"
 
 const PYTH_DECIMALS = 6;
+const INTEGER_REGEXP = new RegExp(/^\d+$/);
+const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
 
 export class PythBalance {
   integerAmount : BN;
@@ -15,16 +17,16 @@ export class PythBalance {
     return this.integerAmount.toNumber() * 10 ** -PYTH_DECIMALS;
   }
 
-  //THIS METHOD MAY LOSE PRECISION
+  //THIS METHOD MAY LOSE PRECISION IF AMOUNT IS NOT AN INTEGER
   static fromNumber(amount : number) : PythBalance {
     return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS))
   }
 
   static fromString(amount : string){
-    if (amount.match(/^\d+$/)) {
+    if (amount.match(INTEGER_REGEXP)) {
       return new PythBalance(new BN(amount).mul(new BN(10 ** PYTH_DECIMALS)));
     }
-    else if (amount.match(/^\d*\.\d{1,6}$/)){
+    else if (amount.match(DECIMAL_REGEXP)){
       const integerPart = amount.split('.')[0];
       const decimalPart = amount.split('.')[1];
       const decimalLength = decimalPart.length;
@@ -32,7 +34,6 @@ export class PythBalance {
       let resBN =  new BN(integerPart).mul(new BN(10 ** PYTH_DECIMALS));
       resBN = resBN.add( new BN(decimalPart).mul(new BN(10 ** (PYTH_DECIMALS - decimalLength))))
 
-      console.log(resBN.toString());
       return new PythBalance(resBN);
     }
     else{
