@@ -10,10 +10,12 @@ export class PythBalance {
     this.integerAmount = integerAmount;
   }
 
+  //THIS METHOD MAY LOSE PRECISION
   toNumber() : number {
     return this.integerAmount.toNumber() * 10 ** -PYTH_DECIMALS;
   }
 
+  //THIS METHOD MAY LOSE PRECISION
   static fromNumber(amount : number) : PythBalance {
     return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS))
   }
