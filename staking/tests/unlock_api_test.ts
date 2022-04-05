@@ -39,7 +39,7 @@ describe("unlock_api", async () => {
   });
 
   it("deposit, lock, unlock, same epoch", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, 100);
+    await stakeConnection.depositAndLockTokens(undefined, new BN(100));
 
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
@@ -77,7 +77,7 @@ describe("unlock_api", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
 
-    await stakeConnection.depositAndLockTokens(res[0], 100);
+    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
 
     await assertBalanceMatches(
       stakeConnection,

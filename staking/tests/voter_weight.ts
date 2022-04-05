@@ -73,7 +73,7 @@ describe("voter_weight", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    await stakeConnection.depositTokens(undefined, 100);
+    await stakeConnection.depositTokens(undefined, new BN(100));
     stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
 
     voterAccount = (
