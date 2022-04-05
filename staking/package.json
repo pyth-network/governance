@@ -42,7 +42,7 @@
 
   "lint-staged": {
     "{app,tests}/**/*.ts": [
-      "prettier --c"
+      "prettier --w"
     ]
   }
 }
