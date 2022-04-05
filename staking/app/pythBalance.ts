@@ -50,7 +50,7 @@ export class PythBalance {
     return this.integerAmount
   }
 
-  eq(other : PythBalance){
-    this.toBN().eq(other.toBN())
+  eq(other : PythBalance) : boolean{
+    return this.toBN().eq(other.toBN())
   }
 }
