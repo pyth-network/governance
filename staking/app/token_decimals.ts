@@ -9,5 +9,5 @@ export function amountBnToNumber(amount: BN, decimals: number): number {
   }
   
   export function amountNumberToBn(amount: number, decimals: number): BN {
-    return new BN(amount).mul(new BN(10).pow(new BN(decimals)));
+    return new BN(amount * 10 ** decimals);
   }
