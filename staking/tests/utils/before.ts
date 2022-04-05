@@ -14,7 +14,6 @@ import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  u64,
 } from "@solana/spl-token";
 import { MintLayout } from "@solana/spl-token";
 import shell from "shelljs";
@@ -143,7 +142,7 @@ export async function requestPythAirdrop(
   destination: PublicKey,
   pythMintAccount: PublicKey,
   pythMintAuthority: Keypair,
-  amount: BN,
+  amount: number,
   connection: Connection
 ) {
   // Testnet airdrop to ensure that the pyth authority can pay for gas
@@ -176,7 +175,7 @@ export async function requestPythAirdrop(
     destinationAta,
     pythMintAuthority.publicKey,
     [],
-    new u64(amount.toString())
+    amount
   );
   transaction.add(mintIx);
 

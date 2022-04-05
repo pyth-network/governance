@@ -66,7 +66,7 @@ describe("position_lifecycle", async () => {
   });
 
   it("deposits tokens and locks", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(200));
+    await stakeConnection.depositAndLockTokens(undefined, 200);
 
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);

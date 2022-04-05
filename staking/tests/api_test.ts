@@ -68,7 +68,7 @@ describe("api", async () => {
       alice.publicKey,
       pythMintAccount.publicKey,
       pythMintAuthority,
-      new BN(1000),
+      1000,
       setupProgram.provider.connection
     );
   });
@@ -84,7 +84,7 @@ describe("api", async () => {
   });
 
   it("alice create deposit and lock", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(600));
+    await stakeConnection.depositAndLockTokens(undefined, 600);
   });
 
   it("find and parse stake accounts", async () => {
@@ -111,7 +111,7 @@ describe("api", async () => {
       await stakeConnection.getTime()
     );
 
-    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
+    await stakeConnection.depositAndLockTokens(res[0], 100);
 
     const after = await stakeConnection.getStakeAccounts(alice.publicKey);
     assert.equal(after.length, 1);
