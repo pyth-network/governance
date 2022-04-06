@@ -125,15 +125,14 @@ export async function startValidator(portNumber: number, config: any) {
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
 
-  return { controller, program};
+  return { controller, program };
 }
 
-export function getConnection(portNumber : number){
+export function getConnection(portNumber: number) {
   return new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
   );
-
 }
 
 /**
@@ -259,7 +258,7 @@ export async function standardSetup(
   portNumber: number,
   config: AnchorConfig,
   pythMintAccount: Keypair,
-  pythMintAuthority: Keypair,
+  pythMintAuthority: Keypair
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 

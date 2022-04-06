@@ -16,7 +16,7 @@ export async function batchInstructions(
   for (let i = 0; i < ixs.length; i += MAX_INSTRUCTIONS_PER_TRANSACTION) {
     let transaction = new Transaction();
     transaction.add(...ixs.slice(i, i + MAX_INSTRUCTIONS_PER_TRANSACTION));
-    transactions.push(transaction); // last transaction needs to get pushed    
+    transactions.push(transaction); // last transaction needs to get pushed
   }
   return transactions;
 }

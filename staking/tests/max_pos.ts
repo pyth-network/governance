@@ -6,16 +6,17 @@ import {
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { expectFail } from "./utils/utils";
 import BN from "bn.js";
-import path from 'path'
+import path from "path";
 import { StakeConnection } from "../app";
-import { readAnchorConfig, ANCHOR_CONFIG_PATH, standardSetup, getPortNumber } from "./utils/before";
+import {
+  readAnchorConfig,
+  ANCHOR_CONFIG_PATH,
+  standardSetup,
+  getPortNumber,
+} from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -33,7 +34,7 @@ describe("fills a stake account with positions", async () => {
   let errMap: Map<number, string>;
   let provider: anchor.Provider;
 
-  let stakeAccountAddress : PublicKey;
+  let stakeAccountAddress: PublicKey;
   let userAta: PublicKey;
 
   let stakeConnection: StakeConnection;
@@ -63,10 +64,10 @@ describe("fills a stake account with positions", async () => {
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
     await stakeConnection.depositTokens(undefined, new BN(102));
-    stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
-
+    stakeAccountAddress = (
+      await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
+    )[0].address;
   });
-
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
@@ -83,10 +84,8 @@ describe("fills a stake account with positions", async () => {
     const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
     for (const logline of simulationResults.value.logs) {
       const m = logline.match(regex);
-      if (m != null)
-        costs.push(parseInt(m.groups['consumed']));
+      if (m != null) costs.push(parseInt(m.groups["consumed"]));
     }
-
 
     let budgetRemaining = 200_000;
     let ixCost = costs[0];
@@ -115,11 +114,9 @@ describe("fills a stake account with positions", async () => {
 
     // Now create 101, which is supposed to fail
     await expectFail(
-      program.methods
-        .createPosition(null, null, new BN(1))
-        .accounts({
-          stakeAccountPositions: stakeAccountAddress,
-        }),
+      program.methods.createPosition(null, null, new BN(1)).accounts({
+        stakeAccountPositions: stakeAccountAddress,
+      }),
       "Number of position limit reached",
       errMap
     );

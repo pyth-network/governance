@@ -1,18 +1,12 @@
 import * as anchor from "@project-serum/anchor";
-import {
-  parseIdlErrors,
-  Program,
-} from "@project-serum/anchor";
+import { parseIdlErrors, Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair,
-} from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -36,9 +30,9 @@ describe("voter_weight", async () => {
   let errMap: Map<number, string>;
 
   let provider: anchor.Provider;
-  let voterAccount : PublicKey;
+  let voterAccount: PublicKey;
 
-  let stakeAccountAddress : PublicKey;
+  let stakeAccountAddress: PublicKey;
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
 
@@ -46,15 +40,15 @@ describe("voter_weight", async () => {
 
   let userAta: PublicKey;
 
-  let controller : AbortController;
-  let stakeConnection : StakeConnection;
+  let controller: AbortController;
+  let stakeConnection: StakeConnection;
 
   after(async () => {
     controller.abort();
   });
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    
+
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -74,7 +68,9 @@ describe("voter_weight", async () => {
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
     await stakeConnection.depositTokens(undefined, new BN(100));
-    stakeAccountAddress = (await stakeConnection.getStakeAccounts(provider.wallet.publicKey))[0].address;
+    stakeAccountAddress = (
+      await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
+    )[0].address;
 
     voterAccount = (
       await PublicKey.findProgramAddress(
