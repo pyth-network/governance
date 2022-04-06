@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import assert from "assert";
 
-const PYTH_DECIMALS = 6;
+export const PYTH_DECIMALS = 6;
 const INTEGER_REGEXP = new RegExp(/^\d+$/);
 const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
 

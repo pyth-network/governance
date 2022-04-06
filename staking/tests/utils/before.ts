@@ -22,7 +22,7 @@ import BN from "bn.js";
 import toml from "toml";
 import path from "path";
 import os from "os";
-import { StakeConnection, PythBalance } from "../../app";
+import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
@@ -269,7 +269,7 @@ export async function standardSetup(
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
   globalConfig?: GlobalConfig,
-  amount?: number
+  amount?: PythBalance
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -278,7 +278,7 @@ export async function standardSetup(
     pythMintAccount,
     pythMintAuthority.publicKey,
     null,
-    0,
+    PYTH_DECIMALS,
     TOKEN_PROGRAM_ID
   );
 
@@ -288,7 +288,7 @@ export async function standardSetup(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    new BN(amount ? amount : PythBalance.fromString("200")),
+    amount ? amount : PythBalance.fromString("200"),
     program.provider.connection
   );
 

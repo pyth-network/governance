@@ -2,7 +2,7 @@ import { StakeConnection, BalanceSummary } from "../../app/StakeConnection";
 import { PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
-import { PythBalance } from "../../app/pythBalance";
+import { PythBalance } from "../../app";
 
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.

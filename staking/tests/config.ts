@@ -12,6 +12,7 @@ import assert from "assert";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import path from "path";
 import * as wasm from "../wasm/node/staking";
+import { PYTH_DECIMALS } from "../app";
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
@@ -43,7 +44,7 @@ describe("config", async () => {
       pythMintAccount,
       pythMintAuthority.publicKey,
       null,
-      0,
+      PYTH_DECIMALS,
       TOKEN_PROGRAM_ID
     );
   });

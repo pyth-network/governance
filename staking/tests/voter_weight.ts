@@ -17,7 +17,7 @@ import {
   standardSetup,
   getPortNumber,
 } from "./utils/before";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -67,7 +67,10 @@ describe("voter_weight", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    await stakeConnection.depositTokens(undefined, new BN(100));
+    await stakeConnection.depositTokens(
+      undefined,
+      PythBalance.fromString("100")
+    );
     stakeAccountAddress = (
       await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
     )[0].address;
@@ -105,7 +108,7 @@ describe("voter_weight", async () => {
 
   it("create a position and then update voter weight again", async () => {
     const tx = await program.methods
-      .createPosition(null, null, new BN(1))
+      .createPosition(null, null, PythBalance.fromString("1").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -126,7 +129,7 @@ describe("voter_weight", async () => {
 
   it("unlocks and checks voter weight", async () => {
     await program.methods
-      .closePosition(0, new BN(1))
+      .closePosition(0, PythBalance.fromString("1").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })

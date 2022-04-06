@@ -16,7 +16,7 @@ import {
   requestPythAirdrop,
 } from "../../tests/utils/before";
 import path from "path";
-import { StakeConnection } from "..";
+import { StakeConnection, PythBalance } from "..";
 import fs from "fs";
 import os from "os";
 
@@ -91,7 +91,7 @@ async function main() {
       owner,
       pythMintAccount.publicKey,
       pythMintAuthority,
-      new BN(1000),
+      PythBalance.fromString("1000").toBN(),
       stakeConnection.program.provider.connection
     );
   }
@@ -109,7 +109,7 @@ async function main() {
   );
 
   for (let connection of [aliceStakeConnection, bobStakeConnection]) {
-    await connection.depositAndLockTokens(undefined, new BN(500));
+    await connection.depositAndLockTokens(undefined, PythBalance.fromString("500").toBN());
   }
 
   setEnvValue(

@@ -6,7 +6,7 @@ import {
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 import assert from "assert";
 import { BN } from "@project-serum/anchor";
 import {
@@ -43,24 +43,43 @@ describe("voter_weight_test", async () => {
   });
 
   it("deposit, lock, make sure voter weight appears after warmup", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(100));
+    await stakeConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("100")
+    );
 
-    await assertVoterWeightEquals(stakeConnection, owner, 0);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("0")
+    );
 
     // undo 50 of the lock
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
-    await assertVoterWeightEquals(stakeConnection, owner, 0);
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("0")
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, 50);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("50")
+    );
   });
 
   it("deposit more while other position unlocking", async () => {
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
-    await assertVoterWeightEquals(stakeConnection, owner, 50);
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("50")
+    );
 
     // end the epoch so that the tokens start unlocking
     await stakeConnection.program.methods
@@ -68,23 +87,42 @@ describe("voter_weight_test", async () => {
       .rpc();
 
     const res = await stakeConnection.getStakeAccounts(owner);
-    await assertVoterWeightEquals(stakeConnection, owner, 0);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("0")
+    );
 
-    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
+    await stakeConnection.depositAndLockTokens(
+      res[0],
+      PythBalance.fromString("100")
+    );
 
-    await assertVoterWeightEquals(stakeConnection, owner, 0);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("0")
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, 100);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("100")
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(3)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, 100);
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      PythBalance.fromString("100")
+    );
   });
 
   after(async () => {

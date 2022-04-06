@@ -23,7 +23,7 @@ import {
   standardSetup,
   getPortNumber,
 } from "./utils/before";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -207,9 +207,11 @@ describe("staking", async () => {
 
   it("creates a position that's too big", async () => {
     await expectFail(
-      program.methods.createPosition(null, null, new BN(102)).accounts({
-        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-      }),
+      program.methods
+        .createPosition(null, null, PythBalance.fromString("102").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
       "Too much exposure to governance",
       errMap
     );
@@ -251,9 +253,11 @@ describe("staking", async () => {
 
   it("creates position with 0 principal", async () => {
     await expectFail(
-      program.methods.createPosition(null, null, new BN(0)).accounts({
-        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-      }),
+      program.methods
+        .createPosition(null, null, PythBalance.fromString("0").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
       "New position needs to have positive balance",
       errMap
     );
@@ -262,7 +266,11 @@ describe("staking", async () => {
   it("creates a non-voting position", async () => {
     await expectFail(
       program.methods
-        .createPosition(zeroPubkey, zeroPubkey, new BN(10))
+        .createPosition(
+          zeroPubkey,
+          zeroPubkey,
+          PythBalance.fromString("10").toBN()
+        )
         .accounts({
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
