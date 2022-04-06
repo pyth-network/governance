@@ -86,7 +86,7 @@ describe("voter_weight", async () => {
     )[0];
   });
 
-  async function assertVoterWeight(expectedValue: number) {
+  async function assertVoterWeight(expectedValue: PythBalance) {
     await program.methods
       .updateVoterWeight()
       .accounts({
@@ -98,12 +98,12 @@ describe("voter_weight", async () => {
       voterAccount
     );
 
-    assert.equal(voter_record.voterWeight.toNumber(), expectedValue);
+    assert(voter_record.voterWeight.eq(expectedValue.toBN()));
   }
 
   it("updates voter weight", async () => {
     // Haven't locked anything, so no voter weight
-    await assertVoterWeight(0);
+    await assertVoterWeight(PythBalance.fromString("0"));
   });
 
   it("create a position and then update voter weight again", async () => {
@@ -116,7 +116,7 @@ describe("voter_weight", async () => {
         skipPreflight: DEBUG,
       });
     // Time hasn't passed yet, so still no weight
-    await assertVoterWeight(0);
+    await assertVoterWeight(PythBalance.fromString("0"));
 
     await program.methods
       .advanceClock(EPOCH_DURATION.muln(5))
@@ -124,7 +124,7 @@ describe("voter_weight", async () => {
       .rpc({ skipPreflight: DEBUG });
 
     // Locked in 1 token, so voter weight is 1
-    await assertVoterWeight(1);
+    await assertVoterWeight(PythBalance.fromString("1"));
   });
 
   it("unlocks and checks voter weight", async () => {
@@ -137,13 +137,13 @@ describe("voter_weight", async () => {
         skipPreflight: DEBUG,
       });
     // Still have weight until the end of the epoch
-    await assertVoterWeight(1);
+    await assertVoterWeight(PythBalance.fromString("1"));
 
     await program.methods
       .advanceClock(EPOCH_DURATION.muln(1))
       .accounts()
       .rpc({ skipPreflight: DEBUG });
 
-    await assertVoterWeight(0);
+    await assertVoterWeight(PythBalance.fromString("0"));
   });
 });

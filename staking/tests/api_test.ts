@@ -12,6 +12,7 @@ import BN from "bn.js";
 import path from "path";
 import { expectFailApi } from "./utils/utils";
 import { assertBalanceMatches } from "./utils/api_utils";
+import { PythBalance } from "../app";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -38,7 +39,7 @@ describe("api", async () => {
       pythMintAccount,
       pythMintAuthority,
       null,
-      1000
+      PythBalance.fromString("1000")
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -46,7 +47,10 @@ describe("api", async () => {
   });
 
   it("Deposit and lock", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(600));
+    await stakeConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("600")
+    );
   });
 
   it("Find and parse stake accounts", async () => {
@@ -61,32 +65,37 @@ describe("api", async () => {
       res[0].stakeAccountMetadata.owner.toBase58(),
       owner.toBase58()
     );
-    assert.equal(
-      res[0].stakeAccountPositionsJs.positions[0].amount.toNumber(),
-      600
+    assert(
+      res[0].stakeAccountPositionsJs.positions[0].amount.eq(
+        PythBalance.fromString("600").toBN()
+      )
     );
-    assert.equal(res[0].tokenBalance.toNumber(), 600);
+    assert(res[0].tokenBalance.eq(PythBalance.fromString("600").toBN()));
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(600) } },
+      { locked: { locking: PythBalance.fromString("600") } },
       await stakeConnection.getTime()
     );
 
-    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
+    await stakeConnection.depositAndLockTokens(
+      res[0],
+      PythBalance.fromString("100")
+    );
 
     const after = await stakeConnection.getStakeAccounts(owner);
     assert.equal(after.length, 1);
-    assert.equal(
-      after[0].stakeAccountPositionsJs.positions[1].amount.toNumber(),
-      100
+    assert(
+      after[0].stakeAccountPositionsJs.positions[1].amount.eq(
+        PythBalance.fromString("100").toBN()
+      )
     );
-    assert.equal(after[0].tokenBalance.toNumber(), 700);
+    assert(after[0].tokenBalance.eq(PythBalance.fromString("700").toBN()));
     // No time has passed, but LOCKING tokens count as locked for the balance summary, so it shows as 700
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(700) } },
+      { locked: { locking: PythBalance.fromString("700") } },
       await stakeConnection.getTime()
     );
   });
@@ -96,14 +105,14 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await expectFailApi(
-      stakeConnection.unlockTokens(stakeAccount, new BN(701)),
+      stakeConnection.unlockTokens(stakeAccount, PythBalance.fromString("701")),
       "Amount greater than locked amount"
     );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(700) } },
+      { locked: { locking: PythBalance.fromString("700") } },
       await stakeConnection.getTime()
     );
   });
@@ -112,12 +121,18 @@ describe("api", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
     const stakeAccount = res[0];
 
-    await stakeConnection.unlockTokens(stakeAccount, new BN(600));
+    await stakeConnection.unlockTokens(
+      stakeAccount,
+      PythBalance.fromString("600")
+    );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
+      {
+        locked: { locking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("600"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -127,14 +142,20 @@ describe("api", async () => {
     const stakeAccount = res[0];
 
     await expectFailApi(
-      stakeConnection.withdrawTokens(stakeAccount, new BN(601)),
+      stakeConnection.withdrawTokens(
+        stakeAccount,
+        PythBalance.fromString("601")
+      ),
       "Amount exceeds withdrawable"
     );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(100) }, withdrawable: new BN(600) },
+      {
+        locked: { locking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("600"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -142,12 +163,15 @@ describe("api", async () => {
   it("Withdraw", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
     const stakeAccount = res[0];
-    await stakeConnection.withdrawTokens(stakeAccount, new BN(600));
+    await stakeConnection.withdrawTokens(
+      stakeAccount,
+      PythBalance.fromString("600")
+    );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(100) } },
+      { locked: { locking: PythBalance.fromString("100") } },
       await stakeConnection.getTime()
     );
   });
