@@ -6,7 +6,7 @@ import {
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 import assert from "assert";
 import { BN } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
@@ -39,7 +39,10 @@ describe("unlock_api", async () => {
   });
 
   it("deposit, lock, unlock, same epoch", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(100));
+    await stakeConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("100")
+    );
 
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
@@ -48,16 +51,19 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(100) } },
+      { locked: { locking: PythBalance.fromString("100") } },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(50) }, withdrawable: new BN(50) },
+      {
+        locked: { locking: PythBalance.fromString("50") },
+        withdrawable: PythBalance.fromString("50"),
+      },
       await stakeConnection.getTime()
     );
 
@@ -68,7 +74,10 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(50) }, withdrawable: new BN(50) },
+      {
+        locked: { locked: PythBalance.fromString("50") },
+        withdrawable: PythBalance.fromString("50"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -77,40 +86,52 @@ describe("unlock_api", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
 
-    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
+    await stakeConnection.depositAndLockTokens(
+      res[0],
+      PythBalance.fromString("100")
+    );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locking: new BN(100), locked: new BN(50) },
-        withdrawable: new BN(50),
+        locked: {
+          locking: PythBalance.fromString("100"),
+          locked: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
 
     // The tokens remain locked until the end of the epoch
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locking: new BN(100), locked: new BN(50) },
-        withdrawable: new BN(50),
+        locked: {
+          locking: PythBalance.fromString("100"),
+          locked: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
     // That means that unlocking again is a no-op for that position
     // TODO: This seems very strange. Change this.
-    await loadAndUnlock(stakeConnection, owner, new BN(100));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locking: new BN(50), locked: new BN(50) },
-        withdrawable: new BN(100),
+        locked: {
+          locking: PythBalance.fromString("50"),
+          locked: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("100"),
       },
       await stakeConnection.getTime()
     );
@@ -125,8 +146,11 @@ describe("unlock_api", async () => {
       stakeConnection,
       owner,
       {
-        locked: { locked: new BN(50), unlocking: new BN(50) },
-        withdrawable: new BN(100),
+        locked: {
+          locked: PythBalance.fromString("50"),
+          unlocking: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("100"),
       },
       await stakeConnection.getTime()
     );
@@ -138,16 +162,22 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(50) }, withdrawable: new BN(150) },
+      {
+        locked: { locked: PythBalance.fromString("50") },
+        withdrawable: PythBalance.fromString("150"),
+      },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, new BN(50));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(50) }, withdrawable: new BN(150) },
+      {
+        locked: { locked: PythBalance.fromString("50") },
+        withdrawable: PythBalance.fromString("150"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -160,7 +190,7 @@ describe("unlock_api", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: PythBalance.fromString("200") },
       await stakeConnection.getTime()
     );
   });

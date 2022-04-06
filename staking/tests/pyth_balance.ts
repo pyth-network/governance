@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { PythBalance } from "../app/pythBalance";
+import { PythBalance } from "../app";
 import assert from "assert";
 
 describe("pyth balance tests", async () => {

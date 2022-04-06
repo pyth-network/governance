@@ -28,6 +28,7 @@ import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import { batchInstructions } from "./transaction";
+import { PythBalance } from "./pythBalance";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -216,11 +217,15 @@ export class StakeConnection {
   }
 
   // Unlock a provided token balance
-  public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
+  public async unlockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
     let lockedSummary = stakeAccount.getBalanceSummary(
       await this.getTime()
     ).locked;
-    if (amount.gt(lockedSummary.locked.add(lockedSummary.locking))) {
+    if (
+      amount
+        .toBN()
+        .gt(lockedSummary.locked.toBN().add(lockedSummary.locking.toBN()))
+    ) {
       throw new Error("Amount greater than locked amount");
     }
 
@@ -261,7 +266,7 @@ export class StakeConnection {
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
 
-    let amountBeforeFinishing = amount;
+    let amountBeforeFinishing: BN = amount.toBN();
     let i = 0;
     const toClose: ClosingItem[] = [];
 
@@ -390,7 +395,7 @@ export class StakeConnection {
 
   public async depositTokens(
     stakeAccount: StakeAccount | undefined,
-    amount: BN
+    amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
@@ -413,7 +418,9 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(
+      await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
+    );
 
     const tx = new Transaction();
     tx.add(...ixs);
@@ -422,7 +429,7 @@ export class StakeConnection {
 
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
-    amount: BN
+    amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
@@ -445,10 +452,12 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(await this.buildTransferInstruction(stakeAccountAddress, amount));
+    ixs.push(
+      await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
+    );
 
     await this.program.methods
-      .createPosition(null, null, amount)
+      .createPosition(null, null, amount.toBN())
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
@@ -458,11 +467,15 @@ export class StakeConnection {
   }
 
   //withdraw tokens
-  public async withdrawTokens(stakeAccount: StakeAccount, amount: BN) {
+  public async withdrawTokens(stakeAccount: StakeAccount, amount: PythBalance) {
     if (
-      amount.gt(
-        stakeAccount.getBalanceSummary(await this.getTime()).withdrawable
-      )
+      amount
+        .toBN()
+        .gt(
+          stakeAccount
+            .getBalanceSummary(await this.getTime())
+            .withdrawable.toBN()
+        )
     ) {
       throw new Error("Amount exceeds withdrawable");
     }
@@ -475,7 +488,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .withdrawStake(amount)
+      .withdrawStake(amount.toBN())
       .accounts({
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
@@ -484,14 +497,14 @@ export class StakeConnection {
   }
 }
 export interface BalanceSummary {
-  withdrawable: BN;
+  withdrawable: PythBalance;
   // We may break this down into active, warmup, and cooldown in the future
   locked: {
-    locking: BN;
-    locked: BN;
-    unlocking: BN;
+    locking: PythBalance;
+    locked: PythBalance;
+    unlocking: PythBalance;
   };
-  unvested: BN;
+  unvested: PythBalance;
 }
 
 export class StakeAccount {
@@ -556,24 +569,26 @@ export class StakeAccount {
         unlockingDuration
       );
     return {
-      withdrawable: withdrawableBN,
+      withdrawable: new PythBalance(withdrawableBN),
       locked: {
-        locking: new BN(lockedSummaryBI.locking.toString()),
-        locked: new BN(lockedSummaryBI.locked.toString()),
-        unlocking: new BN(lockedSummaryBI.unlocking.toString()),
+        locking: new PythBalance(new BN(lockedSummaryBI.locking.toString())),
+        locked: new PythBalance(new BN(lockedSummaryBI.locked.toString())),
+        unlocking: new PythBalance(
+          new BN(lockedSummaryBI.unlocking.toString())
+        ),
       },
-      unvested: unvestedBN,
+      unvested: new PythBalance(unvestedBN),
     };
   }
 
-  public getVoterWeight(unixTime: BN) {
+  public getVoterWeight(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
       BigInt(currentEpoch.toString()),
       unlockingDuration
     );
-    return new BN(voterWeightBI.toString());
+    return new PythBalance(new BN(voterWeightBI.toString()));
   }
 
   // What is the best way to represent current vesting schedule in the UI

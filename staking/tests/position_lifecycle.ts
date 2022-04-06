@@ -14,7 +14,7 @@ import { assertBalanceMatches } from "./utils/api_utils";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 import path from "path";
 import { expectFail } from "./utils/utils";
 
@@ -66,7 +66,10 @@ describe("position_lifecycle", async () => {
   });
 
   it("deposits tokens and locks", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, new BN(200));
+    await stakeConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("200")
+    );
 
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
@@ -75,17 +78,19 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(200) } },
+      { locked: { locking: PythBalance.fromString("200") } },
       await stakeConnection.getTime()
     );
   });
 
   it("try to withdraw", async () => {
     expectFail(
-      await program.methods.withdrawStake(new BN(101)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        destination: ownerAta,
-      }),
+      await program.methods
+        .withdrawStake(PythBalance.fromString("101").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          destination: ownerAta,
+        }),
       "Insufficient balance to cover the withdrawal",
       errMap
     );
@@ -93,9 +98,11 @@ describe("position_lifecycle", async () => {
 
   it("try closing a position for more than the position's principal", async () => {
     expectFail(
-      await program.methods.closePosition(0, new BN(201)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      }),
+      await program.methods
+        .closePosition(0, PythBalance.fromString("201").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+        }),
       "Amount to unlock bigger than position",
       errMap
     );
@@ -103,9 +110,11 @@ describe("position_lifecycle", async () => {
 
   it("close null position", async () => {
     expectFail(
-      await program.methods.closePosition(1, new BN(200)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      }),
+      await program.methods
+        .closePosition(1, PythBalance.fromString("200").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+        }),
       "Position not in use",
       errMap
     );
@@ -113,7 +122,7 @@ describe("position_lifecycle", async () => {
 
   it("close position instantly", async () => {
     await program.methods
-      .closePosition(0, new BN(200))
+      .closePosition(0, PythBalance.fromString("200").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -122,14 +131,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: PythBalance.fromString("200") },
       await stakeConnection.getTime()
     );
   });
 
   it("open a new position", async () => {
     await program.methods
-      .createPosition(null, null, new BN(200))
+      .createPosition(null, null, PythBalance.fromString("200").toBN())
       .accounts({
         payer: owner,
         stakeAccountPositions: stakeAccountAddress,
@@ -139,14 +148,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(200) } },
+      { locked: { locking: PythBalance.fromString("200") } },
       await stakeConnection.getTime()
     );
   });
 
   it("first close some", async () => {
     await program.methods
-      .closePosition(0, new BN(10))
+      .closePosition(0, PythBalance.fromString("10").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -157,7 +166,10 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locking: new BN(190) }, withdrawable: new BN(10) },
+      {
+        locked: { locking: PythBalance.fromString("190") },
+        withdrawable: PythBalance.fromString("10"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -168,12 +180,15 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(190) }, withdrawable: new BN(10) },
+      {
+        locked: { locked: PythBalance.fromString("190") },
+        withdrawable: PythBalance.fromString("10"),
+      },
       await stakeConnection.getTime()
     );
 
     await program.methods
-      .closePosition(0, new BN(50))
+      .closePosition(0, PythBalance.fromString("50").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -183,7 +198,10 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(190) }, withdrawable: new BN(10) },
+      {
+        locked: { locked: PythBalance.fromString("190") },
+        withdrawable: PythBalance.fromString("10"),
+      },
       await stakeConnection.getTime()
     );
   });
@@ -195,17 +213,22 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       {
-        locked: { locked: new BN(140), unlocking: new BN(50) },
-        withdrawable: new BN(10),
+        locked: {
+          locked: PythBalance.fromString("140"),
+          unlocking: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("10"),
       },
       await stakeConnection.getTime()
     );
 
     expectFail(
-      await program.methods.withdrawStake(new BN(11)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        destination: ownerAta,
-      }),
+      await program.methods
+        .withdrawStake(PythBalance.fromString("11").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          destination: ownerAta,
+        }),
       "Insufficient balance to cover the withdrawal",
       errMap
     );
@@ -217,19 +240,22 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(140) }, withdrawable: new BN(60) },
+      {
+        locked: { locked: PythBalance.fromString("140") },
+        withdrawable: PythBalance.fromString("60"),
+      },
       await stakeConnection.getTime()
     );
 
     await program.methods
-      .closePosition(1, new BN(50))
+      .closePosition(1, PythBalance.fromString("50").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
 
     await program.methods
-      .closePosition(0, new BN(140))
+      .closePosition(0, PythBalance.fromString("140").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -238,15 +264,20 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: { locked: new BN(140) }, withdrawable: new BN(60) },
+      {
+        locked: { locked: PythBalance.fromString("140") },
+        withdrawable: PythBalance.fromString("60"),
+      },
       await stakeConnection.getTime()
     );
 
     expectFail(
-      await program.methods.withdrawStake(new BN(61)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        destination: ownerAta,
-      }),
+      await program.methods
+        .withdrawStake(PythBalance.fromString("61").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          destination: ownerAta,
+        }),
       "Insufficient balance to cover the withdrawal",
       errMap
     );
@@ -258,12 +289,12 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: PythBalance.fromString("200") },
       await stakeConnection.getTime()
     );
 
     await program.methods
-      .closePosition(0, new BN(140))
+      .closePosition(0, PythBalance.fromString("140").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -272,14 +303,14 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { withdrawable: new BN(200) },
+      { withdrawable: PythBalance.fromString("200") },
       await stakeConnection.getTime()
     );
   });
 
   it("withdraws everything", async () => {
     await program.methods
-      .withdrawStake(new BN(200))
+      .withdrawStake(PythBalance.fromString("200").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
         destination: ownerAta,

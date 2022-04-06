@@ -10,7 +10,7 @@ import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { expectFail } from "./utils/utils";
 import BN from "bn.js";
 import path from "path";
-import { StakeConnection } from "../app";
+import { StakeConnection, PythBalance } from "../app";
 import {
   readAnchorConfig,
   ANCHOR_CONFIG_PATH,
@@ -63,7 +63,10 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    await stakeConnection.depositTokens(undefined, new BN(102));
+    await stakeConnection.depositTokens(
+      undefined,
+      PythBalance.fromString("102")
+    );
     stakeAccountAddress = (
       await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
     )[0].address;
@@ -71,7 +74,7 @@ describe("fills a stake account with positions", async () => {
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(null, null, new BN(1))
+      .createPosition(null, null, PythBalance.fromString("1").toBN())
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -114,9 +117,11 @@ describe("fills a stake account with positions", async () => {
 
     // Now create 101, which is supposed to fail
     await expectFail(
-      program.methods.createPosition(null, null, new BN(1)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      }),
+      program.methods
+        .createPosition(null, null, PythBalance.fromString("1").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+        }),
       "Number of position limit reached",
       errMap
     );
