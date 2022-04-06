@@ -7,17 +7,21 @@ import {
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
-  Keypair, PublicKey,
-} from "@solana/web3.js";
-import { readAnchorConfig, standardSetup, ANCHOR_CONFIG_PATH, getPortNumber, requestPythAirdrop} from "../../tests/utils/before"
+  readAnchorConfig,
+  standardSetup,
+  ANCHOR_CONFIG_PATH,
+  getPortNumber,
+  requestPythAirdrop,
+} from "../../tests/utils/before";
 import path from "path";
 import { StakeConnection } from "..";
 import fs from "fs";
 import os from "os";
 
-const FRONTEND_ENV_FILE = "../frontend/.env"
-const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample"
+const FRONTEND_ENV_FILE = "../frontend/.env";
+const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample";
 
 //https://stackoverflow.com/questions/53360535/how-to-save-changes-in-env-file-in-node-js
 const readEnvVars = (path) => fs.readFileSync(path, "utf-8").split(os.EOL);
@@ -39,12 +43,10 @@ const setEnvValue = (key, value, path) => {
   fs.writeFileSync(FRONTEND_ENV_FILE, envVars.join(os.EOL));
 };
 
-
 const portNumber = 8899;
-async function main(){
-
-  let stakeConnection : StakeConnection;
-  let controller : AbortController;
+async function main() {
+  let stakeConnection: StakeConnection;
+  let controller: AbortController;
 
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
@@ -56,10 +58,7 @@ async function main(){
     `./app/keypairs/alice.json`,
     `[${alice.secretKey.toString()}]`
   );
-  fs.writeFileSync(
-    `./app/keypairs/bob.json`,
-    `[${bob.secretKey.toString()}]`
-  );
+  fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
   fs.writeFileSync(
     `./app/keypairs/pyth_mint.json`,
     JSON.stringify(pythMintAccount.publicKey.toBase58())
@@ -71,23 +70,31 @@ async function main(){
     portNumber,
     config,
     pythMintAccount,
-    pythMintAuthority, 
+    pythMintAuthority,
     {
-      bump : 0,
+      bump: 0,
       governanceAuthority: new PublicKey(0),
-      pythGovernanceRealm : new PublicKey(0),
+      pythGovernanceRealm: new PublicKey(0),
       pythTokenMint: pythMintAccount.publicKey,
       unlockingDuration: 2,
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
     }
   ));
-  
-  for (let owner of [alice.publicKey, bob.publicKey]) {
-    await stakeConnection.program.provider.connection.requestAirdrop(owner, 1_000_000_000_000);
-    await requestPythAirdrop(owner, pythMintAccount.publicKey, pythMintAuthority, new BN(1000), stakeConnection.program.provider.connection)
-  }
 
+  for (let owner of [alice.publicKey, bob.publicKey]) {
+    await stakeConnection.program.provider.connection.requestAirdrop(
+      owner,
+      1_000_000_000_000
+    );
+    await requestPythAirdrop(
+      owner,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      new BN(1000),
+      stakeConnection.program.provider.connection
+    );
+  }
 
   const aliceStakeConnection = await StakeConnection.createStakeConnection(
     stakeConnection.program.provider.connection,
@@ -101,16 +108,17 @@ async function main(){
     stakeConnection.program.programId
   );
 
-  for (let connection of [aliceStakeConnection, bobStakeConnection]){
+  for (let connection of [aliceStakeConnection, bobStakeConnection]) {
     await connection.depositAndLockTokens(undefined, new BN(500));
   }
 
+  setEnvValue(
+    "LOCALNET_PYTH_MINT",
+    pythMintAccount.publicKey.toBase58(),
+    fs.existsSync(FRONTEND_ENV_FILE) ? FRONTEND_ENV_FILE : FRONTEND_SAMPLE_FILE
+  );
 
-  setEnvValue("LOCALNET_PYTH_MINT", pythMintAccount.publicKey.toBase58(), fs.existsSync(FRONTEND_ENV_FILE) ? FRONTEND_ENV_FILE : FRONTEND_SAMPLE_FILE);
-  
-  while (true){
-
-  }
+  while (true) {}
 }
 
 main();

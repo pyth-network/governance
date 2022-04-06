@@ -45,7 +45,6 @@ describe("api", async () => {
     owner = stakeConnection.program.provider.wallet.publicKey;
   });
 
-
   it("Deposit and lock", async () => {
     await stakeConnection.depositAndLockTokens(undefined, new BN(600));
   });
