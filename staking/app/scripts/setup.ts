@@ -40,7 +40,7 @@ const setEnvValue = (key, value, path) => {
 };
 
 
-const portNumber = getPortNumber(path.basename(__filename));
+const portNumber = 8899;
 async function main(){
 
   let stakeConnection : StakeConnection;
