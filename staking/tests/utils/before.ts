@@ -22,7 +22,7 @@ import BN from "bn.js";
 import toml from "toml";
 import path from "path";
 import os from "os";
-import { StakeConnection } from "../../app";
+import { StakeConnection, PythBalance } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
@@ -143,7 +143,7 @@ export async function requestPythAirdrop(
   destination: PublicKey,
   pythMintAccount: PublicKey,
   pythMintAuthority: Keypair,
-  amount: BN,
+  amount: PythBalance,
   connection: Connection
 ) {
   // Testnet airdrop to ensure that the pyth authority can pay for gas
@@ -176,7 +176,7 @@ export async function requestPythAirdrop(
     destinationAta,
     pythMintAuthority.publicKey,
     [],
-    new u64(amount.toString())
+    new u64(amount.toBN().toString())
   );
   transaction.add(mintIx);
 
@@ -288,7 +288,7 @@ export async function standardSetup(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    new BN(amount ? amount : 200),
+    new BN(amount ? amount : PythBalance.fromString("200")),
     program.provider.connection
   );
 
