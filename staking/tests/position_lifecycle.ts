@@ -75,7 +75,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(200)} },
+      { locked: { locking: new BN(200) } },
       await stakeConnection.getTime()
     );
   });
@@ -157,7 +157,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locking: new BN(190)}, withdrawable: new BN(10) },
+      { locked: { locking: new BN(190) }, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
   });
@@ -168,7 +168,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
+      { locked: { locked: new BN(190) }, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
 
@@ -183,7 +183,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(190)}, withdrawable: new BN(10) },
+      { locked: { locked: new BN(190) }, withdrawable: new BN(10) },
       await stakeConnection.getTime()
     );
   });
@@ -194,7 +194,10 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140), unlocking: new BN(50)}, withdrawable: new BN(10) },
+      {
+        locked: { locked: new BN(140), unlocking: new BN(50) },
+        withdrawable: new BN(10),
+      },
       await stakeConnection.getTime()
     );
 
@@ -206,7 +209,6 @@ describe("position_lifecycle", async () => {
       "Insufficient balance to cover the withdrawal",
       errMap
     );
-
   });
 
   it("one epoch pass, try withdrawing", async () => {
@@ -215,11 +217,10 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
+      { locked: { locked: new BN(140) }, withdrawable: new BN(60) },
       await stakeConnection.getTime()
     );
 
-    
     await program.methods
       .closePosition(1, new BN(50))
       .accounts({
@@ -237,7 +238,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { locked: {locked: new BN(140)}, withdrawable: new BN(60) },
+      { locked: { locked: new BN(140) }, withdrawable: new BN(60) },
       await stakeConnection.getTime()
     );
 
@@ -288,7 +289,7 @@ describe("position_lifecycle", async () => {
     await assertBalanceMatches(
       stakeConnection,
       owner,
-      { },
+      {},
       await stakeConnection.getTime()
     );
   });

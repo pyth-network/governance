@@ -72,7 +72,7 @@ export class StakeConnection {
     ) as unknown as Program<Staking>;
     // Sometimes in the browser, the import returns a promise.
     // Don't fully understand, but this workaround is not terrible
-    if (wasm.hasOwnProperty('default')) {
+    if (wasm.hasOwnProperty("default")) {
       wasm = await (wasm as any).default;
     }
 
@@ -200,7 +200,7 @@ export class StakeConnection {
     // The Idl contains mockClockTime even when we build it with mock-clock feature disabled.
     // Therefore if the field doesn't exist it gets parsed as 0.
     // Thus, if mockClockTime is 0 we need to use real time.
-    if (("mockClockTime" in this.config) && (this.config.mockClockTime.gtn(0))) {
+    if ("mockClockTime" in this.config && this.config.mockClockTime.gtn(0)) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(
         this.configAddress
@@ -217,10 +217,10 @@ export class StakeConnection {
 
   // Unlock a provided token balance
   public async unlockTokens(stakeAccount: StakeAccount, amount: BN) {
-    let lockedSummary = stakeAccount.getBalanceSummary(await this.getTime()).locked;
-    if (
-      amount.gt(lockedSummary.locked.add(lockedSummary.locking))
-    ) {
+    let lockedSummary = stakeAccount.getBalanceSummary(
+      await this.getTime()
+    ).locked;
+    if (amount.gt(lockedSummary.locked.add(lockedSummary.locking))) {
       throw new Error("Amount greater than locked amount");
     }
 
@@ -550,16 +550,30 @@ export class StakeAccount {
     );
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
-    const lockedSummaryBI = this.stakeAccountPositionsWasm.getLockedBalanceSummary(currentEpochBI, unlockingDuration);
+    const lockedSummaryBI =
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
+        currentEpochBI,
+        unlockingDuration
+      );
     return {
       withdrawable: withdrawableBN,
       locked: {
         locking: new BN(lockedSummaryBI.locking.toString()),
         locked: new BN(lockedSummaryBI.locked.toString()),
-        unlocking: new BN(lockedSummaryBI.unlocking.toString())
+        unlocking: new BN(lockedSummaryBI.unlocking.toString()),
       },
       unvested: unvestedBN,
     };
+  }
+
+  public getVoterWeight(unixTime: BN) {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
+      BigInt(currentEpoch.toString()),
+      unlockingDuration
+    );
+    return new BN(voterWeightBI.toString());
   }
 
   // What is the best way to represent current vesting schedule in the UI

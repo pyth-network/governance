@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import {IdlTypes, parseIdlErrors, Program } from "@project-serum/anchor";
+import { IdlTypes, parseIdlErrors, Program } from "@project-serum/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -16,8 +16,13 @@ import { expectFail } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
-import path from 'path'
-import { readAnchorConfig, ANCHOR_CONFIG_PATH, standardSetup, getPortNumber } from "./utils/before";
+import path from "path";
+import {
+  readAnchorConfig,
+  ANCHOR_CONFIG_PATH,
+  standardSetup,
+  getPortNumber,
+} from "./utils/before";
 import { StakeConnection } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -28,7 +33,6 @@ type Position = IdlTypes<Staking>["Position"];
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("staking", async () => {
-
   let program: Program<Staking>;
 
   let voterAccount: PublicKey;
@@ -45,14 +49,13 @@ describe("staking", async () => {
   let userAta: PublicKey;
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-  let controller : AbortController;
-  let stakeConnection : StakeConnection;
+  let controller: AbortController;
+  let stakeConnection: StakeConnection;
 
   after(async () => {
     controller.abort();
   });
   before(async () => {
-    
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -119,7 +122,7 @@ describe("staking", async () => {
           lamports: await provider.connection.getMinimumBalanceForRentExemption(
             wasm.Constants.POSITIONS_ACCOUNT_SIZE()
           ),
-          space:  wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
           programId: program.programId,
         }),
       ])
@@ -176,8 +179,6 @@ describe("staking", async () => {
     });
   });
 
- 
-
   it("withdraws tokens", async () => {
     const toAccount = userAta;
 
@@ -206,11 +207,9 @@ describe("staking", async () => {
 
   it("creates a position that's too big", async () => {
     await expectFail(
-      program.methods
-        .createPosition(null, null, new BN(102))
-        .accounts({
-          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        }),
+      program.methods.createPosition(null, null, new BN(102)).accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+      }),
       "Too much exposure to governance",
       errMap
     );
@@ -250,15 +249,11 @@ describe("staking", async () => {
     }
   });
 
-  
-
   it("creates position with 0 principal", async () => {
     await expectFail(
-      program.methods
-        .createPosition(null, null, new BN(0))
-        .accounts({
-          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        }),
+      program.methods.createPosition(null, null, new BN(0)).accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+      }),
       "New position needs to have positive balance",
       errMap
     );

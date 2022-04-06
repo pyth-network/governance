@@ -1,8 +1,13 @@
-import { ANCHOR_CONFIG_PATH, getPortNumber, readAnchorConfig, standardSetup } from "./utils/before";
+import {
+  ANCHOR_CONFIG_PATH,
+  getPortNumber,
+  readAnchorConfig,
+  standardSetup,
+} from "./utils/before";
 import path from "path";
 import { Keypair } from "@solana/web3.js";
 import { StakeConnection } from "../app";
-import assert from 'assert';
+import assert from "assert";
 import { BN } from "@project-serum/anchor";
 
 const portNumber = getPortNumber(path.basename(__filename));
@@ -31,7 +36,7 @@ describe("clock_api", async () => {
     // Default config starts the clock at 10
     assert.equal(time.toNumber(), 10);
   });
-  it("advances mock clock a few times",async () => {
+  it("advances mock clock a few times", async () => {
     await stakeConnection.program.methods.advanceClock(new BN(10)).rpc();
     assert.equal((await stakeConnection.getTime()).toNumber(), 20);
 
@@ -40,15 +45,15 @@ describe("clock_api", async () => {
     assert.equal((await stakeConnection.getTime()).toNumber(), 25);
   });
 
-  it("gets real time",async () => {
+  it("gets real time", async () => {
     // Delete the property, which will make the API think it's not using mock clock anymore
     delete stakeConnection.config.mockClockTime;
-    let sysTime = Date.now()/1000;
+    let sysTime = Date.now() / 1000;
     let solanaTime = (await stakeConnection.getTime()).toNumber();
     assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);
 
     await new Promise((resolve) => setTimeout(resolve, 10000));
-    sysTime = Date.now()/1000;
+    sysTime = Date.now() / 1000;
     solanaTime = (await stakeConnection.getTime()).toNumber();
     assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);
   });

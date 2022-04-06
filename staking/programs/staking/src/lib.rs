@@ -9,6 +9,7 @@ use state::{
     vesting::VestingSchedule,
 };
 use utils::clock::get_current_epoch;
+use utils::voter_weight::compute_voter_weight;
 
 mod constants;
 mod context;
@@ -301,23 +302,7 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        let mut voter_weight = 0u64;
-        for i in 0..MAX_POSITIONS {
-            if stake_account_positions.positions[i].is_some() {
-                let position = stake_account_positions.positions[i].unwrap();
-                match position.get_current_position(current_epoch, config.unlocking_duration)? {
-                    PositionState::LOCKED => {
-                        if position.is_voting() {
-                            // position.amount is trusted, so I don't think this can overflow,
-                            // but still probably better to use checked math
-                            voter_weight = voter_weight.checked_add(position.amount).unwrap();
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        voter_record.voter_weight = voter_weight;
+        voter_record.voter_weight = compute_voter_weight(stake_account_positions, current_epoch, config.unlocking_duration)?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
