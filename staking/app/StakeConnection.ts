@@ -566,6 +566,16 @@ export class StakeAccount {
     };
   }
 
+  public getVoterWeight(unixTime: BN) {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
+      BigInt(currentEpoch.toString()),
+      unlockingDuration
+    );
+    return new BN(voterWeightBI.toString());
+  }
+
   // What is the best way to represent current vesting schedule in the UI
   public getVestingSchedule() {}
 

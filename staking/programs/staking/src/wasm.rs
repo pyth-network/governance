@@ -122,6 +122,19 @@ impl WasmPositionData {
         ))
     }
 
+    #[wasm_bindgen(js_name=getVoterWeight)]
+    pub fn get_voter_weight(
+        &self,
+        current_epoch: u64,
+        unlocking_duration: u8,
+    ) -> Result<u64, JsValue> {
+        convert_error(crate::utils::voter_weight::compute_voter_weight(
+            &self.wrapped,
+            current_epoch,
+            unlocking_duration,
+        ))
+    }
+
     /// Finds first index available for a new position
     #[wasm_bindgen(js_name=getUnusedIndex)]
     pub fn get_unused_index(&self) -> Result<usize, JsValue> {
