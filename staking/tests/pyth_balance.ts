@@ -82,7 +82,7 @@ describe("pyth balance tests", async () => {
   });
 
   it("Raises an error", async () => {
-    for (let s of ["","a", "a.2", "0xpyth", "1.", "1.0000001"]) {
+    for (let s of ["", "a", "a.2", "0xpyth", "1.", "1.0000001"]) {
       try {
         PythBalance.fromString(s);
         assert(false, "Operation should fail");

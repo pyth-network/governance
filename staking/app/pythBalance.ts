@@ -1,57 +1,60 @@
 import BN from "bn.js";
-import assert from "assert"
+import assert from "assert";
 
 const PYTH_DECIMALS = 6;
 const INTEGER_REGEXP = new RegExp(/^\d+$/);
 const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
 
 export class PythBalance {
-  integerAmount : BN;
+  integerAmount: BN;
 
   constructor(integerAmount: BN) {
     this.integerAmount = integerAmount;
   }
 
   //THIS METHOD MAY LOSE PRECISION
-  toNumber() : number {
+  toNumber(): number {
     return this.integerAmount.toNumber() * 10 ** -PYTH_DECIMALS;
   }
 
   //THIS METHOD MAY LOSE PRECISION IF AMOUNT IS NOT AN INTEGER
-  static fromNumber(amount : number) : PythBalance {
-    return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS))
+  static fromNumber(amount: number): PythBalance {
+    return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS));
   }
 
-  static fromString(amount : string){
+  static fromString(amount: string) {
     if (amount.match(INTEGER_REGEXP)) {
       return new PythBalance(new BN(amount).mul(new BN(10 ** PYTH_DECIMALS)));
-    }
-    else if (amount.match(DECIMAL_REGEXP)){
-      const integerPart = amount.split('.')[0];
-      const decimalPart = amount.split('.')[1];
+    } else if (amount.match(DECIMAL_REGEXP)) {
+      const integerPart = amount.split(".")[0];
+      const decimalPart = amount.split(".")[1];
       const decimalLength = decimalPart.length;
 
-      let resBN =  new BN(integerPart).mul(new BN(10 ** PYTH_DECIMALS));
-      resBN = resBN.add( new BN(decimalPart).mul(new BN(10 ** (PYTH_DECIMALS - decimalLength))))
+      let resBN = new BN(integerPart).mul(new BN(10 ** PYTH_DECIMALS));
+      resBN = resBN.add(
+        new BN(decimalPart).mul(new BN(10 ** (PYTH_DECIMALS - decimalLength)))
+      );
 
       return new PythBalance(resBN);
-    }
-    else{
+    } else {
       throw new Error("Failed parsing");
     }
   }
 
-  toString() : string {
-    const padded = this.toBN().toString().padStart(PYTH_DECIMALS + 1,'0')
-    return padded.slice(0, padded.length - 6) + '.' + padded.slice(padded.length - 6)
-    
+  toString(): string {
+    const padded = this.toBN()
+      .toString()
+      .padStart(PYTH_DECIMALS + 1, "0");
+    return (
+      padded.slice(0, padded.length - 6) + "." + padded.slice(padded.length - 6)
+    );
   }
 
-  toBN(){
-    return this.integerAmount
+  toBN() {
+    return this.integerAmount;
   }
 
-  eq(other : PythBalance) : boolean{
-    return this.toBN().eq(other.toBN())
+  eq(other: PythBalance): boolean {
+    return this.toBN().eq(other.toBN());
   }
 }

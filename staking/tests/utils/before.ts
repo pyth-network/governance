@@ -23,6 +23,7 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 import { StakeConnection } from "../../app";
+import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 interface AnchorConfig {
@@ -227,20 +228,28 @@ export async function createMint(
   });
 }
 
-export async function initConfig(program: Program, pythMintAccount: PublicKey) {
+export async function initConfig(
+  program: Program,
+  pythMintAccount: PublicKey,
+  globalConfig?: GlobalConfig
+) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
     [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     program.programId
   );
 
   await program.methods
-    .initConfig({
-      governanceAuthority: program.provider.wallet.publicKey,
-      pythTokenMint: pythMintAccount,
-      unlockingDuration: 2,
-      epochDuration: new BN(3600),
-      mockClockTime: new BN(10),
-    })
+    .initConfig(
+      globalConfig
+        ? globalConfig
+        : {
+            governanceAuthority: program.provider.wallet.publicKey,
+            pythTokenMint: pythMintAccount,
+            unlockingDuration: 2,
+            epochDuration: new BN(3600),
+            mockClockTime: new BN(10),
+          }
+    )
     .rpc({
       skipPreflight: true,
     });
@@ -258,7 +267,9 @@ export async function standardSetup(
   portNumber: number,
   config: AnchorConfig,
   pythMintAccount: Keypair,
-  pythMintAuthority: Keypair
+  pythMintAuthority: Keypair,
+  globalConfig?: GlobalConfig,
+  amount?: number
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -277,11 +288,11 @@ export async function standardSetup(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    200,
+    new BN(amount ? amount : 200),
     program.provider.connection
   );
 
-  await initConfig(program, pythMintAccount.publicKey);
+  await initConfig(program, pythMintAccount.publicKey, globalConfig);
 
   const connection = new Connection(
     `http://localhost:${portNumber}`,
@@ -290,7 +301,7 @@ export async function standardSetup(
 
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
-    program.provider.wallet,
+    program.provider.wallet as Wallet,
     config.programs.localnet.staking
   );
 
