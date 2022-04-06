@@ -109,7 +109,10 @@ async function main() {
   );
 
   for (let connection of [aliceStakeConnection, bobStakeConnection]) {
-    await connection.depositAndLockTokens(undefined, PythBalance.fromString("500").toBN());
+    await connection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("500").toBN()
+    );
   }
 
   setEnvValue(
