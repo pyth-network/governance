@@ -50,7 +50,7 @@ export async function assertBalanceMatches(
 export async function assertVoterWeightEquals(
   stakeConnection: StakeConnection,
   owner: PublicKey,
-  expected: number,
+  expected: number
 ) {
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
