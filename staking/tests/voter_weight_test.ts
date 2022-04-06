@@ -43,7 +43,7 @@ describe("voter_weight_test", async () => {
   });
 
   it("deposit, lock, make sure voter weight appears after warmup", async () => {
-    await stakeConnection.depositAndLockTokens(undefined, 100);
+    await stakeConnection.depositAndLockTokens(undefined, new BN(100));
 
     await assertVoterWeightEquals(stakeConnection, owner, 0);
 
@@ -70,7 +70,7 @@ describe("voter_weight_test", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
     await assertVoterWeightEquals(stakeConnection, owner, 0);
 
-    await stakeConnection.depositAndLockTokens(res[0], 100);
+    await stakeConnection.depositAndLockTokens(res[0], new BN(100));
 
     await assertVoterWeightEquals(stakeConnection, owner, 0);
 
