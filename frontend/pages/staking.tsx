@@ -39,13 +39,14 @@ const Staking: NextPage = () => {
   const { publicKey, connected } = useWallet()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
-  const [balance, setBalance] = useState<number>(0)
-  const [pythBalance, setPythBalance] = useState<number>(0)
-  const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
-  const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
-  const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
-  const [lockingPythBalance, setLockingPythBalance] = useState<number>(0)
-  const [unlockingPythBalance, setUnlockingPythBalance] = useState<number>(0)
+  const [balance, setBalance] = useState<PythBalance>()
+  const [pythBalance, setPythBalance] = useState<PythBalance>()
+  const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>()
+  const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>()
+  const [unvestedPythBalance, setUnvestedPythBalance] = useState<PythBalance>()
+  const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
+  const [unlockingPythBalance, setUnlockingPythBalance] =
+    useState<PythBalance>()
   const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
@@ -91,7 +92,7 @@ const Staking: NextPage = () => {
           break
       }
     } else {
-      setBalance(0)
+      setBalance(undefined)
     }
   }, [
     currentTab,
@@ -187,19 +188,19 @@ const Staking: NextPage = () => {
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
-      setPythBalance(await getPythTokenBalance(connection, publicKey))
+      const pythTokenBalance = await getPythTokenBalance(connection, publicKey)
+      setPythBalance(PythBalance.fromNumber(pythTokenBalance))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       if (stakeAccounts.length > 0) {
         setStakeAccount(stakeAccounts[0])
         const { withdrawable, locked, unvested } =
           stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
-        setLockingPythBalance(parseFloat(locked.locking.toNumber().toFixed(6)))
-        setLockedPythBalance(parseFloat(locked.locked.toNumber().toFixed(6)))
-        setUnlockingPythBalance(
-          parseFloat(locked.unlocking.toNumber().toFixed(6))
-        )
-        setUnlockedPythBalance(parseFloat(withdrawable.toNumber().toFixed(6)))
-        setUnvestedPythBalance(parseFloat(unvested.toNumber().toFixed(6)))
+        setLockingPythBalance(locked.locking)
+        setLockedPythBalance(locked.locked)
+        setUnlockingPythBalance(locked.unlocking)
+
+        setUnlockedPythBalance(withdrawable)
+        setUnvestedPythBalance(unvested)
       }
     }
   }
@@ -211,12 +212,16 @@ const Staking: NextPage = () => {
 
   // set input amount to half of pyth balance in wallet
   const handleHalfBalanceClick = () => {
-    setAmount(parseFloat((balance / 2).toFixed(6)).toString())
+    if (balance) {
+      setAmount(new PythBalance(balance.toBN().div(new BN(2))).toString())
+    }
   }
 
   // set input amount to max of pyth balance in wallet
   const handleMaxBalanceClick = () => {
-    setAmount(parseFloat(balance.toFixed(6)).toString())
+    if (balance) {
+      setAmount(balance.toString())
+    }
   }
 
   return (
@@ -235,12 +240,13 @@ const Staking: NextPage = () => {
                   Locked{' '}
                 </div>
                 <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                  {lockedPythBalance}{' '}
-                  {lockingPythBalance > 0 ? (
+                  {lockedPythBalance?.toString()}{' '}
+                  {lockingPythBalance &&
+                  lockingPythBalance.toString() !== '0' ? (
                     <div>
                       <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
                         <div className="mx-1 text-scampi">
-                          (+{lockingPythBalance})
+                          (+{lockingPythBalance.toString()})
                         </div>
                       </Tooltip>
                     </div>
@@ -257,12 +263,13 @@ const Staking: NextPage = () => {
                   Unlocked{' '}
                 </div>
                 <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                  {unlockedPythBalance}{' '}
-                  {unlockingPythBalance > 0 ? (
+                  {unlockedPythBalance?.toString()}{' '}
+                  {unlockingPythBalance &&
+                  unlockingPythBalance.toString() !== '0' ? (
                     <div>
                       <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
                         <div className="text-scampi">
-                          (+{unlockingPythBalance})
+                          (+{unlockingPythBalance.toString()})
                         </div>
                       </Tooltip>
                     </div>
@@ -276,7 +283,7 @@ const Staking: NextPage = () => {
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold">Unvested</div>
-                <div className="text-sm">{unvestedPythBalance}</div>
+                <div className="text-sm">{unvestedPythBalance?.toString()}</div>
               </div>
             </div>
           </div>
@@ -340,7 +347,7 @@ const Staking: NextPage = () => {
                                 : currentTab === TabEnum.Unlock
                                 ? 'Locked Tokens'
                                 : 'Withdrawable'}
-                              : {balance}
+                              : {balance?.toString()}
                             </p>
                             <div className="hidden space-x-2 sm:flex">
                               <button
