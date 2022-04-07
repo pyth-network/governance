@@ -1,5 +1,6 @@
 import { PYTH_MINT_ACCOUNT_PUBKEY } from '@components/constants'
 import { Connection, PublicKey } from '@solana/web3.js'
+import { PythBalance } from 'pyth-staking-api'
 
 export const getPythTokenBalance = async (
   connection: Connection,
@@ -17,5 +18,5 @@ export const getPythTokenBalance = async (
   } catch (e) {
     console.error(e)
   }
-  return balance
+  return PythBalance.fromNumber(balance)
 }

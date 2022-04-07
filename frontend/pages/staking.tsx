@@ -188,8 +188,7 @@ const Staking: NextPage = () => {
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
-      const pythTokenBalance = await getPythTokenBalance(connection, publicKey)
-      setPythBalance(PythBalance.fromNumber(pythTokenBalance))
+      setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       if (stakeAccounts.length > 0) {
         setStakeAccount(stakeAccounts[0])
