@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(Default)]
 pub struct ProductMetadata {
+    pub bump : u8,
     pub last_update_at: u64,
     pub locking: u64,
     pub locked: u64,

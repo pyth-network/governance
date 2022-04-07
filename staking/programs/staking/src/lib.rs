@@ -311,9 +311,15 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_product(ctx : Context<CreateProduct>) -> Result<()>{
+    pub fn create_product(ctx : Context<CreateProduct>, product : Option<Pubkey>) -> Result<()>{
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
+
+        if product.is_some(){
+            return Err(error!(ErrorCode::NotImplemented));
+        }
+
+        product_account.bump = *ctx.bumps.get("product_account").unwrap();
         product_account.last_update_at = get_current_epoch(config).unwrap();
         Ok(())
     }
