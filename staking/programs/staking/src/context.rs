@@ -192,7 +192,7 @@ pub struct CreateProduct<'info>{
         init,
         payer = payer,
         space = voter_weight_record::VOTER_WEIGHT_RECORD_SIZE,
-        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()],
+        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump)]
     pub product_account : Account<'info, product::ProductMetadata>,
     pub system_program : Program<'info, System>,
@@ -202,8 +202,6 @@ pub struct CreateProduct<'info>{
 pub struct CleanupPositions<'info>{
     pub payer : Signer<'info>,
 }
-
-
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed
 // up if we try to use it here. We can just keep the definition the same.
