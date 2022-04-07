@@ -4,6 +4,7 @@ import assert from "assert";
 export const PYTH_DECIMALS = 6;
 const INTEGER_REGEXP = new RegExp(/^\d+$/);
 const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
+const TRAILING_ZEROS = new RegExp(/\.?0+$/);
 
 export class PythBalance {
   integerAmount: BN;
@@ -46,7 +47,11 @@ export class PythBalance {
       .toString()
       .padStart(PYTH_DECIMALS + 1, "0");
     return (
-      padded.slice(0, padded.length - 6) + "." + padded.slice(padded.length - 6)
+      padded.slice(0, padded.length - PYTH_DECIMALS) +
+      ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
+        TRAILING_ZEROS,
+        ""
+      )
     );
   }
 
