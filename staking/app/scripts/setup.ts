@@ -91,7 +91,7 @@ async function main() {
       owner,
       pythMintAccount.publicKey,
       pythMintAuthority,
-      PythBalance.fromString("1000").toBN(),
+      PythBalance.fromString("1000"),
       stakeConnection.program.provider.connection
     );
   }
@@ -111,7 +111,7 @@ async function main() {
   for (let connection of [aliceStakeConnection, bobStakeConnection]) {
     await connection.depositAndLockTokens(
       undefined,
-      PythBalance.fromString("500").toBN()
+      PythBalance.fromString("500")
     );
   }
 
