@@ -311,6 +311,13 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn create_product(ctx : Context<CreateProduct>) -> Result<()>{
+        let product_account = &mut ctx.accounts.product_account;
+        let config = &ctx.accounts.config;
+        product_account.last_update_at = get_current_epoch(config).unwrap();
+        Ok(())
+    }
+
     // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
     // so we have to keep it, but make it a no-op.
     pub fn advance_clock(ctx: Context<AdvanceClock>, seconds: i64) -> Result<()> {
@@ -325,4 +332,6 @@ pub mod staking {
             return Err(error!(ErrorCode::DebuggingOnly));
         }
     }
+
+
 }

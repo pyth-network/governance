@@ -10,6 +10,8 @@ pub const CUSTODY_SEED: &str = "custody";
 pub const STAKE_ACCOUNT_METADATA_SEED : &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
+pub const PRODUCT_SEED: &str = "product";
+pub const GOVERNANCE_SEED: &str = "governance";
 
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
@@ -180,9 +182,27 @@ pub struct UpdateVoterWeight<'info>{
 }
 
 #[derive(Accounts)]
+#[instruction(product : Option<Pubkey>)]
+pub struct CreateProduct<'info>{
+    #[account(mut, address = config.governance_authority)]
+    pub payer : Signer<'info>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config : Account<'info, global_config::GlobalConfig>,
+    #[account(
+        init,
+        payer = payer,
+        space = voter_weight_record::VOTER_WEIGHT_RECORD_SIZE,
+        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()],
+        bump)]
+    pub product_account : Account<'info, product::ProductMetadata>,
+    pub system_program : Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct CleanupPositions<'info>{
     pub payer : Signer<'info>,
 }
+
 
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed
