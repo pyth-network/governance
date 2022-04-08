@@ -9,10 +9,7 @@ import { ChangeEvent, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 import { STAKING_PROGRAM } from '@components/constants'
-import {
-  StakeAccount,
-  StakeConnection,
-} from 'pyth-staking-api'
+import { PythBalance, StakeAccount, StakeConnection } from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
 import { Tab } from '@headlessui/react'
@@ -21,7 +18,6 @@ import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import BN from 'bn.js'
 import Tooltip from '@components/Tooltip'
-import InfoIcon from '@components/icons/InfoIcon'
 
 enum TabEnum {
   Lock,
@@ -43,14 +39,15 @@ const Staking: NextPage = () => {
   const { publicKey, connected } = useWallet()
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
-  const [balance, setBalance] = useState<number>(0)
-  const [pythBalance, setPythBalance] = useState<number>(0)
-  const [lockedPythBalance, setLockedPythBalance] = useState<number>(0)
-  const [unlockedPythBalance, setUnlockedPythBalance] = useState<number>(0)
-  const [unvestedPythBalance, setUnvestedPythBalance] = useState<number>(0)
-  const [lockingPythBalance, setLockingPythBalance] = useState<number>(0)
-  const [unlockingPythBalance, setUnlockingPythBalance] = useState<number>(0)
-  const [amount, setAmount] = useState<number>(0)
+  const [balance, setBalance] = useState<PythBalance>()
+  const [pythBalance, setPythBalance] = useState<PythBalance>()
+  const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>()
+  const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>()
+  const [unvestedPythBalance, setUnvestedPythBalance] = useState<PythBalance>()
+  const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
+  const [unlockingPythBalance, setUnlockingPythBalance] =
+    useState<PythBalance>()
+  const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
   // create stake connection when wallet is connected
@@ -95,7 +92,7 @@ const Staking: NextPage = () => {
           break
       }
     } else {
-      setBalance(0)
+      setBalance(undefined)
     }
   }, [
     currentTab,
@@ -107,15 +104,26 @@ const Staking: NextPage = () => {
 
   // set amount when input changes
   const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setAmount(parseFloat(event.target.value))
+    const re = /^(\d*\.)?\d{0,6}$/
+    if (re.test(event.target.value)) {
+      setAmount(event.target.value)
+    }
   }
 
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const handleDeposit = async () => {
-    if (amount > 0) {
+    if (!amount) {
+      toast.error('Please enter a valid amount!')
+      return
+    }
+    const depositAmount = PythBalance.fromString(amount)
+    if (depositAmount.toBN().gt(new BN(0))) {
       if (stakeAccount) {
         try {
-          await stakeConnection?.depositAndLockTokens(stakeAccount, amount)
+          await stakeConnection?.depositAndLockTokens(
+            stakeAccount,
+            depositAmount
+          )
           toast.success(`Deposit and locked ${amount} PYTH tokens!`)
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
@@ -131,10 +139,15 @@ const Staking: NextPage = () => {
 
   // TODO: unlock is buggy now in the sense that you have to unlock twice before it gets unlocked -- will be fixed in subsequent PR
   const handleUnlock = async () => {
-    if (amount > 0) {
+    if (!amount) {
+      toast.error('Please enter a valid amount!')
+      return
+    }
+    const unlockAmount = PythBalance.fromString(amount)
+    if (unlockAmount.toBN().gt(new BN(0))) {
       if (stakeAccount) {
         try {
-          await stakeConnection?.unlockTokens(stakeAccount, new BN(amount))
+          await stakeConnection?.unlockTokens(stakeAccount, unlockAmount)
           toast.success('Unlock successful!')
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
@@ -150,10 +163,15 @@ const Staking: NextPage = () => {
 
   // withdraw unlocked PYTH tokens to wallet
   const handleWithdraw = async () => {
-    if (amount > 0) {
+    if (!amount) {
+      toast.error('Please enter a valid amount!')
+      return
+    }
+    const withdrawAmount = PythBalance.fromString(amount)
+    if (withdrawAmount.toBN().gt(new BN(0))) {
       if (stakeAccount) {
         try {
-          await stakeConnection?.withdrawTokens(stakeAccount, new BN(amount))
+          await stakeConnection?.withdrawTokens(stakeAccount, withdrawAmount)
           toast.success('Withdraw successful!')
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
@@ -176,11 +194,12 @@ const Staking: NextPage = () => {
         setStakeAccount(stakeAccounts[0])
         const { withdrawable, locked, unvested } =
           stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
-        setLockingPythBalance(locked.locking.toNumber())
-        setLockedPythBalance(locked.locked.toNumber())
-        setUnlockingPythBalance(locked.unlocking.toNumber())
-        setUnlockedPythBalance(withdrawable.toNumber())
-        setUnvestedPythBalance(unvested.toNumber())
+        setLockingPythBalance(locked.locking)
+        setLockedPythBalance(locked.locked)
+        setUnlockingPythBalance(locked.unlocking)
+
+        setUnlockedPythBalance(withdrawable)
+        setUnvestedPythBalance(unvested)
       }
     }
   }
@@ -192,19 +211,23 @@ const Staking: NextPage = () => {
 
   // set input amount to half of pyth balance in wallet
   const handleHalfBalanceClick = () => {
-    setAmount(balance / 2)
+    if (balance) {
+      setAmount(new PythBalance(balance.toBN().div(new BN(2))).toString())
+    }
   }
 
   // set input amount to max of pyth balance in wallet
   const handleMaxBalanceClick = () => {
-    setAmount(balance)
+    if (balance) {
+      setAmount(balance.toString())
+    }
   }
 
   return (
     <Layout>
       <SEO title={'Staking'} />
       <div className="mb-20 flex flex-col items-center px-8">
-        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-12 sm:px-14 md:px-20">
+        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-12 sm:px-14">
           <SEO title={'Staking'} />
           <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -215,13 +238,14 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Locked{' '}
                 </div>
-                <div className="mx-auto flex text-sm sm:m-0">
-                  {lockedPythBalance}{' '}
-                  {lockingPythBalance > 0 ? (
-                    <div className="ml-1">
+                <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
+                  {lockedPythBalance?.toString()}{' '}
+                  {lockingPythBalance &&
+                  lockingPythBalance.toString() !== '0' ? (
+                    <div>
                       <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                        <div className="text-scampi">
-                          (+{lockingPythBalance})
+                        <div className="mx-1 text-scampi">
+                          (+{lockingPythBalance.toString()})
                         </div>
                       </Tooltip>
                     </div>
@@ -237,13 +261,14 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Unlocked{' '}
                 </div>
-                <div className="mx-auto flex text-sm sm:m-0">
-                  {unlockedPythBalance}{' '}
-                  {unlockingPythBalance > 0 ? (
-                    <div className="ml-1">
+                <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
+                  {unlockedPythBalance?.toString()}{' '}
+                  {unlockingPythBalance &&
+                  unlockingPythBalance.toString() !== '0' ? (
+                    <div>
                       <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
                         <div className="text-scampi">
-                          (+{unlockingPythBalance})
+                          (+{unlockingPythBalance.toString()})
                         </div>
                       </Tooltip>
                     </div>
@@ -257,12 +282,12 @@ const Staking: NextPage = () => {
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold">Unvested</div>
-                <div className="text-sm">{unvestedPythBalance}</div>
+                <div className="text-sm">{unvestedPythBalance?.toString()}</div>
               </div>
             </div>
           </div>
         </div>
-        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14 md:px-20">
+        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14">
           <div className="w-full py-8">
             <Tab.Group onChange={handleChangeTab}>
               <Tab.List className="flex justify-center space-x-2">
@@ -321,7 +346,7 @@ const Staking: NextPage = () => {
                                 : currentTab === TabEnum.Unlock
                                 ? 'Locked Tokens'
                                 : 'Withdrawable'}
-                              : {balance}
+                              : {balance?.toString()}
                             </p>
                             <div className="hidden space-x-2 sm:flex">
                               <button
@@ -340,7 +365,7 @@ const Staking: NextPage = () => {
                           </div>
                         </div>
                         <input
-                          type="number"
+                          type="text"
                           name="amount"
                           id="amount"
                           autoComplete="amount"

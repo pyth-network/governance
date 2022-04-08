@@ -29,6 +29,6 @@ yarn setup
 Once that's done, change directory to the frontend directory and run:
 
 ```bash
-yarn install
-yarn run dev
+npm install
+npm run dev
 ```
