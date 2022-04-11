@@ -1,9 +1,10 @@
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{*, borsh::BorshSchema};
 
 pub const MAX_VOTER_WEIGHT_RECORD: usize = 32 + 32 + 8 + 9 + 8;
 
+/// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/max_voter_weight.rs
 #[account]
-#[derive(Default)]
+#[derive(BorshSchema)]
 pub struct MaxVoterWeightRecord {
     /// The Realm the MaxVoterWeightRecord belongs to
     pub realm: Pubkey,
@@ -26,4 +27,15 @@ pub struct MaxVoterWeightRecord {
 
     /// Reserved space for future versions
     pub reserved: [u8; 8],
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::state::max_voter_weight::{MaxVoterWeightRecord, MAX_VOTER_WEIGHT_RECORD};
+
+    #[test]
+    fn check_size() {
+        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<MaxVoterWeightRecord>(),
+        MAX_VOTER_WEIGHT_RECORD);
+    }
 }
