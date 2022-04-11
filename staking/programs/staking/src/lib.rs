@@ -224,7 +224,16 @@ pub mod staking {
 
             // For this case, we don't need to create new positions because the "closed"
             // tokens become "free"
-            PositionState::LOCKING | PositionState::UNLOCKED => {
+            PositionState::LOCKING => {
+                if remaining_amount == 0 {
+                    stake_account_positions.positions[i] = None;
+                } else {
+                    current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
+                }
+                product_account.add_unlocking(amount)?;
+            }
+            PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
                     stake_account_positions.positions[i] = None;
                 } else {
