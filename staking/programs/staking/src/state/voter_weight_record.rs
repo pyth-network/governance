@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{*, borsh::BorshSchema};
 
-pub const VOTER_WEIGHT_RECORD_SIZE: usize = 150;
+pub const VOTER_WEIGHT_RECORD_SIZE: usize = 156;
 
 /// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/voter_weight.rs
 /// Anchor has a macro (vote_weight_record) that is supposed to generate this struct, but it doesn't work 
@@ -9,6 +9,7 @@ pub const VOTER_WEIGHT_RECORD_SIZE: usize = 150;
 /// that means we'd need the equivalent of this code on the client side.
 /// If Anchor fixes the macro, we might consider changing it
 #[account]
+#[derive(BorshSchema)]
 pub struct VoterWeightRecord {
     /// VoterWeightRecord discriminator sha256("account:VoterWeightRecord")[..8]
     /// Note: The discriminator size must match the addin implementing program discriminator size
@@ -53,7 +54,7 @@ pub struct VoterWeightRecord {
     pub reserved: [u8; 8],
 }
 /// The governance action VoterWeight is evaluated for
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 pub enum VoterWeightAction {
     /// Cast vote for a proposal. Target: Proposal
     CastVote,
@@ -70,4 +71,16 @@ pub enum VoterWeightAction {
     /// Signs off a proposal for a governance. Target: Proposal
     /// Note: SignOffProposal is not supported in the current version
     SignOffProposal,
+}
+
+
+#[cfg(test)]
+pub mod tests {
+    use crate::state::voter_weight_record::{VoterWeightRecord, VOTER_WEIGHT_RECORD_SIZE};
+
+    #[test]
+    fn check_size() {
+        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<VoterWeightRecord>(),
+        VOTER_WEIGHT_RECORD_SIZE);
+    }
 }
