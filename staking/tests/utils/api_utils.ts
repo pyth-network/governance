@@ -3,6 +3,8 @@ import { PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
+import * as wasm from "../../wasm/node/staking";
+import * as anchor from "@project-serum/anchor";
 
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
@@ -58,7 +60,25 @@ export async function assertVoterWeightEquals(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getVoterWeight(await stakeConnection.getTime());
-  assert(actual.eq(expected));
+  assert.equal(actual.toNumber(), expected);
+  await stakeConnection.program.methods
+    .updateVoterWeight()
+    .accounts({
+      stakeAccountPositions: res[0].address,
+    })
+    .rpc();
+
+  let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+    [
+      anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
+      res[0].address.toBuffer(),
+    ],
+    stakeConnection.program.programId
+  );
+
+  const voterRecord =
+    await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
+  assert.equal(voterRecord.voterWeight.toNumber(), expected);
 }
 
 export async function loadAndUnlock(
