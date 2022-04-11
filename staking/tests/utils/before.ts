@@ -6,6 +6,8 @@ import {
   Keypair,
   Transaction,
   SystemProgram,
+  BPF_LOADER_PROGRAM_ID,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
@@ -17,6 +19,15 @@ import {
   u64,
 } from "@solana/spl-token";
 import { MintLayout } from "@solana/spl-token";
+import {
+  GovernanceConfig,
+  MintMaxVoteWeightSource,
+  MintMaxVoteWeightSourceType,
+  PROGRAM_VERSION_V2,
+  VoteThresholdPercentage,
+  withCreateGovernance,
+  withCreateRealm,
+} from "@solana/spl-governance";
 import shell from "shelljs";
 import BN from "bn.js";
 import toml from "toml";
@@ -30,6 +41,7 @@ interface AnchorConfig {
   path: {
     idl_path: string;
     binary_path: string;
+    governance_path: string;
   };
   provider: {
     cluster: string;
@@ -37,7 +49,8 @@ interface AnchorConfig {
   };
   programs: {
     localnet: {
-      staking: PublicKey;
+      staking: string;
+      governance: string;
     };
   };
   validator: {
@@ -74,7 +87,7 @@ export function getPortNumber(filename: string) {
  * validator by calling :
  * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: any) {
+export async function startValidator(portNumber: number, config: AnchorConfig) {
   const connection: Connection = getConnection(portNumber);
 
   const controller: AbortController = new AbortController();
@@ -94,9 +107,9 @@ export async function startValidator(portNumber: number, config: any) {
   exec(
     `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
       user.publicKey
-    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --faucet-port ${
-      portNumber + 101
-    }`,
+    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
+      config.programs.localnet.governance
+    } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
     (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
@@ -227,6 +240,58 @@ export async function createMint(
     skipPreflight: true,
   });
 }
+/*
+  Creates a governance realm using the SPL-governance deployment in config.
+  Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
+*/
+export async function createGovernance(
+  provider: Provider,
+  config: AnchorConfig,
+  maxVotingTime: number, // in seconds
+  pythMint: PublicKey
+) {
+  const realmAuthority = Keypair.generate();
+  const tx = new Transaction();
+  const govProgramId = new PublicKey(config.programs.localnet.governance);
+  const MIN_TOKENS_CREATE_PROPOSAL = PythBalance.fromNumber(200).toBN();
+
+  const realm = await withCreateRealm(
+    tx.instructions,
+    govProgramId,
+    PROGRAM_VERSION_V2,
+    "Pyth Governance",
+    realmAuthority.publicKey,
+    pythMint,
+    provider.wallet.publicKey,
+    undefined, // no council mint
+    MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
+    MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
+    new PublicKey(config.programs.localnet.staking),
+    new PublicKey(config.programs.localnet.staking)
+  );
+  const governanceConfig = new GovernanceConfig({
+    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    minCommunityTokensToCreateProposal: MIN_TOKENS_CREATE_PROPOSAL,
+    minInstructionHoldUpTime: 1,
+    maxVotingTime: maxVotingTime,
+    minCouncilTokensToCreateProposal: new BN(1),
+  });
+  const governance = await withCreateGovernance(
+    tx.instructions,
+    govProgramId,
+    PROGRAM_VERSION_V2,
+    realm,
+    undefined,
+    governanceConfig,
+    new PublicKey(0),
+    provider.wallet.publicKey,
+    realmAuthority.publicKey,
+    null
+  );
+  await provider.send(tx, [realmAuthority], { skipPreflight: true });
+
+  return { realm, governance };
+}
 
 export async function initConfig(
   program: Program,
@@ -292,6 +357,16 @@ export async function standardSetup(
     program.provider.connection
   );
 
+  const { realm, governance } = await createGovernance(
+    program.provider,
+    config,
+    globalConfig.epochDuration.toNumber(),
+    pythMintAccount.publicKey
+  );
+  globalConfig.governanceAuthority =
+    globalConfig.governanceAuthority || governance;
+  globalConfig.pythGovernanceRealm = globalConfig.pythGovernanceRealm || realm;
+
   await initConfig(program, pythMintAccount.publicKey, globalConfig);
 
   const connection = new Connection(
@@ -302,8 +377,8 @@ export async function standardSetup(
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     program.provider.wallet as Wallet,
-    config.programs.localnet.staking
+    new PublicKey(config.programs.localnet.staking)
   );
 
-  return { controller, stakeConnection };
+  return { controller, stakeConnection, globalConfig };
 }

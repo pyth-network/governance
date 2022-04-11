@@ -12,15 +12,17 @@
   ],
   "dependencies": {
     "@project-serum/anchor": "0.22.0",
+    "@solana/spl-governance": "^0.0.34",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "*",
+    "pyth-staking-wasm": "^0.1.2",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/mocha": "^9.0.0",
+    "@types/shelljs": "^0.8.11",
     "chai": "^4.3.4",
     "husky": "^7.0.4",
     "lint-staged": "^12.3.7",
@@ -32,12 +34,13 @@
   },
   "scripts": {
     "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
-    "setup": "yarn generate_keypair && anchor build && yarn ts-node ./app/scripts/setup.ts",
+    "setup": "yarn generate_keypair && anchor build && yarn dump_governance && yarn ts-node ./app/scripts/setup.ts",
     "build_wasm": "./wasm/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
     "start": "yarn ts-node ./docker/validator.ts",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
+    "dump_governance": "solana program dump -u mainnet-beta GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw ./target/deploy/governance.so",
     "prepare": "cd .. && husky install staking/.husky"
   },
   "lint-staged": {
