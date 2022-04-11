@@ -191,7 +191,6 @@ pub struct CreateProduct<'info>{
     #[account(
         init,
         payer = payer,
-        space = voter_weight_record::VOTER_WEIGHT_RECORD_SIZE,
         seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump)]
     pub product_account : Account<'info, product::ProductMetadata>,
