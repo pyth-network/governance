@@ -15,11 +15,9 @@ pub struct ProductMetadata {
 }
 
 impl ProductMetadata {
-    pub fn update(&mut self, n: u64) -> Result<()> {
-        self.last_update_at = self
-            .last_update_at
-            .checked_add(n)
-            .ok_or(error!(ErrorCode::GenericOverflow))?;
+    pub fn update(&mut self, current_epoch: u64) -> Result<()> {
+        let n : u64 = current_epoch.checked_sub(self.last_update_at).ok_or(error!(ErrorCode::GenericOverflow))?;
+        self.last_update_at = current_epoch;
         match n {
             0 => Ok(()),
             _ => {
@@ -66,7 +64,7 @@ pub mod tests {
             delta_locked: 0,
         };
 
-        product.update(10);
+        product.update(product.last_update_at + 10);
         assert_eq!(product.last_update_at, 10);
         assert_eq!(product.locked, 0);
         assert_eq!(product.delta_locked, 0);
@@ -86,7 +84,7 @@ pub mod tests {
         assert_eq!(product.locked, 0);
         assert_eq!(product.delta_locked, 10);
 
-        product.update(1);
+        product.update(product.last_update_at + 1);
 
         assert_eq!(product.last_update_at, 1);
         assert_eq!(product.locked, 10);
@@ -107,7 +105,7 @@ pub mod tests {
         assert_eq!(product.locked, 30);
         assert_eq!(product.delta_locked, -20);
 
-        product.update(2);
+        product.update(product.last_update_at + 2);
 
         assert_eq!(product.last_update_at, 2);
         assert_eq!(product.locked, 10);
@@ -125,7 +123,7 @@ pub mod tests {
 
         assert!(product.add_unlocking(40).is_err());
 
-        product.update(5);
+        product.update(product.last_update_at + 5);
 
         assert_eq!(product.last_update_at, 5);
         assert_eq!(product.locked, 30);
