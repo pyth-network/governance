@@ -216,6 +216,7 @@ pub struct UpdateMaxVoterWeight<'info>{
     pub payer : Signer<'info>,
     // Governance product accounts:
     #[account(
+        mut,
         seeds = [PRODUCT_SEED.as_bytes(), Pubkey::default().as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump = governance_account.bump)]
     pub governance_account : Account<'info, product::ProductMetadata>,
