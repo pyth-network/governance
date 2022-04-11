@@ -67,11 +67,8 @@ describe("create_product", async () => {
         lastUpdateAt: (await stakeConnection.getTime()).div(
           stakeConnection.config.epochDuration
         ),
-        locking: new BN(0),
         locked: new BN(0),
-        preUnlocking: new BN(0),
-        unlocking1: new BN(0),
-        unlocking2: new BN(0),
+        deltaLocked: new BN(0),
       })
     );
   });
