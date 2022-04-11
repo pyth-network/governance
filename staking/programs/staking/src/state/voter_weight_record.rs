@@ -1,7 +1,7 @@
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 
-pub const VOTER_WEIGHT_RECORD_SIZE: usize = 156;
+pub const VOTER_WEIGHT_RECORD_SIZE: usize = 32 * 3 + 8 + 9 + 2 + 33 + 8;
 
 /// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/voter_weight.rs
 /// Anchor has a macro (vote_weight_record) that is supposed to generate this struct, but it doesn't
