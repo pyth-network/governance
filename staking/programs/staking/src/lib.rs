@@ -94,12 +94,16 @@ pub mod staking {
             return Err(error!(ErrorCode::CreatePositionWithZero));
         }
 
+
         // TODO: Should we check that product and publisher are legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake product
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+        let product_account = &mut ctx.accounts.product_account;
+
+        product_account.update(current_epoch)?;
 
         // Make sure both are Some() or both are None
         if product.is_none() != publisher.is_none() {
@@ -139,17 +143,26 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
+        product_account.add_locking(amount)?;
+
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>, index: u8, amount: u64) -> Result<()> {
+    pub fn close_position(ctx: Context<ClosePosition>, index: u8, amount: u64, product : Option<Pubkey>) -> Result<()> {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
         let current_position =
             &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
+
+        if current_position.product != product{
+            return Err(error!(ErrorCode::WrongProduct))
+        }
+        
+        product_account.update(current_epoch)?;
 
         let original_amount = current_position.amount;
 
@@ -205,6 +218,8 @@ pub mod staking {
                         }
                     }
                 }
+
+                product_account.add_unlocking(amount)?;
             }
 
             // For this case, we don't need to create new positions because the "closed"
@@ -320,10 +335,13 @@ pub mod staking {
     }
 
     pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
-        let governance_account = &ctx.accounts.governance_account;
+        let governance_account = &mut ctx.accounts.governance_account;
         let config = &ctx.accounts.config;
         let max_voter_record = &mut ctx.accounts.max_voter_record;
+        let current_epoch = get_current_epoch(config)?;
 
+        governance_account.update(current_epoch)?;
+        
         max_voter_record.realm = config.pyth_governance_realm;
         max_voter_record.governing_token_mint = config.pyth_token_mint;
         max_voter_record.max_voter_weight = governance_account.locked;
