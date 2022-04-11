@@ -1,5 +1,4 @@
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{*, borsh::BorshSchema};
 
 pub const MAX_VOTER_WEIGHT_RECORD: usize = 32 + 32 + 8 + 9 + 8;
 
