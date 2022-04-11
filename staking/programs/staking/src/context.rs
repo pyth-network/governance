@@ -11,7 +11,6 @@ pub const STAKE_ACCOUNT_METADATA_SEED : &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
 pub const PRODUCT_SEED: &str = "product";
-pub const GOVERNANCE_SEED: &str = "governance";
 
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
