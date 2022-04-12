@@ -302,7 +302,11 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        voter_record.voter_weight = compute_voter_weight(stake_account_positions, current_epoch, config.unlocking_duration)?;
+        voter_record.voter_weight = compute_voter_weight(
+            stake_account_positions,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
@@ -311,16 +315,18 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_product(ctx : Context<CreateProduct>, product : Option<Pubkey>) -> Result<()>{
+    pub fn create_product(ctx: Context<CreateProduct>, product: Option<Pubkey>) -> Result<()> {
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
 
-        if product.is_some(){
+        if product.is_some() {
             return Err(error!(ErrorCode::NotImplemented));
         }
 
         product_account.bump = *ctx.bumps.get("product_account").unwrap();
         product_account.last_update_at = get_current_epoch(config).unwrap();
+        product_account.locked = 0;
+        product_account.delta_locked = 0;
         Ok(())
     }
 
@@ -338,6 +344,4 @@ pub mod staking {
             return Err(error!(ErrorCode::DebuggingOnly));
         }
     }
-
-
 }
