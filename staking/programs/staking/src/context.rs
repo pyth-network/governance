@@ -144,7 +144,7 @@ pub struct CreatePosition<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, product : Option<Pubkey>)]
+#[instruction(index : u8, amount : u64, product : Option<Pubkey>)] // Product is in the instruction arguments because it's needed in the anchor PDA checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
