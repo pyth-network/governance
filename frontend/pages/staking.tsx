@@ -37,13 +37,22 @@ const Staking: NextPage = () => {
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
   const { publicKey, connected } = useWallet()
+  const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
   const [balance, setBalance] = useState<PythBalance>()
-  const [pythBalance, setPythBalance] = useState<PythBalance>()
-  const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>()
-  const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>()
-  const [unvestedPythBalance, setUnvestedPythBalance] = useState<PythBalance>()
+  const [pythBalance, setPythBalance] = useState<PythBalance>(
+    new PythBalance(new BN(0))
+  )
+  const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>(
+    new PythBalance(new BN(0))
+  )
+  const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>(
+    new PythBalance(new BN(0))
+  )
+  const [unvestedPythBalance, setUnvestedPythBalance] = useState<PythBalance>(
+    new PythBalance(new BN(0))
+  )
   const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
   const [unlockingPythBalance, setUnlockingPythBalance] =
     useState<PythBalance>()
@@ -118,26 +127,19 @@ const Staking: NextPage = () => {
     }
     const depositAmount = PythBalance.fromString(amount)
     if (depositAmount.toBN().gt(new BN(0))) {
-      if (stakeAccount) {
-        try {
-          await stakeConnection?.depositAndLockTokens(
-            stakeAccount,
-            depositAmount
-          )
-          toast.success(`Deposit and locked ${amount} PYTH tokens!`)
-        } catch (e) {
-          toast.error(capitalizeFirstLetter(e.message))
-        }
-        await refreshBalance()
-      } else {
-        toast.error('Stake account is undefined.')
+      try {
+        await stakeConnection?.depositAndLockTokens(stakeAccount, depositAmount)
+        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
       }
+      await refreshBalance()
     } else {
       toast.error('Amount must be greater than 0.')
     }
   }
 
-  // TODO: unlock is buggy now in the sense that you have to unlock twice before it gets unlocked -- will be fixed in subsequent PR
+  // call unlock api when unlock button is clicked
   const handleUnlock = async () => {
     if (!amount) {
       toast.error('Please enter a valid amount!')
@@ -187,6 +189,7 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
+    setIsBalanceLoading(true)
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
@@ -202,6 +205,7 @@ const Staking: NextPage = () => {
         setUnvestedPythBalance(unvested)
       }
     }
+    setIsBalanceLoading(false)
   }
 
   // set current tab value when tab is clicked
@@ -238,19 +242,23 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Locked{' '}
                 </div>
-                <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                  {lockedPythBalance?.toString()}{' '}
-                  {lockingPythBalance &&
-                  lockingPythBalance.toString() !== '0' ? (
-                    <div>
-                      <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                        <div className="mx-1 text-scampi">
-                          (+{lockingPythBalance.toString()})
-                        </div>
-                      </Tooltip>
-                    </div>
-                  ) : null}
-                </div>
+                {isBalanceLoading ? (
+                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                ) : (
+                  <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
+                    {lockedPythBalance?.toString()}{' '}
+                    {lockingPythBalance &&
+                    lockingPythBalance.toString() !== '0' ? (
+                      <div>
+                        <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                          <div className="mx-1 text-scampi">
+                            (+{lockingPythBalance.toString()})
+                          </div>
+                        </Tooltip>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -261,19 +269,23 @@ const Staking: NextPage = () => {
                 <div className="mx-auto flex text-sm font-bold sm:m-0">
                   Unlocked{' '}
                 </div>
-                <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                  {unlockedPythBalance?.toString()}{' '}
-                  {unlockingPythBalance &&
-                  unlockingPythBalance.toString() !== '0' ? (
-                    <div>
-                      <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                        <div className="text-scampi">
-                          (+{unlockingPythBalance.toString()})
-                        </div>
-                      </Tooltip>
-                    </div>
-                  ) : null}
-                </div>
+                {isBalanceLoading ? (
+                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                ) : (
+                  <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
+                    {unlockedPythBalance?.toString()}{' '}
+                    {unlockingPythBalance &&
+                    unlockingPythBalance.toString() !== '0' ? (
+                      <div>
+                        <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
+                          <div className="text-scampi">
+                            (+{unlockingPythBalance.toString()})
+                          </div>
+                        </Tooltip>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-white sm:grid sm:grid-cols-3">
@@ -282,7 +294,13 @@ const Staking: NextPage = () => {
               </div>
               <div className="my-auto flex flex-col sm:col-span-2">
                 <div className="text-sm font-bold">Unvested</div>
-                <div className="text-sm">{unvestedPythBalance?.toString()}</div>
+                {isBalanceLoading ? (
+                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                ) : (
+                  <div className="text-sm">
+                    {unvestedPythBalance?.toString()}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -340,14 +358,18 @@ const Staking: NextPage = () => {
                             Amount (PYTH)
                           </label>
                           <div className="ml-auto mr-0 flex items-center space-x-2">
-                            <p className="text-white">
-                              {currentTab === TabEnum.Lock
-                                ? 'Balance'
-                                : currentTab === TabEnum.Unlock
-                                ? 'Locked Tokens'
-                                : 'Withdrawable'}
-                              : {balance?.toString()}
-                            </p>
+                            {isBalanceLoading ? (
+                              <div className="h-5 w-14 animate-pulse rounded-lg bg-ebonyClay" />
+                            ) : (
+                              <p className="text-white">
+                                {currentTab === TabEnum.Lock
+                                  ? 'Balance'
+                                  : currentTab === TabEnum.Unlock
+                                  ? 'Locked Tokens'
+                                  : 'Withdrawable'}
+                                : {balance?.toString()}
+                              </p>
+                            )}
                             <div className="hidden space-x-2 sm:flex">
                               <button
                                 className="outlined-btn"

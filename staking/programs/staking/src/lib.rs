@@ -1,13 +1,20 @@
+#![deny(unused_must_use)]
+// Objects of type Result must be used, otherwise we might
+// call a function that returns a Result and not handle the error
+
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log;
 use anchor_spl::token::transfer;
 use context::*;
-use state::{
-    global_config::GlobalConfig,
-    positions::{Position, PositionData, PositionState, MAX_POSITIONS},
-    vesting::VestingSchedule,
+use state::global_config::GlobalConfig;
+use state::positions::{
+    Position,
+    PositionData,
+    PositionState,
+    MAX_POSITIONS,
 };
+use state::vesting::VestingSchedule;
 use utils::clock::get_current_epoch;
 use utils::voter_weight::compute_voter_weight;
 
@@ -45,7 +52,8 @@ pub mod staking {
     }
 
     /// Trustless instruction that creates a stake account for a user
-    /// The main account i.e. the position accounts needs to be initialized outside of the program otherwise we run into stack limits
+    /// The main account i.e. the position accounts needs to be initialized outside of the program
+    /// otherwise we run into stack limits
     #[inline(never)]
     pub fn create_stake_account(
         ctx: Context<CreateStakeAccount>,
@@ -98,11 +106,11 @@ pub mod staking {
             return Err(error!(ErrorCode::InvalidPosition));
         }
         let new_position = Position {
-            amount: amount,
-            product: product,
-            publisher: publisher,
+            amount:           amount,
+            product:          product,
+            publisher:        publisher,
             activation_epoch: current_epoch + 1,
-            unlocking_start: None,
+            unlocking_start:  None,
         };
         // For now, restrict positions to voting position
         // This could be combined with the previous check, but the following check is temporary
@@ -174,11 +182,11 @@ pub mod staking {
                         Err(x) => return Err(x),
                         Ok(j) => {
                             stake_account_positions.positions[j] = Some(Position {
-                                amount: amount,
-                                product: current_position.product,
-                                publisher: current_position.publisher,
+                                amount:           amount,
+                                product:          current_position.product,
+                                publisher:        current_position.publisher,
                                 activation_epoch: current_position.activation_epoch,
-                                unlocking_start: Some(current_epoch + 1),
+                                unlocking_start:  Some(current_epoch + 1),
                             });
 
                             assert_ne!(i, j);
@@ -302,12 +310,43 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        voter_record.voter_weight = compute_voter_weight(stake_account_positions, current_epoch, config.unlocking_duration)?;
+        voter_record.voter_weight = compute_voter_weight(
+            stake_account_positions,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
 
+    pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
+        let governance_account = &ctx.accounts.governance_account;
+        let config = &ctx.accounts.config;
+        let max_voter_record = &mut ctx.accounts.max_voter_record;
+
+        max_voter_record.realm = config.pyth_governance_realm;
+        max_voter_record.governing_token_mint = config.pyth_token_mint;
+        max_voter_record.max_voter_weight = governance_account.locked;
+        max_voter_record.max_voter_weight_expiry = Some(Clock::get()?.slot);
+        Ok(())
+    }
+
     pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn create_product(ctx: Context<CreateProduct>, product: Option<Pubkey>) -> Result<()> {
+        let product_account = &mut ctx.accounts.product_account;
+        let config = &ctx.accounts.config;
+
+        if product.is_some() {
+            return Err(error!(ErrorCode::NotImplemented));
+        }
+
+        product_account.bump = *ctx.bumps.get("product_account").unwrap();
+        product_account.last_update_at = get_current_epoch(config).unwrap();
+        product_account.locked = 0;
+        product_account.delta_locked = 0;
         Ok(())
     }
 

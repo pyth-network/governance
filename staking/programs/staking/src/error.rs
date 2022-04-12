@@ -31,6 +31,8 @@ pub enum ErrorCode {
     InsufficientWithdrawableBalance,
     #[msg("An arithmetic operation unexpectedly overflowed")]
     GenericOverflow,
+    #[msg("Locked balance must be positive")]
+    NegativeBalance,
     #[msg("Not allowed when not debugging")]
     DebuggingOnly,
     #[msg("Not implemented")]

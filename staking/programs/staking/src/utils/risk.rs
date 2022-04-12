@@ -1,9 +1,17 @@
 use anchor_lang::prelude::*;
-use std::{cmp, collections::BTreeMap};
+use std::cmp;
+use std::collections::BTreeMap;
 
-use crate::state::positions::{PositionData, PositionState, MAX_POSITIONS};
+use crate::state::positions::{
+    PositionData,
+    PositionState,
+    MAX_POSITIONS,
+};
 use crate::ErrorCode::{
-    RiskLimitExceeded, TokensNotYetVested, TooMuchExposureToGovernance, TooMuchExposureToProduct,
+    RiskLimitExceeded,
+    TokensNotYetVested,
+    TooMuchExposureToGovernance,
+    TooMuchExposureToProduct,
 };
 
 /// Validates that a proposed set of positions meets all risk requirements
@@ -112,38 +120,42 @@ pub fn validate(
 
 #[cfg(test)]
 pub mod tests {
-    use anchor_lang::prelude::{Pubkey};
+    use anchor_lang::prelude::Pubkey;
 
-    use crate::state::positions::PositionState;
-    use crate::ErrorCode::{
-        RiskLimitExceeded, TokensNotYetVested, TooMuchExposureToGovernance,
-        TooMuchExposureToProduct,
+    use crate::state::positions::{
+        Position,
+        PositionData,
+        PositionState,
+        MAX_POSITIONS,
     };
-    use crate::{
-        state::positions::{Position, PositionData, MAX_POSITIONS},
-        utils::risk::validate,
+    use crate::utils::risk::validate;
+    use crate::ErrorCode::{
+        RiskLimitExceeded,
+        TokensNotYetVested,
+        TooMuchExposureToGovernance,
+        TooMuchExposureToProduct,
     };
 
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
-            amount: 7,
-            product: Some(Pubkey::new_unique()),
-            publisher: Some(Pubkey::new_unique()),
-            unlocking_start: Some(50),
+            amount:           7,
+            product:          Some(Pubkey::new_unique()),
+            publisher:        Some(Pubkey::new_unique()),
+            unlocking_start:  Some(50),
         });
         pd.positions[1] = Some(Position {
             activation_epoch: 1,
-            amount: 3,
-            product: Some(Pubkey::new_unique()),
-            publisher: Some(Pubkey::new_unique()),
-            unlocking_start: Some(50),
+            amount:           3,
+            product:          Some(Pubkey::new_unique()),
+            publisher:        Some(Pubkey::new_unique()),
+            unlocking_start:  Some(50),
         });
         let tests = [
             (0, PositionState::LOCKING),
@@ -169,23 +181,23 @@ pub mod tests {
     #[test]
     fn test_voting() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
-            amount: 7,
-            product: None,
-            publisher: None,
-            unlocking_start: None,
+            amount:           7,
+            product:          None,
+            publisher:        None,
+            unlocking_start:  None,
         });
         pd.positions[4] = Some(Position {
             activation_epoch: 1,
-            amount: 3,
-            product: Some(Pubkey::new_unique()),
-            publisher: Some(Pubkey::new_unique()),
-            unlocking_start: None,
+            amount:           3,
+            product:          Some(Pubkey::new_unique()),
+            publisher:        Some(Pubkey::new_unique()),
+            unlocking_start:  None,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
@@ -198,24 +210,24 @@ pub mod tests {
     #[test]
     fn test_double_product() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
-            amount: 7,
-            product: Some(product),
-            publisher: None,
-            unlocking_start: None,
+            amount:           7,
+            product:          Some(product),
+            publisher:        None,
+            unlocking_start:  None,
         });
         pd.positions[3] = Some(Position {
             activation_epoch: 1,
-            amount: 3,
-            product: Some(product),
-            publisher: None,
-            unlocking_start: None,
+            amount:           3,
+            product:          Some(product),
+            publisher:        None,
+            unlocking_start:  None,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
@@ -227,16 +239,16 @@ pub mod tests {
     #[test]
     fn test_risk() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
-                amount: 10,
-                product: Some(Pubkey::new_unique()),
-                publisher: Some(Pubkey::new_unique()),
-                unlocking_start: None,
+                amount:           10,
+                product:          Some(Pubkey::new_unique()),
+                publisher:        Some(Pubkey::new_unique()),
+                unlocking_start:  None,
             });
         }
         let current_epoch = 44;
@@ -244,10 +256,10 @@ pub mod tests {
         // Now we have 6 products, so 10 tokens is not enough
         pd.positions[7] = Some(Position {
             activation_epoch: 1,
-            amount: 10,
-            product: Some(Pubkey::new_unique()),
-            publisher: Some(Pubkey::new_unique()),
-            unlocking_start: None,
+            amount:           10,
+            product:          Some(Pubkey::new_unique()),
+            publisher:        Some(Pubkey::new_unique()),
+            unlocking_start:  None,
         });
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
@@ -257,16 +269,16 @@ pub mod tests {
     #[test]
     fn test_multiple_voting() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
-                amount: 10,
-                product: None,
-                publisher: None,
-                unlocking_start: None,
+                amount:           10,
+                product:          None,
+                publisher:        None,
+                unlocking_start:  None,
             });
         }
         let current_epoch = 44;
@@ -280,16 +292,16 @@ pub mod tests {
     #[test]
     fn test_overflow_total() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
-                amount: u64::MAX / 3,
-                product: None,
-                publisher: None,
-                unlocking_start: None,
+                amount:           u64::MAX / 3,
+                product:          None,
+                publisher:        None,
+                unlocking_start:  None,
             });
         }
         let current_epoch = 44;
@@ -300,17 +312,17 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
-            owner : Pubkey::new_unique(),
+            owner:     Pubkey::new_unique(),
             positions: [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
-                amount: u64::MAX / 3,
-                product: Some(product),
-                publisher: Some(Pubkey::new_unique()),
-                unlocking_start: None,
+                amount:           u64::MAX / 3,
+                product:          Some(product),
+                publisher:        Some(Pubkey::new_unique()),
+                unlocking_start:  None,
             });
         }
         let current_epoch = 44;

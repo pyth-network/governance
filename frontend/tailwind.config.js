@@ -1,4 +1,3 @@
-
 module.exports = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx}',
@@ -28,6 +27,7 @@ module.exports = {
       mediumSlateBlue: '#8246FA',
       darkSlateBlue: '#42428E',
       hoverGray: 'rgba(255, 255, 255, 0.08)',
+      ebonyClay: '#563250',
     },
     fontFamily: {
       arboria: 'arboria, sans-serif',
@@ -37,15 +37,15 @@ module.exports = {
     },
     extend: {
       spacing: {
-        '128': '32rem',
-        '144': '36rem',
+        128: '32rem',
+        144: '36rem',
       },
       borderRadius: {
         '4xl': '2rem',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--gradient-color-stops))',
-      }
+      },
     },
   },
   plugins: [],
