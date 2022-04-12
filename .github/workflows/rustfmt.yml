@@ -13,8 +13,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - name : Run rustfmt check
-      working-directory: ./staking
-      run: cargo +nightly fmt --check
-
-
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        components: rustfmt
+    - uses: pre-commit/action@v2.0.3
