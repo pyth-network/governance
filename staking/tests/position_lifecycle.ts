@@ -194,12 +194,15 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    // No time has passed, so still locked until the end of the epoch
+    // No time has passed, so preunlocking until the end of the epoch
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("190") },
+        locked: {
+          locked: PythBalance.fromString("140"),
+          preunlocking: PythBalance.fromString("50"),
+        },
         withdrawable: PythBalance.fromString("10"),
       },
       await stakeConnection.getTime()
@@ -265,7 +268,7 @@ describe("position_lifecycle", async () => {
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("140") },
+        locked: { preunlocking: PythBalance.fromString("140") },
         withdrawable: PythBalance.fromString("60"),
       },
       await stakeConnection.getTime()

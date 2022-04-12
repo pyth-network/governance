@@ -83,6 +83,8 @@ describe("unlock_api", async () => {
   });
 
   it("deposit more, unlock first unlocks oldest position (FIFO)", async () => {
+    console.log("FIFO");
+
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
 
@@ -106,32 +108,17 @@ describe("unlock_api", async () => {
 
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
 
-    // The tokens remain locked until the end of the epoch
-    await assertBalanceMatches(
-      stakeConnection,
-      owner,
-      {
-        locked: {
-          locking: PythBalance.fromString("100"),
-          locked: PythBalance.fromString("50"),
-        },
-        withdrawable: PythBalance.fromString("50"),
-      },
-      await stakeConnection.getTime()
-    );
-    // That means that unlocking again is a no-op for that position
-    // TODO: This seems very strange. Change this.
-    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
+    // The tokens are preunlocking until the end of the epoch
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
         locked: {
-          locking: PythBalance.fromString("50"),
-          locked: PythBalance.fromString("50"),
+          preunlocking: PythBalance.fromString("50"),
+          locking: PythBalance.fromString("100"),
         },
-        withdrawable: PythBalance.fromString("100"),
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
@@ -147,10 +134,10 @@ describe("unlock_api", async () => {
       owner,
       {
         locked: {
-          locked: PythBalance.fromString("50"),
           unlocking: PythBalance.fromString("50"),
+          locked: PythBalance.fromString("100"),
         },
-        withdrawable: PythBalance.fromString("100"),
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
@@ -163,20 +150,20 @@ describe("unlock_api", async () => {
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("50") },
-        withdrawable: PythBalance.fromString("150"),
+        withdrawable: PythBalance.fromString("100"),
+        locked: { locked: PythBalance.fromString("100") },
       },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("50") },
-        withdrawable: PythBalance.fromString("150"),
+        locked: { preunlocking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
       },
       await stakeConnection.getTime()
     );

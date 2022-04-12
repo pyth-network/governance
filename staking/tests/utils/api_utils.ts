@@ -14,6 +14,7 @@ export type OptionalBalanceSummary = {
     locking?: PythBalance | null;
     locked?: PythBalance | null;
     unlocking?: PythBalance | null;
+    preunlocking?: PythBalance | null;
   } | null;
 };
 
@@ -29,6 +30,7 @@ export async function assertBalanceMatches(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getBalanceSummary(currentTime);
+
   assert(
     actual.locked.locking.eq(
       expected.locked?.locking || PythBalance.fromString("0")
@@ -44,6 +46,12 @@ export async function assertBalanceMatches(
       expected.locked?.unlocking || PythBalance.fromString("0")
     )
   );
+  assert(
+    actual.locked.preunlocking.eq(
+      expected.locked?.preunlocking || PythBalance.fromString("0")
+    )
+  );
+
   assert(actual.unvested.eq(expected.unvested || PythBalance.fromString("0")));
   assert(
     actual.withdrawable.eq(expected.withdrawable || PythBalance.fromString("0"))
