@@ -134,18 +134,18 @@ pub struct CreatePosition<'info> {
     )]
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config : Account<'info, global_config::GlobalConfig>,
+    pub config:                  Account<'info, global_config::GlobalConfig>,
     // Product account :
     #[account(
         mut,
         seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump = product_account.bump)]
-    pub product_account : Account<'info, product::ProductMetadata>,
+    pub product_account:         Account<'info, product::ProductMetadata>,
 }
 
 #[derive(Accounts)]
 #[instruction(index : u8, amount : u64, product : Option<Pubkey>)]
-pub struct ClosePosition<'info>{
+pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
     pub payer:                   Signer<'info>,
@@ -160,13 +160,13 @@ pub struct ClosePosition<'info>{
     )]
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config : Account<'info, global_config::GlobalConfig>,
+    pub config:                  Account<'info, global_config::GlobalConfig>,
     // Product account :
     #[account(
         mut,
         seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump = product_account.bump)]
-    pub product_account : Account<'info, product::ProductMetadata>,
+    pub product_account:         Account<'info, product::ProductMetadata>,
 }
 
 #[derive(Accounts)]
@@ -207,24 +207,6 @@ pub struct UpdateMaxVoterWeight<'info> {
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:             Account<'info, global_config::GlobalConfig>,
     pub system_program:     Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateMaxVoterWeight<'info>{
-    // Native payer:
-    #[account(mut)]
-    pub payer : Signer<'info>,
-    // Governance product accounts:
-    #[account(
-        mut,
-        seeds = [PRODUCT_SEED.as_bytes(), Pubkey::default().as_ref()], //can we find a better way for this where the seed is empty when option is none
-        bump = governance_account.bump)]
-    pub governance_account : Account<'info, product::ProductMetadata>,
-    #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
-    pub max_voter_record : Account<'info, max_voter_weight::MaxVoterWeightRecord>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config : Account<'info, global_config::GlobalConfig>,
-    pub system_program : Program<'info, System>,
 }
 
 #[derive(Accounts)]
