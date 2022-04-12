@@ -1,4 +1,5 @@
-use anchor_lang::prelude::{*, borsh::BorshSchema};
+use anchor_lang::prelude::borsh::BorshSchema;
+use anchor_lang::prelude::*;
 
 pub const VOTER_WEIGHT_RECORD_SIZE: usize = 156;
 
