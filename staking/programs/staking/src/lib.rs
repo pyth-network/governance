@@ -1,3 +1,7 @@
+#![deny(unused_must_use)]
+// Objects of type Result must be used, otherwise we might
+// call a function that returns a Result and not handle the error
+
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log;
@@ -302,12 +306,31 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        voter_record.voter_weight = compute_voter_weight(stake_account_positions, current_epoch, config.unlocking_duration)?;
+        voter_record.voter_weight = compute_voter_weight(
+            stake_account_positions,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
 
     pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
+        Ok(())
+    }
+
+    pub fn create_product(ctx: Context<CreateProduct>, product: Option<Pubkey>) -> Result<()> {
+        let product_account = &mut ctx.accounts.product_account;
+        let config = &ctx.accounts.config;
+
+        if product.is_some() {
+            return Err(error!(ErrorCode::NotImplemented));
+        }
+
+        product_account.bump = *ctx.bumps.get("product_account").unwrap();
+        product_account.last_update_at = get_current_epoch(config).unwrap();
+        product_account.locked = 0;
+        product_account.delta_locked = 0;
         Ok(())
     }
 
