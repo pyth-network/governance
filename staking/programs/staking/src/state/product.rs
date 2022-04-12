@@ -16,7 +16,9 @@ pub struct ProductMetadata {
 
 impl ProductMetadata {
     pub fn update(&mut self, current_epoch: u64) -> Result<()> {
-        let n : u64 = current_epoch.checked_sub(self.last_update_at).ok_or(error!(ErrorCode::GenericOverflow))?;
+        let n: u64 = current_epoch
+            .checked_sub(self.last_update_at)
+            .ok_or(error!(ErrorCode::GenericOverflow))?;
         self.last_update_at = current_epoch;
         match n {
             0 => Ok(()),
@@ -41,13 +43,18 @@ impl ProductMetadata {
     }
 
     pub fn add_unlocking(&mut self, amount: u64) -> Result<()> {
-        if amount > self.locked {
-            return Err(error!(ErrorCode::NegativeBalance));
-        }
         self.delta_locked = self
             .delta_locked
             .checked_sub(amount as i64)
             .ok_or(error!(ErrorCode::GenericOverflow))?;
+
+        if (self.locked as i64)
+            .checked_add(self.delta_locked)
+            .ok_or(error!(ErrorCode::GenericOverflow))?
+            < 0
+        {
+            return Err(error!(ErrorCode::NegativeBalance));
+        }
         Ok(())
     }
 }
@@ -100,15 +107,15 @@ pub mod tests {
             delta_locked: 0,
         };
 
-        product.add_unlocking(20);
+        product.add_unlocking(30);
         assert_eq!(product.last_update_at, 0);
         assert_eq!(product.locked, 30);
-        assert_eq!(product.delta_locked, -20);
+        assert_eq!(product.delta_locked, -30);
 
         product.update(product.last_update_at + 2);
 
         assert_eq!(product.last_update_at, 2);
-        assert_eq!(product.locked, 10);
+        assert_eq!(product.locked, 0);
         assert_eq!(product.delta_locked, 0);
     }
 
