@@ -15,6 +15,12 @@ pub struct ProductMetadata {
 }
 
 impl ProductMetadata {
+    // Updates the ProductMedata struct.
+    // If no time has passed, doesn't do anything
+    // If 1 epoch has passed, locked becomes locked + delta_locked
+    // If more than 1 epoch has passed, we can assume that no tokens
+    // were locked or unlocked in those epochs (otherwise update would've called already)
+    // therefore the logic is the same as the case where 1 epoch has passed
     pub fn update(&mut self, current_epoch: u64) -> Result<()> {
         let n: u64 = current_epoch
             .checked_sub(self.last_update_at)
@@ -34,7 +40,11 @@ impl ProductMetadata {
         }
     }
 
-    pub fn add_locking(&mut self, amount: u64) -> Result<()> {
+    // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
+    // subtracts amount to delta_locked. This method needs to be called everytime a user requests to create a new position.
+    pub fn add_locking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch);
+
         self.delta_locked = self
             .delta_locked
             .checked_add(amount as i64)
@@ -42,12 +52,17 @@ impl ProductMetadata {
         Ok(())
     }
 
-    pub fn add_unlocking(&mut self, amount: u64) -> Result<()> {
+    // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
+    // subtracts amount to delta_locked. This method needs to be called everytime a user request to unlock a position.
+    pub fn add_unlocking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch);
+
         self.delta_locked = self
             .delta_locked
             .checked_sub(amount as i64)
             .ok_or(error!(ErrorCode::GenericOverflow))?;
 
+        // Locked + delta_locked should never be negative, because that'd mean the balance staked to the product is negative
         if (self.locked as i64)
             .checked_add(self.delta_locked)
             .ok_or(error!(ErrorCode::GenericOverflow))?
