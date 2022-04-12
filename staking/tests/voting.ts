@@ -258,12 +258,8 @@ describe("voting", async () => {
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
     const vote = await withDefaultCastVote(tx, proposalAddress);
-    try {
-      await provider.send(tx);
-    } catch (e) {
-      console.log(e);
-      while (true) {}
-    }
+    await provider.send(tx);
+
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
       proposal.account.getYesVoteCount().toNumber(),
