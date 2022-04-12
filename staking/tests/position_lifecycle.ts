@@ -9,6 +9,7 @@ import {
   getPortNumber,
   standardSetup,
   ANCHOR_CONFIG_PATH,
+  makeDefaultConfig,
 } from "./utils/before";
 import { assertBalanceMatches } from "./utils/api_utils";
 import { PublicKey, Keypair } from "@solana/web3.js";
@@ -49,7 +50,8 @@ describe("position_lifecycle", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
     owner = stakeConnection.program.provider.wallet.publicKey;

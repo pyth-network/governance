@@ -1,6 +1,7 @@
 import {
   ANCHOR_CONFIG_PATH,
   getPortNumber,
+  makeDefaultConfig,
   readAnchorConfig,
   standardSetup,
 } from "./utils/before";
@@ -31,7 +32,8 @@ describe("unlock_api", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;

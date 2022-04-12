@@ -142,7 +142,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   return { controller, program };
 }
 
-export function getConnection(portNumber: number) {
+export function getConnection(portNumber: number): Connection {
   return new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
@@ -240,6 +240,10 @@ export async function createMint(
     skipPreflight: true,
   });
 }
+interface GovernanceIds {
+  realm: PublicKey;
+  governance: PublicKey;
+}
 /*
   Creates a governance realm using the SPL-governance deployment in config.
   Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
@@ -249,7 +253,7 @@ export async function createGovernance(
   config: AnchorConfig,
   maxVotingTime: number, // in seconds
   pythMint: PublicKey
-) {
+): Promise<GovernanceIds> {
   const realmAuthority = Keypair.generate();
   const tx = new Transaction();
   const govProgramId = new PublicKey(config.programs.localnet.governance);
@@ -308,11 +312,24 @@ export async function initConfig(
   });
 }
 
+export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
+  return {
+    governanceAuthority: null,
+    pythGovernanceRealm: null,
+    pythTokenMint: pythMint,
+    unlockingDuration: 2,
+    epochDuration: new BN(3600),
+    mockClockTime: new BN(10),
+    bump: 0,
+  };
+}
+
 /**
  * Standard setup for test, this function :
  * - Launches at validator at `portNumber`
  * - Creates a Pyth token in the localnet environment
  * - Airdrops Pyth token to the currently connected wallet
+ * - If the passed in global config has a null pythGovernanceRealm, creates a default governance
  * - Initializes the global config of the Pyth staking program to some default values
  * - Creates a connection de the localnet Pyth staking program
  * */
@@ -321,21 +338,10 @@ export async function standardSetup(
   config: AnchorConfig,
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
-  _globalConfig?: GlobalConfig,
+  globalConfig: GlobalConfig,
   amount?: PythBalance
 ) {
   const { controller, program } = await startValidator(portNumber, config);
-  let globalConfig: GlobalConfig = _globalConfig
-    ? _globalConfig
-    : {
-        governanceAuthority: null,
-        pythGovernanceRealm: null,
-        pythTokenMint: pythMintAccount.publicKey,
-        unlockingDuration: 2,
-        epochDuration: new BN(3600),
-        mockClockTime: new BN(10),
-        bump: 0,
-      };
 
   await createMint(
     program.provider,
@@ -356,15 +362,16 @@ export async function standardSetup(
     program.provider.connection
   );
 
-  const { realm, governance } = await createGovernance(
-    program.provider,
-    config,
-    globalConfig.epochDuration.toNumber(),
-    pythMintAccount.publicKey
-  );
-  globalConfig.governanceAuthority =
-    globalConfig.governanceAuthority || governance;
-  globalConfig.pythGovernanceRealm = globalConfig.pythGovernanceRealm || realm;
+  if (globalConfig.pythGovernanceRealm == null) {
+    const { realm, governance } = await createGovernance(
+      program.provider,
+      config,
+      globalConfig.epochDuration.toNumber(),
+      pythMintAccount.publicKey
+    );
+    globalConfig.governanceAuthority = governance;
+    globalConfig.pythGovernanceRealm = realm;
+  }
 
   await initConfig(program, pythMintAccount.publicKey, globalConfig);
 
@@ -379,5 +386,5 @@ export async function standardSetup(
     new PublicKey(config.programs.localnet.staking)
   );
 
-  return { controller, stakeConnection, globalConfig };
+  return { controller, stakeConnection };
 }

@@ -68,15 +68,15 @@ async function main() {
 
   console.log("Validator at port ", portNumber);
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-  ({ controller, stakeConnection, globalConfig } = await standardSetup(
+  ({ controller, stakeConnection } = await standardSetup(
     portNumber,
     config,
     pythMintAccount,
     pythMintAuthority,
     {
       bump: 0,
-      governanceAuthority: undefined,
-      pythGovernanceRealm: undefined,
+      governanceAuthority: null,
+      pythGovernanceRealm: null,
       pythTokenMint: pythMintAccount.publicKey,
       unlockingDuration: 2,
       epochDuration: new BN(1),

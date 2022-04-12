@@ -16,6 +16,7 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
+  makeDefaultConfig,
 } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -49,7 +50,8 @@ describe("fills a stake account with positions", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
     provider = stakeConnection.program.provider;

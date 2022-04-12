@@ -17,6 +17,7 @@ import {
   standardSetup,
   getPortNumber,
   AnchorConfig,
+  makeDefaultConfig,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 import { GlobalConfig } from "../app/StakeConnection";
@@ -69,13 +70,15 @@ describe("voting", async () => {
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     governanceProgram = new PublicKey(config.programs.localnet.governance);
-    let globalConfig: GlobalConfig;
-    ({ controller, stakeConnection, globalConfig } = await standardSetup(
+
+    ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
+    const globalConfig = stakeConnection.config;
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
     provider = stakeConnection.program.provider;
@@ -245,6 +248,7 @@ describe("voting", async () => {
     await provider.send(tx);
   });
   it("ensures voter weight expires", async () => {
+    // Slot has probably already increased, but make extra sure by waiting one second
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, false, false);

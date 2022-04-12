@@ -1,6 +1,7 @@
 import {
   ANCHOR_CONFIG_PATH,
   getPortNumber,
+  makeDefaultConfig,
   readAnchorConfig,
   standardSetup,
 } from "./utils/before";
@@ -27,7 +28,8 @@ describe("clock_api", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
   });
 

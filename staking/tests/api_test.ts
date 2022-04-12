@@ -6,6 +6,7 @@ import {
   readAnchorConfig,
   getPortNumber,
   ANCHOR_CONFIG_PATH,
+  makeDefaultConfig,
 } from "./utils/before";
 import {} from "../../staking/tests/utils/before";
 import BN from "bn.js";
@@ -38,7 +39,7 @@ describe("api", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      null,
+      makeDefaultConfig(pythMintAccount.publicKey),
       PythBalance.fromString("1000")
     ));
 

@@ -60,7 +60,7 @@ export async function assertVoterWeightEquals(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getVoterWeight(await stakeConnection.getTime());
-  assert.equal(actual.toNumber(), expected);
+  assert(actual.eq(expected));
   await stakeConnection.program.methods
     .updateVoterWeight()
     .accounts({
