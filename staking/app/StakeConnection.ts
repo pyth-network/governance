@@ -46,15 +46,18 @@ export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
   private configAddress: PublicKey;
+  governanceAggregateAccount: PublicKey;
 
   private constructor(
     program: Program<Staking>,
     config: GlobalConfig,
-    configAddress: PublicKey
+    configAddress: PublicKey,
+    governanceAggregateAccount: PublicKey
   ) {
     this.program = program;
     this.config = config;
     this.configAddress = configAddress;
+    this.governanceAggregateAccount = governanceAggregateAccount;
   }
 
   // creates a program connection and loads the staking config
@@ -85,7 +88,22 @@ export class StakeConnection {
     )[0];
 
     const config = await program.account.globalConfig.fetch(configAddress);
-    return new StakeConnection(program, config, configAddress);
+
+    const governanceAggregateAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
+          new PublicKey(0).toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
+    return new StakeConnection(
+      program,
+      config,
+      configAddress,
+      governanceAggregateAccount
+    );
   }
 
   //gets a users stake accounts
@@ -292,8 +310,9 @@ export class StakeConnection {
     const instructions = await Promise.all(
       toClose.map((el) =>
         this.program.methods
-          .closePosition(el.index, el.amount)
+          .closePosition(el.index, el.amount, null)
           .accounts({
+            productAccount: this.governanceAggregateAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -353,8 +372,9 @@ export class StakeConnection {
     amount: BN
   ) {
     return await this.program.methods
-      .closePosition(index, amount)
+      .closePosition(index, amount, null)
       .accounts({
+        productAccount: this.governanceAggregateAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .rpc();
@@ -461,6 +481,7 @@ export class StakeConnection {
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
+        productAccount: this.governanceAggregateAccount,
       })
       .signers(signers)
       .rpc({ skipPreflight: true });

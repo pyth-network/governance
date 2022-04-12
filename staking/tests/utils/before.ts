@@ -35,6 +35,7 @@ import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
+import { getProductAccount } from "./utils";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -343,6 +344,12 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
   };
 }
 
+export async function initGovernanceProduct(program: Program) {
+  const productAccount = await getProductAccount(null, program.programId);
+
+  await program.methods.createProduct(null).accounts({ productAccount }).rpc();
+}
+
 /**
  * Standard setup for test, this function :
  * - Launches at validator at `portNumber`
@@ -393,6 +400,8 @@ export async function standardSetup(
   }
 
   await initConfig(program, pythMintAccount.publicKey, globalConfig);
+
+  await initGovernanceProduct(program);
 
   const connection = new Connection(
     `http://localhost:${portNumber}`,

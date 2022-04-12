@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
+import { expectFail, getProductAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -53,6 +53,8 @@ describe("staking", async () => {
   let controller: AbortController;
   let stakeConnection: StakeConnection;
 
+  let productAccount: PublicKey;
+
   after(async () => {
     controller.abort();
   });
@@ -72,6 +74,8 @@ describe("staking", async () => {
       pythMintAccount.publicKey,
       program.provider.wallet.publicKey
     );
+
+    productAccount = await getProductAccount(null, program.programId);
 
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -212,6 +216,7 @@ describe("staking", async () => {
       program.methods
         .createPosition(null, null, PythBalance.fromString("102").toBN())
         .accounts({
+          productAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -223,6 +228,7 @@ describe("staking", async () => {
     await program.methods
       .createPosition(null, null, new BN(1))
       .accounts({
+        productAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -258,6 +264,7 @@ describe("staking", async () => {
       program.methods
         .createPosition(null, null, PythBalance.fromString("0").toBN())
         .accounts({
+          productAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
@@ -274,6 +281,10 @@ describe("staking", async () => {
           PythBalance.fromString("10").toBN()
         )
         .accounts({
+          productAccount: await getProductAccount(
+            zeroPubkey,
+            program.programId
+          ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Not implemented",

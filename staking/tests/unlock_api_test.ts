@@ -122,6 +122,31 @@ describe("unlock_api", async () => {
       },
       await stakeConnection.getTime()
     );
+<<<<<<< HEAD
+=======
+    // That means that unlocking again is a no-op for that position
+    // TODO: This seems very strange. Change this.
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      {
+        locked: {
+          locking: PythBalance.fromString("50"),
+          locked: PythBalance.fromString("50"),
+        },
+        withdrawable: PythBalance.fromString("100"),
+      },
+      await stakeConnection.getTime()
+    );
+
+    console.log(
+      await stakeConnection.program.account.productMetadata.fetch(
+        stakeConnection.governanceAggregateAccount
+      )
+    );
+>>>>>>> f125c90 (All tests work except unlock_api_test.ts)
   });
 
   it("time passes, first position becomes unlocked, now unlock targets second position", async () => {
@@ -156,7 +181,19 @@ describe("unlock_api", async () => {
       await stakeConnection.getTime()
     );
 
+<<<<<<< HEAD
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
+=======
+    console.log(
+      await stakeConnection.program.account.productMetadata.fetch(
+        stakeConnection.governanceAggregateAccount
+      )
+    );
+
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
+>>>>>>> f125c90 (All tests work except unlock_api_test.ts)
+
+    console.log("AFTER LOAD");
 
     await assertBalanceMatches(
       stakeConnection,

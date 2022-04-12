@@ -7,7 +7,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
+import { expectFail, getProductAccount } from "./utils/utils";
 import BN from "bn.js";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
@@ -42,6 +42,8 @@ describe("fills a stake account with positions", async () => {
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
 
+  let productAccount;
+
   after(async () => {
     controller.abort();
   });
@@ -66,6 +68,8 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
+    productAccount = await getProductAccount(null, program.programId);
+
     await stakeConnection.depositTokens(
       undefined,
       PythBalance.fromString("102")
@@ -79,6 +83,7 @@ describe("fills a stake account with positions", async () => {
     let createPosIx = await program.methods
       .createPosition(null, null, PythBalance.fromString("1").toBN())
       .accounts({
+        productAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -123,6 +128,7 @@ describe("fills a stake account with positions", async () => {
       program.methods
         .createPosition(null, null, PythBalance.fromString("1").toBN())
         .accounts({
+          productAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached",

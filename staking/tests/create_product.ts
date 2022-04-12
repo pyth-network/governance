@@ -53,7 +53,7 @@ describe("create_product", async () => {
     program = stakeConnection.program;
   });
 
-  it("creates governance product", async () => {
+  it("checks governance product", async () => {
     [productAccount, bump] = await PublicKey.findProgramAddress(
       [
         utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
@@ -61,7 +61,7 @@ describe("create_product", async () => {
       ],
       program.programId
     );
-    try {
+
       await program.methods
         .createProduct(null)
         .accounts({
@@ -70,10 +70,7 @@ describe("create_product", async () => {
         })
         .signers([fakeGovernance])
         .rpc({ skipPreflight: true });
-    } catch (error) {
-      console.dir(error);
-      while (true) {}
-    }
+
 
     const productAccountData = await program.account.productMetadata.fetch(
       productAccount
