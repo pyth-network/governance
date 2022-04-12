@@ -43,6 +43,9 @@
   "lint-staged": {
     "{app,tests}/**/*.ts": [
       "prettier --w"
+    ],
+    "programs/staking/**/*.rs" : [
+      "rustfmt +nightly"
     ]
   }
 }
