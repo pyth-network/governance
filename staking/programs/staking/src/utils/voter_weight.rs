@@ -1,12 +1,18 @@
-use anchor_lang::prelude::*;
-use crate::state::{
-    global_config::GlobalConfig,
-    positions::{Position, PositionData, PositionState, MAX_POSITIONS}
+use crate::state::global_config::GlobalConfig;
+use crate::state::positions::{
+    Position,
+    PositionData,
+    PositionState,
+    MAX_POSITIONS,
 };
 use crate::utils::clock::get_current_epoch;
+use anchor_lang::prelude::*;
 
-
-pub fn compute_voter_weight(stake_account_positions: &PositionData, current_epoch: u64, unlocking_duration: u8) -> Result<u64> {
+pub fn compute_voter_weight(
+    stake_account_positions: &PositionData,
+    current_epoch: u64,
+    unlocking_duration: u8,
+) -> Result<u64> {
     let mut voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
         if let Some(position) = stake_account_positions.positions[i] {
