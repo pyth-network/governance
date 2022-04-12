@@ -83,8 +83,6 @@ describe("unlock_api", async () => {
   });
 
   it("deposit more, unlock first unlocks oldest position (FIFO)", async () => {
-    console.log("FIFO");
-
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 1);
 
