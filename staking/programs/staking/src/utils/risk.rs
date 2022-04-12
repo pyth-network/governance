@@ -35,7 +35,10 @@ pub fn validate(
                 .get_current_position(current_epoch, unlocking_duration)
                 .unwrap()
             {
-                PositionState::LOCKED | PositionState::UNLOCKING | PositionState::LOCKING => {
+                PositionState::LOCKED
+                | PositionState::PREUNLOCKING
+                | PositionState::UNLOCKING
+                | PositionState::LOCKING => {
                     let this_position = stake_account_positions.positions[i].unwrap();
                     let prod_exposure: &mut u64 =
                         current_exposures.entry(this_position.product).or_default();
@@ -159,7 +162,7 @@ pub mod tests {
         });
         let tests = [
             (0, PositionState::LOCKING),
-            (44, PositionState::LOCKED),
+            (44, PositionState::PREUNLOCKING),
             (50, PositionState::UNLOCKING),
         ];
         for (current_epoch, desired_state) in tests {

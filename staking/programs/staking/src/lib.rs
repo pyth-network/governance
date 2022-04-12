@@ -217,7 +217,7 @@ pub mod staking {
                     stake_account_positions.positions[i] = Some(*current_position);
                 }
             }
-            PositionState::UNLOCKING => {
+            PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
             }
         }
