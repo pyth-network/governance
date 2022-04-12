@@ -20,4 +20,4 @@ jobs:
           components: rustfmt
       - name: Run rustfmt check
         working-directory: ./staking
-        run: cargo +nightly fmt
+        run: cargo +nightly fmt --check
