@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
-=======
-use anchor_lang::prelude::{*, borsh::BorshSchema};
->>>>>>> 0ef21ea (Add correct size calculation and testing for Max Voter Weight)
 
 pub const VOTER_WEIGHT_RECORD_SIZE: usize = 156;
 
