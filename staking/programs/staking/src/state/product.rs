@@ -8,10 +8,10 @@ use std::convert::TryInto;
 #[account]
 #[derive(Default)]
 pub struct ProductMetadata {
-    pub bump: u8,
+    pub bump:           u8,
     pub last_update_at: u64,
-    pub locked: u64,
-    pub delta_locked: i64, // locked = locked + delta_locked for the next epoch
+    pub locked:         u64,
+    pub delta_locked:   i64, // locked = locked + delta_locked for the next epoch
 }
 
 impl ProductMetadata {
@@ -43,7 +43,8 @@ impl ProductMetadata {
     }
 
     // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
-    // subtracts amount to delta_locked. This method needs to be called everytime a user requests to create a new position.
+    // subtracts amount to delta_locked. This method needs to be called everytime a user requests to
+    // create a new position.
     pub fn add_locking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
         self.update(current_epoch)?;
 
@@ -55,7 +56,8 @@ impl ProductMetadata {
     }
 
     // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
-    // subtracts amount to delta_locked. This method needs to be called everytime a user request to unlock a position.
+    // subtracts amount to delta_locked. This method needs to be called everytime a user request to
+    // unlock a position.
     pub fn add_unlocking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
         self.update(current_epoch)?;
 
@@ -64,7 +66,8 @@ impl ProductMetadata {
             .checked_sub(amount.try_into().or(Err(ErrorCode::GenericOverflow))?)
             .ok_or(error!(ErrorCode::GenericOverflow))?;
 
-        // Locked + delta_locked should never be negative, because that'd mean the balance staked to the product is negative
+        // Locked + delta_locked should never be negative, because that'd mean the balance staked to
+        // the product is negative
         if (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
             .checked_add(self.delta_locked)
             .ok_or(error!(ErrorCode::GenericOverflow))?
@@ -82,10 +85,10 @@ pub mod tests {
     #[test]
     fn zero_update() {
         let product = &mut ProductMetadata {
-            bump: 0,
+            bump:           0,
             last_update_at: 0,
-            locked: 0,
-            delta_locked: 0,
+            locked:         0,
+            delta_locked:   0,
         };
 
         assert!(product.update(product.last_update_at + 10).is_ok());
@@ -97,10 +100,10 @@ pub mod tests {
     #[test]
     fn positive_update() {
         let product = &mut ProductMetadata {
-            bump: 0,
+            bump:           0,
             last_update_at: 0,
-            locked: 0,
-            delta_locked: 0,
+            locked:         0,
+            delta_locked:   0,
         };
 
         assert!(product.add_locking(10, product.last_update_at).is_ok());
@@ -118,10 +121,10 @@ pub mod tests {
     #[test]
     fn negative_update() {
         let product = &mut ProductMetadata {
-            bump: 0,
+            bump:           0,
             last_update_at: 0,
-            locked: 30,
-            delta_locked: 0,
+            locked:         30,
+            delta_locked:   0,
         };
 
         assert!(product.add_unlocking(30, product.last_update_at).is_ok());
@@ -138,10 +141,10 @@ pub mod tests {
     #[test]
     fn unlock_bigger_than_locked() {
         let product = &mut ProductMetadata {
-            bump: 0,
+            bump:           0,
             last_update_at: 0,
-            locked: 30,
-            delta_locked: 0,
+            locked:         30,
+            delta_locked:   0,
         };
 
         assert!(product.add_unlocking(40, product.last_update_at).is_err());
@@ -150,10 +153,10 @@ pub mod tests {
     #[test]
     fn overflow() {
         let product = &mut ProductMetadata {
-            bump: 0,
+            bump:           0,
             last_update_at: 0,
-            locked: u64::MAX,
-            delta_locked: 0,
+            locked:         u64::MAX,
+            delta_locked:   0,
         };
 
         assert!(product.add_unlocking(1, 0).is_err());

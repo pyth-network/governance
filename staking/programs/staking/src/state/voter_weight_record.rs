@@ -79,7 +79,6 @@ pub enum VoterWeightAction {
     SignOffProposal,
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use crate::state::voter_weight_record::{
