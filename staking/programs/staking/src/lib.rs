@@ -319,6 +319,18 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
+        let governance_account = &ctx.accounts.governance_account;
+        let config = &ctx.accounts.config;
+        let max_voter_record = &mut ctx.accounts.max_voter_record;
+
+        max_voter_record.realm = config.pyth_governance_realm;
+        max_voter_record.governing_token_mint = config.pyth_token_mint;
+        max_voter_record.max_voter_weight = governance_account.locked;
+        max_voter_record.max_voter_weight_expiry = Some(Clock::get()?.slot);
+        Ok(())
+    }
+
     pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
         Ok(())
     }
