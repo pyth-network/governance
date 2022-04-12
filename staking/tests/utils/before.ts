@@ -37,7 +37,7 @@ import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
-interface AnchorConfig {
+export interface AnchorConfig {
   path: {
     idl_path: string;
     binary_path: string;
@@ -59,7 +59,7 @@ interface AnchorConfig {
   };
 }
 
-export function readAnchorConfig(pathToAnchorToml: string) {
+export function readAnchorConfig(pathToAnchorToml: string): AnchorConfig {
   const config: AnchorConfig = toml.parse(
     fs.readFileSync(pathToAnchorToml).toString()
   );
@@ -267,7 +267,7 @@ export async function createGovernance(
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
     new PublicKey(config.programs.localnet.staking),
-    new PublicKey(config.programs.localnet.staking)
+    undefined // new PublicKey(config.programs.localnet.staking) //TODO: Restore after max voter weight plugin implemented
   );
   const governanceConfig = new GovernanceConfig({
     voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
@@ -296,28 +296,16 @@ export async function createGovernance(
 export async function initConfig(
   program: Program,
   pythMintAccount: PublicKey,
-  globalConfig?: GlobalConfig
+  globalConfig: GlobalConfig
 ) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
     [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     program.programId
   );
 
-  await program.methods
-    .initConfig(
-      globalConfig
-        ? globalConfig
-        : {
-            governanceAuthority: program.provider.wallet.publicKey,
-            pythTokenMint: pythMintAccount,
-            unlockingDuration: 2,
-            epochDuration: new BN(3600),
-            mockClockTime: new BN(10),
-          }
-    )
-    .rpc({
-      skipPreflight: true,
-    });
+  await program.methods.initConfig(globalConfig).rpc({
+    skipPreflight: true,
+  });
 }
 
 /**
@@ -333,10 +321,21 @@ export async function standardSetup(
   config: AnchorConfig,
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
-  globalConfig?: GlobalConfig,
+  _globalConfig?: GlobalConfig,
   amount?: PythBalance
 ) {
   const { controller, program } = await startValidator(portNumber, config);
+  let globalConfig: GlobalConfig = _globalConfig
+    ? _globalConfig
+    : {
+        governanceAuthority: null,
+        pythGovernanceRealm: null,
+        pythTokenMint: pythMintAccount.publicKey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        mockClockTime: new BN(10),
+        bump: 0,
+      };
 
   await createMint(
     program.provider,

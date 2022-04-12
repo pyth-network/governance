@@ -78,7 +78,7 @@ export async function assertVoterWeightEquals(
 
   const voterRecord =
     await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
-  assert.equal(voterRecord.voterWeight.toNumber(), expected);
+  assert(voterRecord.voterWeight.eq(expected.toBN()));
 }
 
 export async function loadAndUnlock(
