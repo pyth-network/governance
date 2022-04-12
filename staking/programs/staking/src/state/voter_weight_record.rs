@@ -1,4 +1,5 @@
-use anchor_lang::prelude::{*, borsh::BorshSchema};
+use anchor_lang::prelude::borsh::BorshSchema;
+use anchor_lang::prelude::*;
 
 pub const VOTER_WEIGHT_RECORD_SIZE: usize = 156;
 
@@ -81,11 +82,16 @@ pub enum VoterWeightAction {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::voter_weight_record::{VoterWeightRecord, VOTER_WEIGHT_RECORD_SIZE};
+    use crate::state::voter_weight_record::{
+        VoterWeightRecord,
+        VOTER_WEIGHT_RECORD_SIZE,
+    };
 
     #[test]
     fn check_size() {
-        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<VoterWeightRecord>(),
-        VOTER_WEIGHT_RECORD_SIZE);
+        assert_eq!(
+            anchor_lang::solana_program::borsh::get_packed_len::<VoterWeightRecord>(),
+            VOTER_WEIGHT_RECORD_SIZE
+        );
     }
 }
