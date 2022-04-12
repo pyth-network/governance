@@ -1,3 +1,7 @@
+#![deny(unused_must_use)]
+// Objects of type Result must be used, otherwise we might
+// call a function that returns a Result and not handle the error
+
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::log;
