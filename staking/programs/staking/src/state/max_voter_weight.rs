@@ -1,4 +1,5 @@
-use anchor_lang::prelude::{*, borsh::BorshSchema};
+use anchor_lang::prelude::borsh::BorshSchema;
+use anchor_lang::prelude::*;
 
 pub const MAX_VOTER_WEIGHT_RECORD: usize = 32 + 32 + 8 + 9 + 8;
 
@@ -10,7 +11,8 @@ pub struct MaxVoterWeightRecord {
     pub realm: Pubkey,
 
     /// Governing Token Mint the MaxVoterWeightRecord is associated with
-    /// Note: The addin can take deposits of any tokens and is not restricted to the community or council tokens only
+    /// Note: The addin can take deposits of any tokens and is not restricted to the community or
+    /// council tokens only
     // The mint here is to link the record to either community or council mint of the realm
     pub governing_token_mint: Pubkey,
 
@@ -20,9 +22,10 @@ pub struct MaxVoterWeightRecord {
 
     /// The slot when the max voting weight expires
     /// It should be set to None if the weight never expires
-    /// If the max vote weight decays with time, for example for time locked based weights, then the expiry must be set
-    /// As a pattern Revise instruction to update the max weight should be invoked before governance instruction within the same transaction
-    /// and the expiry set to the current slot to provide up to date weight
+    /// If the max vote weight decays with time, for example for time locked based weights, then
+    /// the expiry must be set As a pattern Revise instruction to update the max weight should
+    /// be invoked before governance instruction within the same transaction and the expiry set
+    /// to the current slot to provide up to date weight
     pub max_voter_weight_expiry: Option<u64>,
 
     /// Reserved space for future versions
@@ -31,11 +34,16 @@ pub struct MaxVoterWeightRecord {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::max_voter_weight::{MaxVoterWeightRecord, MAX_VOTER_WEIGHT_RECORD};
+    use crate::state::max_voter_weight::{
+        MaxVoterWeightRecord,
+        MAX_VOTER_WEIGHT_RECORD,
+    };
 
     #[test]
     fn check_size() {
-        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<MaxVoterWeightRecord>(),
-        MAX_VOTER_WEIGHT_RECORD);
+        assert_eq!(
+            anchor_lang::solana_program::borsh::get_packed_len::<MaxVoterWeightRecord>(),
+            MAX_VOTER_WEIGHT_RECORD
+        );
     }
 }

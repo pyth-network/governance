@@ -181,20 +181,20 @@ pub struct UpdateVoterWeight<'info> {
 }
 
 #[derive(Accounts)]
-pub struct UpdateMaxVoterWeight<'info>{
+pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
-    pub payer : Signer<'info>,
+    pub payer:              Signer<'info>,
     // Governance product accounts:
     #[account(
         seeds = [PRODUCT_SEED.as_bytes(), Pubkey::default().as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump = governance_account.bump)]
-    pub governance_account : Account<'info, product::ProductMetadata>,
+    pub governance_account: Account<'info, product::ProductMetadata>,
     #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
-    pub max_voter_record : Account<'info, max_voter_weight::MaxVoterWeightRecord>,
+    pub max_voter_record:   Account<'info, max_voter_weight::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config : Account<'info, global_config::GlobalConfig>,
-    pub system_program : Program<'info, System>,
+    pub config:             Account<'info, global_config::GlobalConfig>,
+    pub system_program:     Program<'info, System>,
 }
 
 #[derive(Accounts)]
