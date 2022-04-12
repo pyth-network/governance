@@ -69,6 +69,12 @@ impl Position {
         if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
         } else {
+
+
+
+
+
+            
             match self.unlocking_start {
                 None => Ok(PositionState::LOCKED),
                 Some(unlocking_start) => {
