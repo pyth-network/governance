@@ -1,18 +1,23 @@
-use crate::error::ErrorCode;
-use anchor_lang::{prelude::{*, borsh::BorshSchema}, solana_program::wasm_bindgen};
 use crate::borsh::BorshSerialize;
-use std::fmt::{self, Debug, Display};
-
+use crate::error::ErrorCode;
+use anchor_lang::prelude::borsh::BorshSchema;
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::wasm_bindgen;
+use std::fmt::{
+    self,
+    Debug,
+    Display,
+};
 
 pub const MAX_POSITIONS: usize = 100;
 
-/// An array that contains all of a user's positions i.e. where are the staking and who are they staking to
-/// We mostly fill it front to back, but indicies don't mean much.
+/// An array that contains all of a user's positions i.e. where are the staking and who are they
+/// staking to We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
 #[account(zero_copy)]
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
-    pub owner : Pubkey,
+    pub owner:     Pubkey,
     pub positions: [Option<Position>; MAX_POSITIONS],
 }
 
@@ -36,25 +41,26 @@ impl PositionData {
     }
 }
 
-/// This represents a staking position, i.e. an amount that someone has staked to a particular (product, publisher) tuple.
-/// This is one of the core pieces of our staking design, and stores all of the state related to a position
-/// The voting position is a position where the product is None
+/// This represents a staking position, i.e. an amount that someone has staked to a particular
+/// (product, publisher) tuple. This is one of the core pieces of our staking design, and stores all
+/// of the state related to a position The voting position is a position where the product is None
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 pub struct Position {
-    pub amount: u64,
+    pub amount:           u64,
     pub activation_epoch: u64,
-    pub unlocking_start: Option<u64>,
-    pub product: Option<Pubkey>,
-    pub publisher: Option<Pubkey>,
-    // Note: If you add a field here, you may need to change MAX_POSITIONS or the account size 
+    pub unlocking_start:  Option<u64>,
+    pub product:          Option<Pubkey>,
+    pub publisher:        Option<Pubkey>,
+    // Note: If you add a field here, you may need to change MAX_POSITIONS or the account size
     // as well as POSITION_SIZE in constants.ts.
 } // TODO: Decide if we want to reserve some space here for reward tracking state
 
 impl Position {
-    /// Managing the state of a position is tricky because we can only update the data when a user makes a transaction
-    /// but many of the state transitions take effect later, e.g. at the next epoch boundary.
-    /// In order to get the actual current state, we need the current epoch. This encapsulates that logic
-    /// so that other parts of the code can use the actual state.
+    /// Managing the state of a position is tricky because we can only update the data when a user
+    /// makes a transaction but many of the state transitions take effect later, e.g. at the
+    /// next epoch boundary. In order to get the actual current state, we need the current
+    /// epoch. This encapsulates that logic so that other parts of the code can use the actual
+    /// state.
     pub fn get_current_position(
         &self,
         current_epoch: u64,
@@ -103,19 +109,23 @@ impl std::fmt::Display for PositionState {
     }
 }
 
-
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{Position, PositionState, PositionData, MAX_POSITIONS};
-    
+    use crate::state::positions::{
+        Position,
+        PositionData,
+        PositionState,
+        MAX_POSITIONS,
+    };
+
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
             activation_epoch: 8,
-            unlocking_start: Some(12),
-            product: None,
-            publisher: None,
-            amount: 10,
+            unlocking_start:  Some(12),
+            product:          None,
+            publisher:        None,
+            amount:           10,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -144,10 +154,10 @@ pub mod tests {
     fn lifecycle_lock() {
         let p = Position {
             activation_epoch: 8,
-            unlocking_start: None,
-            product: None,
-            publisher: None,
-            amount: 10,
+            unlocking_start:  None,
+            product:          None,
+            publisher:        None,
+            amount:           10,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -169,7 +179,9 @@ pub mod tests {
     }
     #[test]
     fn test_serialized_size() {
-        assert_eq!(anchor_lang::solana_program::borsh::get_packed_len::<PositionData>(),
-        32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33));
+        assert_eq!(
+            anchor_lang::solana_program::borsh::get_packed_len::<PositionData>(),
+            32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33)
+        );
     }
 }

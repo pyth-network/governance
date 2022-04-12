@@ -16,21 +16,21 @@ pub enum VestingSchedule {
     FullyVested,
     /// Continuous vesting of (initial_balance/vesting_duration) per time unit
     LinearVesting {
-        initial_balance: u64,
+        initial_balance:  u64,
         vesting_duration: u64, // Must be > 0!
-        start_date: i64,
+        start_date:       i64,
     },
     /// Full balance vests at the cliff date
     CliffVesting {
         initial_balance: u64,
-        cliff_date: i64,
+        cliff_date:      i64,
     },
     /// Every (period_duration), (initial_balance/num_periods) vests
     PeriodicVesting {
         initial_balance: u64,
-        start_date: i64,
+        start_date:      i64,
         period_duration: u64,
-        num_periods: u64,
+        num_periods:     u64,
     },
 }
 
@@ -40,8 +40,8 @@ impl Default for VestingSchedule {
     }
 }
 
-/// Computes  Ceiling(numerator / denominator), i.e. division rounding up. Requires that denominator > 0.
-/// Returns the quotient as a u64. For some numerator and denominator choices,
+/// Computes  Ceiling(numerator / denominator), i.e. division rounding up. Requires that denominator
+/// > 0. Returns the quotient as a u64. For some numerator and denominator choices,
 /// the quotient might not fit in a u64, but we aren't interested in those cases.
 fn div_round_up(numerator: u128, denominator: u64) -> u64 {
     // Common C-esque trick: (n + d-1)/d computes ceil(n/d)
@@ -51,9 +51,9 @@ fn div_round_up(numerator: u128, denominator: u64) -> u64 {
 }
 
 impl VestingSchedule {
-    /// For a vesting schedule and the current time (in the same units used in the vesting schedule),
-    /// gets the _unvested_ amount. If the unvested balance is fractional, it rounds the unvested amount up.
-    /// It tries to be careful about overflow.
+    /// For a vesting schedule and the current time (in the same units used in the vesting
+    /// schedule), gets the _unvested_ amount. If the unvested balance is fractional, it rounds
+    /// the unvested amount up. It tries to be careful about overflow.
     pub fn get_unvested_balance(&self, current_time: i64) -> Result<u64> {
         match *self {
             VestingSchedule::FullyVested => Ok(0),
@@ -126,7 +126,10 @@ impl VestingSchedule {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::vesting::{div_round_up, VestingSchedule};
+    use crate::state::vesting::{
+        div_round_up,
+        VestingSchedule,
+    };
 
     #[test]
     fn test_rounding() {
@@ -134,7 +137,8 @@ pub mod tests {
         assert_eq!(div_round_up(9, 2), 5);
         assert_eq!(
             div_round_up(u128::MAX / 4, u64::MAX / 2 - 500),
-            u64::MAX / 2 + 503 // I checked this with WolframAlpha using arbitrary precision arithmetic
+            u64::MAX / 2 + 503 /* I checked this with WolframAlpha using arbitrary precision
+                                * arithmetic */
         );
     }
     #[test]
@@ -146,9 +150,9 @@ pub mod tests {
     #[test]
     fn test_linear() {
         let v = VestingSchedule::LinearVesting {
-            initial_balance: 20,
+            initial_balance:  20,
             vesting_duration: 6, // Intentionally not divisible
-            start_date: 5,
+            start_date:       5,
         };
         for t in 0..14 {
             if t <= 5 {
@@ -167,7 +171,7 @@ pub mod tests {
     fn test_cliff() {
         let v = VestingSchedule::CliffVesting {
             initial_balance: 20,
-            cliff_date: 5,
+            cliff_date:      5,
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(4).unwrap(), 20);
@@ -180,9 +184,9 @@ pub mod tests {
     fn test_period() {
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 20,
-            start_date: 5,
+            start_date:      5,
             period_duration: 3,
-            num_periods: 7,
+            num_periods:     7,
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(5).unwrap(), 20);
@@ -206,9 +210,9 @@ pub mod tests {
     fn test_overflow() {
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 1_000_000_000,
-            start_date: -9223372036854775264,
+            start_date:      -9223372036854775264,
             period_duration: 1,
-            num_periods: 1 << 63,
+            num_periods:     1 << 63,
         };
         v.get_unvested_balance(9223372036854775264).unwrap();
     }
@@ -218,9 +222,9 @@ pub mod tests {
         // Invariant: get_unvested_balance always returns something between 0 and initial_balance
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 1_000_000_000,
-            start_date: -(1 << 60),
+            start_date:      -(1 << 60),
             period_duration: 1,
-            num_periods: 1 << 62,
+            num_periods:     1 << 62,
         };
         let value = v.get_unvested_balance(1 << 60).unwrap();
         assert!(value <= 1_000_000_000);
