@@ -17,6 +17,7 @@ import {
   standardSetup,
   getPortNumber,
   makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -39,7 +40,7 @@ describe("fills a stake account with positions", async () => {
   let userAta: PublicKey;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   after(async () => {
     controller.abort();

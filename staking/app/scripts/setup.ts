@@ -14,6 +14,7 @@ import {
   ANCHOR_CONFIG_PATH,
   getPortNumber,
   requestPythAirdrop,
+  CustomAbortController,
 } from "../../tests/utils/before";
 import path from "path";
 import { StakeConnection, PythBalance } from "..";
@@ -47,7 +48,7 @@ const setEnvValue = (key, value, path) => {
 const portNumber = 8899;
 async function main() {
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
   let globalConfig: GlobalConfig;
 
   const pythMintAccount = new Keypair();

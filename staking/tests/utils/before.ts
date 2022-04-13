@@ -78,6 +78,20 @@ export function getPortNumber(filename: string) {
   return portNumber;
 }
 /**
+ * If we abort immediately, the websockets are still subscribed, and they give a ton of errors.
+ * Waiting a few seconds is enough to let the sockets close.
+ */
+export class CustomAbortController {
+  abortController: AbortController;
+  constructor(abortController: AbortController) {
+    this.abortController = abortController;
+  }
+  abort() {
+    setTimeout(() => this.abortController.abort(), 5000);
+  }
+}
+
+/**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
  *
@@ -90,8 +104,8 @@ export function getPortNumber(filename: string) {
 export async function startValidator(portNumber: number, config: AnchorConfig) {
   const connection: Connection = getConnection(portNumber);
 
-  const controller: AbortController = new AbortController();
-  const { signal } = controller;
+  const internalController: AbortController = new AbortController();
+  const { signal } = internalController;
 
   const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
   const programAddress = new PublicKey(config.programs.localnet.staking);
@@ -113,10 +127,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     { signal },
     (error, stdout, stderr) => {
       if (error.name.includes("AbortError")) {
-        console.log(
-          "Test complete. Validator terminated. Ignore websocket errors from port " +
-            (portNumber + 1)
-        );
+        // Test complete, this is expected.
         return;
       }
       if (error) {
@@ -146,7 +157,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   shell.exec(
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
-
+  const controller = new CustomAbortController(internalController);
   return { controller, program };
 }
 

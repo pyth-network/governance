@@ -1,5 +1,6 @@
 import {
   ANCHOR_CONFIG_PATH,
+  CustomAbortController,
   getPortNumber,
   makeDefaultConfig,
   readAnchorConfig,
@@ -24,7 +25,7 @@ describe("voter_weight_test", async () => {
   let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   let stakeAccountAddress;
 

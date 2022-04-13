@@ -20,7 +20,7 @@ describe("clock_api", async () => {
   let stakeConnection: StakeConnection;
   let controller: AbortController;
 
-  const CLOCK_TOLERANCE_SECONDS = 5;
+  const CLOCK_TOLERANCE_SECONDS = 10;
 
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
