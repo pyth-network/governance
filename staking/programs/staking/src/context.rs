@@ -135,10 +135,16 @@ pub struct CreatePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
+    // Product account :
+    #[account(
+        mut,
+        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
+        bump = product_account.bump)]
+    pub product_account:         Account<'info, product::ProductMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64)]
+#[instruction(index : u8, amount : u64, product : Option<Pubkey>)]
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -155,6 +161,12 @@ pub struct ClosePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
+    // Product account :
+    #[account(
+        mut,
+        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
+        bump = product_account.bump)]
+    pub product_account:         Account<'info, product::ProductMetadata>,
 }
 
 #[derive(Accounts)]

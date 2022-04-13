@@ -100,6 +100,7 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+        let product_account = &mut ctx.accounts.product_account;
 
         // Make sure both are Some() or both are None
         if product.is_none() != publisher.is_none() {
@@ -139,17 +140,29 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
+        product_account.add_locking(amount, current_epoch)?;
+
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>, index: u8, amount: u64) -> Result<()> {
+    pub fn close_position(
+        ctx: Context<ClosePosition>,
+        index: u8,
+        amount: u64,
+        product: Option<Pubkey>,
+    ) -> Result<()> {
         let i = index as usize;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
         let current_position =
             &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
+
+        if current_position.product != product {
+            return Err(error!(ErrorCode::WrongProduct));
+        }
 
         let original_amount = current_position.amount;
 
@@ -205,17 +218,28 @@ pub mod staking {
                         }
                     }
                 }
+
+                product_account.add_unlocking(amount, current_epoch)?;
             }
 
             // For this case, we don't need to create new positions because the "closed"
             // tokens become "free"
-            PositionState::LOCKING | PositionState::UNLOCKED => {
+            PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
                     stake_account_positions.positions[i] = None;
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
                 }
+            }
+            PositionState::LOCKING => {
+                if remaining_amount == 0 {
+                    stake_account_positions.positions[i] = None;
+                } else {
+                    current_position.amount = remaining_amount;
+                    stake_account_positions.positions[i] = Some(*current_position);
+                }
+                product_account.add_unlocking(amount, current_epoch)?;
             }
             PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
@@ -320,10 +344,12 @@ pub mod staking {
     }
 
     pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
-        let governance_account = &ctx.accounts.governance_account;
+        let governance_account = &mut ctx.accounts.governance_account;
         let config = &ctx.accounts.config;
         let max_voter_record = &mut ctx.accounts.max_voter_record;
+        let current_epoch = get_current_epoch(config)?;
 
+        governance_account.update(current_epoch)?;
         max_voter_record.realm = config.pyth_governance_realm;
         max_voter_record.governing_token_mint = config.pyth_token_mint;
         max_voter_record.max_voter_weight = governance_account.locked;
