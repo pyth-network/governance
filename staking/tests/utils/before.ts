@@ -110,6 +110,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
       config.programs.localnet.governance
     } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
+    { signal },
     (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
