@@ -74,7 +74,7 @@ export function readAnchorConfig(pathToAnchorToml: string): AnchorConfig {
  */
 export function getPortNumber(filename: string) {
   const index = fs.readdirSync("./tests/").sort().indexOf(filename);
-  const portNumber = 8899 + 2 * index;
+  const portNumber = 8899 - 2 * index;
   return portNumber;
 }
 /**
