@@ -22,6 +22,7 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
+  makeDefaultConfig,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 
@@ -60,7 +61,8 @@ describe("staking", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
     provider = stakeConnection.program.provider;

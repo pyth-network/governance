@@ -3,6 +3,8 @@ import { PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
+import * as wasm from "../../wasm/node/staking";
+import * as anchor from "@project-serum/anchor";
 
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
@@ -30,31 +32,36 @@ export async function assertBalanceMatches(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getBalanceSummary(currentTime);
-
-  assert(
-    actual.locked.locking.eq(
-      expected.locked?.locking || PythBalance.fromString("0")
-    )
+  // Comparison as string gives better error messages when a test fails
+  assert.equal(
+    actual.locked.locking.toString(),
+    expected.locked?.locking?.toString() || "0",
+    "Locking"
   );
-  assert(
-    actual.locked.locked.eq(
-      expected.locked?.locked || PythBalance.fromString("0")
-    )
+  assert.equal(
+    actual.locked.locked.toString(),
+    expected.locked?.locked?.toString() || "0",
+    "Locked"
   );
-  assert(
-    actual.locked.unlocking.eq(
-      expected.locked?.unlocking || PythBalance.fromString("0")
-    )
+  assert.equal(
+    actual.locked.preunlocking.toString(),
+    expected.locked?.preunlocking?.toString() || "0",
+    "Preunlocking"
   );
-  assert(
-    actual.locked.preunlocking.eq(
-      expected.locked?.preunlocking || PythBalance.fromString("0")
-    )
+  assert.equal(
+    actual.locked.unlocking.toString(),
+    expected.locked?.unlocking?.toString() || "0",
+    "Unlocking"
   );
-
-  assert(actual.unvested.eq(expected.unvested || PythBalance.fromString("0")));
-  assert(
-    actual.withdrawable.eq(expected.withdrawable || PythBalance.fromString("0"))
+  assert.equal(
+    actual.unvested.toString(),
+    expected.unvested?.toString() || "0",
+    "Unvested"
+  );
+  assert.equal(
+    actual.withdrawable.toString(),
+    expected.withdrawable?.toString() || "0",
+    "Withdrawable"
   );
 }
 
@@ -67,6 +74,24 @@ export async function assertVoterWeightEquals(
   assert.equal(res.length, 1);
   const actual = res[0].getVoterWeight(await stakeConnection.getTime());
   assert(actual.eq(expected));
+  await stakeConnection.program.methods
+    .updateVoterWeight()
+    .accounts({
+      stakeAccountPositions: res[0].address,
+    })
+    .rpc();
+
+  let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+    [
+      anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
+      res[0].address.toBuffer(),
+    ],
+    stakeConnection.program.programId
+  );
+
+  const voterRecord =
+    await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
+  assert(voterRecord.voterWeight.eq(expected.toBN()));
 }
 
 export async function loadAndUnlock(

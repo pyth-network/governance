@@ -6,6 +6,8 @@ import {
   Keypair,
   Transaction,
   SystemProgram,
+  BPF_LOADER_PROGRAM_ID,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
@@ -17,6 +19,15 @@ import {
   u64,
 } from "@solana/spl-token";
 import { MintLayout } from "@solana/spl-token";
+import {
+  GovernanceConfig,
+  MintMaxVoteWeightSource,
+  MintMaxVoteWeightSourceType,
+  PROGRAM_VERSION_V2,
+  VoteThresholdPercentage,
+  withCreateGovernance,
+  withCreateRealm,
+} from "@solana/spl-governance";
 import shell from "shelljs";
 import BN from "bn.js";
 import toml from "toml";
@@ -26,10 +37,11 @@ import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
-interface AnchorConfig {
+export interface AnchorConfig {
   path: {
     idl_path: string;
     binary_path: string;
+    governance_path: string;
   };
   provider: {
     cluster: string;
@@ -37,7 +49,8 @@ interface AnchorConfig {
   };
   programs: {
     localnet: {
-      staking: PublicKey;
+      staking: string;
+      governance: string;
     };
   };
   validator: {
@@ -46,7 +59,7 @@ interface AnchorConfig {
   };
 }
 
-export function readAnchorConfig(pathToAnchorToml: string) {
+export function readAnchorConfig(pathToAnchorToml: string): AnchorConfig {
   const config: AnchorConfig = toml.parse(
     fs.readFileSync(pathToAnchorToml).toString()
   );
@@ -61,9 +74,23 @@ export function readAnchorConfig(pathToAnchorToml: string) {
  */
 export function getPortNumber(filename: string) {
   const index = fs.readdirSync("./tests/").sort().indexOf(filename);
-  const portNumber = 8899 + 2 * index;
+  const portNumber = 8899 - 2 * index;
   return portNumber;
 }
+/**
+ * If we abort immediately, the websockets are still subscribed, and they give a ton of errors.
+ * Waiting a few seconds is enough to let the sockets close.
+ */
+export class CustomAbortController {
+  abortController: AbortController;
+  constructor(abortController: AbortController) {
+    this.abortController = abortController;
+  }
+  abort() {
+    setTimeout(() => this.abortController.abort(), 5000);
+  }
+}
+
 /**
  * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
  * Also takes config as an argument, config is obtained by parsing Anchor.toml
@@ -74,11 +101,11 @@ export function getPortNumber(filename: string) {
  * validator by calling :
  * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: any) {
+export async function startValidator(portNumber: number, config: AnchorConfig) {
   const connection: Connection = getConnection(portNumber);
 
-  const controller: AbortController = new AbortController();
-  const { signal } = controller;
+  const internalController: AbortController = new AbortController();
+  const { signal } = internalController;
 
   const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
   const programAddress = new PublicKey(config.programs.localnet.staking);
@@ -94,10 +121,15 @@ export async function startValidator(portNumber: number, config: any) {
   exec(
     `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
       user.publicKey
-    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --faucet-port ${
-      portNumber + 101
-    }`,
+    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
+      config.programs.localnet.governance
+    } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
+    { signal },
     (error, stdout, stderr) => {
+      if (error.name.includes("AbortError")) {
+        // Test complete, this is expected.
+        return;
+      }
       if (error) {
         console.error(`exec error: ${error}`);
         return;
@@ -125,11 +157,11 @@ export async function startValidator(portNumber: number, config: any) {
   shell.exec(
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
-
+  const controller = new CustomAbortController(internalController);
   return { controller, program };
 }
 
-export function getConnection(portNumber: number) {
+export function getConnection(portNumber: number): Connection {
   return new Connection(
     `http://localhost:${portNumber}`,
     Provider.defaultOptions().commitment
@@ -227,32 +259,88 @@ export async function createMint(
     skipPreflight: true,
   });
 }
+interface GovernanceIds {
+  realm: PublicKey;
+  governance: PublicKey;
+}
+/*
+  Creates a governance realm using the SPL-governance deployment in config.
+  Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
+*/
+export async function createGovernance(
+  provider: Provider,
+  config: AnchorConfig,
+  maxVotingTime: number, // in seconds
+  pythMint: PublicKey
+): Promise<GovernanceIds> {
+  const realmAuthority = Keypair.generate();
+  const tx = new Transaction();
+  const govProgramId = new PublicKey(config.programs.localnet.governance);
+  const MIN_TOKENS_CREATE_PROPOSAL = PythBalance.fromNumber(200).toBN();
+
+  const realm = await withCreateRealm(
+    tx.instructions,
+    govProgramId,
+    PROGRAM_VERSION_V2,
+    "Pyth Governance",
+    realmAuthority.publicKey,
+    pythMint,
+    provider.wallet.publicKey,
+    undefined, // no council mint
+    MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
+    MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
+    new PublicKey(config.programs.localnet.staking),
+    undefined // new PublicKey(config.programs.localnet.staking) //TODO: Restore after max voter weight plugin implemented
+  );
+  const governanceConfig = new GovernanceConfig({
+    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    minCommunityTokensToCreateProposal: MIN_TOKENS_CREATE_PROPOSAL,
+    minInstructionHoldUpTime: 1,
+    maxVotingTime: maxVotingTime,
+    minCouncilTokensToCreateProposal: new BN(1),
+  });
+  const governance = await withCreateGovernance(
+    tx.instructions,
+    govProgramId,
+    PROGRAM_VERSION_V2,
+    realm,
+    undefined,
+    governanceConfig,
+    new PublicKey(0),
+    provider.wallet.publicKey,
+    realmAuthority.publicKey,
+    null
+  );
+  await provider.send(tx, [realmAuthority], { skipPreflight: true });
+
+  return { realm, governance };
+}
 
 export async function initConfig(
   program: Program,
   pythMintAccount: PublicKey,
-  globalConfig?: GlobalConfig
+  globalConfig: GlobalConfig
 ) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
     [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     program.programId
   );
 
-  await program.methods
-    .initConfig(
-      globalConfig
-        ? globalConfig
-        : {
-            governanceAuthority: program.provider.wallet.publicKey,
-            pythTokenMint: pythMintAccount,
-            unlockingDuration: 2,
-            epochDuration: new BN(3600),
-            mockClockTime: new BN(10),
-          }
-    )
-    .rpc({
-      skipPreflight: true,
-    });
+  await program.methods.initConfig(globalConfig).rpc({
+    skipPreflight: true,
+  });
+}
+
+export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
+  return {
+    governanceAuthority: null,
+    pythGovernanceRealm: null,
+    pythTokenMint: pythMint,
+    unlockingDuration: 2,
+    epochDuration: new BN(3600),
+    mockClockTime: new BN(10),
+    bump: 0,
+  };
 }
 
 /**
@@ -260,6 +348,7 @@ export async function initConfig(
  * - Launches at validator at `portNumber`
  * - Creates a Pyth token in the localnet environment
  * - Airdrops Pyth token to the currently connected wallet
+ * - If the passed in global config has a null pythGovernanceRealm, creates a default governance
  * - Initializes the global config of the Pyth staking program to some default values
  * - Creates a connection de the localnet Pyth staking program
  * */
@@ -268,7 +357,7 @@ export async function standardSetup(
   config: AnchorConfig,
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
-  globalConfig?: GlobalConfig,
+  globalConfig: GlobalConfig,
   amount?: PythBalance
 ) {
   const { controller, program } = await startValidator(portNumber, config);
@@ -292,6 +381,17 @@ export async function standardSetup(
     program.provider.connection
   );
 
+  if (globalConfig.pythGovernanceRealm == null) {
+    const { realm, governance } = await createGovernance(
+      program.provider,
+      config,
+      globalConfig.epochDuration.toNumber(),
+      pythMintAccount.publicKey
+    );
+    globalConfig.governanceAuthority = governance;
+    globalConfig.pythGovernanceRealm = realm;
+  }
+
   await initConfig(program, pythMintAccount.publicKey, globalConfig);
 
   const connection = new Connection(
@@ -302,7 +402,7 @@ export async function standardSetup(
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     program.provider.wallet as Wallet,
-    config.programs.localnet.staking
+    new PublicKey(config.programs.localnet.staking)
   );
 
   return { controller, stakeConnection };
