@@ -26,9 +26,10 @@ pub struct WasmPositionData {
 
 #[wasm_bindgen]
 pub struct LockedBalanceSummary {
-    pub locking:   u64,
-    pub locked:    u64,
-    pub unlocking: u64,
+    pub locking:      u64,
+    pub locked:       u64,
+    pub unlocking:    u64,
+    pub preunlocking: u64,
 }
 
 #[wasm_bindgen]
@@ -120,6 +121,7 @@ impl WasmPositionData {
         let mut locking: u64 = 0;
         let mut locked: u64 = 0;
         let mut unlocking: u64 = 0;
+        let mut preunlocking: u64 = 0;
 
         for i in 0..crate::MAX_POSITIONS {
             if let Some(position) = self.wrapped.positions[i] {
@@ -131,6 +133,11 @@ impl WasmPositionData {
                     }
                     PositionState::LOCKED => {
                         locked = locked
+                            .checked_add(position.amount)
+                            .ok_or(error!(ErrorCode::GenericOverflow))?;
+                    }
+                    PositionState::PREUNLOCKING => {
+                        preunlocking = preunlocking
                             .checked_add(position.amount)
                             .ok_or(error!(ErrorCode::GenericOverflow))?;
                     }
@@ -147,6 +154,7 @@ impl WasmPositionData {
             locking,
             locked,
             unlocking,
+            preunlocking,
         })
     }
 
