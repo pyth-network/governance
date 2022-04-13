@@ -503,6 +503,7 @@ export interface BalanceSummary {
     locking: PythBalance;
     locked: PythBalance;
     unlocking: PythBalance;
+    preunlocking: PythBalance;
   };
   unvested: PythBalance;
 }
@@ -575,6 +576,9 @@ export class StakeAccount {
         locked: new PythBalance(new BN(lockedSummaryBI.locked.toString())),
         unlocking: new PythBalance(
           new BN(lockedSummaryBI.unlocking.toString())
+        ),
+        preunlocking: new PythBalance(
+          new BN(lockedSummaryBI.preunlocking.toString())
         ),
       },
       unvested: new PythBalance(unvestedBN),
