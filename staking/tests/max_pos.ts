@@ -42,7 +42,8 @@ describe("fills a stake account with positions", async () => {
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
 
-  let productAccount;
+  let votingProductMetadataAccount;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -68,7 +69,11 @@ describe("fills a stake account with positions", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    productAccount = await getProductAccount(null, program.programId);
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getProductAccount(
+      votingProduct,
+      program.programId
+    );
 
     await stakeConnection.depositTokens(
       undefined,
@@ -81,9 +86,9 @@ describe("fills a stake account with positions", async () => {
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(null, null, PythBalance.fromString("1").toBN())
+      .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -126,9 +131,9 @@ describe("fills a stake account with positions", async () => {
     // Now create 101, which is supposed to fail
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("1").toBN())
+        .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
         .accounts({
-          productAccount,
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached",

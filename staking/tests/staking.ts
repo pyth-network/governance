@@ -53,7 +53,8 @@ describe("staking", async () => {
   let controller: AbortController;
   let stakeConnection: StakeConnection;
 
-  let productAccount: PublicKey;
+  let votingProductMetadataAccount: PublicKey;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -75,7 +76,11 @@ describe("staking", async () => {
       program.provider.wallet.publicKey
     );
 
-    productAccount = await getProductAccount(null, program.programId);
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getProductAccount(
+      votingProduct,
+      program.programId
+    );
 
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -214,9 +219,13 @@ describe("staking", async () => {
   it("creates a position that's too big", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("102").toBN())
+        .createPosition(
+          votingProduct,
+          null,
+          PythBalance.fromString("102").toBN()
+        )
         .accounts({
-          productAccount,
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -226,9 +235,9 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     await program.methods
-      .createPosition(null, null, new BN(1))
+      .createPosition(votingProduct, null, new BN(1))
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -250,7 +259,7 @@ describe("staking", async () => {
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        product: null,
+        product: votingProduct,
         publisher: null,
       })
     );
@@ -262,9 +271,9 @@ describe("staking", async () => {
   it("creates position with 0 principal", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("0").toBN())
+        .createPosition(votingProduct, null, PythBalance.fromString("0").toBN())
         .accounts({
-          productAccount,
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",

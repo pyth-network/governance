@@ -41,7 +41,8 @@ describe("position_lifecycle", async () => {
 
   let stakeConnection: StakeConnection;
 
-  let productAccount;
+  let votingProductMetadataAccount;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -68,7 +69,11 @@ describe("position_lifecycle", async () => {
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
-    productAccount = await getProductAccount(null, program.programId);
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getProductAccount(
+      votingProduct,
+      program.programId
+    );
   });
 
   it("deposits tokens and locks", async () => {
@@ -105,7 +110,7 @@ describe("position_lifecycle", async () => {
   it("try closing a position for more than the position's principal", async () => {
     expectFail(
       await program.methods
-        .closePosition(0, PythBalance.fromString("201").toBN(), null)
+        .closePosition(0, PythBalance.fromString("201").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
         }),
@@ -117,7 +122,7 @@ describe("position_lifecycle", async () => {
   it("close null position", async () => {
     expectFail(
       await program.methods
-        .closePosition(1, PythBalance.fromString("200").toBN(), null)
+        .closePosition(1, PythBalance.fromString("200").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
         }),
@@ -128,9 +133,9 @@ describe("position_lifecycle", async () => {
 
   it("close position instantly", async () => {
     await program.methods
-      .closePosition(0, PythBalance.fromString("200").toBN(), null)
+      .closePosition(0, PythBalance.fromString("200").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -145,9 +150,9 @@ describe("position_lifecycle", async () => {
 
   it("open a new position", async () => {
     await program.methods
-      .createPosition(null, null, PythBalance.fromString("200").toBN())
+      .createPosition(votingProduct, null, PythBalance.fromString("200").toBN())
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         payer: owner,
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -163,9 +168,9 @@ describe("position_lifecycle", async () => {
 
   it("first close some", async () => {
     await program.methods
-      .closePosition(0, PythBalance.fromString("10").toBN(), null)
+      .closePosition(0, PythBalance.fromString("10").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -197,9 +202,9 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("50").toBN(), null)
+      .closePosition(0, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -261,17 +266,17 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN(), null)
+      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN(), null)
+      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -320,9 +325,9 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN(), null)
+      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
-        productAccount,
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();

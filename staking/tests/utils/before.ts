@@ -346,7 +346,6 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
 
 export async function initGovernanceProduct(program: Program) {
   const productAccount = await getProductAccount(null, program.programId);
-
   await program.methods.createProduct(null).accounts({ productAccount }).rpc();
 }
 

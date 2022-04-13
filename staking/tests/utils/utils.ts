@@ -11,7 +11,7 @@ import assert from "assert";
 import * as wasm from "../../wasm/node/staking";
 
 export async function getProductAccount(
-  seed: PublicKey | null,
+  seed: PublicKey | undefined,
   programId: PublicKey
 ): Promise<PublicKey> {
   return (
