@@ -127,7 +127,7 @@ async function main() {
   );
   setEnvValue(
     "LOCALNET_GOVERNANCE_REALM",
-    globalConfig.pythGovernanceRealm.toBase58(),
+    stakeConnection.config.pythGovernanceRealm.toBase58(),
     envPath
   );
 
