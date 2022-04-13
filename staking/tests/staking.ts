@@ -23,6 +23,7 @@ import {
   standardSetup,
   getPortNumber,
   makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 
@@ -50,7 +51,7 @@ describe("staking", async () => {
   let userAta: PublicKey;
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-  let controller: AbortController;
+  let controller: CustomAbortController;
   let stakeConnection: StakeConnection;
 
   let votingProductMetadataAccount: PublicKey;

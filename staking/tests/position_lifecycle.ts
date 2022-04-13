@@ -284,8 +284,9 @@ describe("position_lifecycle", async () => {
     // Make sure than closing a position twice fails
     await expectFail(
       await program.methods
-        .closePosition(0, PythBalance.fromString("140").toBN())
+        .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
         .accounts({
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Position already unlocking",

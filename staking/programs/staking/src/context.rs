@@ -214,8 +214,7 @@ pub struct UpdateMaxVoterWeight<'info> {
 pub struct CreateProduct<'info> {
     #[account(mut)]
     pub payer:             Signer<'info>,
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
+    pub governance_signer: Signer<'info>, // Add check later
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:            Account<'info, global_config::GlobalConfig>,
     #[account(

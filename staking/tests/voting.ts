@@ -18,6 +18,7 @@ import {
   getPortNumber,
   AnchorConfig,
   makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 import { GlobalConfig } from "../app/StakeConnection";
@@ -44,13 +45,14 @@ import { expectFail, expectFailApi } from "./utils/utils";
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
+console.log(portNumber);
 describe("voting", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
   let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   let governanceProgram: PublicKey;
   let realm: PublicKey;
