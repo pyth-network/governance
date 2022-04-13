@@ -201,18 +201,18 @@ pub struct UpdateMaxVoterWeight<'info> {
 #[instruction(product : Option<Pubkey>)]
 pub struct CreateProduct<'info> {
     #[account(mut)]
-    pub payer:            Signer<'info>,
+    pub payer:             Signer<'info>,
     #[account(address = config.governance_authority)]
-    pub governanceSigner: Signer<'info>,
+    pub governance_signer: Signer<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:           Account<'info, global_config::GlobalConfig>,
+    pub config:            Account<'info, global_config::GlobalConfig>,
     #[account(
         init,
         payer = payer,
         seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
         bump)]
-    pub product_account:  Account<'info, product::ProductMetadata>,
-    pub system_program:   Program<'info, System>,
+    pub product_account:   Account<'info, product::ProductMetadata>,
+    pub system_program:    Program<'info, System>,
 }
 
 #[derive(Accounts)]
