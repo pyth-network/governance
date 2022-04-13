@@ -31,24 +31,31 @@ export async function assertBalanceMatches(
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getBalanceSummary(currentTime);
-  assert(
-    actual.locked.locking.eq(
-      expected.locked?.locking || PythBalance.fromString("0")
-    )
+  // Comparison as string gives better error messages when a test fails
+  assert.equal(
+    actual.locked.locking.toString(),
+    expected.locked?.locking?.toString() || "0",
+    "Locking"
   );
-  assert(
-    actual.locked.locked.eq(
-      expected.locked?.locked || PythBalance.fromString("0")
-    )
+  assert.equal(
+    actual.locked.locked.toString(),
+    expected.locked?.locked?.toString() || "0",
+    "Locked"
   );
-  assert(
-    actual.locked.unlocking.eq(
-      expected.locked?.unlocking || PythBalance.fromString("0")
-    )
+  assert.equal(
+    actual.locked.unlocking.toString(),
+    expected.locked?.unlocking?.toString() || "0",
+    "Unlocking"
   );
-  assert(actual.unvested.eq(expected.unvested || PythBalance.fromString("0")));
-  assert(
-    actual.withdrawable.eq(expected.withdrawable || PythBalance.fromString("0"))
+  assert.equal(
+    actual.unvested.toString(),
+    expected.unvested?.toString() || "0",
+    "Unvested"
+  );
+  assert.equal(
+    actual.withdrawable.toString(),
+    expected.withdrawable?.toString() || "0",
+    "Withdrawable"
   );
 }
 
