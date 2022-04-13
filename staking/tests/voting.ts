@@ -45,7 +45,6 @@ import { expectFail, expectFailApi } from "./utils/utils";
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
-console.log(portNumber);
 describe("voting", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
