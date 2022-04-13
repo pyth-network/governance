@@ -332,6 +332,21 @@ export class StakeConnection {
     );
   }
 
+  public withUpdateVoterWeight(
+    instructions: TransactionInstruction[],
+    stakeAccount: StakeAccount
+  ) {
+    instructions.push(
+      this.program.methods
+        .updateVoterWeight()
+        .accounts({ stakeAccountPositions: stakeAccount.address })
+        .instruction()
+    );
+    instructions.push(
+      this.program.methods.updateMaxVoterWeight().instruction()
+    );
+  }
+
   private async withCreateAccount(
     instructions: TransactionInstruction[],
     owner: PublicKey

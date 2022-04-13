@@ -1,5 +1,5 @@
 import { StakeConnection, BalanceSummary } from "../../app/StakeConnection";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
@@ -74,12 +74,9 @@ export async function assertVoterWeightEquals(
   assert.equal(res.length, 1);
   const actual = res[0].getVoterWeight(await stakeConnection.getTime());
   assert(actual.eq(expected));
-  await stakeConnection.program.methods
-    .updateVoterWeight()
-    .accounts({
-      stakeAccountPositions: res[0].address,
-    })
-    .rpc();
+  const tx = new Transaction();
+  stakeConnection.withUpdateVoterWeight(tx.instructions, res[0]);
+  await stakeConnection.program.provider.send(tx);
 
   let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
     [
