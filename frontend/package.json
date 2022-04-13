@@ -4,7 +4,7 @@
     "dev": "next dev",
     "build": "next build && next export && echo '/ /staking' > out/_redirects",
     "serve": "serve out",
-    "start": "next start",
+    "start": "next start"
   },
   "dependencies": {
     "@headlessui/react": "^1.5.0",
