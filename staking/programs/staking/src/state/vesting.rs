@@ -105,7 +105,11 @@ impl VestingSchedule {
         if current_time < start_date {
             initial_balance
         } else {
-            let time_passed = current_time.checked_sub(start_date).unwrap() as u64;
+            let time_passed: u64 = current_time
+                .checked_sub(start_date)
+                .unwrap()
+                .try_into()
+                .unwrap();
             let periods_passed = time_passed / period_duration; // Definitely round this one down
 
             if periods_passed >= num_periods {
