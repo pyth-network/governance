@@ -74,7 +74,7 @@ impl Position {
                 Some(unlocking_start) => {
                     if (self.activation_epoch <= current_epoch) && (current_epoch < unlocking_start)
                     {
-                        Ok(PositionState::LOCKED)
+                        Ok(PositionState::PREUNLOCKING)
                     } else if (unlocking_start <= current_epoch)
                         && (current_epoch < unlocking_start + unlocking_duration as u64)
                     {
@@ -100,6 +100,7 @@ pub enum PositionState {
     UNLOCKED,
     LOCKING,
     LOCKED,
+    PREUNLOCKING,
     UNLOCKING,
 }
 
@@ -135,9 +136,12 @@ pub mod tests {
             PositionState::LOCKING,
             p.get_current_position(7, 2).unwrap()
         );
-        assert_eq!(PositionState::LOCKED, p.get_current_position(8, 2).unwrap());
         assert_eq!(
-            PositionState::LOCKED,
+            PositionState::PREUNLOCKING,
+            p.get_current_position(8, 2).unwrap()
+        );
+        assert_eq!(
+            PositionState::PREUNLOCKING,
             p.get_current_position(11, 2).unwrap()
         );
         assert_eq!(

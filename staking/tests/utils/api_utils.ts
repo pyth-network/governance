@@ -16,6 +16,7 @@ export type OptionalBalanceSummary = {
     locking?: PythBalance | null;
     locked?: PythBalance | null;
     unlocking?: PythBalance | null;
+    preunlocking?: PythBalance | null;
   } | null;
 };
 
@@ -41,6 +42,11 @@ export async function assertBalanceMatches(
     actual.locked.locked.toString(),
     expected.locked?.locked?.toString() || "0",
     "Locked"
+  );
+  assert.equal(
+    actual.locked.preunlocking.toString(),
+    expected.locked?.preunlocking?.toString() || "0",
+    "Preunlocking"
   );
   assert.equal(
     actual.locked.unlocking.toString(),

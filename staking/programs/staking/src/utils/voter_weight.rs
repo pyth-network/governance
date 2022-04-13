@@ -17,7 +17,7 @@ pub fn compute_voter_weight(
     for i in 0..MAX_POSITIONS {
         if let Some(position) = stake_account_positions.positions[i] {
             match position.get_current_position(current_epoch, unlocking_duration)? {
-                PositionState::LOCKED => {
+                PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
                         // position.amount is trusted, so I don't think this can overflow,
                         // but still probably better to use checked math
