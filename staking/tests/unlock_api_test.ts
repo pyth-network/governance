@@ -1,5 +1,6 @@
 import {
   ANCHOR_CONFIG_PATH,
+  CustomAbortController,
   getPortNumber,
   makeDefaultConfig,
   readAnchorConfig,
@@ -20,7 +21,7 @@ describe("unlock_api", async () => {
   let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   let stakeAccountAddress;
 

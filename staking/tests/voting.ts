@@ -18,6 +18,7 @@ import {
   getPortNumber,
   AnchorConfig,
   makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 import { GlobalConfig } from "../app/StakeConnection";
@@ -50,7 +51,7 @@ describe("voting", async () => {
   let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   let governanceProgram: PublicKey;
   let realm: PublicKey;

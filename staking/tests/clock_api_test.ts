@@ -1,5 +1,6 @@
 import {
   ANCHOR_CONFIG_PATH,
+  CustomAbortController,
   getPortNumber,
   makeDefaultConfig,
   readAnchorConfig,
@@ -18,7 +19,7 @@ describe("clock_api", async () => {
   const pythMintAuthority = new Keypair();
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   const CLOCK_TOLERANCE_SECONDS = 10;
 

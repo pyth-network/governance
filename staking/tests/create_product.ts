@@ -37,8 +37,6 @@ describe("create_product", async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     let globalConfig = makeDefaultConfig(pythMintAccount.publicKey);
 
-    globalConfig.governanceAuthority = fakeGovernance.publicKey;
-    globalConfig.pythGovernanceRealm = new PublicKey(0);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -61,16 +59,6 @@ describe("create_product", async () => {
       ],
       program.programId
     );
-
-      await program.methods
-        .createProduct(null)
-        .accounts({
-          productAccount,
-          governanceSigner: fakeGovernance.publicKey,
-        })
-        .signers([fakeGovernance])
-        .rpc({ skipPreflight: true });
-
 
     const productAccountData = await program.account.productMetadata.fetch(
       productAccount
