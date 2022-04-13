@@ -2,9 +2,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export",
+    "build": "next build",
     "serve": "serve out",
-    "start": "next start"
+    "start": "next start",
+    "export": "next export"
   },
   "dependencies": {
     "@headlessui/react": "^1.5.0",
@@ -24,7 +25,7 @@
     "react-dom": "^17.0.2",
     "react-hot-toast": "^2.2.0",
     "serve": "13.0.2",
-    "pyth-staking-api":"^1.1.2"
+    "pyth-staking-api": "^1.1.2"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",
