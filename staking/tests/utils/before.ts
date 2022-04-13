@@ -112,8 +112,16 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
     { signal },
     (error, stdout, stderr) => {
+      if (error.name.includes("AbortError")) {
+        console.log(
+          "Test complete. Validator terminated. Ignore websocket errors from port " +
+            (portNumber + 1)
+        );
+        return;
+      }
       if (error) {
         console.error(`exec error: ${error}`);
+        return;
       }
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
