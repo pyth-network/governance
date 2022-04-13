@@ -264,6 +264,17 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
+    // Make sure than closing a position twice fails
+    await expectFail(
+      await program.methods
+        .closePosition(0, PythBalance.fromString("140").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+        }),
+      "Position already unlocking",
+      errMap
+    );
+
     await assertBalanceMatches(
       stakeConnection,
       owner,
