@@ -8,6 +8,7 @@ import {
   SystemProgram,
   BPF_LOADER_PROGRAM_ID,
   TransactionInstruction,
+  LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
@@ -26,6 +27,7 @@ import {
   PROGRAM_VERSION_V2,
   VoteThresholdPercentage,
   withCreateGovernance,
+  withCreateNativeTreasury,
   withCreateRealm,
 } from "@solana/spl-governance";
 import shell from "shelljs";
@@ -312,7 +314,17 @@ export async function createGovernance(
     realmAuthority.publicKey,
     null
   );
+  const mintGov = await withCreateNativeTreasury(
+    tx.instructions,
+    govProgramId,
+    governance,
+    provider.wallet.publicKey
+  );
+
   await provider.send(tx, [realmAuthority], { skipPreflight: true });
+
+  // Give governance 100 SOL to play with
+  await provider.connection.requestAirdrop(mintGov, LAMPORTS_PER_SOL * 100);
 
   return { realm, governance };
 }
@@ -397,7 +409,7 @@ export async function standardSetup(
     const { realm, governance } = await createGovernance(
       program.provider,
       config,
-      globalConfig.epochDuration.toNumber(),
+      Math.max(globalConfig.epochDuration.toNumber(), 60), // at least one minute
       pythMintAccount.publicKey
     );
     globalConfig.governanceAuthority = governance;
