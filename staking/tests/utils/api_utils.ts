@@ -66,8 +66,8 @@ export async function assertBalanceMatches(
 }
 
 export type VoterWeights = {
-  voterWeight: PythBalance | undefined;
-  maxVoterWeight: PythBalance | undefined;
+  voterWeight: PythBalance;
+  maxVoterWeight: PythBalance;
 };
 
 export async function assertVoterWeightEquals(
