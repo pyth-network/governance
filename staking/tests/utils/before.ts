@@ -405,12 +405,14 @@ export async function standardSetup(
   }
 
   const temporaryConfig = { ...globalConfig };
+  // User becomes a temporary dictator during setup
   temporaryConfig.governanceAuthority = user;
 
   await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
   await initGovernanceProduct(program);
 
+  // Give the power back to the people
   await program.methods
     .updateGovernanceAuthority(globalConfig.governanceAuthority)
     .accounts({ governanceSigner: user })
