@@ -52,6 +52,15 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn update_governance_authority(
+        ctx: Context<UpdateGovernanceAuthority>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.governance_authority = new_authority;
+        Ok(())
+    }
+
     /// Trustless instruction that creates a stake account for a user
     /// The main account i.e. the position accounts needs to be initialized outside of the program
     /// otherwise we run into stack limits

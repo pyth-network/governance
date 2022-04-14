@@ -35,6 +35,17 @@ pub struct InitConfig<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(new_authority : Pubkey)]
+pub struct UpdateGovernanceAuthority<'info> {
+    // Native payer
+    pub payer:             Signer<'info>,
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info> {
     // Native payer:
@@ -214,7 +225,8 @@ pub struct UpdateMaxVoterWeight<'info> {
 pub struct CreateProduct<'info> {
     #[account(mut)]
     pub payer:             Signer<'info>,
-    pub governance_signer: Signer<'info>, // Add check later
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:            Account<'info, global_config::GlobalConfig>,
     #[account(
