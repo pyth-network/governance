@@ -9,10 +9,10 @@
     "skipLibCheck": true,
   },
   "include": [
-    "./app/*.ts"
+    "./app/*.ts",
+    "./tests"
   ],
   "exclude": [
-    "./tests",
     "./docker",
     "./migrations"
   ]

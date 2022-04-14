@@ -10,9 +10,9 @@
   },
   "include": [
     "./app/*.ts",
-    "./tests"
   ],
   "exclude": [
+    "./tests",
     "./docker",
     "./migrations"
   ]
