@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
+import { expectFail, getProductAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -23,6 +23,7 @@ import {
   standardSetup,
   getPortNumber,
   makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 
@@ -50,8 +51,11 @@ describe("staking", async () => {
   let userAta: PublicKey;
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-  let controller: AbortController;
+  let controller: CustomAbortController;
   let stakeConnection: StakeConnection;
+
+  let votingProductMetadataAccount: PublicKey;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -71,6 +75,12 @@ describe("staking", async () => {
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
       program.provider.wallet.publicKey
+    );
+
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getProductAccount(
+      votingProduct,
+      program.programId
     );
 
     errMap = parseIdlErrors(program.idl);
@@ -210,8 +220,13 @@ describe("staking", async () => {
   it("creates a position that's too big", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("102").toBN())
+        .createPosition(
+          votingProduct,
+          null,
+          PythBalance.fromString("102").toBN()
+        )
         .accounts({
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -221,8 +236,9 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     await program.methods
-      .createPosition(null, null, new BN(1))
+      .createPosition(votingProduct, null, new BN(1))
       .accounts({
+        productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -244,7 +260,7 @@ describe("staking", async () => {
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        product: null,
+        product: votingProduct,
         publisher: null,
       })
     );
@@ -256,8 +272,9 @@ describe("staking", async () => {
   it("creates position with 0 principal", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("0").toBN())
+        .createPosition(votingProduct, null, PythBalance.fromString("0").toBN())
         .accounts({
+          productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
@@ -274,6 +291,10 @@ describe("staking", async () => {
           PythBalance.fromString("10").toBN()
         )
         .accounts({
+          productAccount: await getProductAccount(
+            zeroPubkey,
+            program.programId
+          ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Not implemented",

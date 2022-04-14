@@ -144,7 +144,7 @@ pub struct CreatePosition<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, product : Option<Pubkey>)]
+#[instruction(index : u8, amount : u64, product : Option<Pubkey>)] // Product is in the instruction arguments because it's needed in the anchor PDA checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -214,8 +214,7 @@ pub struct UpdateMaxVoterWeight<'info> {
 pub struct CreateProduct<'info> {
     #[account(mut)]
     pub payer:             Signer<'info>,
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
+    pub governance_signer: Signer<'info>, // Add check later
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:            Account<'info, global_config::GlobalConfig>,
     #[account(

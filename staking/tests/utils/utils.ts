@@ -8,7 +8,22 @@ import {
 import * as anchor from "@project-serum/anchor";
 import { ProgramError } from "@project-serum/anchor";
 import assert from "assert";
+import * as wasm from "../../wasm/node/staking";
 
+export async function getProductAccount(
+  seed: PublicKey | undefined,
+  programId: PublicKey
+): Promise<PublicKey> {
+  return (
+    await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
+        seed ? seed.toBuffer() : new PublicKey(0).toBuffer(),
+      ],
+      programId
+    )
+  )[0];
+}
 /**
  * Creates new spl-token at a random keypair
  */

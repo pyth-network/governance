@@ -46,15 +46,19 @@ export class StakeConnection {
   program: Program<Staking>;
   config: GlobalConfig;
   private configAddress: PublicKey;
+  votingProductMetadataAccount: PublicKey;
+  votingProduct = null;
 
   private constructor(
     program: Program<Staking>,
     config: GlobalConfig,
-    configAddress: PublicKey
+    configAddress: PublicKey,
+    votingProductMetadataAccount: PublicKey
   ) {
     this.program = program;
     this.config = config;
     this.configAddress = configAddress;
+    this.votingProductMetadataAccount = votingProductMetadataAccount;
   }
 
   // creates a program connection and loads the staking config
@@ -85,7 +89,22 @@ export class StakeConnection {
     )[0];
 
     const config = await program.account.globalConfig.fetch(configAddress);
-    return new StakeConnection(program, config, configAddress);
+
+    const votingProductMetadataAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
+          new PublicKey(0).toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
+    return new StakeConnection(
+      program,
+      config,
+      configAddress,
+      votingProductMetadataAccount
+    );
   }
 
   //gets a users stake accounts
@@ -292,8 +311,9 @@ export class StakeConnection {
     const instructions = await Promise.all(
       toClose.map((el) =>
         this.program.methods
-          .closePosition(el.index, el.amount)
+          .closePosition(el.index, el.amount, this.votingProduct)
           .accounts({
+            productAccount: this.votingProductMetadataAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -353,8 +373,9 @@ export class StakeConnection {
     amount: BN
   ) {
     return await this.program.methods
-      .closePosition(index, amount)
+      .closePosition(index, amount, this.votingProduct)
       .accounts({
+        productAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .rpc();
@@ -457,10 +478,11 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .createPosition(null, null, amount.toBN())
+      .createPosition(this.votingProduct, null, amount.toBN())
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
+        productAccount: this.votingProductMetadataAccount,
       })
       .signers(signers)
       .rpc({ skipPreflight: true });
