@@ -15,6 +15,7 @@ use state::positions::{
     MAX_POSITIONS,
 };
 use state::vesting::VestingSchedule;
+use std::convert::TryInto;
 use utils::clock::get_current_epoch;
 use utils::voter_weight::compute_voter_weight;
 
@@ -94,7 +95,6 @@ pub mod staking {
             return Err(error!(ErrorCode::CreatePositionWithZero));
         }
 
-
         // TODO: Should we check that product and publisher are legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake product
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
@@ -152,7 +152,7 @@ pub mod staking {
         amount: u64,
         product: Option<Pubkey>,
     ) -> Result<()> {
-        let i = index as usize;
+        let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
