@@ -332,18 +332,21 @@ export class StakeConnection {
     );
   }
 
-  public withUpdateVoterWeight(
+  public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
     stakeAccount: StakeAccount
   ) {
     instructions.push(
-      this.program.methods
+      await this.program.methods
         .updateVoterWeight()
         .accounts({ stakeAccountPositions: stakeAccount.address })
         .instruction()
     );
     instructions.push(
-      this.program.methods.updateMaxVoterWeight().instruction()
+      await this.program.methods
+        .updateMaxVoterWeight()
+        .accounts({ governanceAccount: this.votingProductMetadataAccount })
+        .instruction()
     );
   }
 

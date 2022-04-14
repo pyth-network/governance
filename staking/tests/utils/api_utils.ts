@@ -65,18 +65,23 @@ export async function assertBalanceMatches(
   );
 }
 
+export type VoterWeights = {
+  voterWeight: PythBalance | undefined;
+  maxVoterWeight: PythBalance | undefined;
+};
+
 export async function assertVoterWeightEquals(
   stakeConnection: StakeConnection,
   owner: PublicKey,
-  expected: PythBalance
+  expected: VoterWeights
 ) {
   const res = await stakeConnection.getStakeAccounts(owner);
   assert.equal(res.length, 1);
   const actual = res[0].getVoterWeight(await stakeConnection.getTime());
-  assert(actual.eq(expected));
+  assert(actual.eq(expected.voterWeight));
   const tx = new Transaction();
   stakeConnection.withUpdateVoterWeight(tx.instructions, res[0]);
-  await stakeConnection.program.provider.send(tx);
+  await stakeConnection.program.provider.send(tx, []);
 
   let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
     [
@@ -88,7 +93,21 @@ export async function assertVoterWeightEquals(
 
   const voterRecord =
     await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
-  assert(voterRecord.voterWeight.eq(expected.toBN()));
+  assert(voterRecord.voterWeight.eq(expected.voterWeight.toBN()));
+
+  let [maxVoterWeightAccount, maxVoterWeightBump] =
+    await PublicKey.findProgramAddress(
+      [anchor.utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],
+      stakeConnection.program.programId
+    );
+
+  const maxVoterWeightRecord =
+    await stakeConnection.program.account.maxVoterWeightRecord.fetch(
+      maxVoterWeightAccount
+    );
+  assert(
+    maxVoterWeightRecord.maxVoterWeight.eq(expected.maxVoterWeight.toBN())
+  );
 }
 
 export async function loadAndUnlock(

@@ -4,18 +4,14 @@ import {
   getPortNumber,
   makeDefaultConfig,
   readAnchorConfig,
+  requestPythAirdrop,
   standardSetup,
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { StakeConnection, PythBalance } from "../app";
-import assert from "assert";
-import { BN } from "@project-serum/anchor";
-import {
-  assertBalanceMatches,
-  assertVoterWeightEquals,
-  loadAndUnlock,
-} from "./utils/api_utils";
+import { BN, Wallet } from "@project-serum/anchor";
+import { assertVoterWeightEquals, loadAndUnlock } from "./utils/api_utils";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -50,39 +46,34 @@ describe("voter_weight_test", async () => {
       undefined,
       PythBalance.fromString("100")
     );
-
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("0")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("0"),
+      maxVoterWeight: PythBalance.fromString("0"),
+    });
 
     // undo 50 of the lock
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("0")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("0"),
+      maxVoterWeight: PythBalance.fromString("0"),
+    });
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("50")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("50"),
+      maxVoterWeight: PythBalance.fromString("50"),
+    });
   });
 
   it("deposit more while other position unlocking", async () => {
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("50")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("50"),
+      maxVoterWeight: PythBalance.fromString("50"),
+    });
 
     // end the epoch so that the tokens start unlocking
     await stakeConnection.program.methods
@@ -90,42 +81,80 @@ describe("voter_weight_test", async () => {
       .rpc();
 
     const res = await stakeConnection.getStakeAccounts(owner);
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("0")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("0"),
+      maxVoterWeight: PythBalance.fromString("0"),
+    });
 
     await stakeConnection.depositAndLockTokens(
       res[0],
       PythBalance.fromString("100")
     );
 
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("0")
-    );
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("0"),
+      maxVoterWeight: PythBalance.fromString("0"),
+    });
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("100")
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("100"),
+      maxVoterWeight: PythBalance.fromString("100"),
+    });
+
+    await stakeConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .rpc();
+
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("100"),
+      maxVoterWeight: PythBalance.fromString("100"),
+    });
+  });
+
+  it("new user, max weight adds up", async () => {
+    const bob = new Keypair();
+
+    const bobConnection = await StakeConnection.createStakeConnection(
+      stakeConnection.program.provider.connection,
+      new Wallet(bob),
+      stakeConnection.program.programId
+    );
+
+    await bobConnection.program.provider.connection.requestAirdrop(
+      bob.publicKey,
+      1_000_000_000_000
+    );
+
+    await requestPythAirdrop(
+      bob.publicKey,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      PythBalance.fromString("1000"),
+      stakeConnection.program.provider.connection
+    );
+
+    await bobConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("500")
     );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(3)))
       .rpc();
 
-    await assertVoterWeightEquals(
-      stakeConnection,
-      owner,
-      PythBalance.fromString("100")
-    );
+    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
+      voterWeight: PythBalance.fromString("500"),
+      maxVoterWeight: PythBalance.fromString("600"),
+    });
+
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("100"),
+      maxVoterWeight: PythBalance.fromString("600"),
+    });
   });
 
   after(async () => {
