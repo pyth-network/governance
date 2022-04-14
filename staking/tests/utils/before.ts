@@ -409,7 +409,7 @@ export async function standardSetup(
     const { realm, governance } = await createGovernance(
       program.provider,
       config,
-      globalConfig.epochDuration.toNumber(),
+      Math.max(globalConfig.epochDuration.toNumber(), 60), // at least one minute
       pythMintAccount.publicKey
     );
     globalConfig.governanceAuthority = governance;
