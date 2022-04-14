@@ -95,7 +95,6 @@ pub mod staking {
             return Err(error!(ErrorCode::CreatePositionWithZero));
         }
 
-
         // TODO: Should we check that product and publisher are legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake product
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
@@ -147,7 +146,12 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn close_position(ctx: Context<ClosePosition>, index: u8, amount: u64, product : Option<Pubkey>) -> Result<()> {
+    pub fn close_position(
+        ctx: Context<ClosePosition>,
+        index: u8,
+        amount: u64,
+        product: Option<Pubkey>,
+    ) -> Result<()> {
         let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let product_account = &mut ctx.accounts.product_account;
