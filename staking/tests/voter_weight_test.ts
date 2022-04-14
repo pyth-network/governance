@@ -155,6 +155,38 @@ describe("voter_weight_test", async () => {
       voterWeight: PythBalance.fromString("100"),
       maxVoterWeight: PythBalance.fromString("600"),
     });
+
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
+
+    const res = await stakeConnection.getStakeAccounts(bob.publicKey);
+    await bobConnection.depositAndLockTokens(
+      res[0],
+      PythBalance.fromString("50")
+    );
+
+    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
+      voterWeight: PythBalance.fromString("500"),
+      maxVoterWeight: PythBalance.fromString("600"),
+    });
+
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("100"),
+      maxVoterWeight: PythBalance.fromString("600"),
+    });
+
+    await stakeConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .rpc();
+
+    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
+      voterWeight: PythBalance.fromString("550"),
+      maxVoterWeight: PythBalance.fromString("550"),
+    });
+
+    await assertVoterWeightEquals(stakeConnection, owner, {
+      voterWeight: PythBalance.fromString("0"),
+      maxVoterWeight: PythBalance.fromString("550"),
+    });
   });
 
   after(async () => {
