@@ -224,8 +224,8 @@ describe("position_lifecycle", async () => {
     );
   });
 
-  it("two epoch pass, still locked", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
+  it("one epoch pass, still locked", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
