@@ -8,7 +8,7 @@ import type { NextPage } from 'next'
 import { ChangeEvent, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { STAKING_PROGRAM } from '@components/constants'
+import { GOVERNANCE_PROGRAM, STAKING_PROGRAM } from '@components/constants'
 import { PythBalance, StakeAccount, StakeConnection } from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
@@ -66,7 +66,8 @@ const Staking: NextPage = () => {
         const sc = await StakeConnection.createStakeConnection(
           connection,
           anchorWallet as Wallet,
-          STAKING_PROGRAM
+          STAKING_PROGRAM,
+          GOVERNANCE_PROGRAM
         )
         setStakeConnection(sc)
       } catch (e) {
