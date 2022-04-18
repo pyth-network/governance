@@ -59,6 +59,7 @@ export interface AnchorConfig {
   validator: {
     port: number;
     ledger_dir: string;
+    clone: string[];
   };
 }
 
@@ -120,11 +121,18 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
       JSON.parse(fs.readFileSync(config.provider.wallet).toString())
     )
   );
+  let cloneStr = "";
+  if (config.validator.clone) {
+    cloneStr += "--url mainnet-beta ";
+    for (const pubkey of config.validator.clone) {
+      cloneStr += " --clone " + pubkey + " ";
+    }
+  }
 
   exec(
     `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
       user.publicKey
-    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
+    } --reset ${cloneStr} --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
       config.programs.localnet.governance
     } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
     { signal },
