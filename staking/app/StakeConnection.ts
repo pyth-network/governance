@@ -511,6 +511,22 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(owner)
+      );
+
+    if (!voterAccountInfo) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
+    }
+
     ixs.push(
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
