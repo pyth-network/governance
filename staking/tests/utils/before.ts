@@ -441,8 +441,7 @@ export async function standardSetup(
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     program.provider.wallet as Wallet,
-    new PublicKey(config.programs.localnet.staking),
-    new PublicKey(config.programs.localnet.governance)
+    new PublicKey(config.programs.localnet.staking)
   );
 
   return { controller, stakeConnection };
