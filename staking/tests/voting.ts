@@ -25,7 +25,6 @@ import { GlobalConfig } from "../app/StakeConnection";
 import {
   getProposal,
   getProposalsByGovernance,
-  getTokenOwnerRecordAddress,
   PROGRAM_VERSION_V2,
   Vote,
   VoteChoice,

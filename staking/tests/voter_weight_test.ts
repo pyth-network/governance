@@ -26,10 +26,9 @@ describe("voter_weight_test", async () => {
   let stakeAccountAddress;
 
   let owner: PublicKey;
-  let config;
 
   before(async () => {
-    config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
@@ -122,8 +121,7 @@ describe("voter_weight_test", async () => {
     const bobConnection = await StakeConnection.createStakeConnection(
       stakeConnection.program.provider.connection,
       new Wallet(bob),
-      stakeConnection.program.programId,
-      new PublicKey(config.programs.localnet.governance)
+      stakeConnection.program.programId
     );
 
     await bobConnection.program.provider.connection.requestAirdrop(
