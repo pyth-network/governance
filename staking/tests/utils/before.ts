@@ -385,8 +385,7 @@ export async function standardSetup(
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
   globalConfig: GlobalConfig,
-  amount?: PythBalance,
-  governanceAddress?: PublicKey
+  amount?: PythBalance
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
