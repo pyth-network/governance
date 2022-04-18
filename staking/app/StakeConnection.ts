@@ -35,10 +35,6 @@ import {
 } from "@solana/spl-governance";
 let wasm = wasm2;
 
-const GOVERNANCE_PROGRAM = new PublicKey(
-  "pythGovernance11111111111111111111111111111"
-);
-
 interface ClosingItem {
   amount: BN;
   index: number;
@@ -56,17 +52,20 @@ export class StakeConnection {
   private configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
   votingProduct = null;
+  governanceAddress: PublicKey;
 
   private constructor(
     program: Program<Staking>,
     config: GlobalConfig,
     configAddress: PublicKey,
-    votingProductMetadataAccount: PublicKey
+    votingProductMetadataAccount: PublicKey,
+    governanceAddress: PublicKey
   ) {
     this.program = program;
     this.config = config;
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
+    this.governanceAddress = governanceAddress;
   }
 
   // creates a program connection and loads the staking config
@@ -74,13 +73,14 @@ export class StakeConnection {
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
-    address: PublicKey
+    stakingAddress: PublicKey,
+    governanceAddress: PublicKey
   ): Promise<StakeConnection> {
     const provider = new Provider(connection, wallet, {});
-    const idl = (await Program.fetchIdl(address, provider))!;
+    const idl = (await Program.fetchIdl(stakingAddress, provider))!;
     const program = new Program(
       idl,
-      address,
+      stakingAddress,
       provider
     ) as unknown as Program<Staking>;
     // Sometimes in the browser, the import returns a promise.
@@ -111,7 +111,8 @@ export class StakeConnection {
       program,
       config,
       configAddress,
-      votingProductMetadataAccount
+      votingProductMetadataAccount,
+      governanceAddress
     );
   }
 
@@ -466,7 +467,7 @@ export class StakeConnection {
     if (!voterAccountInfo) {
       await withCreateTokenOwnerRecord(
         ixs,
-        GOVERNANCE_PROGRAM,
+        this.governanceAddress,
         this.config.pythGovernanceRealm,
         owner,
         this.config.pythTokenMint,
@@ -485,7 +486,7 @@ export class StakeConnection {
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
     return getTokenOwnerRecordAddress(
-      GOVERNANCE_PROGRAM,
+      this.governanceAddress,
       this.config.pythGovernanceRealm,
       this.config.pythTokenMint,
       user

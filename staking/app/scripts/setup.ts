@@ -102,13 +102,15 @@ async function main() {
   const aliceStakeConnection = await StakeConnection.createStakeConnection(
     stakeConnection.program.provider.connection,
     new anchor.Wallet(alice),
-    stakeConnection.program.programId
+    stakeConnection.program.programId,
+    new PublicKey(config.programs.localnet.governance)
   );
 
   const bobStakeConnection = await StakeConnection.createStakeConnection(
     stakeConnection.program.provider.connection,
     new anchor.Wallet(bob),
-    stakeConnection.program.programId
+    stakeConnection.program.programId,
+    new PublicKey(config.programs.localnet.governance)
   );
 
   for (let connection of [aliceStakeConnection, bobStakeConnection]) {

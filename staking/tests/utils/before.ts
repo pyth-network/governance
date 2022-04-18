@@ -382,7 +382,8 @@ export async function standardSetup(
   pythMintAccount: Keypair,
   pythMintAuthority: Keypair,
   globalConfig: GlobalConfig,
-  amount?: PythBalance
+  amount?: PythBalance,
+  governanceAddress?: PublicKey
 ) {
   const { controller, program } = await startValidator(portNumber, config);
 
@@ -438,7 +439,8 @@ export async function standardSetup(
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     program.provider.wallet as Wallet,
-    new PublicKey(config.programs.localnet.staking)
+    new PublicKey(config.programs.localnet.staking),
+    new PublicKey(config.programs.localnet.governance)
   );
 
   return { controller, stakeConnection };
