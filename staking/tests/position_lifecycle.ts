@@ -224,8 +224,8 @@ describe("position_lifecycle", async () => {
     );
   });
 
-  it("two epoch pass, still locked", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
+  it("one epoch pass, still locked", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -332,6 +332,56 @@ describe("position_lifecycle", async () => {
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { withdrawable: PythBalance.fromString("200") },
+      await stakeConnection.getTime()
+    );
+  });
+
+  it("another iteration", async () => {
+    await program.methods
+      .createPosition(votingProduct, null, PythBalance.fromString("100").toBN())
+      .accounts({
+        productAccount: votingProductMetadataAccount,
+        payer: owner,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      {
+        locked: { locking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
+      },
+      await stakeConnection.getTime()
+    );
+
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      {
+        locked: { locked: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
+      },
+      await stakeConnection.getTime()
+    );
+
+    await program.methods
+      .closePosition(0, PythBalance.fromString("100").toBN(), votingProduct)
+      .accounts({
+        productAccount: votingProductMetadataAccount,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .rpc();
+
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
