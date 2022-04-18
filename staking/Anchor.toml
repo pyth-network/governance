@@ -5,6 +5,9 @@ seeds = true
 staking = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 governance = "pythGovernance11111111111111111111111111111"
 
+[programs.devnet]
+governance = "GTesTBiEWE32WHXXE2S4XbZvA5CrEc4xs6ZgRe895dP"
+
 [registry]
 url = "https://anchor.projectserum.com"
 

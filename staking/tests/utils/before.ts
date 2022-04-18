@@ -55,6 +55,9 @@ export interface AnchorConfig {
       staking: string;
       governance: string;
     };
+    devnet: {
+      governance: string;
+    };
   };
   validator: {
     port: number;
