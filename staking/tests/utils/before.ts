@@ -416,9 +416,19 @@ export async function standardSetup(
     globalConfig.pythGovernanceRealm = realm;
   }
 
-  await initConfig(program, pythMintAccount.publicKey, globalConfig);
+  const temporaryConfig = { ...globalConfig };
+  // User becomes a temporary dictator during setup
+  temporaryConfig.governanceAuthority = user;
+
+  await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
   await initGovernanceProduct(program);
+
+  // Give the power back to the people
+  await program.methods
+    .updateGovernanceAuthority(globalConfig.governanceAuthority)
+    .accounts({ governanceSigner: user })
+    .rpc();
 
   const connection = new Connection(
     `http://localhost:${portNumber}`,
