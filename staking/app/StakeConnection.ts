@@ -33,6 +33,11 @@ import {
   getTokenOwnerRecordAddress,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
+import {
+  DEVNET_ENDPOINT,
+  DEVNET_GOVERNANCE_ADDRESS,
+  LOCALNET_GOVERNANCE_ADDRESS,
+} from "./constants";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -58,14 +63,16 @@ export class StakeConnection {
     program: Program<Staking>,
     config: GlobalConfig,
     configAddress: PublicKey,
-    votingProductMetadataAccount: PublicKey,
-    governanceAddress: PublicKey
+    votingProductMetadataAccount: PublicKey
   ) {
     this.program = program;
     this.config = config;
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
-    this.governanceAddress = governanceAddress;
+    this.governanceAddress =
+      program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
+        ? DEVNET_GOVERNANCE_ADDRESS
+        : LOCALNET_GOVERNANCE_ADDRESS;
   }
 
   // creates a program connection and loads the staking config
@@ -73,14 +80,13 @@ export class StakeConnection {
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
-    stakingAddress: PublicKey,
-    governanceAddress: PublicKey
+    stakingProgramAddress: PublicKey
   ): Promise<StakeConnection> {
     const provider = new Provider(connection, wallet, {});
-    const idl = (await Program.fetchIdl(stakingAddress, provider))!;
+    const idl = (await Program.fetchIdl(stakingProgramAddress, provider))!;
     const program = new Program(
       idl,
-      stakingAddress,
+      stakingProgramAddress,
       provider
     ) as unknown as Program<Staking>;
     // Sometimes in the browser, the import returns a promise.
@@ -111,8 +117,7 @@ export class StakeConnection {
       program,
       config,
       configAddress,
-      votingProductMetadataAccount,
-      governanceAddress
+      votingProductMetadataAccount
     );
   }
 
