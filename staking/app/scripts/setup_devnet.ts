@@ -149,8 +149,7 @@ async function main() {
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     program.provider.wallet as Wallet,
-    programAddress.publicKey,
-    new PublicKey(config.programs.devnet.governance)
+    programAddress.publicKey
   );
 
   for (let owner of [alice.publicKey, bob.publicKey]) {
@@ -178,15 +177,13 @@ async function main() {
   const aliceStakeConnection = await StakeConnection.createStakeConnection(
     stakeConnection.program.provider.connection,
     new Wallet(alice),
-    stakeConnection.program.programId,
-    new PublicKey(config.programs.devnet.governance)
+    stakeConnection.program.programId
   );
 
   const bobStakeConnection = await StakeConnection.createStakeConnection(
     stakeConnection.program.provider.connection,
     new Wallet(bob),
-    stakeConnection.program.programId,
-    new PublicKey(config.programs.devnet.governance)
+    stakeConnection.program.programId
   );
 
   for (let connection of [aliceStakeConnection, bobStakeConnection]) {
