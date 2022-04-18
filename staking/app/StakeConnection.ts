@@ -29,6 +29,15 @@ import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
+import {
+  getTokenOwnerRecordAddress,
+  withCreateTokenOwnerRecord,
+} from "@solana/spl-governance";
+import {
+  DEVNET_ENDPOINT,
+  DEVNET_GOVERNANCE_ADDRESS,
+  LOCALNET_GOVERNANCE_ADDRESS,
+} from "./constants";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -48,6 +57,7 @@ export class StakeConnection {
   private configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
   votingProduct = null;
+  governanceAddress: PublicKey;
 
   private constructor(
     program: Program<Staking>,
@@ -59,6 +69,10 @@ export class StakeConnection {
     this.config = config;
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
+    this.governanceAddress =
+      program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
+        ? DEVNET_GOVERNANCE_ADDRESS
+        : LOCALNET_GOVERNANCE_ADDRESS;
   }
 
   // creates a program connection and loads the staking config
@@ -66,13 +80,13 @@ export class StakeConnection {
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
-    address: PublicKey
+    stakingProgramAddress: PublicKey
   ): Promise<StakeConnection> {
     const provider = new Provider(connection, wallet, {});
-    const idl = (await Program.fetchIdl(address, provider))!;
+    const idl = (await Program.fetchIdl(stakingProgramAddress, provider))!;
     const program = new Program(
       idl,
-      address,
+      stakingProgramAddress,
       provider
     ) as unknown as Program<Staking>;
     // Sometimes in the browser, the import returns a promise.
@@ -439,12 +453,57 @@ export class StakeConnection {
     let stakeAccountAddress: PublicKey;
     const owner = this.program.provider.wallet.publicKey;
 
-    const ata = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      this.config.pythTokenMint,
-      owner
+    const ixs: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+
+    if (!stakeAccount) {
+      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
+      signers.push(stakeAccountKeypair);
+      stakeAccountAddress = stakeAccountKeypair.publicKey;
+    } else {
+      stakeAccountAddress = stakeAccount.address;
+    }
+
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(owner)
+      );
+
+    if (!voterAccountInfo) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
+    }
+
+    ixs.push(
+      await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
+
+    const tx = new Transaction();
+    tx.add(...ixs);
+    await this.program.provider.send(tx, signers);
+  }
+
+  public async getTokenOwnerRecordAddress(user: PublicKey) {
+    return getTokenOwnerRecordAddress(
+      this.governanceAddress,
+      this.config.pythGovernanceRealm,
+      this.config.pythTokenMint,
+      user
+    );
+  }
+
+  public async depositAndLockTokens(
+    stakeAccount: StakeAccount | undefined,
+    amount: PythBalance
+  ) {
+    let stakeAccountAddress: PublicKey;
+    const owner = this.program.provider.wallet.publicKey;
 
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -457,38 +516,20 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    ixs.push(
-      await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
-    );
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(owner)
+      );
 
-    const tx = new Transaction();
-    tx.add(...ixs);
-    await this.program.provider.send(tx, signers);
-  }
-
-  public async depositAndLockTokens(
-    stakeAccount: StakeAccount | undefined,
-    amount: PythBalance
-  ) {
-    let stakeAccountAddress: PublicKey;
-    const owner = this.program.provider.wallet.publicKey;
-
-    const ata = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      this.config.pythTokenMint,
-      owner
-    );
-
-    const ixs: TransactionInstruction[] = [];
-    const signers: Signer[] = [];
-
-    if (!stakeAccount) {
-      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
-      signers.push(stakeAccountKeypair);
-      stakeAccountAddress = stakeAccountKeypair.publicKey;
-    } else {
-      stakeAccountAddress = stakeAccount.address;
+    if (!voterAccountInfo) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
     }
 
     ixs.push(

@@ -107,18 +107,8 @@ describe("voting", async () => {
         stakeConnection.program.programId
       )
     )[0];
-  });
-  it("creates token owner record", async () => {
-    const tx = new Transaction();
-    tokenOwnerRecord = await withCreateTokenOwnerRecord(
-      tx.instructions,
-      governanceProgram,
-      realm,
-      owner,
-      pythMintAccount.publicKey,
-      owner
-    );
-    await provider.send(tx);
+
+    tokenOwnerRecord = await stakeConnection.getTokenOwnerRecordAddress(owner);
   });
 
   async function withDefaultCreateProposal(
