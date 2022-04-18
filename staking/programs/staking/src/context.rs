@@ -37,8 +37,6 @@ pub struct InitConfig<'info> {
 #[derive(Accounts)]
 #[instruction(new_authority : Pubkey)]
 pub struct UpdateGovernanceAuthority<'info> {
-    // Native payer
-    pub payer:             Signer<'info>,
     #[account(address = config.governance_authority)]
     pub governance_signer: Signer<'info>,
     #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
