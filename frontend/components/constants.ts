@@ -11,5 +11,3 @@ export const STAKING_PROGRAM =
 
 export const PYTH_MINT_ACCOUNT_PUBKEY =
   process.env.ENDPOINT === 'devnet' ? DEVNET_PYTH_MINT : LOCALNET_PYTH_MINT
-
-export const GOVERNANCE_PROGRAM = new PublicKey("pythGovernance11111111111111111111111111111");
