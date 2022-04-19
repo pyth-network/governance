@@ -159,7 +159,7 @@ impl WasmPositionData {
     }
 
     #[wasm_bindgen(js_name=getWithdrawable)]
-    pub fn get_widthdrawable(
+    pub fn get_withdrawable(
         &self,
         total_balance: u64,
         unvested_balance: u64,
