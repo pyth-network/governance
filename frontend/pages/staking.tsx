@@ -192,11 +192,13 @@ const Staking: NextPage = () => {
     setIsBalanceLoading(true)
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
-      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
-      if (stakeAccounts.length > 0) {
-        setStakeAccount(stakeAccounts[0])
-        const { withdrawable, locked, unvested } =
-          stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
+      // TODO: get all stake accounts and enable user to choose one
+      const sa = await stakeConnection.getMainAccount(publicKey)
+      if (sa) {
+        setStakeAccount(sa)
+        const { withdrawable, locked, unvested } = sa.getBalanceSummary(
+          await stakeConnection.getTime()
+        )
         setLockingPythBalance(locked.locking)
         setLockedPythBalance(locked.locked)
         setUnlockingPythBalance(locked.unlocking)
