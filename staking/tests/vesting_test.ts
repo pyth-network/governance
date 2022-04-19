@@ -12,9 +12,11 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { StakeConnection, PythBalance } from "../app";
 import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
+import assert from "assert";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
+console.log(portNumber);
 
 describe("vesting", async () => {
   const pythMintAccount = new Keypair();
@@ -54,6 +56,13 @@ describe("vesting", async () => {
       sam.publicKey,
       1_000_000_000_000
     );
+    await requestPythAirdrop(
+      sam.publicKey,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      PythBalance.fromString("200"),
+      samConnection.program.provider.connection
+    );
 
     const transaction = new Transaction();
 
@@ -70,25 +79,39 @@ describe("vesting", async () => {
       }
     );
 
-    await samConnection.program.provider.sendAndConfirm(
+    transaction.instructions.push(
+      await samConnection.buildTransferInstruction(
+        stakeAccountKeypair.publicKey,
+        PythBalance.fromString("100").toBN()
+      )
+    );
+
+    await samConnection.program.provider.send(
       transaction,
       [stakeAccountKeypair],
       { skipPreflight: true }
     );
 
-    await requestPythAirdrop(
-      sam.publicKey,
-      pythMintAccount.publicKey,
-      pythMintAuthority,
-      PythBalance.fromString("200"),
-      samConnection.program.provider.connection
+    let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      stakeAccount.isNonGovernanceVestingAccount(await samConnection.getTime())
     );
 
-    let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    await samConnection.program.methods
+      .createPosition(
+        samConnection.votingProduct,
+        null,
+        PythBalance.fromString("100").toBN()
+      )
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        productAccount: samConnection.votingProductMetadataAccount,
+      })
+      .rpc({ skipPreflight: true });
 
-    await samConnection.depositAndLockTokens(
-      stakeAccount,
-      PythBalance.fromString("100")
+    stakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      !stakeAccount.isNonGovernanceVestingAccount(await samConnection.getTime())
     );
 
     await assertBalanceMatches(
