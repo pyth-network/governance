@@ -52,7 +52,7 @@ pub struct CreateStakeAccount<'info> {
     // Stake program accounts:
     #[account(zero)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    #[account(init, payer = payer, space = stake_account::STAKE_ACCOUNT_METADATA_SIZE, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
     #[account(
         init,
