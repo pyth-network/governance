@@ -84,10 +84,10 @@ describe("vesting", async () => {
       samConnection.program.provider.connection
     );
 
-    let res = await samConnection.getStakeAccounts(sam.publicKey);
+    let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     await samConnection.depositAndLockTokens(
-      res[0],
+      stakeAccount,
       PythBalance.fromString("100")
     );
 
@@ -111,9 +111,9 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    let res = await samConnection.getStakeAccounts(sam.publicKey);
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     await samConnection.depositAndLockTokens(
-      res[0],
+      samStakeAccount,
       PythBalance.fromString("1")
     );
 
@@ -141,9 +141,9 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    let res = await samConnection.getStakeAccounts(sam.publicKey);
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     await samConnection.depositAndLockTokens(
-      res[0],
+      samStakeAccount,
       PythBalance.fromString("1")
     );
 

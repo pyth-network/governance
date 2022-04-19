@@ -122,7 +122,7 @@ export class StakeConnection {
     );
   }
 
-  //gets a users stake accounts
+  /** Gets a users stake accounts */
   public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
     const res = await this.program.provider.connection.getProgramAccounts(
       this.program.programId,
@@ -146,6 +146,22 @@ export class StakeConnection {
         return await this.loadStakeAccount(account.pubkey);
       })
     );
+  }
+
+  /** Gets the user's stake account with the most tokens or undefined if it doesn't exist */
+  public async getMainAccount(
+    user: PublicKey
+  ): Promise<StakeAccount | undefined> {
+    const accounts = await this.getStakeAccounts(user);
+    if (accounts.length == 0) {
+      return undefined;
+    } else {
+      return accounts.reduce(
+        (prev: StakeAccount, curr: StakeAccount): StakeAccount => {
+          return prev.tokenBalance.lt(curr.tokenBalance) ? curr : prev;
+        }
+      );
+    }
   }
 
   // creates stake account will happen inside deposit

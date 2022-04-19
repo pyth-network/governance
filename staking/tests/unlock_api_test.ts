@@ -47,9 +47,7 @@ describe("unlock_api", async () => {
       PythBalance.fromString("100")
     );
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    stakeAccountAddress = res[0].address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     await assertBalanceMatches(
       stakeConnection,
@@ -86,11 +84,10 @@ describe("unlock_api", async () => {
   });
 
   it("deposit more, unlock first unlocks oldest position (FIFO)", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
 
     await stakeConnection.depositAndLockTokens(
-      res[0],
+      stakeAccount,
       PythBalance.fromString("100")
     );
 
