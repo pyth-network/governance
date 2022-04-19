@@ -1,3 +1,4 @@
+use anchor_lang::prelude::borsh::BorshSchema;
 use std::convert::TryInto;
 
 use anchor_lang::prelude::*;
@@ -10,7 +11,7 @@ use anchor_lang::prelude::*;
 /// Represents how a given initial balance vests over time
 /// It is unit-less, but units must be consistent
 #[repr(u8)]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 pub enum VestingSchedule {
     /// No vesting, i.e. balance is fully vested at all time
     FullyVested,
@@ -134,6 +135,7 @@ pub mod tests {
         div_round_up,
         VestingSchedule,
     };
+    use std::convert::TryInto;
 
     #[test]
     fn test_rounding() {
@@ -232,5 +234,56 @@ pub mod tests {
         };
         let value = v.get_unvested_balance(1 << 60).unwrap();
         assert!(value <= 1_000_000_000);
+    }
+
+    #[test]
+    fn default_pyth_vesting() {
+        let ONE_MONTH = 61 * 3600 * 12;
+        let v = VestingSchedule::PeriodicVesting {
+            initial_balance: 1_000,
+            start_date:      0,
+            period_duration: ONE_MONTH,
+            num_periods:     72,
+        };
+
+        let TOKENS_PER_PERIOD = 1_000 / 72;
+
+        let value = v.get_unvested_balance(1).unwrap();
+        assert_eq!(value, 1000);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH - 1).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 1000);
+
+        let value = v
+            .get_unvested_balance(ONE_MONTH.try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 1000 - TOKENS_PER_PERIOD);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH * 2 - 1).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 1000 - TOKENS_PER_PERIOD);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH * 2).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 973);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH * 72 - 1).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 14);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH * 72).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 0);
+
+        let value = v
+            .get_unvested_balance((ONE_MONTH * 73).try_into().unwrap())
+            .unwrap();
+        assert_eq!(value, 0);
     }
 }
