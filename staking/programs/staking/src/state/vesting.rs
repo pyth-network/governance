@@ -35,12 +35,6 @@ pub enum VestingSchedule {
     },
 }
 
-impl Default for VestingSchedule {
-    fn default() -> Self {
-        VestingSchedule::FullyVested
-    }
-}
-
 /// Computes  Ceiling(numerator / denominator), i.e. division rounding up. Requires that denominator
 /// > 0. Returns the quotient as a u64. For some numerator and denominator choices,
 /// the quotient might not fit in a u64, but we aren't interested in those cases.
