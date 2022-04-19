@@ -431,7 +431,7 @@ export class StakeConnection {
       .rpc();
   }
 
-  private async buildTransferInstruction(
+  public async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: BN
   ): Promise<TransactionInstruction> {
@@ -462,6 +462,44 @@ export class StakeConnection {
     );
 
     return ix;
+  }
+
+  public async activateGovernanceOfVestingAccount(
+    vestingAccount: StakeAccount
+  ) {
+    assert(vestingAccount.isNonGovernanceVestingAccount(await this.getTime()));
+
+    const unvestedBalance = vestingAccount.getBalanceSummary(
+      await this.getTime()
+    ).withdrawable;
+
+    const ixs: TransactionInstruction[] = [];
+    const owner: PublicKey = vestingAccount.stakeAccountMetadata.owner;
+
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(owner)
+      );
+
+    if (!voterAccountInfo) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
+    }
+
+    await this.program.methods
+      .createPosition(this.votingProduct, null, unvestedBalance.toBN())
+      .preInstructions(ixs)
+      .accounts({
+        stakeAccountPositions: vestingAccount.address,
+        productAccount: this.votingProductMetadataAccount,
+      })
+      .rpc({ skipPreflight: true });
   }
 
   public async depositTokens(
@@ -754,5 +792,16 @@ export class StakeAccount {
     );
     const length = vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
+  }
+
+  public isVestingAccount(unixTime: BN): boolean {
+    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
+  }
+
+  public isNonGovernanceVestingAccount(unixTime: BN): boolean {
+    return (
+      !(this.stakeAccountPositionsJs.positions as []).some((v) => v) &&
+      this.isVestingAccount(unixTime)
+    );
   }
 }
