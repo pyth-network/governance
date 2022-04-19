@@ -199,7 +199,7 @@ const Staking: NextPage = () => {
           stakeAccounts[0].getBalanceSummary(await stakeConnection.getTime())
         setLockingPythBalance(locked.locking)
         setLockedPythBalance(locked.locked)
-        setUnlockingPythBalance(locked.unlocking)
+        setUnlockingPythBalance(new PythBalance(locked.unlocking.toBN().add(locked.preunlocking.toBN())))
 
         setUnlockedPythBalance(withdrawable)
         setUnvestedPythBalance(unvested)
