@@ -193,7 +193,7 @@ const Staking: NextPage = () => {
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccount = await stakeConnection.getMainAccount(publicKey)
-      if (stakeAccount!) {
+      if (stakeAccount) {
         setStakeAccount(stakeAccount)
         const { withdrawable, locked, unvested } =
         stakeAccount.getBalanceSummary(await stakeConnection.getTime())
