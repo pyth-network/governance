@@ -13,10 +13,10 @@ import { StakeConnection, PythBalance } from "../app";
 import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
+import { expectFailApi } from "./utils/utils";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
-console.log(portNumber);
 
 describe("vesting", async () => {
   const pythMintAccount = new Keypair();
@@ -30,6 +30,9 @@ describe("vesting", async () => {
 
   let sam = new Keypair();
   let samConnection: StakeConnection;
+
+  let alice = new Keypair();
+  let aliceConnection: StakeConnection;
 
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
@@ -47,6 +50,12 @@ describe("vesting", async () => {
     samConnection = await StakeConnection.createStakeConnection(
       stakeConnection.provider.connection,
       new Wallet(sam),
+      stakeConnection.program.programId
+    );
+
+    aliceConnection = await StakeConnection.createStakeConnection(
+      stakeConnection.program.provider.connection,
+      new Wallet(alice),
       stakeConnection.program.programId
     );
   });
@@ -97,17 +106,7 @@ describe("vesting", async () => {
       stakeAccount.isNonGovernanceVestingAccount(await samConnection.getTime())
     );
 
-    await samConnection.program.methods
-      .createPosition(
-        samConnection.votingProduct,
-        null,
-        PythBalance.fromString("100").toBN()
-      )
-      .accounts({
-        stakeAccountPositions: stakeAccount.address,
-        productAccount: samConnection.votingProductMetadataAccount,
-      })
-      .rpc({ skipPreflight: true });
+    await samConnection.activateGovernanceOfVestingAccount(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -201,6 +200,114 @@ describe("vesting", async () => {
         },
       },
       await samConnection.getTime()
+    );
+  });
+
+  it("create acccount that does not opt into governance", async () => {
+    await aliceConnection.program.provider.connection.requestAirdrop(
+      alice.publicKey,
+      1_000_000_000_000
+    );
+    await requestPythAirdrop(
+      alice.publicKey,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      PythBalance.fromString("200"),
+      aliceConnection.program.provider.connection
+    );
+    ``;
+    const transaction = new Transaction();
+
+    const stakeAccountKeypair = await aliceConnection.withCreateAccount(
+      transaction.instructions,
+      alice.publicKey,
+      {
+        periodicVesting: {
+          initialBalance: PythBalance.fromString("100").toBN(),
+          startDate: await stakeConnection.getTime(),
+          periodDuration: ONE_MONTH,
+          numPeriods: new BN(72),
+        },
+      }
+    );
+
+    transaction.instructions.push(
+      await aliceConnection.buildTransferInstruction(
+        stakeAccountKeypair.publicKey,
+        PythBalance.fromString("100").toBN()
+      )
+    );
+
+    await aliceConnection.program.provider.send(
+      transaction,
+      [stakeAccountKeypair],
+      { skipPreflight: true }
+    );
+
+    let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
+    assert(
+      stakeAccount.isNonGovernanceVestingAccount(
+        await aliceConnection.getTime()
+      )
+    );
+
+    await assertBalanceMatches(
+      aliceConnection,
+      alice.publicKey,
+      { unvested: PythBalance.fromString("100") },
+      await aliceConnection.getTime()
+    );
+  });
+
+  it("once month passes, alice withdraws", async () => {
+    await aliceConnection.program.methods.advanceClock(ONE_MONTH).rpc();
+
+    await assertBalanceMatches(
+      aliceConnection,
+      alice.publicKey,
+      {
+        unvested: PythBalance.fromString("98.611112"),
+        withdrawable: PythBalance.fromString("1.388888"),
+      },
+      await aliceConnection.getTime()
+    );
+
+    let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
+    await expectFailApi(
+      aliceConnection.withdrawTokens(
+        stakeAccount,
+        PythBalance.fromString("1.388889")
+      ),
+      "Amount exceeds withdrawable"
+    );
+
+    await aliceConnection.withdrawTokens(
+      stakeAccount,
+      PythBalance.fromString("1")
+    );
+
+    await assertBalanceMatches(
+      aliceConnection,
+      alice.publicKey,
+      {
+        unvested: PythBalance.fromString("98.611112"),
+        withdrawable: PythBalance.fromString("0.388888"),
+      },
+      await aliceConnection.getTime()
+    );
+  });
+
+  it("once month passes, vesting continues", async () => {
+    await aliceConnection.program.methods.advanceClock(ONE_MONTH).rpc();
+
+    await assertBalanceMatches(
+      aliceConnection,
+      alice.publicKey,
+      {
+        unvested: PythBalance.fromString("97.222223"),
+        withdrawable: PythBalance.fromString("1.777777"),
+      },
+      await aliceConnection.getTime()
     );
   });
 

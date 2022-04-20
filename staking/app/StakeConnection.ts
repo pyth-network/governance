@@ -485,7 +485,7 @@ export class StakeConnection {
 
     const unvestedBalance = vestingAccount.getBalanceSummary(
       await this.getTime()
-    ).withdrawable;
+    ).unvested;
 
     const ixs: TransactionInstruction[] = [];
     const owner: PublicKey = vestingAccount.stakeAccountMetadata.owner;
