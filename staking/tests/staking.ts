@@ -262,6 +262,20 @@ describe("staking", async () => {
         unlockingStart: null,
         product: votingProduct,
         publisher: null,
+        reserved: [
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+        ],
       })
     );
     for (let index = 1; index < positions.positions.length; index++) {
