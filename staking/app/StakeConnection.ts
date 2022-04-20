@@ -478,6 +478,10 @@ export class StakeConnection {
     return ix;
   }
 
+  /**
+   * This function is intended for vesting accounts that want to participate in governance.
+   * It creates a token record in spl governance and creates a voting position with all unvested balance.
+   */
   public async activateGovernanceOfVestingAccount(
     vestingAccount: StakeAccount
   ) {
@@ -826,6 +830,10 @@ export class StakeAccount {
     return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
   }
 
+  /**
+   * Checks whether the account is a vesting account that doesn't participate
+   * in governance (has no positions and a vesting schedule)
+   */
   public isNonGovernanceVestingAccount(unixTime: BN): boolean {
     return (
       !(this.stakeAccountPositionsJs.positions as []).some((v) => v) &&

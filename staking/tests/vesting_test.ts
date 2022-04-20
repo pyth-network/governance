@@ -106,6 +106,7 @@ describe("vesting", async () => {
       stakeAccount.isNonGovernanceVestingAccount(await samConnection.getTime())
     );
 
+    // Sam opts into governance
     await samConnection.activateGovernanceOfVestingAccount(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
