@@ -1,19 +1,4 @@
-cargo-features = ["named-profiles"]
-
 [workspace]
 members = [
     "programs/*"
 ]
-
-[profile.philip]
-inherits = 'release'
-opt-level = 3
-debug = 2
-split-debuginfo = 'off'
-debug-assertions = false
-overflow-checks = false
-lto = false
-panic = 'unwind'
-incremental = false
-codegen-units = 16
-rpath = false
