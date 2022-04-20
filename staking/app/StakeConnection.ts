@@ -38,6 +38,7 @@ import {
   DEVNET_GOVERNANCE_ADDRESS,
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
+import assert from "assert";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -121,7 +122,7 @@ export class StakeConnection {
     );
   }
 
-  //gets a users stake accounts
+  /** Gets a users stake accounts */
   public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
     const res = await this.program.provider.connection.getProgramAccounts(
       this.program.programId,
@@ -145,6 +146,22 @@ export class StakeConnection {
         return await this.loadStakeAccount(account.pubkey);
       })
     );
+  }
+
+  /** Gets the user's stake account with the most tokens or undefined if it doesn't exist */
+  public async getMainAccount(
+    user: PublicKey
+  ): Promise<StakeAccount | undefined> {
+    const accounts = await this.getStakeAccounts(user);
+    if (accounts.length == 0) {
+      return undefined;
+    } else {
+      return accounts.reduce(
+        (prev: StakeAccount, curr: StakeAccount): StakeAccount => {
+          return prev.tokenBalance.lt(curr.tokenBalance) ? curr : prev;
+        }
+      );
+    }
   }
 
   // creates stake account will happen inside deposit
@@ -364,9 +381,12 @@ export class StakeConnection {
     );
   }
 
-  private async withCreateAccount(
+  public async withCreateAccount(
     instructions: TransactionInstruction[],
-    owner: PublicKey
+    owner: PublicKey,
+    vesting: Object = {
+      fullyVested: {},
+    }
   ): Promise<Keypair> {
     const stakeAccountKeypair = new Keypair();
 
@@ -385,9 +405,7 @@ export class StakeConnection {
 
     instructions.push(
       await this.program.methods
-        .createStakeAccount(this.program.provider.wallet.publicKey, {
-          fullyVested: {},
-        })
+        .createStakeAccount(this.program.provider.wallet.publicKey, vesting)
         .accounts({
           stakeAccountPositions: stakeAccountKeypair.publicKey,
           mint: this.config.pythTokenMint,
@@ -633,6 +651,7 @@ export class StakeAccount {
       this.vestingSchedule,
       BigInt(unixTime.toString())
     );
+
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
@@ -643,6 +662,7 @@ export class StakeAccount {
       currentEpochBI,
       unlockingDuration
     );
+
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI =
@@ -650,20 +670,64 @@ export class StakeAccount {
         currentEpochBI,
         unlockingDuration
       );
+
+    let lockingBN = new BN(lockedSummaryBI.locking.toString());
+    let lockedBN = new BN(lockedSummaryBI.locked.toString());
+    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
+    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+
+    // For the user it makes sense that all the categories add up to the number of tokens in their custody account
+    // This sections corrects the locked balances to achieve this invariant
+    let excess = lockingBN
+      .add(lockedBN)
+      .add(preunlockingBN)
+      .add(unlockingBN)
+      .add(withdrawableBN)
+      .add(unvestedBN)
+      .sub(this.tokenBalance);
+
+    // First adjust locked. Most of the time, the unvested tokens are in this state.
+    [excess, lockedBN] = this.adjustLockedAmount(excess, lockedBN);
+
+    // The unvested tokens can also be in a locking state at the very beginning.
+    // The reason why we adjust this balance second is the following
+    // If a user has 100 unvested in a locked position and decides to stake 1 free token
+    // we want that token to appear as locking
+    [excess, lockingBN] = this.adjustLockedAmount(excess, lockingBN);
+
+    //Enforce the invariant
+    assert(
+      lockingBN
+        .add(lockedBN)
+        .add(preunlockingBN)
+        .add(unlockingBN)
+        .add(withdrawableBN)
+        .add(unvestedBN)
+        .eq(this.tokenBalance)
+    );
+
     return {
       withdrawable: new PythBalance(withdrawableBN),
       locked: {
-        locking: new PythBalance(new BN(lockedSummaryBI.locking.toString())),
-        locked: new PythBalance(new BN(lockedSummaryBI.locked.toString())),
-        unlocking: new PythBalance(
-          new BN(lockedSummaryBI.unlocking.toString())
-        ),
-        preunlocking: new PythBalance(
-          new BN(lockedSummaryBI.preunlocking.toString())
-        ),
+        locking: new PythBalance(lockingBN),
+        locked: new PythBalance(lockedBN),
+        unlocking: new PythBalance(unlockingBN),
+        preunlocking: new PythBalance(preunlockingBN),
       },
       unvested: new PythBalance(unvestedBN),
     };
+  }
+
+  private adjustLockedAmount(excess: BN, locked: BN) {
+    if (excess.gt(new BN(0))) {
+      if (excess.gte(locked)) {
+        return [excess.sub(locked), new BN(0)];
+      } else {
+        return [new BN(0), locked.sub(excess)];
+      }
+    } else {
+      return [excess, locked];
+    }
   }
 
   public getVoterWeight(unixTime: BN): PythBalance {
