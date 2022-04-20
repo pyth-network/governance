@@ -687,13 +687,13 @@ export class StakeAccount {
       .sub(this.tokenBalance);
 
     // First adjust locked. Most of the time, the unvested tokens are in this state.
-    [excess, lockedBN] = this.adjust_locked_amount(excess, lockedBN);
+    [excess, lockedBN] = this.adjustLockedAmount(excess, lockedBN);
 
     // The unvested tokens can also be in a locking state at the very beginning.
     // The reason why we adjust this balance second is the following
     // If a user has 100 unvested in a locked position and decides to stake 1 free token
     // we want that token to appear as locking
-    [excess, lockingBN] = this.adjust_locked_amount(excess, lockingBN);
+    [excess, lockingBN] = this.adjustLockedAmount(excess, lockingBN);
 
     //Enforce the invariant
     assert(
@@ -718,17 +718,16 @@ export class StakeAccount {
     };
   }
 
-  private adjust_locked_amount(excess: BN, locked: BN) {
+  private adjustLockedAmount(excess: BN, locked: BN) {
     if (excess.gt(new BN(0))) {
       if (excess.gte(locked)) {
-        excess.isub(locked);
-        locked = new BN(0);
+        return [excess.sub(locked), new BN(0)];
       } else {
-        locked.isub(excess);
-        excess = new BN(0);
+        return [new BN(0), locked.sub(excess)];
       }
+    } else {
+      return [excess, locked];
     }
-    return [excess, locked];
   }
 
   public getVoterWeight(unixTime: BN): PythBalance {
