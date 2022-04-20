@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
 
+pub const GLOBAL_CONFIG_SIZE: usize = 10240;
+
 #[account]
 #[derive(Default)]
 pub struct GlobalConfig {

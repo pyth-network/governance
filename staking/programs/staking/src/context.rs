@@ -25,7 +25,8 @@ pub struct InitConfig<'info> {
         init,
         seeds = [CONFIG_SEED.as_bytes()],
         bump,
-        payer = payer
+        payer = payer,
+        space = global_config::GLOBAL_CONFIG_SIZE
     )]
     // Stake program accounts:
     pub config_account: Account<'info, global_config::GlobalConfig>,
@@ -53,7 +54,7 @@ pub struct CreateStakeAccount<'info> {
     #[account(zero)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(init, payer = payer, space = stake_account::STAKE_ACCOUNT_METADATA_SIZE, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadata>>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -231,6 +232,7 @@ pub struct CreateProduct<'info> {
         init,
         payer = payer,
         seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
+        space = product::PRODUCT_METADATA_SIZE,
         bump)]
     pub product_account:   Account<'info, product::ProductMetadata>,
     pub system_program:    Program<'info, System>,
