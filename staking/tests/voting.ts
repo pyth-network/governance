@@ -89,14 +89,13 @@ describe("voting", async () => {
 
     // Create stake account
     await stakeConnection.depositTokens(undefined, PythBalance.fromString("1"));
-    const accounts = await stakeConnection.getStakeAccounts(owner);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
     await stakeConnection.withdrawTokens(
-      accounts[0],
+      stakeAccount,
       PythBalance.fromString("1")
     );
 
-    stakeAccountAddress = (await stakeConnection.getStakeAccounts(owner))[0]
-      .address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     voterWeightRecordAccount = (
       await PublicKey.findProgramAddress(
@@ -117,12 +116,12 @@ describe("voting", async () => {
     signoff: boolean
   ): Promise<PublicKey> {
     if (updateFirst) {
-      const accounts = await stakeConnection.getStakeAccounts(owner);
+      const stakeAccount = await stakeConnection.getMainAccount(owner);
       tx.instructions.push(
         await stakeConnection.program.methods
           .updateVoterWeight()
           .accounts({
-            stakeAccountPositions: accounts[0].address,
+            stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
       );
@@ -219,7 +218,7 @@ describe("voting", async () => {
 
   it("create a position and then create proposal", async () => {
     stakeConnection.depositAndLockTokens(
-      (await stakeConnection.getStakeAccounts(owner))[0],
+      await stakeConnection.getMainAccount(owner),
       PythBalance.fromString("200")
     );
     // Time hasn't passed yet, so still no weight

@@ -80,8 +80,8 @@ describe("fills a stake account with positions", async () => {
       PythBalance.fromString("102")
     );
     stakeAccountAddress = (
-      await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
-    )[0].address;
+      await stakeConnection.getMainAccount(provider.wallet.publicKey)
+    ).address;
   });
 
   it("creates too many positions", async () => {
