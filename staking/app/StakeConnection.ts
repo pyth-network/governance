@@ -478,7 +478,7 @@ export class StakeConnection {
    * if it exists.
    * TODO : Function for opting out of governance
    */
-  public async OptIntoGovernance(stakeAccount: StakeAccount) {
+  public async optIntoGovernance(stakeAccount: StakeAccount) {
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
 
     const unvestedBalance = stakeAccount.getBalanceSummary(
