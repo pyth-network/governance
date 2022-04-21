@@ -473,10 +473,12 @@ export class StakeConnection {
     return Boolean(voterAccountInfo);
   }
   /**
-   * This function is intended for vesting accounts that want to participate in governance.
-   * It creates a token record in spl governance and creates a voting position with all unvested balance.
+   * This function is intended for accounts that want to participate in governance.
+   * It creates a token record in spl governance and creates a voting position with all unvested balance
+   * if it exists.
+   * TODO : Function for opting out of governance
    */
-  public async activateGovernance(stakeAccount: StakeAccount) {
+  public async OptIntoGovernance(stakeAccount: StakeAccount) {
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
 
     const unvestedBalance = stakeAccount.getBalanceSummary(
@@ -840,6 +842,7 @@ export class StakeAccount {
 
   /**
    * A stake account is in a broken state if some unvested tokens participate in governance, but not all of them.
+   * TODO : Create a function to repair accounts
    */
   public hasBrokenState(unixTime: BN): boolean {
     return (
