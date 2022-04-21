@@ -28,7 +28,7 @@ export async function getProductAccount(
  * Creates new spl-token at a random keypair
  */
 export async function createMint(
-  provider: anchor.Provider,
+  provider: anchor.AnchorProvider,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -62,7 +62,7 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await provider.send(transaction, [mintAccount], {
+  const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
     skipPreflight: true,
   });
 }
