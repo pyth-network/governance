@@ -117,7 +117,7 @@ describe("vesting", async () => {
     );
 
     // Sam opts into governance
-    await samConnection.activateGovernance(stakeAccount);
+    await samConnection.OptIntoGovernance(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
