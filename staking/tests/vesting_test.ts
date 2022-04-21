@@ -40,10 +40,10 @@ describe("vesting", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
 
     samConnection = await StakeConnection.createStakeConnection(
-      stakeConnection.program.provider.connection,
+      stakeConnection.provider.connection,
       new Wallet(sam),
       stakeConnection.program.programId
     );
@@ -70,7 +70,7 @@ describe("vesting", async () => {
       }
     );
 
-    await samConnection.program.provider.send(
+    await samConnection.program.provider.sendAndConfirm(
       transaction,
       [stakeAccountKeypair],
       { skipPreflight: true }

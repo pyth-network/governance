@@ -83,7 +83,7 @@ export async function expectFail(
     assert(false, "Transaction should fail");
   } catch (err) {
     if (err instanceof AnchorError) {
-      assert.equal(err.message, error);
+      assert.equal(err.error.errorMessage, error);
     } else {
       throw err;
     }

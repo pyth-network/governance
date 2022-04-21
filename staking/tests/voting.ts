@@ -6,7 +6,12 @@ import {
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  Transaction,
+  SimulatedTransactionResponse,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -271,15 +276,17 @@ async function expectFailGovernance(
     const response = await tx;
     throw new Error("Function that was expected to fail succeeded");
   } catch (error) {
-    if (error instanceof AnchorError) {
-      const errors = error.logs.filter((line) =>
-        line.includes("GOVERNANCE-ERROR")
-      );
+    // Anchor probable should export this type but doesn't
+    if (error.hasOwnProperty("simulationResponse")) {
+      const logs = (error.simulationResponse as SimulatedTransactionResponse)
+        .logs;
+      const errors = logs.filter((line) => line.includes("GOVERNANCE-ERROR"));
       if (!errors.some((line) => line.includes(expectedError))) {
         assert.equal(errors.join("\n"), expectedError);
       }
     } else {
-      throw new Error("Wrong error type: " + error);
+      console.dir(error);
+      throw error;
     }
   }
 }

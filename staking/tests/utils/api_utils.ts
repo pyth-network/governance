@@ -79,7 +79,7 @@ export async function assertVoterWeightEquals(
   assert(actual.eq(expected.voterWeight));
   const tx = new Transaction();
   stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount);
-  await stakeConnection.program.provider.send(tx, []);
+  await stakeConnection.program.provider.sendAndConfirm(tx, []);
 
   let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
     [
