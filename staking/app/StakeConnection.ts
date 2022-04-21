@@ -12,7 +12,6 @@ import {
   PublicKey,
   Connection,
   Keypair,
-  SystemProgram,
   TransactionInstruction,
   Signer,
   Transaction,
@@ -396,16 +395,10 @@ export class StakeConnection {
     const stakeAccountKeypair = new Keypair();
 
     instructions.push(
-      SystemProgram.createAccount({
-        fromPubkey: owner,
-        newAccountPubkey: stakeAccountKeypair.publicKey,
-        lamports:
-          await this.program.provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-        programId: this.program.programId,
-      })
+      await this.program.account.positionData.createInstruction(
+        stakeAccountKeypair,
+        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+      )
     );
 
     instructions.push(

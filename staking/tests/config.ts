@@ -1,23 +1,20 @@
 import { parseIdlErrors, utils, Wallet } from "@project-serum/anchor";
 import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 import {
-  createMint,
   startValidator,
   readAnchorConfig,
   getPortNumber,
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
 } from "./utils/before";
+import { expectFail, createMint } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import path from "path";
 import * as wasm from "../wasm/node/staking";
-import { PYTH_DECIMALS } from "../app";
-import { SystemProgram } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
-import { PythBalance, StakeConnection } from "../app";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
+
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
@@ -192,16 +189,10 @@ describe("config", async () => {
     const instructions: TransactionInstruction[] = [];
 
     instructions.push(
-      SystemProgram.createAccount({
-        fromPubkey: owner,
-        newAccountPubkey: stakeAccountKeypair.publicKey,
-        lamports:
-          await program.provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-        programId: program.programId,
-      })
+      await program.account.positionData.createInstruction(
+        stakeAccountKeypair,
+        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+      )
     );
 
     await expectFail(
@@ -244,16 +235,10 @@ describe("config", async () => {
     const instructions: TransactionInstruction[] = [];
 
     instructions.push(
-      SystemProgram.createAccount({
-        fromPubkey: owner,
-        newAccountPubkey: stakeAccountKeypair.publicKey,
-        lamports:
-          await program.provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-        programId: program.programId,
-      })
+      await program.account.positionData.createInstruction(
+        stakeAccountKeypair,
+        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+      )
     );
 
     await program.methods
