@@ -1,10 +1,5 @@
 import { parseIdlErrors, utils } from "@project-serum/anchor";
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
 import {
   createMint,
   startValidator,
@@ -47,6 +42,7 @@ describe("config", async () => {
 
   before(async () => {
     ({ controller, program } = await startValidator(portNumber, config));
+    errMap = parseIdlErrors(program.idl);
 
     await createMint(
       program.provider,
@@ -175,8 +171,6 @@ describe("config", async () => {
         programId: program.programId,
       })
     );
-
-    errMap = parseIdlErrors(program.idl);
 
     await expectFail(
       program.methods
