@@ -40,7 +40,7 @@ describe("staking", async () => {
   let voterAccount: PublicKey;
   let errMap: Map<number, string>;
 
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   const stakeAccountPositionsSecret = new Keypair();
   const pythMintAccount = new Keypair();
@@ -69,12 +69,12 @@ describe("staking", async () => {
       makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      provider.wallet.publicKey
     );
 
     votingProduct = stakeConnection.votingProduct;
@@ -186,7 +186,7 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
-    const tx = await provider.send(transaction, [], {
+    const tx = await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
   });

@@ -44,7 +44,7 @@ describe("api", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
   });
 
   it("Deposit and lock", async () => {
@@ -60,6 +60,8 @@ describe("api", async () => {
   });
 
   it("Find and parse stake accounts", async () => {
+    //console.log(stakeConnection.provider.connection.rpcEndpoint);
+    //while(true) {}
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 2);
 

@@ -6,6 +6,7 @@ import {
   Idl,
   IdlAccounts,
   IdlTypes,
+  AnchorProvider,
 } from "@project-serum/anchor";
 import {
   PublicKey,
@@ -54,6 +55,7 @@ type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 
 export class StakeConnection {
   program: Program<Staking>;
+  provider: AnchorProvider;
   config: GlobalConfig;
   private configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
@@ -62,11 +64,13 @@ export class StakeConnection {
 
   private constructor(
     program: Program<Staking>,
+    provider: AnchorProvider,
     config: GlobalConfig,
     configAddress: PublicKey,
     votingProductMetadataAccount: PublicKey
   ) {
     this.program = program;
+    this.provider = provider;
     this.config = config;
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
@@ -83,7 +87,7 @@ export class StakeConnection {
     wallet: Wallet,
     stakingProgramAddress: PublicKey
   ): Promise<StakeConnection> {
-    const provider = new Provider(connection, wallet, {});
+    const provider = new AnchorProvider(connection, wallet, {});
     const idl = (await Program.fetchIdl(stakingProgramAddress, provider))!;
     const program = new Program(
       idl,
@@ -116,6 +120,7 @@ export class StakeConnection {
     )[0];
     return new StakeConnection(
       program,
+      provider,
       config,
       configAddress,
       votingProductMetadataAccount
@@ -405,7 +410,7 @@ export class StakeConnection {
 
     instructions.push(
       await this.program.methods
-        .createStakeAccount(this.program.provider.wallet.publicKey, vesting)
+        .createStakeAccount(this.provider.wallet.publicKey, vesting)
         .accounts({
           stakeAccountPositions: stakeAccountKeypair.publicKey,
           mint: this.config.pythTokenMint,
@@ -439,7 +444,7 @@ export class StakeConnection {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.program.provider.wallet.publicKey
+      this.provider.wallet.publicKey
     );
 
     const toAccount = (
@@ -456,7 +461,7 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       from_account,
       toAccount,
-      this.program.provider.wallet.publicKey,
+      this.provider.wallet.publicKey,
       [],
       new u64(amount.toString())
     );
@@ -469,7 +474,7 @@ export class StakeConnection {
     amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
-    const owner = this.program.provider.wallet.publicKey;
+    const owner = this.provider.wallet.publicKey;
 
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -504,7 +509,7 @@ export class StakeConnection {
 
     const tx = new Transaction();
     tx.add(...ixs);
-    await this.program.provider.send(tx, signers);
+    await this.provider.sendAndConfirm(tx, signers);
   }
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
@@ -521,7 +526,7 @@ export class StakeConnection {
     amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
-    const owner = this.program.provider.wallet.publicKey;
+    const owner = this.provider.wallet.publicKey;
 
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -583,7 +588,7 @@ export class StakeConnection {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.program.provider.wallet.publicKey
+      this.provider.wallet.publicKey
     );
 
     await this.program.methods

@@ -6,7 +6,7 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
-import { ProgramError } from "@project-serum/anchor";
+import { AnchorError, ProgramError } from "@project-serum/anchor";
 import assert from "assert";
 import * as wasm from "../../wasm/node/staking";
 
@@ -82,8 +82,8 @@ export async function expectFail(
     const tx = await rpcCall.rpc();
     assert(false, "Transaction should fail");
   } catch (err) {
-    if (err instanceof ProgramError) {
-      assert.equal(parseErrorMessage(err, idlErrors), error);
+    if (err instanceof AnchorError) {
+      assert.equal(err.message, error);
     } else {
       throw err;
     }
