@@ -464,28 +464,28 @@ export class StakeConnection {
     return ix;
   }
 
+  public async hasGovernanceRecord(user: PublicKey): Promise<boolean> {
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(user)
+      );
+
+    return Boolean(voterAccountInfo);
+  }
   /**
    * This function is intended for vesting accounts that want to participate in governance.
    * It creates a token record in spl governance and creates a voting position with all unvested balance.
    */
-  public async activateGovernanceOfVestingAccount(
-    vestingAccount: StakeAccount
-  ) {
-    assert(vestingAccount.isNonGovernanceVestingAccount(await this.getTime()));
+  public async activateGovernance(stakeAccount: StakeAccount) {
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
 
-    const unvestedBalance = vestingAccount.getBalanceSummary(
+    const unvestedBalance = stakeAccount.getBalanceSummary(
       await this.getTime()
     ).unvested;
 
     const ixs: TransactionInstruction[] = [];
-    const owner: PublicKey = vestingAccount.stakeAccountMetadata.owner;
 
-    const voterAccountInfo =
-      await this.program.provider.connection.getAccountInfo(
-        await this.getTokenOwnerRecordAddress(owner)
-      );
-
-    if (!voterAccountInfo) {
+    if (!this.hasGovernanceRecord(owner)) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -496,14 +496,21 @@ export class StakeConnection {
       );
     }
 
-    await this.program.methods
-      .createPosition(this.votingProduct, null, unvestedBalance.toBN())
-      .preInstructions(ixs)
-      .accounts({
-        stakeAccountPositions: vestingAccount.address,
-        productAccount: this.votingProductMetadataAccount,
-      })
-      .rpc({ skipPreflight: true });
+    if (
+      unvestedBalance.toBN().gt(new BN(0)) &&
+      stakeAccount
+        .getInactiveUnvestedTokens(await this.getTime())
+        .eq(unvestedBalance.toBN())
+    ) {
+      await this.program.methods
+        .createPosition(this.votingProduct, null, unvestedBalance.toBN())
+        .preInstructions(ixs)
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          productAccount: this.votingProductMetadataAccount,
+        })
+        .rpc({ skipPreflight: true });
+    }
   }
 
   public async depositTokens(
@@ -524,12 +531,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    const voterAccountInfo =
-      await this.program.provider.connection.getAccountInfo(
-        await this.getTokenOwnerRecordAddress(owner)
-      );
-
-    if (!voterAccountInfo) {
+    if (!this.hasGovernanceRecord(owner)) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -576,12 +578,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    const voterAccountInfo =
-      await this.program.provider.connection.getAccountInfo(
-        await this.getTokenOwnerRecordAddress(owner)
-      );
-
-    if (!voterAccountInfo) {
+    if (!this.hasGovernanceRecord(owner)) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -798,18 +795,58 @@ export class StakeAccount {
     return buffer.slice(0, length);
   }
 
-  public isVestingAccount(unixTime: BN): boolean {
-    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
+  public getInactiveUnvestedTokens(unixTime: BN): BN {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    let currentEpochBI = BigInt(currentEpoch.toString());
+
+    const lockedSummaryBI =
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
+        currentEpochBI,
+        unlockingDuration
+      );
+
+    const unvested = this.getBalanceSummary(unixTime).unvested.toBN();
+
+    let lockingBN = new BN(lockedSummaryBI.locking.toString());
+    let lockedBN = new BN(lockedSummaryBI.locked.toString());
+
+    if (lockingBN.add(lockedBN).lt(unvested)) {
+      return unvested.sub(lockingBN).sub(lockedBN);
+    }
+    return new BN(0);
+  }
+
+  public getGovernanceExposure(unixTime: BN): BN {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    let currentEpochBI = BigInt(currentEpoch.toString());
+
+    const lockedSummaryBI =
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
+        currentEpochBI,
+        unlockingDuration
+      );
+
+    let lockingBN = new BN(lockedSummaryBI.locking.toString());
+    let lockedBN = new BN(lockedSummaryBI.locked.toString());
+    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
+
+    return lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN);
   }
 
   /**
-   * Checks whether the account is a vesting account that doesn't participate
-   * in governance (has no positions and a vesting schedule)
+   * A stake account is in a broken state if some unvested tokens participate in governance, but not all of them.
    */
-  public isNonGovernanceVestingAccount(unixTime: BN): boolean {
+  public hasBrokenState(unixTime: BN): boolean {
     return (
-      !(this.stakeAccountPositionsJs.positions as []).some((v) => v) &&
-      this.isVestingAccount(unixTime)
+      this.getGovernanceExposure(unixTime).gt(new BN(0)) &&
+      this.getInactiveUnvestedTokens(unixTime).gt(new BN(0))
     );
+  }
+
+  public hasUnvestedTokens(unixTime: BN): boolean {
+    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
   }
 }
