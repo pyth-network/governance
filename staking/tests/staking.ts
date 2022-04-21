@@ -128,15 +128,10 @@ describe("staking", async () => {
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stakeAccountPositionsSecret.publicKey,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-          programId: program.programId,
-        }),
+        await program.account.positionData.createInstruction(
+          stakeAccountPositionsSecret,
+          wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+        ),
       ])
       .accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
