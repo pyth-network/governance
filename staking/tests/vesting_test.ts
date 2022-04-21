@@ -107,13 +107,13 @@ describe("vesting", async () => {
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     assert(
       stakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(100_000_000))
+        .eq(PythBalance.fromString("100"))
     );
 
     // Sam opts into governance
@@ -126,13 +126,13 @@ describe("vesting", async () => {
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(100_000_000))
+        .eq(PythBalance.fromString("100"))
     );
 
     assert(
       stakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     await assertBalanceMatches(
@@ -163,13 +163,13 @@ describe("vesting", async () => {
     assert(
       samStakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(100_000_000))
+        .eq(PythBalance.fromString("100"))
     );
 
     assert(
       samStakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     await samConnection.depositAndLockTokens(
@@ -195,13 +195,13 @@ describe("vesting", async () => {
     assert(
       samStakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(101_000_000))
+        .eq(PythBalance.fromString("101"))
     );
 
     assert(
       samStakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
   });
 
@@ -226,13 +226,13 @@ describe("vesting", async () => {
     assert(
       samStakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(101_000_000))
+        .eq(PythBalance.fromString("101"))
     );
 
     assert(
       samStakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     await samConnection.depositAndLockTokens(
@@ -248,13 +248,13 @@ describe("vesting", async () => {
     assert(
       samStakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(102_000_000))
+        .eq(PythBalance.fromString("102"))
     );
 
     assert(
       samStakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     await assertBalanceMatches(
@@ -284,13 +284,13 @@ describe("vesting", async () => {
     assert(
       samStakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(102_000_000))
+        .eq(PythBalance.fromString("102"))
     );
 
     assert(
       samStakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     await assertBalanceMatches(
@@ -357,13 +357,13 @@ describe("vesting", async () => {
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     assert(
       stakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(100_000_000))
+        .eq(PythBalance.fromString("100"))
     );
 
     await assertBalanceMatches(
@@ -419,13 +419,13 @@ describe("vesting", async () => {
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     assert(
       stakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(98611112))
+        .eq(PythBalance.fromString("98.611112"))
     );
   });
 
@@ -450,13 +450,13 @@ describe("vesting", async () => {
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
-        .eq(new BN(0))
+        .eq(PythBalance.fromString("0"))
     );
 
     assert(
       stakeAccount
         .getInactiveUnvestedTokens(await samConnection.getTime())
-        .eq(new BN(97222223))
+        .eq(PythBalance.fromString("97.222223"))
     );
   });
 

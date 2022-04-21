@@ -514,7 +514,7 @@ export class StakeConnection {
       unvestedBalance.toBN().gt(new BN(0)) &&
       stakeAccount
         .getInactiveUnvestedTokens(await this.getTime())
-        .eq(unvestedBalance.toBN())
+        .eq(unvestedBalance)
     ) {
       await this.program.methods
         .createPosition(this.votingProduct, null, unvestedBalance.toBN())
@@ -823,7 +823,7 @@ export class StakeAccount {
     return buffer.slice(0, length);
   }
 
-  public getInactiveUnvestedTokens(unixTime: BN): BN {
+  public getInactiveUnvestedTokens(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
@@ -840,12 +840,12 @@ export class StakeAccount {
     let lockedBN = new BN(lockedSummaryBI.locked.toString());
 
     if (lockingBN.add(lockedBN).lt(unvested)) {
-      return unvested.sub(lockingBN).sub(lockedBN);
+      return new PythBalance(unvested.sub(lockingBN).sub(lockedBN));
     }
-    return new BN(0);
+    return PythBalance.fromString("0");
   }
 
-  public getGovernanceExposure(unixTime: BN): BN {
+  public getGovernanceExposure(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
@@ -861,7 +861,9 @@ export class StakeAccount {
     let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
     let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
 
-    return lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN);
+    return new PythBalance(
+      lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN)
+    );
   }
 
   /**
@@ -869,8 +871,8 @@ export class StakeAccount {
    */
   public hasBrokenState(unixTime: BN): boolean {
     return (
-      this.getGovernanceExposure(unixTime).gt(new BN(0)) &&
-      this.getInactiveUnvestedTokens(unixTime).gt(new BN(0))
+      this.getGovernanceExposure(unixTime).toBN().gt(new BN(0)) &&
+      this.getInactiveUnvestedTokens(unixTime).toBN().gt(new BN(0))
     );
   }
 
