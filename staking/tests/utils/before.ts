@@ -43,7 +43,7 @@ import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
-import { getProductAccount } from "./utils";
+import { createMint, getProductAccount } from "./utils";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -226,48 +226,6 @@ export async function requestPythAirdrop(
   });
 }
 
-/**
- * Creates new spl-token at a random keypair
- */
-export async function createMint(
-  provider: AnchorProvider,
-  mintAccount: Keypair,
-  mintAuthority: PublicKey,
-  freezeAuthority: PublicKey | null,
-  decimals: number,
-  programId: PublicKey
-): Promise<void> {
-  // Allocate memory for the account
-  const balanceNeeded = await Token.getMinBalanceRentForExemptMint(
-    provider.connection
-  );
-
-  const transaction = new Transaction();
-  transaction.add(
-    SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
-      newAccountPubkey: mintAccount.publicKey,
-      lamports: balanceNeeded,
-      space: MintLayout.span,
-      programId,
-    })
-  );
-
-  transaction.add(
-    Token.createInitMintInstruction(
-      programId,
-      mintAccount.publicKey,
-      decimals,
-      mintAuthority,
-      freezeAuthority
-    )
-  );
-
-  // Send the two instructions
-  const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
-    skipPreflight: true,
-  });
-}
 interface GovernanceIds {
   realm: PublicKey;
   governance: PublicKey;
