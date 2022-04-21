@@ -13,7 +13,7 @@
     "app/constants.{js,d.ts}"
   ],
   "dependencies": {
-    "@project-serum/anchor": "0.22.0",
+    "@project-serum/anchor": "0.24.2",
     "@solana/spl-governance": "^0.0.34",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",

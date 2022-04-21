@@ -38,7 +38,7 @@ describe("voter_weight_test", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
   });
 
   it("deposit, lock, make sure voter weight appears after warmup", async () => {

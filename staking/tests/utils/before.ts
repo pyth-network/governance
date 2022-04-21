@@ -11,7 +11,13 @@ import {
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import fs from "fs";
-import { Program, Provider, Wallet, utils } from "@project-serum/anchor";
+import {
+  Program,
+  Provider,
+  Wallet,
+  utils,
+  AnchorProvider,
+} from "@project-serum/anchor";
 import * as wasm from "../../wasm/node/staking";
 import {
   TOKEN_PROGRAM_ID,
@@ -150,7 +156,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     } catch (e) {}
   }
 
-  const provider = new Provider(connection, new Wallet(user), {});
+  const provider = new AnchorProvider(connection, new Wallet(user), {});
   const program = new Program(
     JSON.parse(fs.readFileSync(idlPath).toString()),
     programAddress,
@@ -161,13 +167,13 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
   );
   const controller = new CustomAbortController(internalController);
-  return { controller, program };
+  return { controller, program, provider };
 }
 
 export function getConnection(portNumber: number): Connection {
   return new Connection(
     `http://localhost:${portNumber}`,
-    Provider.defaultOptions().commitment
+    AnchorProvider.defaultOptions().commitment
   );
 }
 
@@ -224,7 +230,7 @@ export async function requestPythAirdrop(
  * Creates new spl-token at a random keypair
  */
 export async function createMint(
-  provider: Provider,
+  provider: AnchorProvider,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -258,7 +264,7 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await provider.send(transaction, [mintAccount], {
+  const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
     skipPreflight: true,
   });
 }
@@ -271,7 +277,7 @@ interface GovernanceIds {
   Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
 */
 export async function createGovernance(
-  provider: Provider,
+  provider: AnchorProvider,
   config: AnchorConfig,
   maxVotingTime: number, // in seconds
   pythMint: PublicKey
@@ -321,7 +327,7 @@ export async function createGovernance(
     provider.wallet.publicKey
   );
 
-  await provider.send(tx, [realmAuthority], { skipPreflight: true });
+  await provider.sendAndConfirm(tx, [realmAuthority], { skipPreflight: true });
 
   // Give governance 100 SOL to play with
   await provider.connection.requestAirdrop(mintGov, LAMPORTS_PER_SOL * 100);
@@ -356,13 +362,16 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
   };
 }
 
-export async function initGovernanceProduct(program: Program) {
+export async function initGovernanceProduct(
+  program: Program,
+  governanceSigner: PublicKey
+) {
   const productAccount = await getProductAccount(null, program.programId);
   await program.methods
     .createProduct(null)
     .accounts({
       productAccount,
-      governanceSigner: program.provider.wallet.publicKey,
+      governanceSigner: governanceSigner,
     })
     .rpc();
 }
@@ -374,7 +383,7 @@ export async function initGovernanceProduct(program: Program) {
  * - Airdrops Pyth token to the currently connected wallet
  * - If the passed in global config has a null pythGovernanceRealm, creates a default governance
  * - Initializes the global config of the Pyth staking program to some default values
- * - Creates a connection de the localnet Pyth staking program
+ * - Creates a connection to the localnet Pyth staking program
  * */
 export async function standardSetup(
   portNumber: number,
@@ -384,10 +393,13 @@ export async function standardSetup(
   globalConfig: GlobalConfig,
   amount?: PythBalance
 ) {
-  const { controller, program } = await startValidator(portNumber, config);
+  const { controller, program, provider } = await startValidator(
+    portNumber,
+    config
+  );
 
   await createMint(
-    program.provider,
+    provider,
     pythMintAccount,
     pythMintAuthority.publicKey,
     null,
@@ -395,7 +407,7 @@ export async function standardSetup(
     TOKEN_PROGRAM_ID
   );
 
-  const user = program.provider.wallet.publicKey;
+  const user = provider.wallet.publicKey;
 
   await requestPythAirdrop(
     user,
@@ -407,7 +419,7 @@ export async function standardSetup(
 
   if (globalConfig.pythGovernanceRealm == null) {
     const { realm, governance } = await createGovernance(
-      program.provider,
+      provider,
       config,
       Math.max(globalConfig.epochDuration.toNumber(), 60), // at least one minute
       pythMintAccount.publicKey
@@ -422,7 +434,7 @@ export async function standardSetup(
 
   await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
-  await initGovernanceProduct(program);
+  await initGovernanceProduct(program, user);
 
   // Give the power back to the people
   await program.methods
@@ -432,12 +444,12 @@ export async function standardSetup(
 
   const connection = new Connection(
     `http://localhost:${portNumber}`,
-    Provider.defaultOptions().commitment
+    AnchorProvider.defaultOptions().commitment
   );
 
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
-    program.provider.wallet as Wallet,
+    provider.wallet as Wallet,
     new PublicKey(config.programs.localnet.staking)
   );
 

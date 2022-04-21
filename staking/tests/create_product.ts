@@ -46,7 +46,7 @@ describe("create_product", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
 
     program = stakeConnection.program;
   });

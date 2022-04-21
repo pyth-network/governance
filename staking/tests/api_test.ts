@@ -44,7 +44,7 @@ describe("api", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
   });
 
   it("Deposit and lock", async () => {
