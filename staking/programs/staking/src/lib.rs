@@ -43,6 +43,7 @@ pub mod staking {
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
+        config_account.freeze = global_config.freeze;
         #[cfg(feature = "mock-clock")]
         {
             config_account.mock_clock_time = global_config.mock_clock_time;
