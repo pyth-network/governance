@@ -5,5 +5,4 @@ target
 **/*.rs.bk
 node_modules
 tests/keypairs/
-tests/default_wallet.json
 yarn-error.log
