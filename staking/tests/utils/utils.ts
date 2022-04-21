@@ -103,11 +103,3 @@ export async function expectFailApi(promise: Promise<any>, error: string) {
     assert.equal(err.message, error);
   }
 }
-
-/**
- * Parses an error message from solana into a human-readable message
- */
-export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
-  if (err.msg) return err.msg;
-  if (err.code) return idlErrors[err.code];
-}

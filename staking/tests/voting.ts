@@ -1,11 +1,4 @@
 import * as anchor from "@project-serum/anchor";
-import { AnchorError, parseIdlErrors, Program } from "@project-serum/anchor";
-import { Staking } from "../target/types/staking";
-import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 import {
   PublicKey,
   Keypair,
@@ -21,12 +14,10 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
-  AnchorConfig,
   makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
-import { GlobalConfig } from "../app/StakeConnection";
 import {
   getProposal,
   getProposalsByGovernance,
@@ -37,12 +28,8 @@ import {
   VoteType,
   withCastVote,
   withCreateProposal,
-  withCreateTokenOwnerRecord,
   withSignOffProposal,
-  YesNoVote,
 } from "@solana/spl-governance";
-import { program } from "@project-serum/anchor/dist/cjs/spl/token";
-import { expectFail, expectFailApi } from "./utils/utils";
 import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
