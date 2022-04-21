@@ -66,7 +66,7 @@ describe("config", async () => {
         pythTokenMint: pythMintAccount.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: false,
+        freeze: true,
         mockClockTime: new BN(10),
       })
       .rpc({
@@ -86,7 +86,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: false,
+        freeze: true,
         mockClockTime: new BN(10),
       })
     );
@@ -108,7 +108,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: false,
+        freeze: true,
         mockClockTime: new BN(15),
       })
     );
@@ -128,7 +128,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: false,
+        freeze: true,
         mockClockTime: new BN(30),
       })
     );
