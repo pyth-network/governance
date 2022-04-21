@@ -60,8 +60,6 @@ describe("api", async () => {
   });
 
   it("Find and parse stake accounts", async () => {
-    //console.log(stakeConnection.provider.connection.rpcEndpoint);
-    //while(true) {}
     const res = await stakeConnection.getStakeAccounts(owner);
     assert.equal(res.length, 2);
 
