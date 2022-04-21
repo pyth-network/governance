@@ -10,6 +10,8 @@ use std::fmt::{
 
 pub const MAX_POSITIONS: usize = 100;
 pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
+
+pub const VOTING_PRODUCT_SEED: &str = "voting_product";
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
@@ -49,8 +51,7 @@ pub struct Position {
     pub amount:           u64,
     pub activation_epoch: u64,
     pub unlocking_start:  Option<u64>,
-    pub product:          Option<Pubkey>,
-    pub publisher:        Option<Pubkey>,
+    pub stake_target:     StakeTarget,
     pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
                                         0: amount
                                         8: activation_epoch
@@ -65,6 +66,65 @@ pub struct Position {
 
                                         total: 200 bytes
                                      */
+}
+
+#[derive(
+    AnchorSerialize,
+    AnchorDeserialize,
+    Debug,
+    Clone,
+    Copy,
+    BorshSchema,
+    PartialEq,
+    PartialOrd,
+    Eq,
+    Ord,
+)]
+pub enum StakeTarget {
+    VOTING,
+    STAKING {
+        product:   Pubkey,
+        publisher: Publisher,
+    },
+}
+
+#[derive(
+    AnchorSerialize,
+    AnchorDeserialize,
+    Debug,
+    Clone,
+    Copy,
+    BorshSchema,
+    PartialEq,
+    PartialOrd,
+    Eq,
+    Ord,
+)]
+pub enum Publisher {
+    DEFAULT,
+    SOME { address: Pubkey },
+}
+
+impl StakeTarget {
+    pub fn get_seed(&self) -> &[u8] {
+        match *self {
+            StakeTarget::VOTING => VOTING_PRODUCT_SEED.as_bytes(),
+            StakeTarget::STAKING {
+                ref product,
+                publisher: _,
+            } => product.as_ref(),
+        }
+    }
+
+    pub fn get_key(&self) -> Option<Pubkey> {
+        match *self {
+            StakeTarget::VOTING => None,
+            StakeTarget::STAKING {
+                product,
+                publisher: _,
+            } => Some(product),
+        }
+    }
 }
 
 impl Position {
@@ -100,7 +160,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        return self.product.is_none() && self.publisher.is_none();
+        return matches!(self.stake_target, StakeTarget::VOTING);
     }
 }
 
@@ -128,6 +188,7 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
+        StakeTarget,
         POSITION_DATA_PADDING,
     };
     #[test]
@@ -135,8 +196,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  Some(12),
-            product:          None,
-            publisher:        None,
+            stake_target:     StakeTarget::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };
@@ -171,8 +231,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  None,
-            product:          None,
-            publisher:        None,
+            stake_target:     StakeTarget::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };

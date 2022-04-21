@@ -12,6 +12,7 @@ use state::positions::{
     Position,
     PositionData,
     PositionState,
+    StakeTarget,
     MAX_POSITIONS,
 };
 use state::vesting::VestingSchedule;
@@ -110,8 +111,7 @@ pub mod staking {
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
         ctx: Context<CreatePosition>,
-        product: Option<Pubkey>,
-        publisher: Option<Pubkey>,
+        stake_target: StakeTarget,
         amount: u64,
     ) -> Result<()> {
         if amount == 0 {
@@ -128,14 +128,9 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        // Make sure both are Some() or both are None
-        if product.is_none() != publisher.is_none() {
-            return Err(error!(ErrorCode::InvalidPosition));
-        }
         let new_position = Position {
             amount:           amount,
-            product:          product,
-            publisher:        publisher,
+            stake_target:     stake_target,
             activation_epoch: current_epoch + 1,
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
@@ -176,7 +171,7 @@ pub mod staking {
         ctx: Context<ClosePosition>,
         index: u8,
         amount: u64,
-        product: Option<Pubkey>,
+        stake_target: StakeTarget,
     ) -> Result<()> {
         let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
@@ -189,7 +184,7 @@ pub mod staking {
         let current_position =
             &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
 
-        if current_position.product != product {
+        if current_position.stake_target != stake_target {
             return Err(error!(ErrorCode::WrongProduct));
         }
 
@@ -225,8 +220,7 @@ pub mod staking {
                         Ok(j) => {
                             stake_account_positions.positions[j] = Some(Position {
                                 amount:           amount,
-                                product:          current_position.product,
-                                publisher:        current_position.publisher,
+                                stake_target:     current_position.stake_target,
                                 activation_epoch: current_position.activation_epoch,
                                 unlocking_start:  Some(current_epoch + 1),
                                 reserved:         POSITION_DATA_PADDING,

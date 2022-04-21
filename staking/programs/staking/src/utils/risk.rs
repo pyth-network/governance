@@ -5,7 +5,9 @@ use std::collections::BTreeMap;
 use crate::state::positions::{
     PositionData,
     PositionState,
+    StakeTarget,
     MAX_POSITIONS,
+    VOTING_PRODUCT_SEED,
 };
 use crate::ErrorCode::{
     RiskLimitExceeded,
@@ -40,8 +42,9 @@ pub fn validate(
                 | PositionState::UNLOCKING
                 | PositionState::LOCKING => {
                     let this_position = stake_account_positions.positions[i].unwrap();
-                    let prod_exposure: &mut u64 =
-                        current_exposures.entry(this_position.product).or_default();
+                    let prod_exposure: &mut u64 = current_exposures
+                        .entry(this_position.stake_target.get_key())
+                        .or_default();
                     *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
                 }
                 _ => {}
@@ -76,7 +79,7 @@ pub fn validate(
     let mut max_product_exposure: u64 = 0;
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
-        match *product {
+        match product {
             None => {
                 // This is the special voting position that ignores vesting
                 // If there are multiple voting positions, they've been aggregated at this point
@@ -129,6 +132,8 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
+        Publisher,
+        StakeTarget,
         MAX_POSITIONS,
         POSITION_DATA_PADDING,
     };
@@ -150,16 +155,24 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
+            stake_target:     StakeTarget::STAKING {
+                product:   Pubkey::new_unique(),
+                publisher: Publisher::SOME {
+                    address: Pubkey::new_unique(),
+                },
+            },
             unlocking_start:  Some(50),
             reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[1] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
+            stake_target:     StakeTarget::STAKING {
+                product:   Pubkey::new_unique(),
+                publisher: Publisher::SOME {
+                    address: Pubkey::new_unique(),
+                },
+            },
             unlocking_start:  Some(50),
             reserved:         POSITION_DATA_PADDING,
         });
@@ -194,16 +207,19 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            product:          None,
-            publisher:        None,
+            stake_target:     StakeTarget::VOTING,
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[4] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
+            stake_target:     StakeTarget::STAKING {
+                product:   Pubkey::new_unique(),
+                publisher: Publisher::SOME {
+                    address: Pubkey::new_unique(),
+                },
+            },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
@@ -226,16 +242,20 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            product:          Some(product),
-            publisher:        None,
+            stake_target:     StakeTarget::STAKING {
+                product,
+                publisher: Publisher::DEFAULT,
+            },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[3] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            product:          Some(product),
-            publisher:        None,
+            stake_target:     StakeTarget::STAKING {
+                product,
+                publisher: Publisher::DEFAULT,
+            },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
@@ -256,8 +276,12 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           10,
-                product:          Some(Pubkey::new_unique()),
-                publisher:        Some(Pubkey::new_unique()),
+                stake_target:     StakeTarget::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
@@ -268,8 +292,12 @@ pub mod tests {
         pd.positions[7] = Some(Position {
             activation_epoch: 1,
             amount:           10,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
+            stake_target:     StakeTarget::STAKING {
+                product:   Pubkey::new_unique(),
+                publisher: Publisher::SOME {
+                    address: Pubkey::new_unique(),
+                },
+            },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
@@ -288,8 +316,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           10,
-                product:          None,
-                publisher:        None,
+                stake_target:     StakeTarget::VOTING,
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
@@ -312,8 +339,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           u64::MAX / 3,
-                product:          None,
-                publisher:        None,
+                stake_target:     StakeTarget::VOTING,
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
@@ -334,8 +360,12 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           u64::MAX / 3,
-                product:          Some(product),
-                publisher:        Some(Pubkey::new_unique()),
+                stake_target:     StakeTarget::STAKING {
+                    product,
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
