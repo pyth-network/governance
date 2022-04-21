@@ -130,6 +130,7 @@ pub mod tests {
         PositionData,
         PositionState,
         MAX_POSITIONS,
+        POSITION_DATA_PADDING,
     };
     use crate::utils::risk::validate;
     use crate::ErrorCode::{
@@ -152,6 +153,7 @@ pub mod tests {
             product:          Some(Pubkey::new_unique()),
             publisher:        Some(Pubkey::new_unique()),
             unlocking_start:  Some(50),
+            reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[1] = Some(Position {
             activation_epoch: 1,
@@ -159,6 +161,7 @@ pub mod tests {
             product:          Some(Pubkey::new_unique()),
             publisher:        Some(Pubkey::new_unique()),
             unlocking_start:  Some(50),
+            reserved:         POSITION_DATA_PADDING,
         });
         let tests = [
             (0, PositionState::LOCKING),
@@ -194,6 +197,7 @@ pub mod tests {
             product:          None,
             publisher:        None,
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[4] = Some(Position {
             activation_epoch: 1,
@@ -201,6 +205,7 @@ pub mod tests {
             product:          Some(Pubkey::new_unique()),
             publisher:        Some(Pubkey::new_unique()),
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
@@ -224,6 +229,7 @@ pub mod tests {
             product:          Some(product),
             publisher:        None,
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[3] = Some(Position {
             activation_epoch: 1,
@@ -231,6 +237,7 @@ pub mod tests {
             product:          Some(product),
             publisher:        None,
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
@@ -252,6 +259,7 @@ pub mod tests {
                 product:          Some(Pubkey::new_unique()),
                 publisher:        Some(Pubkey::new_unique()),
                 unlocking_start:  None,
+                reserved:         POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
@@ -263,6 +271,7 @@ pub mod tests {
             product:          Some(Pubkey::new_unique()),
             publisher:        Some(Pubkey::new_unique()),
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         });
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
@@ -282,6 +291,7 @@ pub mod tests {
                 product:          None,
                 publisher:        None,
                 unlocking_start:  None,
+                reserved:         POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
@@ -305,6 +315,7 @@ pub mod tests {
                 product:          None,
                 publisher:        None,
                 unlocking_start:  None,
+                reserved:         POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
@@ -326,6 +337,7 @@ pub mod tests {
                 product:          Some(product),
                 publisher:        Some(Pubkey::new_unique()),
                 unlocking_start:  None,
+                reserved:         POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;

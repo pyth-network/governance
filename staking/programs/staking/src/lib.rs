@@ -31,6 +31,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
+    use crate::state::positions::POSITION_DATA_PADDING;
+
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -124,6 +126,7 @@ pub mod staking {
             publisher:        publisher,
             activation_epoch: current_epoch + 1,
             unlocking_start:  None,
+            reserved:         POSITION_DATA_PADDING,
         };
         // For now, restrict positions to voting position
         // This could be combined with the previous check, but the following check is temporary
@@ -212,6 +215,7 @@ pub mod staking {
                                 publisher:        current_position.publisher,
                                 activation_epoch: current_position.activation_epoch,
                                 unlocking_start:  Some(current_epoch + 1),
+                                reserved:         POSITION_DATA_PADDING,
                             });
 
                             assert_ne!(i, j);

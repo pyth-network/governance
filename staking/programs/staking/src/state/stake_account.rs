@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 /// It is derived from the positions account with seeds "stake_metadata" and the positions account
 /// pubkey It stores some PDA bumps, the owner of the account and the vesting schedule
 
-pub const STAKE_ACCOUNT_METADATA_SIZE: usize = 8 + 1 + 1 + 1 + 1 + 32 + 1 + 8 * 4;
+pub const STAKE_ACCOUNT_METADATA_SIZE: usize = 10240;
 
 #[account]
 #[derive(BorshSchema)]
@@ -29,10 +29,10 @@ pub mod tests {
 
     #[test]
     fn check_size() {
-        assert_eq!(
+        assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadata>()
-                + StakeAccountMetadata::discriminator().len(),
-            STAKE_ACCOUNT_METADATA_SIZE
+                + StakeAccountMetadata::discriminator().len()
+                <= STAKE_ACCOUNT_METADATA_SIZE
         );
     }
 }

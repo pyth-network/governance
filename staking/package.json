@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.1.13",
+  "version": "1.1.15",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
@@ -18,7 +18,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "0.1.5",
+    "pyth-staking-wasm": "0.1.7",
     "typescript": "^4.3.5"
   },
   "devDependencies": {

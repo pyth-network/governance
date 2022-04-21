@@ -6,11 +6,10 @@ use anchor_lang::solana_program::wasm_bindgen;
 use std::fmt::{
     self,
     Debug,
-    Display,
 };
 
 pub const MAX_POSITIONS: usize = 100;
-
+pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
@@ -45,15 +44,28 @@ impl PositionData {
 /// (product, publisher) tuple. This is one of the core pieces of our staking design, and stores all
 /// of the state related to a position The voting position is a position where the product is None
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
+#[repr(C)]
 pub struct Position {
     pub amount:           u64,
     pub activation_epoch: u64,
     pub unlocking_start:  Option<u64>,
     pub product:          Option<Pubkey>,
     pub publisher:        Option<Pubkey>,
-    // Note: If you add a field here, you may need to change MAX_POSITIONS or the account size
-    // as well as POSITION_SIZE in constants.ts.
-} // TODO: Decide if we want to reserve some space here for reward tracking state
+    pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
+                                        0: amount
+                                        8: activation_epoch
+                                        16: 1 if unlocking_start is Some, 2 if the outer option is None
+                                        24: unlocking_start
+                                        32: 1 if is product is Some
+                                        33: product
+                                        65: 1 if publisher is Some
+                                        66: publisher
+                                        98: compiler padding
+                                        104: reserved
+
+                                        total: 200 bytes
+                                     */
+}
 
 impl Position {
     /// Managing the state of a position is tricky because we can only update the data when a user
@@ -116,9 +128,8 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
-        MAX_POSITIONS,
+        POSITION_DATA_PADDING,
     };
-
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
@@ -127,6 +138,7 @@ pub mod tests {
             product:          None,
             publisher:        None,
             amount:           10,
+            reserved:         POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -162,6 +174,7 @@ pub mod tests {
             product:          None,
             publisher:        None,
             amount:           10,
+            reserved:         POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -183,9 +196,11 @@ pub mod tests {
     }
     #[test]
     fn test_serialized_size() {
-        assert_eq!(
-            anchor_lang::solana_program::borsh::get_packed_len::<PositionData>(),
-            32 + MAX_POSITIONS * (1 + 8 + 8 + 9 + 33 + 33)
-        );
+        // These are 0-copy serialized, so use std::mem::size_of instead of borsh::get_packed_len
+        // If this fails, we need a migration
+        assert_eq!(std::mem::size_of::<Option<Position>>(), 200);
+        // This one failing is much worse. If so, just change the number of positions and/or add
+        // padding
+        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
     }
 }
