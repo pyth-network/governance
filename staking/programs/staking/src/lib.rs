@@ -63,6 +63,12 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn update_freeze(ctx: Context<UpdateFreeze>, freeze: bool) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.freeze = freeze;
+        Ok(())
+    }
+
     /// Trustless instruction that creates a stake account for a user
     /// The main account i.e. the position accounts needs to be initialized outside of the program
     /// otherwise we run into stack limits
@@ -72,6 +78,9 @@ pub mod staking {
         owner: Pubkey,
         lock: VestingSchedule,
     ) -> Result<()> {
+        let config = &ctx.accounts.config;
+        config.check_frozen()?;
+
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
         stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
@@ -87,7 +96,7 @@ pub mod staking {
         stake_account_positions.positions = [None; MAX_POSITIONS];
 
         let voter_record = &mut ctx.accounts.voter_record;
-        let config = &ctx.accounts.config;
+
         voter_record.realm = config.pyth_governance_realm;
         voter_record.governing_token_mint = config.pyth_token_mint;
         voter_record.governing_token_owner = owner;
@@ -115,6 +124,8 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
         let product_account = &mut ctx.accounts.product_account;
+
+        config.check_frozen()?;
 
         // Make sure both are Some() or both are None
         if product.is_none() != publisher.is_none() {
@@ -171,6 +182,8 @@ pub mod staking {
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+
+        config.check_frozen()?;
 
         let current_position =
             &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
@@ -274,6 +287,8 @@ pub mod staking {
         let signer = &ctx.accounts.payer;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config).unwrap();
+
+        config.check_frozen()?;
 
         let unvested_balance = ctx
             .accounts
