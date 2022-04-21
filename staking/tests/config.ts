@@ -1,11 +1,12 @@
-import { utils } from "@project-serum/anchor";
-import { PublicKey, Keypair } from "@solana/web3.js";
+import { parseIdlErrors, utils, Wallet } from "@project-serum/anchor";
+import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
 import {
   createMint,
   startValidator,
   readAnchorConfig,
   getPortNumber,
   ANCHOR_CONFIG_PATH,
+  requestPythAirdrop,
 } from "./utils/before";
 import BN from "bn.js";
 import assert from "assert";
@@ -13,6 +14,10 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import path from "path";
 import * as wasm from "../wasm/node/staking";
 import { PYTH_DECIMALS } from "../app";
+import { SystemProgram } from "@solana/web3.js";
+import { expectFail } from "./utils/utils";
+import { PythBalance, StakeConnection } from "../app";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
 // easier to debug.
@@ -26,8 +31,13 @@ describe("config", async () => {
 
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
+  let errMap: Map<number, string>;
+
   let program;
   let controller;
+
+  let stakeAccountAddress;
+  let votingProductMetadataAccount;
 
   let configAccount: PublicKey;
   let bump: number;
@@ -38,6 +48,7 @@ describe("config", async () => {
 
   before(async () => {
     ({ controller, program } = await startValidator(portNumber, config));
+    errMap = parseIdlErrors(program.idl);
 
     await createMint(
       program.provider,
@@ -47,6 +58,16 @@ describe("config", async () => {
       PYTH_DECIMALS,
       TOKEN_PROGRAM_ID
     );
+
+    votingProductMetadataAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
+          new PublicKey(0).toBuffer(),
+        ],
+        program.programId
+      )
+    )[0];
   });
 
   it("initializes config", async () => {
@@ -61,11 +82,28 @@ describe("config", async () => {
         pythTokenMint: pythMintAccount.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        freeze: true,
         mockClockTime: new BN(10),
       })
       .rpc({
         skipPreflight: DEBUG,
       });
+
+    await program.methods
+      .createProduct(null)
+      .accounts({
+        productAccount: votingProductMetadataAccount,
+        governanceSigner: program.provider.wallet.publicKey,
+      })
+      .rpc();
+
+    await requestPythAirdrop(
+      program.provider.wallet.publicKey,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      PythBalance.fromString("100"),
+      program.provider.connection
+    );
 
     const configAccountData = await program.account.globalConfig.fetch(
       configAccount
@@ -80,6 +118,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        freeze: true,
         mockClockTime: new BN(10),
       })
     );
@@ -101,6 +140,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        freeze: true,
         mockClockTime: new BN(15),
       })
     );
@@ -120,8 +160,190 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
+        freeze: true,
         mockClockTime: new BN(30),
       })
+    );
+  });
+
+  it("freeze", async () => {
+    await program.methods.updateFreeze(true).rpc({ skipPreflight: DEBUG });
+
+    const configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        mockClockTime: new BN(30),
+      })
+    );
+
+    const owner = program.provider.wallet.publicKey;
+    const stakeAccountKeypair = new Keypair();
+    const instructions: TransactionInstruction[] = [];
+
+    instructions.push(
+      SystemProgram.createAccount({
+        fromPubkey: owner,
+        newAccountPubkey: stakeAccountKeypair.publicKey,
+        lamports:
+          await program.provider.connection.getMinimumBalanceForRentExemption(
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+          ),
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+        programId: program.programId,
+      })
+    );
+
+    await expectFail(
+      program.methods
+        .createStakeAccount(owner, { fullyVested: {} })
+        .preInstructions(instructions)
+        .accounts({
+          stakeAccountPositions: stakeAccountKeypair.publicKey,
+          mint: pythMintAccount.publicKey,
+        })
+        .signers([stakeAccountKeypair]),
+      "Protocol is frozen",
+      errMap
+    );
+  });
+
+  it("unfreeze, create account", async () => {
+    await program.methods.updateFreeze(false).rpc({ skipPreflight: DEBUG });
+
+    const configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        mockClockTime: new BN(30),
+      })
+    );
+
+    const owner = program.provider.wallet.publicKey;
+    const stakeAccountKeypair = new Keypair();
+    const instructions: TransactionInstruction[] = [];
+
+    instructions.push(
+      SystemProgram.createAccount({
+        fromPubkey: owner,
+        newAccountPubkey: stakeAccountKeypair.publicKey,
+        lamports:
+          await program.provider.connection.getMinimumBalanceForRentExemption(
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+          ),
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+        programId: program.programId,
+      })
+    );
+
+    await program.methods
+      .createStakeAccount(owner, { fullyVested: {} })
+      .preInstructions(instructions)
+      .accounts({
+        stakeAccountPositions: stakeAccountKeypair.publicKey,
+        mint: pythMintAccount.publicKey,
+      })
+      .signers([stakeAccountKeypair])
+      .rpc();
+
+    stakeAccountAddress = stakeAccountKeypair.publicKey;
+  });
+
+  it("freeze again try other instructions", async () => {
+    await program.methods.updateFreeze(true).rpc({ skipPreflight: DEBUG });
+
+    const configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert(configAccountData.freeze);
+
+    await expectFail(
+      program.methods
+        .createPosition(null, null, new BN(1))
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          productAccount: votingProductMetadataAccount,
+        })
+        .signers([]),
+      "Protocol is frozen",
+      errMap
+    );
+
+    await expectFail(
+      program.methods
+        .closePosition(0, new BN(0), null)
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          productAccount: votingProductMetadataAccount,
+        })
+        .signers([]),
+      "Protocol is frozen",
+      errMap
+    );
+
+    const toAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pythMintAccount.publicKey,
+      program.provider.wallet.publicKey
+    );
+
+    await expectFail(
+      program.methods.withdrawStake(new BN(0)).accounts({
+        stakeAccountPositions: stakeAccountAddress,
+        destination: toAccount,
+      }),
+      "Protocol is frozen",
+      errMap
+    );
+  });
+
+  it("someone else tries to freeze", async () => {
+    const sam = new Keypair();
+    const samConnection = await StakeConnection.createStakeConnection(
+      program.provider.connection,
+      new Wallet(sam),
+      program.programId
+    );
+
+    await samConnection.program.provider.connection.requestAirdrop(
+      sam.publicKey,
+      1_000_000_000_000
+    );
+
+    // Airdrops are not instant unfortunately, wait
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    await expectFail(
+      samConnection.program.methods.updateFreeze(true),
+      "An address constraint was violated",
+      errMap
+    );
+    await expectFail(
+      samConnection.program.methods.updateGovernanceAuthority(new PublicKey(0)),
+      "An address constraint was violated",
+      errMap
     );
   });
 });

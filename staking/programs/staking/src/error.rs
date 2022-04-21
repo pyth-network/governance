@@ -35,6 +35,8 @@ pub enum ErrorCode {
     GenericOverflow,
     #[msg("Locked balance must be positive")]
     NegativeBalance,
+    #[msg("Protocol is frozen")]
+    Frozen,
     #[msg("Not allowed when not debugging")]
     DebuggingOnly,
     #[msg("Not implemented")]

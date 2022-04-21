@@ -45,6 +45,15 @@ pub struct UpdateGovernanceAuthority<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(freeze : bool)]
+pub struct UpdateFreeze<'info> {
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info> {
     // Native payer:
