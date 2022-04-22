@@ -14,7 +14,7 @@ pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
 pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
-pub const VOTING_TARGET_SEED: &str = "voting_target";
+pub const VOTING_TARGET_SEED: &str = "voting";
 
 impl positions::Target {
     pub fn get_seed(&self) -> &[u8] {
@@ -22,7 +22,7 @@ impl positions::Target {
             positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes(),
             positions::Target::STAKING {
                 ref product,
-            } => product.as_ref(),
+            } => product.as_ref(), //I think this should actually be two seeds, one for staking and one for the product.
         }
     }
 }
