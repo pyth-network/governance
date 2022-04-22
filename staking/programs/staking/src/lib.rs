@@ -92,7 +92,6 @@ pub mod staking {
 
         stake_account_metadata.lock = lock;
 
-
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
         stake_account_positions.positions = [None; MAX_POSITIONS];
@@ -387,11 +386,11 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_product(ctx: Context<CreateProduct>, product: Option<Pubkey>) -> Result<()> {
+    pub fn create_product(ctx: Context<CreateProduct>, product: StakeTarget) -> Result<()> {
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
 
-        if product.is_some() {
+        if !(matches!(product, StakeTarget::VOTING)) {
             return Err(error!(ErrorCode::NotImplemented));
         }
 

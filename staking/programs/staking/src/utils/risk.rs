@@ -7,7 +7,6 @@ use crate::state::positions::{
     PositionState,
     StakeTarget,
     MAX_POSITIONS,
-    VOTING_PRODUCT_SEED,
 };
 use crate::ErrorCode::{
     RiskLimitExceeded,

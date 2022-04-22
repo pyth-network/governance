@@ -11,7 +11,6 @@ use std::fmt::{
 pub const MAX_POSITIONS: usize = 100;
 pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 
-pub const VOTING_PRODUCT_SEED: &str = "voting_product";
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
@@ -105,16 +104,6 @@ pub enum Publisher {
 }
 
 impl StakeTarget {
-    pub fn get_seed(&self) -> &[u8] {
-        match *self {
-            StakeTarget::VOTING => VOTING_PRODUCT_SEED.as_bytes(),
-            StakeTarget::STAKING {
-                ref product,
-                publisher: _,
-            } => product.as_ref(),
-        }
-    }
-
     pub fn get_key(&self) -> Option<Pubkey> {
         match *self {
             StakeTarget::VOTING => None,

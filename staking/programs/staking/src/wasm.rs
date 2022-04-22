@@ -257,6 +257,7 @@ reexport_seed_const!(CONFIG_SEED);
 reexport_seed_const!(VOTER_RECORD_SEED);
 reexport_seed_const!(PRODUCT_SEED);
 reexport_seed_const!(MAX_VOTER_RECORD_SEED);
+reexport_seed_const!(VOTING_PRODUCT_SEED);
 
 #[wasm_bindgen]
 impl Constants {
