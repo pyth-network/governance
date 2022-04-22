@@ -66,18 +66,7 @@ pub struct Position {
                                      */
 }
 
-#[derive(
-    AnchorSerialize,
-    AnchorDeserialize,
-    Debug,
-    Clone,
-    Copy,
-    BorshSchema,
-    PartialEq,
-    PartialOrd,
-    Eq,
-    Ord,
-)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum StakeTarget {
     VOTING,
     STAKING {
@@ -86,18 +75,7 @@ pub enum StakeTarget {
     },
 }
 
-#[derive(
-    AnchorSerialize,
-    AnchorDeserialize,
-    Debug,
-    Clone,
-    Copy,
-    BorshSchema,
-    PartialEq,
-    PartialOrd,
-    Eq,
-    Ord,
-)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },

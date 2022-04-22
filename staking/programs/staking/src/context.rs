@@ -170,13 +170,13 @@ pub struct CreatePosition<'info> {
     // Product account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()], //can we find a better way for this where the seed is empty when option is none
+        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()],
         bump = product_account.bump)]
     pub product_account:         Account<'info, product::ProductMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, stake_target: positions::StakeTarget)] // Product is in the instruction arguments because it's needed in the anchor PDA checks
+#[instruction(index : u8, amount : u64, stake_target: positions::StakeTarget)] // stake_target is in the instruction arguments because it's needed in the anchor PDA checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -196,7 +196,7 @@ pub struct ClosePosition<'info> {
     // Product account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()], //can we find a better way for this where the seed is empty when option is none
+        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()],
         bump = product_account.bump)]
     pub product_account:         Account<'info, product::ProductMetadata>,
 }
