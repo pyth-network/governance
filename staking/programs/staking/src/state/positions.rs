@@ -57,10 +57,9 @@ pub struct Position {
                                         8: activation_epoch
                                         16: 1 if unlocking_start is Some, 2 if the outer option is None
                                         24: unlocking_start
-                                        32: 1 if is product is Some
-                                        33: product
-                                        65: 1 if publisher is Some
-                                        66: publisher
+                                        32: product
+                                        64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
+                                        65: publisher address
                                         98: compiler padding
                                         104: reserved
 
