@@ -23,7 +23,7 @@ export async function getProductAccount(
         anchor.utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
         stakeTarget.hasOwnProperty("voting")
           ? anchor.utils.bytes.utf8.encode(wasm.Constants.VOTING_PRODUCT_SEED())
-          : stakeTarget.staking.product.toBuffer(),
+          : (stakeTarget as any).staking.product.toBuffer(),
       ],
       programId
     )
