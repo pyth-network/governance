@@ -17,21 +17,21 @@ pub enum VestingSchedule {
     FullyVested,
     /// Continuous vesting of (initial_balance/vesting_duration) per time unit
     LinearVesting {
-        initial_balance:  u64,
-        vesting_duration: u64, // Must be > 0!
-        start_date:       i64,
+        _initial_balance:  u64,
+        _vesting_duration: u64, // Must be > 0!
+        _start_date:       i64,
     },
     /// Full balance vests at the cliff date
     CliffVesting {
-        initial_balance: u64,
-        cliff_date:      i64,
+        _initial_balance: u64,
+        _cliff_date:      i64,
     },
     /// Every (period_duration), (initial_balance/num_periods) vests
     PeriodicVesting {
-        initial_balance: u64,
-        start_date:      i64,
-        period_duration: u64,
-        num_periods:     u64,
+        _initial_balance: u64,
+        _start_date:      i64,
+        _period_duration: u64,
+        _num_periods:     u64,
     },
 }
 
@@ -53,37 +53,37 @@ impl VestingSchedule {
         match *self {
             VestingSchedule::FullyVested => Ok(0),
             VestingSchedule::LinearVesting {
-                initial_balance,
-                vesting_duration,
-                start_date,
+                _initial_balance,
+                _vesting_duration,
+                _start_date,
             } => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
-                initial_balance,
-                start_date,
+                _initial_balance,
+                _start_date,
                 1,
-                vesting_duration,
+                _vesting_duration,
             )),
             VestingSchedule::CliffVesting {
-                initial_balance,
-                cliff_date,
+                _initial_balance,
+                _cliff_date,
             } => {
-                if current_time < cliff_date {
-                    Ok(initial_balance)
+                if current_time < _cliff_date {
+                    Ok(_initial_balance)
                 } else {
                     Ok(0)
                 }
             }
             VestingSchedule::PeriodicVesting {
-                initial_balance,
-                start_date,
-                period_duration,
-                num_periods,
+                _initial_balance,
+                _start_date,
+                _period_duration,
+                _num_periods,
             } => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
-                initial_balance,
-                start_date,
-                period_duration,
-                num_periods,
+                _initial_balance,
+                _start_date,
+                _period_duration,
+                _num_periods,
             )),
         }
     }
@@ -150,9 +150,9 @@ pub mod tests {
     #[test]
     fn test_linear() {
         let v = VestingSchedule::LinearVesting {
-            initial_balance:  20,
-            vesting_duration: 6, // Intentionally not divisible
-            start_date:       5,
+            _initial_balance:  20,
+            _vesting_duration: 6, // Intentionally not divisible
+            _start_date:       5,
         };
         for t in 0..14 {
             if t <= 5 {
@@ -170,8 +170,8 @@ pub mod tests {
     #[test]
     fn test_cliff() {
         let v = VestingSchedule::CliffVesting {
-            initial_balance: 20,
-            cliff_date:      5,
+        _initial_balance: 20,
+           _cliff_date:      5,
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(4).unwrap(), 20);
@@ -183,10 +183,10 @@ pub mod tests {
     #[test]
     fn test_period() {
         let v = VestingSchedule::PeriodicVesting {
-            initial_balance: 20,
-            start_date:      5,
-            period_duration: 3,
-            num_periods:     7,
+            _initial_balance: 20,
+            _start_date:      5,
+            _period_duration: 3,
+            _num_periods:     7,
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(5).unwrap(), 20);
@@ -209,10 +209,10 @@ pub mod tests {
     #[should_panic]
     fn test_overflow() {
         let v = VestingSchedule::PeriodicVesting {
-            initial_balance: 1_000_000_000,
-            start_date:      -9223372036854775264,
-            period_duration: 1,
-            num_periods:     1 << 63,
+            _initial_balance: 1_000_000_000,
+            _start_date:      -9223372036854775264,
+            _period_duration: 1,
+            _num_periods:     1 << 63,
         };
         v.get_unvested_balance(9223372036854775264).unwrap();
     }
@@ -221,10 +221,10 @@ pub mod tests {
     fn test_overflow2() {
         // Invariant: get_unvested_balance always returns something between 0 and initial_balance
         let v = VestingSchedule::PeriodicVesting {
-            initial_balance: 1_000_000_000,
-            start_date:      -(1 << 60),
-            period_duration: 1,
-            num_periods:     1 << 62,
+            _initial_balance: 1_000_000_000,
+            _start_date:      -(1 << 60),
+            _period_duration: 1,
+            _num_periods:     1 << 62,
         };
         let value = v.get_unvested_balance(1 << 60).unwrap();
         assert!(value <= 1_000_000_000);
@@ -234,10 +234,10 @@ pub mod tests {
     fn default_pyth_vesting() {
         let ONE_MONTH = 61 * 3600 * 12;
         let v = VestingSchedule::PeriodicVesting {
-            initial_balance: 1_000,
-            start_date:      0,
-            period_duration: ONE_MONTH,
-            num_periods:     72,
+            _initial_balance: 1_000,
+            _start_date:      0,
+            _period_duration: ONE_MONTH,
+            _num_periods:     72,
         };
 
         let TOKENS_PER_PERIOD = 1_000 / 72;

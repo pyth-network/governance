@@ -1,11 +1,8 @@
-use crate::state::global_config::GlobalConfig;
 use crate::state::positions::{
-    Position,
     PositionData,
     PositionState,
     MAX_POSITIONS,
 };
-use crate::utils::clock::get_current_epoch;
 use anchor_lang::prelude::*;
 
 pub fn compute_voter_weight(

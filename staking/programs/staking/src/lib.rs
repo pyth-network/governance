@@ -4,7 +4,6 @@
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::log;
 use anchor_spl::token::transfer;
 use context::*;
 use state::global_config::GlobalConfig;
@@ -382,10 +381,6 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
-        Ok(())
-    }
-
     pub fn create_product(ctx: Context<CreateProduct>, product: StakeTarget) -> Result<()> {
         let product_account = &mut ctx.accounts.product_account;
         let config = &ctx.accounts.config;
@@ -403,11 +398,11 @@ pub mod staking {
 
     // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
     // so we have to keep it, but make it a no-op.
-    pub fn advance_clock(ctx: Context<AdvanceClock>, seconds: i64) -> Result<()> {
+    pub fn advance_clock(_ctx: Context<AdvanceClock>, _seconds: i64) -> Result<()> {
         #[cfg(feature = "mock-clock")]
         {
-            let config = &mut ctx.accounts.config;
-            config.mock_clock_time = config.mock_clock_time.checked_add(seconds).unwrap();
+            let config = &mut _ctx.accounts.config;
+            config.mock_clock_time = config.mock_clock_time.checked_add(_seconds).unwrap();
             Ok(())
         }
         #[cfg(not(feature = "mock-clock"))]

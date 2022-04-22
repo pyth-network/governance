@@ -33,7 +33,6 @@ impl GlobalConfig {
 pub mod tests {
     use crate::state::global_config::GlobalConfig;
     use anchor_lang::prelude::*;
-    use std::convert::TryInto;
 
     #[test]
     fn test_unfrozen() {

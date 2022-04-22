@@ -5,7 +5,6 @@ use std::collections::BTreeMap;
 use crate::state::positions::{
     PositionData,
     PositionState,
-    StakeTarget,
     MAX_POSITIONS,
 };
 use crate::ErrorCode::{
@@ -137,12 +136,6 @@ pub mod tests {
         POSITION_DATA_PADDING,
     };
     use crate::utils::risk::validate;
-    use crate::ErrorCode::{
-        RiskLimitExceeded,
-        TokensNotYetVested,
-        TooMuchExposureToGovernance,
-        TooMuchExposureToProduct,
-    };
 
     #[test]
     fn test_disjoint() {
@@ -155,9 +148,9 @@ pub mod tests {
             activation_epoch: 1,
             amount:           7,
             stake_target:     StakeTarget::STAKING {
-                product:   Pubkey::new_unique(),
-                publisher: Publisher::SOME {
-                    address: Pubkey::new_unique(),
+                _product:   Pubkey::new_unique(),
+                _publisher: Publisher::SOME {
+                    _address: Pubkey::new_unique(),
                 },
             },
             unlocking_start:  Some(50),
@@ -167,9 +160,9 @@ pub mod tests {
             activation_epoch: 1,
             amount:           3,
             stake_target:     StakeTarget::STAKING {
-                product:   Pubkey::new_unique(),
-                publisher: Publisher::SOME {
-                    address: Pubkey::new_unique(),
+                _product:   Pubkey::new_unique(),
+                _publisher: Publisher::SOME {
+                   _address: Pubkey::new_unique(),
                 },
             },
             unlocking_start:  Some(50),
@@ -214,9 +207,9 @@ pub mod tests {
             activation_epoch: 1,
             amount:           3,
             stake_target:     StakeTarget::STAKING {
-                product:   Pubkey::new_unique(),
-                publisher: Publisher::SOME {
-                    address: Pubkey::new_unique(),
+                _product:   Pubkey::new_unique(),
+                _publisher: Publisher::SOME {
+                    _address: Pubkey::new_unique(),
                 },
             },
             unlocking_start:  None,
@@ -242,8 +235,8 @@ pub mod tests {
             activation_epoch: 1,
             amount:           7,
             stake_target:     StakeTarget::STAKING {
-                product,
-                publisher: Publisher::DEFAULT,
+                _product : product,
+                _publisher: Publisher::DEFAULT,
             },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
@@ -252,8 +245,8 @@ pub mod tests {
             activation_epoch: 1,
             amount:           3,
             stake_target:     StakeTarget::STAKING {
-                product,
-                publisher: Publisher::DEFAULT,
+                _product : product,
+                _publisher: Publisher::DEFAULT,
             },
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
@@ -276,9 +269,9 @@ pub mod tests {
                 activation_epoch: 1,
                 amount:           10,
                 stake_target:     StakeTarget::STAKING {
-                    product:   Pubkey::new_unique(),
-                    publisher: Publisher::SOME {
-                        address: Pubkey::new_unique(),
+                    _product:   Pubkey::new_unique(),
+                    _publisher: Publisher::SOME {
+                        _address: Pubkey::new_unique(),
                     },
                 },
                 unlocking_start:  None,
@@ -292,9 +285,9 @@ pub mod tests {
             activation_epoch: 1,
             amount:           10,
             stake_target:     StakeTarget::STAKING {
-                product:   Pubkey::new_unique(),
-                publisher: Publisher::SOME {
-                    address: Pubkey::new_unique(),
+                _product:   Pubkey::new_unique(),
+                _publisher: Publisher::SOME {
+                    _address: Pubkey::new_unique(),
                 },
             },
             unlocking_start:  None,
@@ -360,9 +353,9 @@ pub mod tests {
                 activation_epoch: 1,
                 amount:           u64::MAX / 3,
                 stake_target:     StakeTarget::STAKING {
-                    product,
-                    publisher: Publisher::SOME {
-                        address: Pubkey::new_unique(),
+                    _product : product,
+                    _publisher: Publisher::SOME {
+                        _address: Pubkey::new_unique(),
                     },
                 },
                 unlocking_start:  None,

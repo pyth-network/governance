@@ -21,9 +21,9 @@ impl positions::StakeTarget {
         match *self {
             positions::StakeTarget::VOTING => VOTING_PRODUCT_SEED.as_bytes(),
             positions::StakeTarget::STAKING {
-                ref product,
-                publisher: _,
-            } => product.as_ref(),
+                ref _product,
+                _publisher: _,
+            } => _product.as_ref(),
         }
     }
 }
@@ -258,11 +258,6 @@ pub struct CreateProduct<'info> {
         bump)]
     pub product_account:   Account<'info, product::ProductMetadata>,
     pub system_program:    Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct CleanupPositions<'info> {
-    pub payer: Signer<'info>,
 }
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed

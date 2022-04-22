@@ -22,12 +22,6 @@ pub struct PositionData {
 }
 
 impl PositionData {
-    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64> {
-        Err(error!(ErrorCode::NotImplemented))
-    }
-    pub fn get_locked(&self, current_epoch: u64) -> Result<u64> {
-        Err(error!(ErrorCode::NotImplemented))
-    }
 
     /// Finds first index available for a new position
     pub fn get_unused_index(&self) -> Result<usize> {
@@ -71,15 +65,15 @@ pub struct Position {
 pub enum StakeTarget {
     VOTING,
     STAKING {
-        product:   Pubkey,
-        publisher: Publisher,
+        _product:   Pubkey,
+        _publisher : Publisher,
     },
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum Publisher {
     DEFAULT,
-    SOME { address: Pubkey },
+    SOME { _address: Pubkey },
 }
 
 impl StakeTarget {
@@ -87,9 +81,9 @@ impl StakeTarget {
         match *self {
             StakeTarget::VOTING => None,
             StakeTarget::STAKING {
-                product,
-                publisher: _,
-            } => Some(product),
+                _product,
+                _publisher: _,
+            } => Some(_product),
         }
     }
 }
