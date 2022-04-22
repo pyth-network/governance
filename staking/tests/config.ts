@@ -43,6 +43,8 @@ describe("config", async () => {
   let configAccount: PublicKey;
   let bump: number;
 
+  const votingProduct = { voting: {} };
+
   after(async () => {
     controller.abort();
   });
@@ -61,7 +63,7 @@ describe("config", async () => {
     );
 
     votingProductMetadataAccount = await getProductAccount(
-      { voting: {} },
+      votingProduct,
       program.programId
     );
   });
@@ -86,7 +88,7 @@ describe("config", async () => {
       });
 
     await program.methods
-      .createProduct({ voting: {} })
+      .createProduct(votingProduct)
       .accounts({
         productAccount: votingProductMetadataAccount,
         governanceSigner: program.provider.wallet.publicKey,
@@ -264,7 +266,7 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .createPosition({ voting: {} }, new BN(1))
+        .createPosition(votingProduct, new BN(1))
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           productAccount: votingProductMetadataAccount,
@@ -276,7 +278,7 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .closePosition(0, new BN(0), { voting: {} })
+        .closePosition(0, new BN(0), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           productAccount: votingProductMetadataAccount,
