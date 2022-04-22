@@ -4,8 +4,8 @@ use std::convert::TryInto;
 
 pub const TARGET_METADATA_SIZE: usize = 10240;
 
-/// This represents a product
-/// Currently we store the last time the product account was updated, the current locked balance
+/// This represents a target
+/// Currently we store the last time the target account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch
 #[account]
 #[derive(Default)]
@@ -17,7 +17,7 @@ pub struct TargetMetadata {
 }
 
 impl TargetMetadata {
-    // Updates the ProductMedata struct.
+    // Updates the TargetMedata struct.
     // If no time has passed, doesn't do anything
     // If 1 epoch has passed, locked becomes locked + delta_locked
     // If more than 1 epoch has passed, we can assume that no tokens
@@ -69,7 +69,7 @@ impl TargetMetadata {
             .ok_or(error!(ErrorCode::GenericOverflow))?;
 
         // Locked + delta_locked should never be negative, because that'd mean the balance staked to
-        // the product is negative
+        // the target is negative
         if (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
             .checked_add(self.delta_locked)
             .ok_or(error!(ErrorCode::GenericOverflow))?

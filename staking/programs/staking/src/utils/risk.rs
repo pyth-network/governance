@@ -58,7 +58,7 @@ pub fn validate(
      * The four inequalities we need to hold are:
      *      vested balance >= 0
      *      total balance = vested balance + unvested balance >= voting position
-     *      vested balance >= exposure_i for each product other than voting
+     *      vested balance >= exposure_i for each target other than voting
      *      RISK_THRESH * vested balance >= sum exposure_i (again excluding voting)
      *
      * If you replace vested balance with (vested balance - withdrawable amount) and then solve
@@ -75,10 +75,10 @@ pub fn validate(
      */
 
     let mut governance_exposure: u64 = 0;
-    let mut max_product_exposure: u64 = 0;
+    let mut max_target_exposure: u64 = 0;
     let mut total_exposure: u64 = 0;
-    for (product, exposure) in &current_exposures {
-        match product {
+    for (target, exposure) in &current_exposures {
+        match target {
             Target::VOTING => {
                 // This is the special voting position that ignores vesting
                 // If there are multiple voting positions, they've been aggregated at this point
@@ -86,7 +86,7 @@ pub fn validate(
             }
             _ => {
                 // A normal position
-                max_product_exposure = cmp::max(max_product_exposure, *exposure);
+                max_target_exposure = cmp::max(max_target_exposure, *exposure);
                 total_exposure = total_exposure
                     .checked_add(*exposure)
                     .ok_or_else(|| error!(TooMuchExposureToProduct))?;
@@ -106,7 +106,7 @@ pub fn validate(
     withdrawable_balance = cmp::min(
         withdrawable_balance,
         vested_balance
-            .checked_sub(max_product_exposure)
+            .checked_sub(max_target_exposure)
             .ok_or_else(|| error!(TooMuchExposureToProduct))?,
     );
     withdrawable_balance = cmp::min(

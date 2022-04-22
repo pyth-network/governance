@@ -118,8 +118,8 @@ pub mod staking {
             return Err(error!(ErrorCode::CreatePositionWithZero));
         }
 
-        // TODO: Should we check that product and publisher are legitimate?
-        // I don't think anyone has anything to gain from adding a position to a fake product
+        // TODO: Should we check that target is legitimate?
+        // I don't think anyone has anything to gain from adding a position to a fake target
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;

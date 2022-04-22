@@ -228,7 +228,7 @@ pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
     pub payer:              Signer<'info>,
-    // Governance product accounts:
+    // Governance target accounts:
     #[account(
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_account.bump)]
