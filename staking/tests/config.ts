@@ -1,6 +1,10 @@
 import { parseIdlErrors, utils, Wallet } from "@project-serum/anchor";
 import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  Token,
+} from "@solana/spl-token";
 import {
   startValidator,
   readAnchorConfig,
@@ -8,7 +12,7 @@ import {
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
 } from "./utils/before";
-import { expectFail, createMint } from "./utils/utils";
+import { expectFail, createMint, getProductAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
@@ -56,15 +60,10 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-          new PublicKey(0).toBuffer(),
-        ],
-        program.programId
-      )
-    )[0];
+    votingProductMetadataAccount = await getProductAccount(
+      { voting: {} },
+      program.programId
+    );
   });
 
   it("initializes config", async () => {
@@ -87,7 +86,7 @@ describe("config", async () => {
       });
 
     await program.methods
-      .createProduct(null)
+      .createProduct({ voting: {} })
       .accounts({
         productAccount: votingProductMetadataAccount,
         governanceSigner: program.provider.wallet.publicKey,
@@ -265,7 +264,7 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .createPosition(null, null, new BN(1))
+        .createPosition({ voting: {} }, new BN(1))
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           productAccount: votingProductMetadataAccount,
@@ -277,7 +276,7 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .closePosition(0, new BN(0), null)
+        .closePosition(0, new BN(0), { voting: {} })
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           productAccount: votingProductMetadataAccount,

@@ -325,9 +325,12 @@ export async function initGovernanceProduct(
   program: Program,
   governanceSigner: PublicKey
 ) {
-  const productAccount = await getProductAccount(null, program.programId);
+  const productAccount = await getProductAccount(
+    { voting: {} },
+    program.programId
+  );
   await program.methods
-    .createProduct(null)
+    .createProduct({ voting: {} })
     .accounts({
       productAccount,
       governanceSigner: governanceSigner,

@@ -57,7 +57,7 @@ describe("position_lifecycle", async () => {
       makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
 
     ownerAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -148,7 +148,7 @@ describe("position_lifecycle", async () => {
 
   it("open a new position", async () => {
     await program.methods
-      .createPosition(votingProduct, null, PythBalance.fromString("200").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("200").toBN())
       .accounts({
         productAccount: votingProductMetadataAccount,
         payer: owner,
@@ -339,7 +339,7 @@ describe("position_lifecycle", async () => {
 
   it("another iteration", async () => {
     await program.methods
-      .createPosition(votingProduct, null, PythBalance.fromString("100").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("100").toBN())
       .accounts({
         productAccount: votingProductMetadataAccount,
         payer: owner,

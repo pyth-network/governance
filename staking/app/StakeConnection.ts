@@ -17,7 +17,7 @@ import {
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
-import * as wasm2 from "pyth-staking-wasm";
+import * as wasm2 from "../wasm";
 import {
   Token,
   TOKEN_PROGRAM_ID,
@@ -58,7 +58,7 @@ export class StakeConnection {
   config: GlobalConfig;
   private configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
-  votingProduct = null;
+  votingProduct = { voting: {} };
   governanceAddress: PublicKey;
 
   private constructor(
@@ -112,7 +112,7 @@ export class StakeConnection {
       await PublicKey.findProgramAddress(
         [
           utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-          new PublicKey(0).toBuffer(),
+          utils.bytes.utf8.encode(wasm.Constants.VOTING_PRODUCT_SEED()),
         ],
         program.programId
       )
@@ -553,7 +553,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .createPosition(this.votingProduct, null, amount.toBN())
+      .createPosition(this.votingProduct, amount.toBN())
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,

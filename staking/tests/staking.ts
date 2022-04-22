@@ -78,6 +78,7 @@ describe("staking", async () => {
     );
 
     votingProduct = stakeConnection.votingProduct;
+
     votingProductMetadataAccount = await getProductAccount(
       votingProduct,
       program.programId
@@ -215,11 +216,7 @@ describe("staking", async () => {
   it("creates a position that's too big", async () => {
     await expectFail(
       program.methods
-        .createPosition(
-          votingProduct,
-          null,
-          PythBalance.fromString("102").toBN()
-        )
+        .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
           productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -231,7 +228,7 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     await program.methods
-      .createPosition(votingProduct, null, new BN(1))
+      .createPosition(votingProduct, new BN(1))
       .accounts({
         productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -255,8 +252,7 @@ describe("staking", async () => {
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        product: votingProduct,
-        publisher: null,
+        stakeTarget: votingProduct,
         reserved: [
           "00",
           "00",
@@ -281,7 +277,7 @@ describe("staking", async () => {
   it("creates position with 0 principal", async () => {
     await expectFail(
       program.methods
-        .createPosition(votingProduct, null, PythBalance.fromString("0").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("0").toBN())
         .accounts({
           productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -292,21 +288,27 @@ describe("staking", async () => {
   });
 
   it("creates a non-voting position", async () => {
+    const nonVotingStakeTarget = {
+      staking: {
+        product: zeroPubkey,
+        publisher: { some: { address: zeroPubkey } },
+      },
+    };
+
     await expectFail(
       program.methods
         .createPosition(
-          zeroPubkey,
-          zeroPubkey,
+          nonVotingStakeTarget,
           PythBalance.fromString("10").toBN()
         )
         .accounts({
           productAccount: await getProductAccount(
-            zeroPubkey,
+            nonVotingStakeTarget,
             program.programId
           ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Not implemented",
+      "The program expected this account to be already initialized",
       errMap
     );
   });

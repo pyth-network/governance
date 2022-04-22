@@ -55,7 +55,7 @@ describe("create_product", async () => {
     [productAccount, bump] = await PublicKey.findProgramAddress(
       [
         utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-        new PublicKey(0).toBuffer(),
+        utils.bytes.utf8.encode(wasm.Constants.VOTING_PRODUCT_SEED()),
       ],
       program.programId
     );
