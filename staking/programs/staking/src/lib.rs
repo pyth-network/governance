@@ -390,7 +390,7 @@ pub mod staking {
             return Err(error!(ErrorCode::NotImplemented));
         }
 
-        target_account.bump = *ctx.bumps.get("product_account").unwrap();
+        target_account.bump = *ctx.bumps.get("target_account").unwrap();
         target_account.last_update_at = get_current_epoch(config).unwrap();
         target_account.locked = 0;
         target_account.delta_locked = 0;
