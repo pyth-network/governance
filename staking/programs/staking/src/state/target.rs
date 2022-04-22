@@ -4,7 +4,7 @@ use std::convert::TryInto;
 
 pub const TARGET_METADATA_SIZE: usize = 10240;
 
-/// This represents a target
+/// This represents a target that users can stake to
 /// Currently we store the last time the target account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch
 #[account]
@@ -83,7 +83,7 @@ impl TargetMetadata {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::stake_target::TargetMetadata;
+    use crate::state::target::TargetMetadata;
     #[test]
     fn zero_update() {
         let target = &mut TargetMetadata {

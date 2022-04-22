@@ -42,7 +42,7 @@ pub fn validate(
                 | PositionState::LOCKING => {
                     let this_position = stake_account_positions.positions[i].unwrap();
                     let prod_exposure: &mut u64 = current_exposures
-                        .entry(this_position.stake_target.get_target())
+                        .entry(this_position.target_with_parameters.get_target())
                         .or_default();
                     *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
                 }
@@ -154,7 +154,7 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
@@ -166,7 +166,7 @@ pub mod tests {
         pd.positions[1] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
@@ -206,14 +206,14 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            stake_target:     TargetWithParameters::VOTING,
+            target_with_parameters:     TargetWithParameters::VOTING,
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         });
         pd.positions[4] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
@@ -241,7 +241,7 @@ pub mod tests {
         pd.positions[0] = Some(Position {
             activation_epoch: 1,
             amount:           7,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product,
                 publisher: Publisher::DEFAULT,
             },
@@ -251,7 +251,7 @@ pub mod tests {
         pd.positions[3] = Some(Position {
             activation_epoch: 1,
             amount:           3,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product,
                 publisher: Publisher::DEFAULT,
             },
@@ -275,7 +275,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           10,
-                stake_target:     TargetWithParameters::STAKING {
+                target_with_parameters:     TargetWithParameters::STAKING {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
@@ -291,7 +291,7 @@ pub mod tests {
         pd.positions[7] = Some(Position {
             activation_epoch: 1,
             amount:           10,
-            stake_target:     TargetWithParameters::STAKING {
+            target_with_parameters:     TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
@@ -315,7 +315,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           10,
-                stake_target:     TargetWithParameters::VOTING,
+                target_with_parameters:     TargetWithParameters::VOTING,
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
@@ -338,7 +338,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           u64::MAX / 3,
-                stake_target:     TargetWithParameters::VOTING,
+                target_with_parameters:     TargetWithParameters::VOTING,
                 unlocking_start:  None,
                 reserved:         POSITION_DATA_PADDING,
             });
@@ -359,7 +359,7 @@ pub mod tests {
             pd.positions[i] = Some(Position {
                 activation_epoch: 1,
                 amount:           u64::MAX / 3,
-                stake_target:     TargetWithParameters::STAKING {
+                target_with_parameters:     TargetWithParameters::STAKING {
                     product,
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),

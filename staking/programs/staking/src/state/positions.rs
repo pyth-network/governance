@@ -51,7 +51,7 @@ pub struct Position {
     pub amount:           u64,
     pub activation_epoch: u64,
     pub unlocking_start:  Option<u64>,
-    pub stake_target:     TargetWithParameters,
+    pub target_with_parameters:     TargetWithParameters,
     pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
                                         0: amount
                                         8: activation_epoch
@@ -135,7 +135,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        return matches!(self.stake_target, TargetWithParameters::VOTING);
+        return matches!(self.target_with_parameters, TargetWithParameters::VOTING);
     }
 }
 
@@ -171,7 +171,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  Some(12),
-            stake_target:     TargetWithParameters::VOTING,
+            target_with_parameters:     TargetWithParameters::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };
@@ -206,7 +206,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  None,
-            stake_target:     TargetWithParameters::VOTING,
+            target_with_parameters:     TargetWithParameters::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };
