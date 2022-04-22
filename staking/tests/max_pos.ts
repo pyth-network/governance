@@ -86,7 +86,7 @@ describe("fills a stake account with positions", async () => {
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
         productAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
@@ -131,7 +131,7 @@ describe("fills a stake account with positions", async () => {
     // Now create 101, which is supposed to fail
     await expectFail(
       program.methods
-        .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("1").toBN())
         .accounts({
           productAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
