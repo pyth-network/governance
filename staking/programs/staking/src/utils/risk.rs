@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use crate::state::positions::{
     PositionData,
     PositionState,
-    StakeTarget,
+    Target,
     MAX_POSITIONS,
 };
 use crate::ErrorCode::{
@@ -27,7 +27,7 @@ pub fn validate(
     current_epoch: u64,
     unlocking_duration: u8,
 ) -> Result<u64> {
-    let mut current_exposures: BTreeMap<Option<Pubkey>, u64> = BTreeMap::new();
+    let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
         if stake_account_positions.positions[i].is_some() {
@@ -42,7 +42,7 @@ pub fn validate(
                 | PositionState::LOCKING => {
                     let this_position = stake_account_positions.positions[i].unwrap();
                     let prod_exposure: &mut u64 = current_exposures
-                        .entry(this_position.stake_target.get_key())
+                        .entry(this_position.stake_target.get_target())
                         .or_default();
                     *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
                 }
@@ -79,12 +79,12 @@ pub fn validate(
     let mut total_exposure: u64 = 0;
     for (product, exposure) in &current_exposures {
         match product {
-            None => {
+            Target::VOTING => {
                 // This is the special voting position that ignores vesting
                 // If there are multiple voting positions, they've been aggregated at this point
                 governance_exposure = *exposure;
             }
-            Some(_) => {
+            _ => {
                 // A normal position
                 max_product_exposure = cmp::max(max_product_exposure, *exposure);
                 total_exposure = total_exposure

@@ -2,21 +2,21 @@ use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use std::convert::TryInto;
 
-pub const PRODUCT_METADATA_SIZE: usize = 10240;
+pub const TARGET_METADATA_SIZE: usize = 10240;
 
 /// This represents a product
 /// Currently we store the last time the product account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch
 #[account]
 #[derive(Default)]
-pub struct ProductMetadata {
+pub struct TargetMetadata {
     pub bump:           u8,
     pub last_update_at: u64,
     pub locked:         u64,
     pub delta_locked:   i64, // locked = locked + delta_locked for the next epoch
 }
 
-impl ProductMetadata {
+impl TargetMetadata {
     // Updates the ProductMedata struct.
     // If no time has passed, doesn't do anything
     // If 1 epoch has passed, locked becomes locked + delta_locked
@@ -83,10 +83,10 @@ impl ProductMetadata {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::product::ProductMetadata;
+    use crate::state::product::TargetMetadata;
     #[test]
     fn zero_update() {
-        let product = &mut ProductMetadata {
+        let product = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         0,
@@ -101,7 +101,7 @@ pub mod tests {
 
     #[test]
     fn positive_update() {
-        let product = &mut ProductMetadata {
+        let product = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         0,
@@ -122,7 +122,7 @@ pub mod tests {
 
     #[test]
     fn negative_update() {
-        let product = &mut ProductMetadata {
+        let product = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         30,
@@ -142,7 +142,7 @@ pub mod tests {
 
     #[test]
     fn unlock_bigger_than_locked() {
-        let product = &mut ProductMetadata {
+        let product = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         30,
@@ -154,7 +154,7 @@ pub mod tests {
 
     #[test]
     fn overflow() {
-        let product = &mut ProductMetadata {
+        let product = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         u64::MAX,

@@ -12,17 +12,16 @@ pub const CUSTODY_SEED: &str = "custody";
 pub const STAKE_ACCOUNT_METADATA_SEED: &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
-pub const PRODUCT_SEED: &str = "product";
+pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
-pub const VOTING_PRODUCT_SEED: &str = "voting_product";
+pub const VOTING_TARGET_SEED: &str = "voting_target";
 
-impl positions::StakeTarget {
+impl positions::Target {
     pub fn get_seed(&self) -> &[u8] {
         match *self {
-            positions::StakeTarget::VOTING => VOTING_PRODUCT_SEED.as_bytes(),
-            positions::StakeTarget::STAKING {
+            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes(),
+            positions::Target::STAKING {
                 ref product,
-                publisher: _,
             } => product.as_ref(),
         }
     }
@@ -150,7 +149,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>>
 }
 
 #[derive(Accounts)]
-#[instruction(stake_target:   positions::StakeTarget, amount : u64)]
+#[instruction(stake_target:   positions::TargetWithParameters, amount : u64)]
 pub struct CreatePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -167,16 +166,16 @@ pub struct CreatePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
-    // Product account :
+    // Target account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()],
-        bump = product_account.bump)]
-    pub product_account:         Account<'info, product::ProductMetadata>,
+        seeds = [TARGET_SEED.as_bytes(), stake_target.get_target().get_seed()],
+        bump = target_account.bump)]
+    pub target_account:         Account<'info, stake_target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, stake_target: positions::StakeTarget)] // stake_target is in the instruction arguments because it's needed in the anchor PDA checks
+#[instruction(index : u8, amount : u64, stake_target: positions::TargetWithParameters)] // stake_target is in the instruction arguments because it's needed in the anchor PDA checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -193,12 +192,12 @@ pub struct ClosePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
-    // Product account :
+    // Target account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), stake_target.get_seed()],
-        bump = product_account.bump)]
-    pub product_account:         Account<'info, product::ProductMetadata>,
+        seeds = [TARGET_SEED.as_bytes(), stake_target.get_target().get_seed()],
+        bump = target_account.bump)]
+    pub target_account:         Account<'info, stake_target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
@@ -231,9 +230,9 @@ pub struct UpdateMaxVoterWeight<'info> {
     pub payer:              Signer<'info>,
     // Governance product accounts:
     #[account(
-        seeds = [PRODUCT_SEED.as_bytes(), VOTING_PRODUCT_SEED.as_bytes()],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_account.bump)]
-    pub governance_account: Account<'info, product::ProductMetadata>,
+    pub governance_account: Account<'info, stake_target::TargetMetadata>,
     #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
     pub max_voter_record:   Account<'info, max_voter_weight::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
@@ -242,8 +241,8 @@ pub struct UpdateMaxVoterWeight<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(product : positions::StakeTarget)]
-pub struct CreateProduct<'info> {
+#[instruction(target : positions::Target)]
+pub struct CreateTarget<'info> {
     #[account(mut)]
     pub payer:             Signer<'info>,
     #[account(address = config.governance_authority)]
@@ -253,10 +252,10 @@ pub struct CreateProduct<'info> {
     #[account(
         init,
         payer = payer,
-        seeds = [PRODUCT_SEED.as_bytes(), product.get_seed()],
-        space = product::PRODUCT_METADATA_SIZE,
+        seeds =  [TARGET_SEED.as_bytes(), target.get_seed()],
+        space = stake_target::TARGET_METADATA_SIZE,
         bump)]
-    pub product_account:   Account<'info, product::ProductMetadata>,
+    pub target_account:   Account<'info, stake_target::TargetMetadata>,
     pub system_program:    Program<'info, System>,
 }
 

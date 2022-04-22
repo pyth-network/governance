@@ -51,7 +51,7 @@ pub struct Position {
     pub amount:           u64,
     pub activation_epoch: u64,
     pub unlocking_start:  Option<u64>,
-    pub stake_target:     StakeTarget,
+    pub stake_target:     TargetWithParameters,
     pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
                                         0: amount
                                         8: activation_epoch
@@ -67,14 +67,22 @@ pub struct Position {
                                      */
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialOrd, Ord, PartialEq, Eq)]
+pub enum Target {
+    VOTING,
+    STAKING {
+        product:   Pubkey,
+    },
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
-pub enum StakeTarget {
+pub enum TargetWithParameters {
     VOTING,
     STAKING {
         product:   Pubkey,
         publisher: Publisher,
     },
-}
+} 
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum Publisher {
@@ -82,14 +90,14 @@ pub enum Publisher {
     SOME { address: Pubkey },
 }
 
-impl StakeTarget {
-    pub fn get_key(&self) -> Option<Pubkey> {
+impl TargetWithParameters {
+    pub fn get_target(&self) -> Target {
         match *self {
-            StakeTarget::VOTING => None,
-            StakeTarget::STAKING {
+            TargetWithParameters::VOTING => Target::VOTING,
+            TargetWithParameters::STAKING {
                 product,
                 publisher: _,
-            } => Some(product),
+            } => Target::STAKING {product},
         }
     }
 }
@@ -127,7 +135,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        return matches!(self.stake_target, StakeTarget::VOTING);
+        return matches!(self.stake_target, TargetWithParameters::VOTING);
     }
 }
 

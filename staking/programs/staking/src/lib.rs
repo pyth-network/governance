@@ -12,7 +12,8 @@ use state::positions::{
     Position,
     PositionData,
     PositionState,
-    StakeTarget,
+    Target,
+    TargetWithParameters,
     MAX_POSITIONS,
 };
 use state::vesting::VestingSchedule;
@@ -110,7 +111,7 @@ pub mod staking {
     /// Computes risk and fails if new positions exceed risk limit
     pub fn create_position(
         ctx: Context<CreatePosition>,
-        stake_target: StakeTarget,
+        stake_target: TargetWithParameters,
         amount: u64,
     ) -> Result<()> {
         if amount == 0 {
@@ -123,7 +124,7 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
-        let product_account = &mut ctx.accounts.product_account;
+        let target_account = &mut ctx.accounts.target_account;
 
         config.check_frozen()?;
 
@@ -134,11 +135,6 @@ pub mod staking {
             unlocking_start:  None,
             reserved:         POSITION_DATA_PADDING,
         };
-        // For now, restrict positions to voting position
-        // This could be combined with the previous check, but the following check is temporary
-        if !new_position.is_voting() {
-            return Err(error!(ErrorCode::NotImplemented));
-        }
 
         match PositionData::get_unused_index(stake_account_positions) {
             Err(x) => return Err(x),
@@ -161,7 +157,7 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
-        product_account.add_locking(amount, current_epoch)?;
+        target_account.add_locking(amount, current_epoch)?;
 
         Ok(())
     }
@@ -170,11 +166,11 @@ pub mod staking {
         ctx: Context<ClosePosition>,
         index: u8,
         amount: u64,
-        stake_target: StakeTarget,
+        stake_target: TargetWithParameters,
     ) -> Result<()> {
         let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let product_account = &mut ctx.accounts.product_account;
+        let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
@@ -242,7 +238,7 @@ pub mod staking {
                     }
                 }
 
-                product_account.add_unlocking(amount, current_epoch)?;
+                target_account.add_unlocking(amount, current_epoch)?;
             }
 
             // For this case, we don't need to create new positions because the "closed"
@@ -262,7 +258,7 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
                 }
-                product_account.add_unlocking(amount, current_epoch)?;
+                target_account.add_unlocking(amount, current_epoch)?;
             }
             PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
@@ -386,18 +382,18 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_product(ctx: Context<CreateProduct>, product: StakeTarget) -> Result<()> {
-        let product_account = &mut ctx.accounts.product_account;
+    pub fn create_target(ctx: Context<CreateTarget>, target: Target) -> Result<()> {
+        let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 
-        if !(matches!(product, StakeTarget::VOTING)) {
+        if !(matches!(target, Target::VOTING)) {
             return Err(error!(ErrorCode::NotImplemented));
         }
 
-        product_account.bump = *ctx.bumps.get("product_account").unwrap();
-        product_account.last_update_at = get_current_epoch(config).unwrap();
-        product_account.locked = 0;
-        product_account.delta_locked = 0;
+        target_account.bump = *ctx.bumps.get("product_account").unwrap();
+        target_account.last_update_at = get_current_epoch(config).unwrap();
+        target_account.locked = 0;
+        target_account.delta_locked = 0;
         Ok(())
     }
 
