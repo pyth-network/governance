@@ -17,7 +17,7 @@ pub struct TargetMetadata {
 }
 
 impl TargetMetadata {
-    // Updates the TargetMedata struct.
+    // Updates the TargetMetadata struct.
     // If no time has passed, doesn't do anything
     // If 1 epoch has passed, locked becomes locked + delta_locked
     // If more than 1 epoch has passed, we can assume that no tokens

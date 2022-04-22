@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
 use std::fmt::{
     self,
-    Debug,
+    Debug, 
 };
 
 pub const MAX_POSITIONS: usize = 100;
@@ -43,7 +43,7 @@ impl PositionData {
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular
 /// target. This is one of the core pieces of our staking design, and stores all
-/// of the state related to a position The voting position is a position where the staking_target is
+/// of the state related to a position The voting position is a position where the target_with_parameters is
 /// VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 #[repr(C)]
