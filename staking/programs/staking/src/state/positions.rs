@@ -163,7 +163,7 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
-        StakeTarget,
+        TargetWithParameters,
         POSITION_DATA_PADDING,
     };
     #[test]
@@ -171,7 +171,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  Some(12),
-            stake_target:     StakeTarget::VOTING,
+            stake_target:     TargetWithParameters::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };
@@ -206,7 +206,7 @@ pub mod tests {
         let p = Position {
             activation_epoch: 8,
             unlocking_start:  None,
-            stake_target:     StakeTarget::VOTING,
+            stake_target:     TargetWithParameters::VOTING,
             amount:           10,
             reserved:         POSITION_DATA_PADDING,
         };

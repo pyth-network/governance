@@ -83,84 +83,84 @@ impl TargetMetadata {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::product::TargetMetadata;
+    use crate::state::stake_target::TargetMetadata;
     #[test]
     fn zero_update() {
-        let product = &mut TargetMetadata {
+        let target = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         0,
             delta_locked:   0,
         };
 
-        assert!(product.update(product.last_update_at + 10).is_ok());
-        assert_eq!(product.last_update_at, 10);
-        assert_eq!(product.locked, 0);
-        assert_eq!(product.delta_locked, 0);
+        assert!(target.update(target.last_update_at + 10).is_ok());
+        assert_eq!(target.last_update_at, 10);
+        assert_eq!(target.locked, 0);
+        assert_eq!(target.delta_locked, 0);
     }
 
     #[test]
     fn positive_update() {
-        let product = &mut TargetMetadata {
+        let target = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         0,
             delta_locked:   0,
         };
 
-        assert!(product.add_locking(10, product.last_update_at).is_ok());
-        assert_eq!(product.last_update_at, 0);
-        assert_eq!(product.locked, 0);
-        assert_eq!(product.delta_locked, 10);
+        assert!(target.add_locking(10, target.last_update_at).is_ok());
+        assert_eq!(target.last_update_at, 0);
+        assert_eq!(target.locked, 0);
+        assert_eq!(target.delta_locked, 10);
 
-        assert!(product.update(product.last_update_at + 1).is_ok());
+        assert!(target.update(target.last_update_at + 1).is_ok());
 
-        assert_eq!(product.last_update_at, 1);
-        assert_eq!(product.locked, 10);
-        assert_eq!(product.delta_locked, 0);
+        assert_eq!(target.last_update_at, 1);
+        assert_eq!(target.locked, 10);
+        assert_eq!(target.delta_locked, 0);
     }
 
     #[test]
     fn negative_update() {
-        let product = &mut TargetMetadata {
+        let target = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         30,
             delta_locked:   0,
         };
 
-        assert!(product.add_unlocking(30, product.last_update_at).is_ok());
-        assert_eq!(product.last_update_at, 0);
-        assert_eq!(product.locked, 30);
-        assert_eq!(product.delta_locked, -30);
+        assert!(target.add_unlocking(30, target.last_update_at).is_ok());
+        assert_eq!(target.last_update_at, 0);
+        assert_eq!(target.locked, 30);
+        assert_eq!(target.delta_locked, -30);
 
-        assert!(product.update(product.last_update_at + 2).is_ok());
-        assert_eq!(product.last_update_at, 2);
-        assert_eq!(product.locked, 0);
-        assert_eq!(product.delta_locked, 0);
+        assert!(target.update(target.last_update_at + 2).is_ok());
+        assert_eq!(target.last_update_at, 2);
+        assert_eq!(target.locked, 0);
+        assert_eq!(target.delta_locked, 0);
     }
 
     #[test]
     fn unlock_bigger_than_locked() {
-        let product = &mut TargetMetadata {
+        let target = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         30,
             delta_locked:   0,
         };
 
-        assert!(product.add_unlocking(40, product.last_update_at).is_err());
+        assert!(target.add_unlocking(40, target.last_update_at).is_err());
     }
 
     #[test]
     fn overflow() {
-        let product = &mut TargetMetadata {
+        let target = &mut TargetMetadata {
             bump:           0,
             last_update_at: 0,
             locked:         u64::MAX,
             delta_locked:   0,
         };
 
-        assert!(product.add_unlocking(1, 0).is_err());
+        assert!(target.add_unlocking(1, 0).is_err());
     }
 }
