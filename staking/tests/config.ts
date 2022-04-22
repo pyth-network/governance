@@ -12,7 +12,7 @@ import {
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
 } from "./utils/before";
-import { expectFail, createMint, getProductAccount } from "./utils/utils";
+import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
@@ -62,7 +62,7 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = await getProductAccount(
+    votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
     );
@@ -88,9 +88,9 @@ describe("config", async () => {
       });
 
     await program.methods
-      .createProduct(votingProduct)
+      .createTarget(votingProduct)
       .accounts({
-        productAccount: votingProductMetadataAccount,
+        targetAccount: votingProductMetadataAccount,
         governanceSigner: program.provider.wallet.publicKey,
       })
       .rpc();
@@ -269,7 +269,7 @@ describe("config", async () => {
         .createPosition(votingProduct, new BN(1))
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
         })
         .signers([]),
       "Protocol is frozen",
@@ -281,7 +281,7 @@ describe("config", async () => {
         .closePosition(0, new BN(0), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
         })
         .signers([]),
       "Protocol is frozen",

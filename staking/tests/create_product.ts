@@ -28,7 +28,7 @@ describe("create_product", async () => {
   let controller: CustomAbortController;
 
   let program: Program<Staking>;
-  let productAccount: PublicKey;
+  let targetAccount: PublicKey;
   let bump;
 
   let owner: PublicKey;
@@ -52,16 +52,16 @@ describe("create_product", async () => {
   });
 
   it("checks governance product", async () => {
-    [productAccount, bump] = await PublicKey.findProgramAddress(
+    [targetAccount, bump] = await PublicKey.findProgramAddress(
       [
-        utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-        utils.bytes.utf8.encode(wasm.Constants.VOTING_PRODUCT_SEED()),
+        utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
+        utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED()),
       ],
       program.programId
     );
 
-    const productAccountData = await program.account.productMetadata.fetch(
-      productAccount
+    const productAccountData = await program.account.targetMetadata.fetch(
+      targetAccount
     );
 
     assert.equal(

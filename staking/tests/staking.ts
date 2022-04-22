@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { expectFail, getProductAccount } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -79,7 +79,7 @@ describe("staking", async () => {
 
     votingProduct = stakeConnection.votingProduct;
 
-    votingProductMetadataAccount = await getProductAccount(
+    votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
     );
@@ -218,7 +218,7 @@ describe("staking", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -230,7 +230,7 @@ describe("staking", async () => {
     await program.methods
       .createPosition(votingProduct, new BN(1))
       .accounts({
-        productAccount: votingProductMetadataAccount,
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -252,7 +252,7 @@ describe("staking", async () => {
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        stakeTarget: votingProduct,
+        targetWithParameters: votingProduct,
         reserved: [
           "00",
           "00",
@@ -279,7 +279,7 @@ describe("staking", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("0").toBN())
         .accounts({
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
@@ -302,7 +302,7 @@ describe("staking", async () => {
           PythBalance.fromString("10").toBN()
         )
         .accounts({
-          productAccount: await getProductAccount(
+          targetAccount: await getTargetAccount(
             nonVotingStakeTarget,
             program.programId
           ),

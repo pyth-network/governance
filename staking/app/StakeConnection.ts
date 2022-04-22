@@ -111,8 +111,8 @@ export class StakeConnection {
     const votingProductMetadataAccount = (
       await PublicKey.findProgramAddress(
         [
-          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-          utils.bytes.utf8.encode(wasm.Constants.VOTING_PRODUCT_SEED()),
+          utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
+          utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED()),
         ],
         program.programId
       )
@@ -348,7 +348,7 @@ export class StakeConnection {
         this.program.methods
           .closePosition(el.index, el.amount, this.votingProduct)
           .accounts({
-            productAccount: this.votingProductMetadataAccount,
+            targetAccount: this.votingProductMetadataAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -423,7 +423,7 @@ export class StakeConnection {
     return await this.program.methods
       .closePosition(index, amount, this.votingProduct)
       .accounts({
-        productAccount: this.votingProductMetadataAccount,
+        targetAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .rpc();
@@ -557,7 +557,7 @@ export class StakeConnection {
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
-        productAccount: this.votingProductMetadataAccount,
+        targetAccount: this.votingProductMetadataAccount,
       })
       .signers(signers)
       .rpc({ skipPreflight: true });
