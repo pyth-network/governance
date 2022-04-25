@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { expectFail, getProductAccount } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -78,7 +78,8 @@ describe("staking", async () => {
     );
 
     votingProduct = stakeConnection.votingProduct;
-    votingProductMetadataAccount = await getProductAccount(
+
+    votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
     );
@@ -215,13 +216,9 @@ describe("staking", async () => {
   it("creates a position that's too big", async () => {
     await expectFail(
       program.methods
-        .createPosition(
-          votingProduct,
-          null,
-          PythBalance.fromString("102").toBN()
-        )
+        .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -231,9 +228,9 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     await program.methods
-      .createPosition(votingProduct, null, new BN(1))
+      .createPosition(votingProduct, new BN(1))
       .accounts({
-        productAccount: votingProductMetadataAccount,
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -255,8 +252,7 @@ describe("staking", async () => {
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        product: votingProduct,
-        publisher: null,
+        targetWithParameters: votingProduct,
         reserved: [
           "00",
           "00",
@@ -281,9 +277,9 @@ describe("staking", async () => {
   it("creates position with 0 principal", async () => {
     await expectFail(
       program.methods
-        .createPosition(votingProduct, null, PythBalance.fromString("0").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("0").toBN())
         .accounts({
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
@@ -292,21 +288,27 @@ describe("staking", async () => {
   });
 
   it("creates a non-voting position", async () => {
+    const nonVotingStakeTarget = {
+      staking: {
+        product: zeroPubkey,
+        publisher: { some: { address: zeroPubkey } },
+      },
+    };
+
     await expectFail(
       program.methods
         .createPosition(
-          zeroPubkey,
-          zeroPubkey,
+          nonVotingStakeTarget,
           PythBalance.fromString("10").toBN()
         )
         .accounts({
-          productAccount: await getProductAccount(
-            zeroPubkey,
+          targetAccount: await getTargetAccount(
+            nonVotingStakeTarget,
             program.programId
           ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Not implemented",
+      "The program expected this account to be already initialized",
       errMap
     );
   });

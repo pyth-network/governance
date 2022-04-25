@@ -29,8 +29,8 @@ pub enum ErrorCode {
     WithdrawToUnauthorizedAccount,
     #[msg("Insufficient balance to cover the withdrawal")]
     InsufficientWithdrawableBalance,
-    #[msg("Product in position doesn't match product in instruction data")]
-    WrongProduct,
+    #[msg("Target in position doesn't match target in instruction data")]
+    WrongTarget,
     #[msg("An arithmetic operation unexpectedly overflowed")]
     GenericOverflow,
     #[msg("Locked balance must be positive")]

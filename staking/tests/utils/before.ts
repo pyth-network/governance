@@ -43,7 +43,7 @@ import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
-import { createMint, getProductAccount } from "./utils";
+import { createMint, getTargetAccount as getTargetAccount } from "./utils";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -325,11 +325,15 @@ export async function initGovernanceProduct(
   program: Program,
   governanceSigner: PublicKey
 ) {
-  const productAccount = await getProductAccount(null, program.programId);
+  const votingProduct = { voting: {} };
+  const targetAccount = await getTargetAccount(
+    votingProduct,
+    program.programId
+  );
   await program.methods
-    .createProduct(null)
+    .createTarget(votingProduct)
     .accounts({
-      productAccount,
+      targetAccount,
       governanceSigner: governanceSigner,
     })
     .rpc();

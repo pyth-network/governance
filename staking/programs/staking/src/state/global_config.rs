@@ -29,7 +29,6 @@ impl GlobalConfig {
     }
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use crate::state::global_config::GlobalConfig;

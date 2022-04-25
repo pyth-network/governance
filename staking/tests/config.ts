@@ -1,6 +1,10 @@
 import { parseIdlErrors, utils, Wallet } from "@project-serum/anchor";
 import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  Token,
+} from "@solana/spl-token";
 import {
   startValidator,
   readAnchorConfig,
@@ -8,7 +12,7 @@ import {
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
 } from "./utils/before";
-import { expectFail, createMint } from "./utils/utils";
+import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
@@ -39,6 +43,8 @@ describe("config", async () => {
   let configAccount: PublicKey;
   let bump: number;
 
+  const votingProduct = { voting: {} };
+
   after(async () => {
     controller.abort();
   });
@@ -56,15 +62,10 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-          new PublicKey(0).toBuffer(),
-        ],
-        program.programId
-      )
-    )[0];
+    votingProductMetadataAccount = await getTargetAccount(
+      votingProduct,
+      program.programId
+    );
   });
 
   it("initializes config", async () => {
@@ -87,9 +88,9 @@ describe("config", async () => {
       });
 
     await program.methods
-      .createProduct(null)
+      .createTarget(votingProduct)
       .accounts({
-        productAccount: votingProductMetadataAccount,
+        targetAccount: votingProductMetadataAccount,
         governanceSigner: program.provider.wallet.publicKey,
       })
       .rpc();
@@ -265,10 +266,10 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .createPosition(null, null, new BN(1))
+        .createPosition(votingProduct, new BN(1))
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
         })
         .signers([]),
       "Protocol is frozen",
@@ -277,10 +278,10 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .closePosition(0, new BN(0), null)
+        .closePosition(0, new BN(0), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
         })
         .signers([]),
       "Protocol is frozen",

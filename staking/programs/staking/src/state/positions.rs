@@ -10,6 +10,7 @@ use std::fmt::{
 
 pub const MAX_POSITIONS: usize = 100;
 pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
+
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to We mostly fill it front to back, but indicies don't mean much.
 /// Because users can close positions, it might get fragmented.
@@ -41,30 +42,73 @@ impl PositionData {
 }
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular
-/// (product, publisher) tuple. This is one of the core pieces of our staking design, and stores all
-/// of the state related to a position The voting position is a position where the product is None
+/// target. This is one of the core pieces of our staking design, and stores all
+/// of the state related to a position The voting position is a position where the
+/// target_with_parameters is VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 #[repr(C)]
 pub struct Position {
-    pub amount:           u64,
-    pub activation_epoch: u64,
-    pub unlocking_start:  Option<u64>,
-    pub product:          Option<Pubkey>,
-    pub publisher:        Option<Pubkey>,
-    pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
-                                        0: amount
-                                        8: activation_epoch
-                                        16: 1 if unlocking_start is Some, 2 if the outer option is None
-                                        24: unlocking_start
-                                        32: 1 if is product is Some
-                                        33: product
-                                        65: 1 if publisher is Some
-                                        66: publisher
-                                        98: compiler padding
-                                        104: reserved
+    pub amount:                 u64,
+    pub activation_epoch:       u64,
+    pub unlocking_start:        Option<u64>,
+    pub target_with_parameters: TargetWithParameters,
+    pub reserved:               [u64; 12], /* Current representation of an Option<Position>:
+                                              0: amount
+                                              8: activation_epoch
+                                              16: 1 if unlocking_start is Some, 2 if the outer option is None
+                                              24: unlocking_start
+                                              32: product
+                                              64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
+                                              65: publisher address
+                                              98: compiler padding
+                                              104: reserved
 
-                                        total: 200 bytes
-                                     */
+                                              total: 200 bytes
+                                           */
+}
+
+#[derive(
+    AnchorSerialize,
+    AnchorDeserialize,
+    Debug,
+    Clone,
+    Copy,
+    BorshSchema,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+)]
+pub enum Target {
+    VOTING,
+    STAKING { product: Pubkey },
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+pub enum TargetWithParameters {
+    VOTING,
+    STAKING {
+        product:   Pubkey,
+        publisher: Publisher,
+    },
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+pub enum Publisher {
+    DEFAULT,
+    SOME { address: Pubkey },
+}
+
+impl TargetWithParameters {
+    pub fn get_target(&self) -> Target {
+        match *self {
+            TargetWithParameters::VOTING => Target::VOTING,
+            TargetWithParameters::STAKING {
+                product,
+                publisher: _,
+            } => Target::STAKING { product },
+        }
+    }
 }
 
 impl Position {
@@ -100,7 +144,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        return self.product.is_none() && self.publisher.is_none();
+        return matches!(self.target_with_parameters, TargetWithParameters::VOTING);
     }
 }
 
@@ -128,17 +172,17 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
+        TargetWithParameters,
         POSITION_DATA_PADDING,
     };
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
-            activation_epoch: 8,
-            unlocking_start:  Some(12),
-            product:          None,
-            publisher:        None,
-            amount:           10,
-            reserved:         POSITION_DATA_PADDING,
+            activation_epoch:       8,
+            unlocking_start:        Some(12),
+            target_with_parameters: TargetWithParameters::VOTING,
+            amount:                 10,
+            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -169,12 +213,11 @@ pub mod tests {
     #[test]
     fn lifecycle_lock() {
         let p = Position {
-            activation_epoch: 8,
-            unlocking_start:  None,
-            product:          None,
-            publisher:        None,
-            amount:           10,
-            reserved:         POSITION_DATA_PADDING,
+            activation_epoch:       8,
+            unlocking_start:        None,
+            target_with_parameters: TargetWithParameters::VOTING,
+            amount:                 10,
+            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,

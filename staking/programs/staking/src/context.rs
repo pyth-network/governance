@@ -12,8 +12,18 @@ pub const CUSTODY_SEED: &str = "custody";
 pub const STAKE_ACCOUNT_METADATA_SEED: &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
-pub const PRODUCT_SEED: &str = "product";
+pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
+pub const VOTING_TARGET_SEED: &str = "voting";
+
+impl positions::Target {
+    pub fn get_seed(&self) -> &[u8] {
+        match *self {
+            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes(),
+            positions::Target::STAKING { ref product } => product.as_ref(), /* I think this should actually be two seeds, one for staking and one for the product. */
+        }
+    }
+}
 
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
@@ -137,7 +147,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>>
 }
 
 #[derive(Accounts)]
-#[instruction(product : Option<Pubkey>, publisher : Option<Pubkey>, amount : u64)]
+#[instruction(target_with_parameters:   positions::TargetWithParameters, amount : u64)]
 pub struct CreatePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -154,16 +164,17 @@ pub struct CreatePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
-    // Product account :
+    // Target account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
-        bump = product_account.bump)]
-    pub product_account:         Account<'info, product::ProductMetadata>,
+        seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
+        bump = target_account.bump)]
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, product : Option<Pubkey>)] // Product is in the instruction arguments because it's needed in the anchor PDA checks
+#[instruction(index : u8, amount : u64, target_with_parameters: positions::TargetWithParameters)] // target_with_parameters is in the instruction arguments because it's needed in the anchor PDA
+                                                                                                  // checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -180,12 +191,12 @@ pub struct ClosePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
-    // Product account :
+    // Target account :
     #[account(
         mut,
-        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
-        bump = product_account.bump)]
-    pub product_account:         Account<'info, product::ProductMetadata>,
+        seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
+        bump = target_account.bump)]
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
@@ -216,11 +227,11 @@ pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
     pub payer:              Signer<'info>,
-    // Governance product accounts:
+    // Governance target accounts:
     #[account(
-        seeds = [PRODUCT_SEED.as_bytes(), Pubkey::default().as_ref()], //can we find a better way for this where the seed is empty when option is none
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_account.bump)]
-    pub governance_account: Account<'info, product::ProductMetadata>,
+    pub governance_account: Account<'info, target::TargetMetadata>,
     #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
     pub max_voter_record:   Account<'info, max_voter_weight::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
@@ -229,8 +240,8 @@ pub struct UpdateMaxVoterWeight<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(product : Option<Pubkey>)]
-pub struct CreateProduct<'info> {
+#[instruction(target : positions::Target)]
+pub struct CreateTarget<'info> {
     #[account(mut)]
     pub payer:             Signer<'info>,
     #[account(address = config.governance_authority)]
@@ -240,10 +251,10 @@ pub struct CreateProduct<'info> {
     #[account(
         init,
         payer = payer,
-        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
-        space = product::PRODUCT_METADATA_SIZE,
+        seeds =  [TARGET_SEED.as_bytes(), target.get_seed()],
+        space = target::TARGET_METADATA_SIZE,
         bump)]
-    pub product_account:   Account<'info, product::ProductMetadata>,
+    pub target_account:    Account<'info, target::TargetMetadata>,
     pub system_program:    Program<'info, System>,
 }
 

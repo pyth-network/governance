@@ -7,7 +7,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
-import { expectFail, getProductAccount } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
@@ -70,7 +70,7 @@ describe("fills a stake account with positions", async () => {
     EPOCH_DURATION = stakeConnection.config.epochDuration;
 
     votingProduct = stakeConnection.votingProduct;
-    votingProductMetadataAccount = await getProductAccount(
+    votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
     );
@@ -86,9 +86,9 @@ describe("fills a stake account with positions", async () => {
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
-        productAccount: votingProductMetadataAccount,
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -131,9 +131,9 @@ describe("fills a stake account with positions", async () => {
     // Now create 101, which is supposed to fail
     await expectFail(
       program.methods
-        .createPosition(votingProduct, null, PythBalance.fromString("1").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("1").toBN())
         .accounts({
-          productAccount: votingProductMetadataAccount,
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached",

@@ -9,16 +9,21 @@ import * as anchor from "@project-serum/anchor";
 import { AnchorError, ProgramError } from "@project-serum/anchor";
 import assert from "assert";
 import * as wasm from "../../wasm/node/staking";
+import { Staking } from "../../target/types/staking";
 
-export async function getProductAccount(
-  seed: PublicKey | undefined,
+type StakeTarget = anchor.IdlTypes<Staking>["Target"];
+
+export async function getTargetAccount(
+  stakeTarget: StakeTarget,
   programId: PublicKey
 ): Promise<PublicKey> {
   return (
     await PublicKey.findProgramAddress(
       [
-        anchor.utils.bytes.utf8.encode(wasm.Constants.PRODUCT_SEED()),
-        seed ? seed.toBuffer() : new PublicKey(0).toBuffer(),
+        anchor.utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
+        stakeTarget.hasOwnProperty("voting")
+          ? anchor.utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED())
+          : (stakeTarget as any).staking.product.toBuffer(),
       ],
       programId
     )
