@@ -232,51 +232,51 @@ pub mod tests {
 
     #[test]
     fn default_pyth_vesting() {
-        let ONE_MONTH = 61 * 3600 * 12;
+        let one_month = 61 * 3600 * 12;
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 1_000,
             start_date:      0,
-            period_duration: ONE_MONTH,
+            period_duration: one_month,
             num_periods:     72,
         };
 
-        let TOKENS_PER_PERIOD = 1_000 / 72;
+        let tokens_per_period = 1_000 / 72;
 
         let value = v.get_unvested_balance(1).unwrap();
         assert_eq!(value, 1000);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH - 1).try_into().unwrap())
+            .get_unvested_balance((one_month - 1).try_into().unwrap())
             .unwrap();
         assert_eq!(value, 1000);
 
         let value = v
-            .get_unvested_balance(ONE_MONTH.try_into().unwrap())
+            .get_unvested_balance(one_month.try_into().unwrap())
             .unwrap();
-        assert_eq!(value, 1000 - TOKENS_PER_PERIOD);
+        assert_eq!(value, 1000 - tokens_per_period);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH * 2 - 1).try_into().unwrap())
+            .get_unvested_balance((one_month * 2 - 1).try_into().unwrap())
             .unwrap();
-        assert_eq!(value, 1000 - TOKENS_PER_PERIOD);
+        assert_eq!(value, 1000 - tokens_per_period);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH * 2).try_into().unwrap())
+            .get_unvested_balance((one_month * 2).try_into().unwrap())
             .unwrap();
         assert_eq!(value, 973);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH * 72 - 1).try_into().unwrap())
+            .get_unvested_balance((one_month * 72 - 1).try_into().unwrap())
             .unwrap();
         assert_eq!(value, 14);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH * 72).try_into().unwrap())
+            .get_unvested_balance((one_month * 72).try_into().unwrap())
             .unwrap();
         assert_eq!(value, 0);
 
         let value = v
-            .get_unvested_balance((ONE_MONTH * 73).try_into().unwrap())
+            .get_unvested_balance((one_month * 73).try_into().unwrap())
             .unwrap();
         assert_eq!(value, 0);
     }
