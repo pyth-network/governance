@@ -3,7 +3,8 @@ seeds = true
 
 [programs.localnet]
 staking = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-governance = "pythGovernance11111111111111111111111111111"
+governance = "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
+chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -22,3 +23,4 @@ ledger_dir = "./.anchor/test-ledger"
 idl_path = "./target/idl/staking.json"
 binary_path = "./target/deploy/staking.so"
 governance_path = "./target/deploy/governance.so"
+chat_path = "./target/deploy/chat.so"
