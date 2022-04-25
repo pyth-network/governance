@@ -20,9 +20,7 @@ impl positions::Target {
     pub fn get_seed(&self) -> &[u8] {
         match *self {
             positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes(),
-            positions::Target::STAKING {
-                ref product,
-            } => product.as_ref(), //I think this should actually be two seeds, one for staking and one for the product.
+            positions::Target::STAKING { ref product } => product.as_ref(), /* I think this should actually be two seeds, one for staking and one for the product. */
         }
     }
 }
@@ -171,11 +169,12 @@ pub struct CreatePosition<'info> {
         mut,
         seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
         bump = target_account.bump)]
-    pub target_account:         Account<'info, target::TargetMetadata>,
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64, target_with_parameters: positions::TargetWithParameters)] // target_with_parameters is in the instruction arguments because it's needed in the anchor PDA checks
+#[instruction(index : u8, amount : u64, target_with_parameters: positions::TargetWithParameters)] // target_with_parameters is in the instruction arguments because it's needed in the anchor PDA
+                                                                                                  // checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -197,7 +196,7 @@ pub struct ClosePosition<'info> {
         mut,
         seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
         bump = target_account.bump)]
-    pub target_account:         Account<'info, target::TargetMetadata>,
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
@@ -255,7 +254,7 @@ pub struct CreateTarget<'info> {
         seeds =  [TARGET_SEED.as_bytes(), target.get_seed()],
         space = target::TARGET_METADATA_SIZE,
         bump)]
-    pub target_account:   Account<'info, target::TargetMetadata>,
+    pub target_account:    Account<'info, target::TargetMetadata>,
     pub system_program:    Program<'info, System>,
 }
 

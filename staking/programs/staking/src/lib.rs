@@ -129,11 +129,11 @@ pub mod staking {
         config.check_frozen()?;
 
         let new_position = Position {
-            amount:           amount,
-            target_with_parameters:     target_with_parameters,
-            activation_epoch: current_epoch + 1,
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            amount:                 amount,
+            target_with_parameters: target_with_parameters,
+            activation_epoch:       current_epoch + 1,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         };
 
         match PositionData::get_unused_index(stake_account_positions) {
@@ -214,11 +214,11 @@ pub mod staking {
                         Err(x) => return Err(x),
                         Ok(j) => {
                             stake_account_positions.positions[j] = Some(Position {
-                                amount:           amount,
-                                target_with_parameters:     current_position.target_with_parameters,
-                                activation_epoch: current_position.activation_epoch,
-                                unlocking_start:  Some(current_epoch + 1),
-                                reserved:         POSITION_DATA_PADDING,
+                                amount:                 amount,
+                                target_with_parameters: current_position.target_with_parameters,
+                                activation_epoch:       current_position.activation_epoch,
+                                unlocking_start:        Some(current_epoch + 1),
+                                reserved:               POSITION_DATA_PADDING,
                             });
 
                             assert_ne!(i, j);

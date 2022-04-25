@@ -152,28 +152,28 @@ pub mod tests {
         };
         // We need at least 7 vested tokens to support these positions
         pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 7,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
                 },
             },
-            unlocking_start:  Some(50),
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        Some(50),
+            reserved:               POSITION_DATA_PADDING,
         });
         pd.positions[1] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 3,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
                 },
             },
-            unlocking_start:  Some(50),
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        Some(50),
+            reserved:               POSITION_DATA_PADDING,
         });
         let tests = [
             (0, PositionState::LOCKING),
@@ -204,23 +204,23 @@ pub mod tests {
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            target_with_parameters:     TargetWithParameters::VOTING,
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            activation_epoch:       1,
+            amount:                 7,
+            target_with_parameters: TargetWithParameters::VOTING,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         });
         pd.positions[4] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 3,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
                 },
             },
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
@@ -239,24 +239,24 @@ pub mod tests {
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
         pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 7,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product,
                 publisher: Publisher::DEFAULT,
             },
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         });
         pd.positions[3] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 3,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product,
                 publisher: Publisher::DEFAULT,
             },
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         });
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
@@ -273,32 +273,32 @@ pub mod tests {
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           10,
-                target_with_parameters:     TargetWithParameters::STAKING {
+                activation_epoch:       1,
+                amount:                 10,
+                target_with_parameters: TargetWithParameters::STAKING {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
                     },
                 },
-                unlocking_start:  None,
-                reserved:         POSITION_DATA_PADDING,
+                unlocking_start:        None,
+                reserved:               POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         // Now we have 6 products, so 10 tokens is not enough
         pd.positions[7] = Some(Position {
-            activation_epoch: 1,
-            amount:           10,
-            target_with_parameters:     TargetWithParameters::STAKING {
+            activation_epoch:       1,
+            amount:                 10,
+            target_with_parameters: TargetWithParameters::STAKING {
                 product:   Pubkey::new_unique(),
                 publisher: Publisher::SOME {
                     address: Pubkey::new_unique(),
                 },
             },
-            unlocking_start:  None,
-            reserved:         POSITION_DATA_PADDING,
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
         });
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
@@ -313,11 +313,11 @@ pub mod tests {
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           10,
-                target_with_parameters:     TargetWithParameters::VOTING,
-                unlocking_start:  None,
-                reserved:         POSITION_DATA_PADDING,
+                activation_epoch:       1,
+                amount:                 10,
+                target_with_parameters: TargetWithParameters::VOTING,
+                unlocking_start:        None,
+                reserved:               POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
@@ -336,11 +336,11 @@ pub mod tests {
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           u64::MAX / 3,
-                target_with_parameters:     TargetWithParameters::VOTING,
-                unlocking_start:  None,
-                reserved:         POSITION_DATA_PADDING,
+                activation_epoch:       1,
+                amount:                 u64::MAX / 3,
+                target_with_parameters: TargetWithParameters::VOTING,
+                unlocking_start:        None,
+                reserved:               POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;
@@ -357,16 +357,16 @@ pub mod tests {
         let product = Pubkey::new_unique();
         for i in 0..5 {
             pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           u64::MAX / 3,
-                target_with_parameters:     TargetWithParameters::STAKING {
+                activation_epoch:       1,
+                amount:                 u64::MAX / 3,
+                target_with_parameters: TargetWithParameters::STAKING {
                     product,
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
                     },
                 },
-                unlocking_start:  None,
-                reserved:         POSITION_DATA_PADDING,
+                unlocking_start:        None,
+                reserved:               POSITION_DATA_PADDING,
             });
         }
         let current_epoch = 44;

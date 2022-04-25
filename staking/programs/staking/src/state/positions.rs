@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
 use std::fmt::{
     self,
-    Debug, 
+    Debug,
 };
 
 pub const MAX_POSITIONS: usize = 100;
@@ -43,36 +43,45 @@ impl PositionData {
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular
 /// target. This is one of the core pieces of our staking design, and stores all
-/// of the state related to a position The voting position is a position where the target_with_parameters is
-/// VOTING
+/// of the state related to a position The voting position is a position where the
+/// target_with_parameters is VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 #[repr(C)]
 pub struct Position {
-    pub amount:           u64,
-    pub activation_epoch: u64,
-    pub unlocking_start:  Option<u64>,
-    pub target_with_parameters:     TargetWithParameters,
-    pub reserved:         [u64; 12], /* Current representation of an Option<Position>:
-                                        0: amount
-                                        8: activation_epoch
-                                        16: 1 if unlocking_start is Some, 2 if the outer option is None
-                                        24: unlocking_start
-                                        32: product
-                                        64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
-                                        65: publisher address
-                                        98: compiler padding
-                                        104: reserved
+    pub amount:                 u64,
+    pub activation_epoch:       u64,
+    pub unlocking_start:        Option<u64>,
+    pub target_with_parameters: TargetWithParameters,
+    pub reserved:               [u64; 12], /* Current representation of an Option<Position>:
+                                              0: amount
+                                              8: activation_epoch
+                                              16: 1 if unlocking_start is Some, 2 if the outer option is None
+                                              24: unlocking_start
+                                              32: product
+                                              64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
+                                              65: publisher address
+                                              98: compiler padding
+                                              104: reserved
 
-                                        total: 200 bytes
-                                     */
+                                              total: 200 bytes
+                                           */
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialOrd, Ord, PartialEq, Eq)]
+#[derive(
+    AnchorSerialize,
+    AnchorDeserialize,
+    Debug,
+    Clone,
+    Copy,
+    BorshSchema,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Eq,
+)]
 pub enum Target {
     VOTING,
-    STAKING {
-        product:   Pubkey,
-    },
+    STAKING { product: Pubkey },
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
@@ -82,7 +91,7 @@ pub enum TargetWithParameters {
         product:   Pubkey,
         publisher: Publisher,
     },
-} 
+}
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum Publisher {
@@ -97,7 +106,7 @@ impl TargetWithParameters {
             TargetWithParameters::STAKING {
                 product,
                 publisher: _,
-            } => Target::STAKING {product},
+            } => Target::STAKING { product },
         }
     }
 }
@@ -169,11 +178,11 @@ pub mod tests {
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
-            activation_epoch: 8,
-            unlocking_start:  Some(12),
-            target_with_parameters:     TargetWithParameters::VOTING,
-            amount:           10,
-            reserved:         POSITION_DATA_PADDING,
+            activation_epoch:       8,
+            unlocking_start:        Some(12),
+            target_with_parameters: TargetWithParameters::VOTING,
+            amount:                 10,
+            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -204,11 +213,11 @@ pub mod tests {
     #[test]
     fn lifecycle_lock() {
         let p = Position {
-            activation_epoch: 8,
-            unlocking_start:  None,
-            target_with_parameters:     TargetWithParameters::VOTING,
-            amount:           10,
-            reserved:         POSITION_DATA_PADDING,
+            activation_epoch:       8,
+            unlocking_start:        None,
+            target_with_parameters: TargetWithParameters::VOTING,
+            amount:                 10,
+            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
