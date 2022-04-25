@@ -22,13 +22,6 @@ pub struct PositionData {
 }
 
 impl PositionData {
-    pub fn get_unlocked(&self, current_epoch: u64) -> Result<u64> {
-        Err(error!(ErrorCode::NotImplemented))
-    }
-    pub fn get_locked(&self, current_epoch: u64) -> Result<u64> {
-        Err(error!(ErrorCode::NotImplemented))
-    }
-
     /// Finds first index available for a new position
     pub fn get_unused_index(&self) -> Result<usize> {
         for i in 0..MAX_POSITIONS {

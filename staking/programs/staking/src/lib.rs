@@ -1,10 +1,10 @@
 #![deny(unused_must_use)]
+#![allow(dead_code)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::log;
 use anchor_spl::token::transfer;
 use context::*;
 use state::global_config::GlobalConfig;
@@ -378,10 +378,6 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn cleanup_positions(ctx: Context<CleanupPositions>) -> Result<()> {
-        Ok(())
-    }
-
     pub fn create_target(ctx: Context<CreateTarget>, target: Target) -> Result<()> {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
@@ -399,6 +395,7 @@ pub mod staking {
 
     // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
     // so we have to keep it, but make it a no-op.
+    #[allow(unused_variables)]
     pub fn advance_clock(ctx: Context<AdvanceClock>, seconds: i64) -> Result<()> {
         #[cfg(feature = "mock-clock")]
         {

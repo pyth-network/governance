@@ -137,12 +137,6 @@ pub mod tests {
         POSITION_DATA_PADDING,
     };
     use crate::utils::risk::validate;
-    use crate::ErrorCode::{
-        RiskLimitExceeded,
-        TokensNotYetVested,
-        TooMuchExposureToGovernance,
-        TooMuchExposureToProduct,
-    };
 
     #[test]
     fn test_disjoint() {
