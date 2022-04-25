@@ -297,12 +297,7 @@ export class StakeConnection {
       .filter(
         (
           el // position is voting
-        ) =>
-          stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
-            el.index,
-            BigInt(currentEpoch.toString()),
-            this.config.unlockingDuration
-          )
+        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
       )
       .filter(
         (

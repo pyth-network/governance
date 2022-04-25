@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use crate::error::ErrorCode;
 use crate::state::positions::{
     PositionData,
@@ -67,20 +68,10 @@ impl WasmPositionData {
         }
     }
     #[wasm_bindgen(js_name=isPositionVoting)]
-    pub fn is_position_voting(
-        &self,
-        index: u16,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<bool, JsValue> {
-        convert_error(self.is_position_voting_impl(index, current_epoch, unlocking_duration))
+    pub fn is_position_voting(&self, index: u16) -> Result<bool, JsValue> {
+        convert_error(self.is_position_voting_impl(index))
     }
-    fn is_position_voting_impl(
-        &self,
-        index: u16,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> anchor_lang::Result<bool> {
+    fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
         match self.wrapped.positions[index as usize] {
             Some(pos) => Ok(pos.is_voting()),
             None => Err(error!(ErrorCode::PositionNotInUse)),
