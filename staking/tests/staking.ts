@@ -40,7 +40,7 @@ describe("staking", async () => {
   let voterAccount: PublicKey;
   let errMap: Map<number, string>;
 
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   const stakeAccountPositionsSecret = new Keypair();
   const pythMintAccount = new Keypair();
@@ -69,12 +69,12 @@ describe("staking", async () => {
       makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      provider.wallet.publicKey
     );
 
     votingProduct = stakeConnection.votingProduct;
@@ -128,15 +128,10 @@ describe("staking", async () => {
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stakeAccountPositionsSecret.publicKey,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-          programId: program.programId,
-        }),
+        await program.account.positionData.createInstruction(
+          stakeAccountPositionsSecret,
+          wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+        ),
       ])
       .accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -186,7 +181,7 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
-    const tx = await provider.send(transaction, [], {
+    const tx = await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
   });
@@ -262,6 +257,20 @@ describe("staking", async () => {
         unlockingStart: null,
         product: votingProduct,
         publisher: null,
+        reserved: [
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+          "00",
+        ],
       })
     );
     for (let index = 1; index < positions.positions.length; index++) {

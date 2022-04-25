@@ -1,12 +1,10 @@
 import * as anchor from "@project-serum/anchor";
-import { parseIdlErrors, Program } from "@project-serum/anchor";
-import { Staking } from "../target/types/staking";
 import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+  PublicKey,
+  Keypair,
+  Transaction,
+  SimulatedTransactionResponse,
+} from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -16,12 +14,10 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
-  AnchorConfig,
   makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
-import { GlobalConfig } from "../app/StakeConnection";
 import {
   getProposal,
   getProposalsByGovernance,
@@ -32,12 +28,9 @@ import {
   VoteType,
   withCastVote,
   withCreateProposal,
-  withCreateTokenOwnerRecord,
   withSignOffProposal,
-  YesNoVote,
 } from "@solana/spl-governance";
-import { program } from "@project-serum/anchor/dist/cjs/spl/token";
-import { expectFail, expectFailApi } from "./utils/utils";
+import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -62,7 +55,7 @@ describe("voting", async () => {
   let owner: PublicKey;
   let voterWeightRecordAccount: PublicKey;
   let tokenOwnerRecord: PublicKey;
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   after(async () => {
     controller.abort();
@@ -82,21 +75,20 @@ describe("voting", async () => {
     const globalConfig = stakeConnection.config;
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     owner = provider.wallet.publicKey;
     realm = globalConfig.pythGovernanceRealm;
     governance = globalConfig.governanceAuthority;
 
     // Create stake account
     await stakeConnection.depositTokens(undefined, PythBalance.fromString("1"));
-    const accounts = await stakeConnection.getStakeAccounts(owner);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
     await stakeConnection.withdrawTokens(
-      accounts[0],
+      stakeAccount,
       PythBalance.fromString("1")
     );
 
-    stakeAccountAddress = (await stakeConnection.getStakeAccounts(owner))[0]
-      .address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     voterWeightRecordAccount = (
       await PublicKey.findProgramAddress(
@@ -117,12 +109,12 @@ describe("voting", async () => {
     signoff: boolean
   ): Promise<PublicKey> {
     if (updateFirst) {
-      const accounts = await stakeConnection.getStakeAccounts(owner);
+      const stakeAccount = await stakeConnection.getMainAccount(owner);
       tx.instructions.push(
         await stakeConnection.program.methods
           .updateVoterWeight()
           .accounts({
-            stakeAccountPositions: accounts[0].address,
+            stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
       );
@@ -219,7 +211,7 @@ describe("voting", async () => {
 
   it("create a position and then create proposal", async () => {
     stakeConnection.depositAndLockTokens(
-      (await stakeConnection.getStakeAccounts(owner))[0],
+      await stakeConnection.getMainAccount(owner),
       PythBalance.fromString("200")
     );
     // Time hasn't passed yet, so still no weight
@@ -232,11 +224,11 @@ describe("voting", async () => {
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.muln(5))
-      .accounts()
+      .accounts({})
       .rpc({ skipPreflight: DEBUG });
 
     // Now it should succeed
-    await provider.send(tx);
+    await provider.sendAndConfirm(tx);
   });
   it("ensures voter weight expires", async () => {
     // Slot has probably already increased, but make extra sure by waiting one second
@@ -253,7 +245,7 @@ describe("voting", async () => {
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
     const vote = await withDefaultCastVote(tx, proposalAddress);
-    await provider.send(tx);
+    await provider.sendAndConfirm(tx);
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
@@ -264,18 +256,24 @@ describe("voting", async () => {
 });
 
 async function expectFailGovernance(
-  tx: Promise<
-    anchor.web3.RpcResponseAndContext<anchor.web3.SimulatedTransactionResponse>
-  >,
+  tx: Promise<SuccessfulTxSimulationResponse>,
   expectedError: string
 ) {
-  const response = await tx;
-  if (response.value.err == null)
+  try {
+    const response = await tx;
     throw new Error("Function that was expected to fail succeeded");
-  const errors = response.value.logs.filter((line) =>
-    line.includes("GOVERNANCE-ERROR")
-  );
-  if (!errors.some((line) => line.includes(expectedError))) {
-    assert.equal(errors.join("\n"), expectedError);
+  } catch (error) {
+    // Anchor probable should export this type but doesn't
+    if (error.hasOwnProperty("simulationResponse")) {
+      const logs = (error.simulationResponse as SimulatedTransactionResponse)
+        .logs;
+      const errors = logs.filter((line) => line.includes("GOVERNANCE-ERROR"));
+      if (!errors.some((line) => line.includes(expectedError))) {
+        assert.equal(errors.join("\n"), expectedError);
+      }
+    } else {
+      console.dir(error);
+      throw error;
+    }
   }
 }

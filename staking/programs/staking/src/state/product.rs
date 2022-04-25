@@ -2,6 +2,8 @@ use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 use std::convert::TryInto;
 
+pub const PRODUCT_METADATA_SIZE: usize = 10240;
+
 /// This represents a product
 /// Currently we store the last time the product account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch

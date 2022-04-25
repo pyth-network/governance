@@ -38,7 +38,7 @@ describe("voter_weight_test", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
   });
 
   it("deposit, lock, make sure voter weight appears after warmup", async () => {
@@ -80,14 +80,14 @@ describe("voter_weight_test", async () => {
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    const res = await stakeConnection.getStakeAccounts(owner);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
     await assertVoterWeightEquals(stakeConnection, owner, {
       voterWeight: PythBalance.fromString("0"),
       maxVoterWeight: PythBalance.fromString("0"),
     });
 
     await stakeConnection.depositAndLockTokens(
-      res[0],
+      stakeAccount,
       PythBalance.fromString("100")
     );
 
@@ -158,9 +158,9 @@ describe("voter_weight_test", async () => {
 
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
 
-    const res = await stakeConnection.getStakeAccounts(bob.publicKey);
+    const bobStakeAccount = await stakeConnection.getMainAccount(bob.publicKey);
     await bobConnection.depositAndLockTokens(
-      res[0],
+      bobStakeAccount,
       PythBalance.fromString("50")
     );
 

@@ -34,7 +34,7 @@ describe("fills a stake account with positions", async () => {
 
   let program: Program<Staking>;
   let errMap: Map<number, string>;
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   let stakeAccountAddress: PublicKey;
   let userAta: PublicKey;
@@ -58,12 +58,12 @@ describe("fills a stake account with positions", async () => {
       makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      provider.wallet.publicKey
     );
 
     errMap = parseIdlErrors(program.idl);
@@ -80,8 +80,8 @@ describe("fills a stake account with positions", async () => {
       PythBalance.fromString("102")
     );
     stakeAccountAddress = (
-      await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
-    )[0].address;
+      await stakeConnection.getMainAccount(provider.wallet.publicKey)
+    ).address;
   });
 
   it("creates too many positions", async () => {
@@ -98,7 +98,7 @@ describe("fills a stake account with positions", async () => {
     const simulationResults = await provider.simulate(testTransaction);
     let costs = [];
     const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
-    for (const logline of simulationResults.value.logs) {
+    for (const logline of simulationResults.logs) {
       const m = logline.match(regex);
       if (m != null) costs.push(parseInt(m.groups["consumed"]));
     }
@@ -114,7 +114,7 @@ describe("fills a stake account with positions", async () => {
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
-        await provider.send(transaction, [], {
+        await provider.sendAndConfirm(transaction, [], {
           skipPreflight: DEBUG,
         });
         transaction = new Transaction();
@@ -124,7 +124,7 @@ describe("fills a stake account with positions", async () => {
       budgetRemaining -= ixCost;
       ixCost += deltaCost;
     }
-    await provider.send(transaction, [], {
+    await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
 

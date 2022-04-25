@@ -29,9 +29,8 @@ export async function assertBalanceMatches(
   expected: OptionalBalanceSummary,
   currentTime: BN
 ) {
-  const res = await stakeConnection.getStakeAccounts(owner);
-  assert.equal(res.length, 1);
-  const actual = res[0].getBalanceSummary(currentTime);
+  const stakeAccount = await stakeConnection.getMainAccount(owner);
+  const actual = stakeAccount.getBalanceSummary(currentTime);
   // Comparison as string gives better error messages when a test fails
   assert.equal(
     actual.locked.locking.toString(),
@@ -75,18 +74,17 @@ export async function assertVoterWeightEquals(
   owner: PublicKey,
   expected: VoterWeights
 ) {
-  const res = await stakeConnection.getStakeAccounts(owner);
-  assert.equal(res.length, 1);
-  const actual = res[0].getVoterWeight(await stakeConnection.getTime());
+  const stakeAccount = await stakeConnection.getMainAccount(owner);
+  const actual = stakeAccount.getVoterWeight(await stakeConnection.getTime());
   assert(actual.eq(expected.voterWeight));
   const tx = new Transaction();
-  stakeConnection.withUpdateVoterWeight(tx.instructions, res[0]);
-  await stakeConnection.program.provider.send(tx, []);
+  stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount);
+  await stakeConnection.program.provider.sendAndConfirm(tx, []);
 
   let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
     [
       anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-      res[0].address.toBuffer(),
+      stakeAccount.address.toBuffer(),
     ],
     stakeConnection.program.programId
   );
@@ -115,7 +113,6 @@ export async function loadAndUnlock(
   owner: PublicKey,
   amount: PythBalance
 ) {
-  const res = await stakeConnection.getStakeAccounts(owner);
-  assert.equal(res.length, 1);
-  await stakeConnection.unlockTokens(res[0], amount);
+  const stakeAccount = await stakeConnection.getMainAccount(owner);
+  await stakeConnection.unlockTokens(stakeAccount, amount);
 }

@@ -82,9 +82,7 @@ describe("position_lifecycle", async () => {
       PythBalance.fromString("200")
     );
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    stakeAccountAddress = res[0].address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     await assertBalanceMatches(
       stakeConnection,
@@ -174,8 +172,6 @@ describe("position_lifecycle", async () => {
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
-
-    const res = await stakeConnection.getStakeAccounts(owner);
 
     await assertBalanceMatches(
       stakeConnection,

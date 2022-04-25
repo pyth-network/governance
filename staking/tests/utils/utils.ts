@@ -6,7 +6,7 @@ import {
   SystemProgram,
 } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
-import { ProgramError } from "@project-serum/anchor";
+import { AnchorError, ProgramError } from "@project-serum/anchor";
 import assert from "assert";
 import * as wasm from "../../wasm/node/staking";
 
@@ -28,7 +28,7 @@ export async function getProductAccount(
  * Creates new spl-token at a random keypair
  */
 export async function createMint(
-  provider: anchor.Provider,
+  provider: anchor.AnchorProvider,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -62,7 +62,7 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await provider.send(transaction, [mintAccount], {
+  const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
     skipPreflight: true,
   });
 }
@@ -82,8 +82,8 @@ export async function expectFail(
     const tx = await rpcCall.rpc();
     assert(false, "Transaction should fail");
   } catch (err) {
-    if (err instanceof ProgramError) {
-      assert.equal(parseErrorMessage(err, idlErrors), error);
+    if (err instanceof AnchorError) {
+      assert.equal(err.error.errorMessage, error);
     } else {
       throw err;
     }
@@ -102,12 +102,4 @@ export async function expectFailApi(promise: Promise<any>, error: string) {
   } catch (err) {
     assert.equal(err.message, error);
   }
-}
-
-/**
- * Parses an error message from solana into a human-readable message
- */
-export function parseErrorMessage(err: any, idlErrors: Map<number, string>) {
-  if (err.msg) return err.msg;
-  if (err.code) return idlErrors[err.code];
 }

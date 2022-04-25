@@ -44,7 +44,7 @@ describe("api", async () => {
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
   });
 
   it("Deposit and lock", async () => {
@@ -52,26 +52,35 @@ describe("api", async () => {
       undefined,
       PythBalance.fromString("600")
     );
+
+    await stakeConnection.depositAndLockTokens(
+      undefined,
+      PythBalance.fromString("100")
+    );
   });
 
   it("Find and parse stake accounts", async () => {
     const res = await stakeConnection.getStakeAccounts(owner);
+    assert.equal(res.length, 2);
 
-    assert.equal(res.length, 1);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+
+    assert(stakeAccount.tokenBalance.eq(PythBalance.fromString("600").toBN()));
+
     assert.equal(
-      res[0].stakeAccountPositionsJs.owner.toBase58(),
+      stakeAccount.stakeAccountPositionsJs.owner.toBase58(),
       owner.toBase58()
     );
     assert.equal(
-      res[0].stakeAccountMetadata.owner.toBase58(),
+      stakeAccount.stakeAccountMetadata.owner.toBase58(),
       owner.toBase58()
     );
     assert(
-      res[0].stakeAccountPositionsJs.positions[0].amount.eq(
+      stakeAccount.stakeAccountPositionsJs.positions[0].amount.eq(
         PythBalance.fromString("600").toBN()
       )
     );
-    assert(res[0].tokenBalance.eq(PythBalance.fromString("600").toBN()));
+    assert(stakeAccount.tokenBalance.eq(PythBalance.fromString("600").toBN()));
     await assertBalanceMatches(
       stakeConnection,
       owner,
@@ -80,18 +89,18 @@ describe("api", async () => {
     );
 
     await stakeConnection.depositAndLockTokens(
-      res[0],
+      stakeAccount,
       PythBalance.fromString("100")
     );
 
-    const after = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(after.length, 1);
+    const afterAccount = await stakeConnection.getMainAccount(owner);
+
     assert(
-      after[0].stakeAccountPositionsJs.positions[1].amount.eq(
+      afterAccount.stakeAccountPositionsJs.positions[1].amount.eq(
         PythBalance.fromString("100").toBN()
       )
     );
-    assert(after[0].tokenBalance.eq(PythBalance.fromString("700").toBN()));
+    assert(afterAccount.tokenBalance.eq(PythBalance.fromString("700").toBN()));
     // No time has passed, but LOCKING tokens count as locked for the balance summary, so it shows as 700
     await assertBalanceMatches(
       stakeConnection,
@@ -102,8 +111,7 @@ describe("api", async () => {
   });
 
   it("Unlock too much", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    const stakeAccount = res[0];
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
 
     await expectFailApi(
       stakeConnection.unlockTokens(stakeAccount, PythBalance.fromString("701")),
@@ -119,8 +127,7 @@ describe("api", async () => {
   });
 
   it("Unlock", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    const stakeAccount = res[0];
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
 
     await stakeConnection.unlockTokens(
       stakeAccount,
@@ -139,8 +146,7 @@ describe("api", async () => {
   });
 
   it("Withdraw too much", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    const stakeAccount = res[0];
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
 
     await expectFailApi(
       stakeConnection.withdrawTokens(
@@ -162,8 +168,8 @@ describe("api", async () => {
   });
 
   it("Withdraw", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    const stakeAccount = res[0];
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+
     await stakeConnection.withdrawTokens(
       stakeAccount,
       PythBalance.fromString("600")
