@@ -42,7 +42,8 @@
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
     "start": "yarn ts-node ./docker/validator.ts",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
-    "dump_governance": "solana program dump -u mainnet-beta GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw ./target/deploy/governance.so",
+    "dump_governance": "solana program dump -u mainnet-beta GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw ./target/deploy/governance.so && solana program dump -u mainnet-beta gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET ./target/deploy/chat.so",
+
     "prepare": "cd .. && husky install staking/.husky",
     "tsc": "tsc -d -p tsconfig.api.json"
   },

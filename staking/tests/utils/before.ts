@@ -45,6 +45,7 @@ export interface AnchorConfig {
     idl_path: string;
     binary_path: string;
     governance_path: string;
+    chat_path: string;
   };
   provider: {
     cluster: string;
@@ -54,6 +55,7 @@ export interface AnchorConfig {
     localnet: {
       staking: string;
       governance: string;
+      chat: string;
     };
   };
   validator: {
@@ -124,9 +126,15 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   exec(
     `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
       user.publicKey
-    } --reset --bpf-program  ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
+    } --reset --bpf-program ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
       config.programs.localnet.governance
-    } ${config.path.governance_path} --faucet-port ${portNumber + 101}`,
+    } ${config.path.governance_path} --bpf-program ${
+      config.programs.localnet.chat
+    } ${
+      config.path.chat_path
+    } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -um --faucet-port ${
+      portNumber + 101
+    }`,
     { signal },
     (error, stdout, stderr) => {
       if (error.name.includes("AbortError")) {
