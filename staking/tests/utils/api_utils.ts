@@ -78,7 +78,10 @@ export async function assertVoterWeightEquals(
   const actual = stakeAccount.getVoterWeight(await stakeConnection.getTime());
   assert(actual.eq(expected.voterWeight));
   const tx = new Transaction();
-  stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount);
+  const accounts = await stakeConnection.withUpdateVoterWeight(
+    tx.instructions,
+    stakeAccount
+  );
   await stakeConnection.program.provider.sendAndConfirm(tx, []);
 
   let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
@@ -88,6 +91,7 @@ export async function assertVoterWeightEquals(
     ],
     stakeConnection.program.programId
   );
+  assert.equal(accounts.voterWeightAccount.toBase58(), voterAccount.toBase58());
 
   const voterRecord =
     await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
@@ -98,6 +102,10 @@ export async function assertVoterWeightEquals(
       [anchor.utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],
       stakeConnection.program.programId
     );
+  assert.equal(
+    accounts.maxVoterWeightAccount.toBase58(),
+    maxVoterWeightAccount.toBase58()
+  );
 
   const maxVoterWeightRecord =
     await stakeConnection.program.account.maxVoterWeightRecord.fetch(
