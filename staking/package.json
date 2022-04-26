@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.1.18",
+  "version": "1.1.19",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
@@ -10,7 +10,8 @@
     "app/StakeConnection.{js,d.ts}",
     "app/transaction.{js,d.ts}",
     "app/pythBalance.{js,d.ts}",
-    "app/constants.{js,d.ts}"
+    "app/constants.{js,d.ts}",
+    "app/PythClient.{js,d.ts}"
   ],
   "dependencies": {
     "@project-serum/anchor": "0.24.2",
@@ -44,7 +45,6 @@
     "start": "yarn ts-node ./docker/validator.ts",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
     "dump_governance": "solana program dump -u mainnet-beta GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw ./target/deploy/governance.so && solana program dump -u mainnet-beta gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET ./target/deploy/chat.so",
-
     "prepare": "cd .. && husky install staking/.husky",
     "tsc": "tsc -d -p tsconfig.api.json"
   },
