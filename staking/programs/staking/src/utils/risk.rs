@@ -120,7 +120,7 @@ pub fn validate(
             .unwrap(),
     );
 
-    return Ok(withdrawable_balance);
+    Ok(withdrawable_balance)
 }
 
 #[cfg(test)]
