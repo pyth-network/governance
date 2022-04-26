@@ -7,3 +7,7 @@ export const DEVNET_GOVERNANCE_ADDRESS = new PublicKey(
 export const LOCALNET_GOVERNANCE_ADDRESS = new PublicKey(
   "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
 );
+
+export const LOCALNET_REALM_ID = new PublicKey(
+  "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
+);
