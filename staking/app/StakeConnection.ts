@@ -365,19 +365,25 @@ export class StakeConnection {
   public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
     stakeAccount: StakeAccount
-  ) {
-    instructions.push(
-      await this.program.methods
-        .updateVoterWeight()
-        .accounts({ stakeAccountPositions: stakeAccount.address })
-        .instruction()
-    );
-    instructions.push(
-      await this.program.methods
-        .updateMaxVoterWeight()
-        .accounts({ governanceAccount: this.votingProductMetadataAccount })
-        .instruction()
-    );
+  ): Promise<{
+    voterWeightAccount: PublicKey;
+    maxVoterWeightAccount: PublicKey;
+  }> {
+    const updateVoterWeightIx = this.program.methods
+      .updateVoterWeight()
+      .accounts({ stakeAccountPositions: stakeAccount.address });
+    instructions.push(await updateVoterWeightIx.instruction());
+
+    const updateMaxVoterWeightIx = this.program.methods
+      .updateMaxVoterWeight()
+      .accounts({ governanceAccount: this.votingProductMetadataAccount });
+    instructions.push(await updateMaxVoterWeightIx.instruction());
+
+    return {
+      voterWeightAccount: (await updateVoterWeightIx.pubkeys()).voterRecord,
+      maxVoterWeightAccount: (await updateMaxVoterWeightIx.pubkeys())
+        .maxVoterRecord,
+    };
   }
 
   public async withCreateAccount(
