@@ -122,6 +122,21 @@ pub mod tests {
     }
 
     #[test]
+    fn test_cliff() {
+        let v = VestingSchedule::PeriodicVesting {
+            initial_balance: 20,
+            start_date:      0,
+            period_duration: 5,
+            num_periods:     1,
+        };
+        assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
+        assert_eq!(v.get_unvested_balance(4).unwrap(), 20);
+        // This one could go either way, but say (t>=cliff_date) has vested
+        assert_eq!(v.get_unvested_balance(5).unwrap(), 0);
+        assert_eq!(v.get_unvested_balance(100).unwrap(), 0);
+    }
+
+    #[test]
     fn test_period() {
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 20,
