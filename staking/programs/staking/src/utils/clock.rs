@@ -10,7 +10,7 @@ pub fn get_current_epoch(global_config: &GlobalConfig) -> Result<u64> {
     let now_ts: u64 = get_current_time(global_config).try_into().unwrap();
     now_ts
         .checked_div(global_config.epoch_duration)
-        .ok_or(error!(ErrorCode::ZeroEpochDuration))
+        .ok_or_else(|| error!(ErrorCode::ZeroEpochDuration))
 }
 
 // As an extra form of defense to make sure we're not using the mock clock

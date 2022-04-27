@@ -27,7 +27,7 @@ impl TargetMetadata {
     pub fn update(&mut self, current_epoch: u64) -> Result<()> {
         let n: u64 = current_epoch
             .checked_sub(self.last_update_at)
-            .ok_or(error!(ErrorCode::GenericOverflow))?;
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
         self.last_update_at = current_epoch;
         match n {
             0 => Ok(()),
@@ -35,7 +35,7 @@ impl TargetMetadata {
                 self.locked = (TryInto::<i64>::try_into(self.locked)
                     .or(Err(ErrorCode::GenericOverflow))?)
                 .checked_add(self.delta_locked)
-                .ok_or(error!(ErrorCode::GenericOverflow))?
+                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                 .try_into()
                 .or(Err(ErrorCode::NegativeBalance))?;
                 self.delta_locked = 0;
@@ -53,7 +53,7 @@ impl TargetMetadata {
         self.delta_locked = self
             .delta_locked
             .checked_add(amount.try_into().or(Err(ErrorCode::GenericOverflow))?)
-            .ok_or(error!(ErrorCode::GenericOverflow))?;
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
         Ok(())
     }
 
@@ -66,13 +66,13 @@ impl TargetMetadata {
         self.delta_locked = self
             .delta_locked
             .checked_sub(amount.try_into().or(Err(ErrorCode::GenericOverflow))?)
-            .ok_or(error!(ErrorCode::GenericOverflow))?;
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
 
         // Locked + delta_locked should never be negative, because that'd mean the balance staked to
         // the target is negative
         if (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
             .checked_add(self.delta_locked)
-            .ok_or(error!(ErrorCode::GenericOverflow))?
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
             < 0
         {
             return Err(error!(ErrorCode::NegativeBalance));

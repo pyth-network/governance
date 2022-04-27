@@ -53,7 +53,7 @@ pub fn validate(
 
     let vested_balance = total_balance
         .checked_sub(unvested_balance)
-        .ok_or(error!(TokensNotYetVested))?;
+        .ok_or_else(|| error!(TokensNotYetVested))?;
     /*
      * The four inequalities we need to hold are:
      *      vested balance >= 0

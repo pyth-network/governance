@@ -1,5 +1,6 @@
 #![deny(unused_must_use)]
 #![allow(dead_code)]
+#![allow(clippy::upper_case_acronyms)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
@@ -176,8 +177,8 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let current_position =
-            &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
+        let current_position = &mut stake_account_positions.positions[i]
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
 
         if current_position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
@@ -188,7 +189,7 @@ pub mod staking {
         let remaining_amount = current_position
             .amount
             .checked_sub(amount)
-            .ok_or(error!(ErrorCode::AmountBiggerThanPosition))?;
+            .ok_or_else(|| error!(ErrorCode::AmountBiggerThanPosition))?;
 
         match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
             PositionState::LOCKED => {
@@ -203,7 +204,7 @@ pub mod staking {
                     assert_eq!(
                         original_amount,
                         stake_account_positions.positions[i]
-                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                             .amount
                     );
                 } else {
@@ -225,14 +226,14 @@ pub mod staking {
                             assert_eq!(
                                 original_amount,
                                 stake_account_positions.positions[i]
-                                    .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
                                     .checked_add(
                                         stake_account_positions.positions[j]
-                                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                             .amount
                                     )
-                                    .ok_or(error!(ErrorCode::GenericOverflow))?
+                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }
