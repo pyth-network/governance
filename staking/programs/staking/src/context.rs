@@ -21,7 +21,7 @@ pub const DATA_TARGET_SEED: &str = "staking";
 impl positions::Target {
     pub fn get_seed(&self) -> Vec<u8> {
         match *self {
-            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes().iter().cloned().collect(),
+            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes().to_vec(),
             positions::Target::STAKING { ref product } => DATA_TARGET_SEED
                 .as_bytes()
                 .iter()
