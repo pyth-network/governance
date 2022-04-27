@@ -100,6 +100,28 @@ pub mod tests {
     }
 
     #[test]
+    fn test_linear() {
+        let v = VestingSchedule::PeriodicVesting {
+            initial_balance: 20,
+            start_date:      5,
+            period_duration: 1,
+            num_periods:     6,
+        };
+        for t in 0..14 {
+            if t <= 5 {
+                assert_eq!(v.get_unvested_balance(t).unwrap(), 20);
+            } else {
+                // Linearly interpolate between (5, 20) and (11, 0)
+                let locked_float = f64::max(20.0 + (t - 5) as f64 * -20.0 / 6.0, 0.0);
+                assert_eq!(
+                    v.get_unvested_balance(t).unwrap(),
+                    locked_float.ceil() as u64
+                );
+            }
+        }
+    }
+
+    #[test]
     fn test_period() {
         let v = VestingSchedule::PeriodicVesting {
             initial_balance: 20,
