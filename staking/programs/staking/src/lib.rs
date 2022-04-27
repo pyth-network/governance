@@ -150,7 +150,7 @@ pub mod staking {
             .get_unvested_balance(utils::clock::get_current_time(config))?;
 
         utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -297,7 +297,7 @@ pub mod staking {
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
         if utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             remaining_balance,
             unvested_balance,
             current_epoch,
@@ -318,7 +318,7 @@ pub mod staking {
         )?;
 
         if utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -348,7 +348,7 @@ pub mod staking {
             .unwrap();
 
         utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
