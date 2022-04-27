@@ -24,7 +24,7 @@
     "react-dom": "^17.0.2",
     "react-hot-toast": "^2.2.0",
     "serve": "13.0.2",
-    "pyth-staking-api": "1.1.21"
+    "pyth-staking-api": "1.1.22"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.2",
