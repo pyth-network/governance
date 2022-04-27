@@ -82,6 +82,7 @@ async function main() {
       unlockingDuration: 2,
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
+      freeze: false,
     }
   ));
 
