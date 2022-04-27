@@ -1396,10 +1396,10 @@ prettier@^2.6.2:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.6.2.tgz#e26d71a18a74c3d0f0597f55f01fb6c06c206032"
   integrity sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==
 
-pyth-staking-wasm@0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/pyth-staking-wasm/-/pyth-staking-wasm-0.2.2.tgz#588de9dcc0198338b224f335136e0a1758e26577"
-  integrity sha512-F3JwGHlRLdEk3rY0WhO1wrmYwwassk2HkQdcHgfoOGYqpuj+Bl9rFfqGD7akA0qL3OoKs0DAqkscISGLP/DHPQ==
+pyth-staking-wasm@0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/pyth-staking-wasm/-/pyth-staking-wasm-0.2.3.tgz#59f84fc708474a627a167e4ac3d102444de0a07c"
+  integrity sha512-gR6HzOQGHZQHy2iIfkzUhfeG/ik+tCR8wC3ZKifqPnkR1h9p+izMNtnU3xOcmXmzqISzmdaUFObA2OInXZ6SHg==
 
 randombytes@^2.1.0:
   version "2.1.0"
