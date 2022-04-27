@@ -6,6 +6,7 @@ use anchor_spl::token::{
     TokenAccount,
     Transfer,
 };
+use std::iter::Iterator;
 
 pub const AUTHORITY_SEED: &str = "authority";
 pub const CUSTODY_SEED: &str = "custody";
@@ -15,12 +16,18 @@ pub const VOTER_RECORD_SEED: &str = "voter_weight";
 pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
 pub const VOTING_TARGET_SEED: &str = "voting";
+pub const DATA_TARGET_SEED: &str = "staking";
 
 impl positions::Target {
-    pub fn get_seed(&self) -> &[u8] {
+    pub fn get_seed(&self) -> Vec<u8> {
         match *self {
-            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes(),
-            positions::Target::STAKING { ref product } => product.as_ref(), /* I think this should actually be two seeds, one for staking and one for the product. */
+            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes().iter().cloned().collect(),
+            positions::Target::STAKING { ref product } => DATA_TARGET_SEED
+                .as_bytes()
+                .iter()
+                .chain(product.as_ref().iter())
+                .cloned()
+                .collect(),
         }
     }
 }
@@ -167,7 +174,7 @@ pub struct CreatePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
+        seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
         bump = target_account.bump)]
     pub target_account:          Account<'info, target::TargetMetadata>,
 }
@@ -194,7 +201,7 @@ pub struct ClosePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), target_with_parameters.get_target().get_seed()],
+        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
         bump = target_account.bump)]
     pub target_account:          Account<'info, target::TargetMetadata>,
 }
@@ -251,7 +258,7 @@ pub struct CreateTarget<'info> {
     #[account(
         init,
         payer = payer,
-        seeds =  [TARGET_SEED.as_bytes(), target.get_seed()],
+        seeds =  [TARGET_SEED.as_bytes(), &target.get_seed()[..]],
         space = target::TARGET_METADATA_SIZE,
         bump)]
     pub target_account:    Account<'info, target::TargetMetadata>,

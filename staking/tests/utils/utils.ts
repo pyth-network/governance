@@ -23,6 +23,10 @@ export async function getTargetAccount(
         anchor.utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
         stakeTarget.hasOwnProperty("voting")
           ? anchor.utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED())
+          : anchor.utils.bytes.utf8.encode(wasm.Constants.DATA_TARGET_SEED()),
+
+        stakeTarget.hasOwnProperty("voting")
+          ? Buffer.from("")
           : (stakeTarget as any).staking.product.toBuffer(),
       ],
       programId
