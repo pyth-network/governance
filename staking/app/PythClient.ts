@@ -1,23 +1,36 @@
 import { Wallet } from "@project-serum/anchor";
 import { Provider } from "@project-serum/common";
 import { PublicKey } from "@solana/web3.js";
-import { LOCALNET_STAKING_ADDRESS } from "./constants";
+import { DEVNET_STAKING_ADDRESS, LOCALNET_STAKING_ADDRESS } from "./constants";
 import { StakeConnection } from "./StakeConnection";
 
 export class PythClient {
   program: { programId: PublicKey };
-  constructor(public stakeConnection: StakeConnection) {
+  cluster: string;
+  constructor(public stakeConnection: StakeConnection, cluster: string) {
+    this.cluster = cluster;
     this.program = {
-      programId: LOCALNET_STAKING_ADDRESS,
+      programId:
+        cluster === "localnet"
+          ? LOCALNET_STAKING_ADDRESS
+          : DEVNET_STAKING_ADDRESS,
     };
   }
-  static async connect(provider: Provider): Promise<PythClient> {
+  static async connect(
+    provider: Provider,
+    cluster: string
+  ): Promise<PythClient> {
+    // only supports localnet and devnet for now
+    // TODO: update this to support mainnet when program is deployed
     return new PythClient(
       await StakeConnection.createStakeConnection(
         provider.connection,
         provider.wallet as unknown as Wallet,
-        LOCALNET_STAKING_ADDRESS
-      )
+        cluster === "localnet"
+          ? LOCALNET_STAKING_ADDRESS
+          : DEVNET_STAKING_ADDRESS
+      ),
+      cluster
     );
   }
 }
