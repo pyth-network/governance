@@ -1,5 +1,5 @@
 # This workflow will run `anchor test`
-name: Rustfmt
+name: Clippy
 
 on:
   push:
@@ -20,4 +20,4 @@ jobs:
           components: clippy
       - name: Run clippy check
         working-directory: ./staking
-        run: cargo +nightly clippy
+        run: cargo +nightly clippy -- -D warnings
