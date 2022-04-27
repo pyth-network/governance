@@ -1,5 +1,6 @@
 #![deny(unused_must_use)]
 #![allow(dead_code)]
+#![allow(clippy::upper_case_acronyms)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
@@ -129,11 +130,11 @@ pub mod staking {
         config.check_frozen()?;
 
         let new_position = Position {
-            amount:                 amount,
-            target_with_parameters: target_with_parameters,
-            activation_epoch:       current_epoch + 1,
-            unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
+            amount,
+            target_with_parameters,
+            activation_epoch: current_epoch + 1,
+            unlocking_start: None,
+            reserved: POSITION_DATA_PADDING,
         };
 
         match PositionData::get_unused_index(stake_account_positions) {
@@ -150,7 +151,7 @@ pub mod staking {
             .get_unvested_balance(utils::clock::get_current_time(config))?;
 
         utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -176,8 +177,8 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let current_position =
-            &mut stake_account_positions.positions[i].ok_or(error!(ErrorCode::PositionNotInUse))?;
+        let current_position = &mut stake_account_positions.positions[i]
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
 
         if current_position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
@@ -188,7 +189,7 @@ pub mod staking {
         let remaining_amount = current_position
             .amount
             .checked_sub(amount)
-            .ok_or(error!(ErrorCode::AmountBiggerThanPosition))?;
+            .ok_or_else(|| error!(ErrorCode::AmountBiggerThanPosition))?;
 
         match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
             PositionState::LOCKED => {
@@ -203,7 +204,7 @@ pub mod staking {
                     assert_eq!(
                         original_amount,
                         stake_account_positions.positions[i]
-                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                             .amount
                     );
                 } else {
@@ -214,25 +215,25 @@ pub mod staking {
                         Err(x) => return Err(x),
                         Ok(j) => {
                             stake_account_positions.positions[j] = Some(Position {
-                                amount:                 amount,
+                                amount,
                                 target_with_parameters: current_position.target_with_parameters,
-                                activation_epoch:       current_position.activation_epoch,
-                                unlocking_start:        Some(current_epoch + 1),
-                                reserved:               POSITION_DATA_PADDING,
+                                activation_epoch: current_position.activation_epoch,
+                                unlocking_start: Some(current_epoch + 1),
+                                reserved: POSITION_DATA_PADDING,
                             });
 
                             assert_ne!(i, j);
                             assert_eq!(
                                 original_amount,
                                 stake_account_positions.positions[i]
-                                    .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
                                     .checked_add(
                                         stake_account_positions.positions[j]
-                                            .ok_or(error!(ErrorCode::PositionNotInUse))?
+                                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                             .amount
                                     )
-                                    .ok_or(error!(ErrorCode::GenericOverflow))?
+                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }
@@ -297,7 +298,7 @@ pub mod staking {
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
         if utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             remaining_balance,
             unvested_balance,
             current_epoch,
@@ -318,7 +319,7 @@ pub mod staking {
         )?;
 
         if utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -348,7 +349,7 @@ pub mod staking {
             .unwrap();
 
         utils::risk::validate(
-            &stake_account_positions,
+            stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -405,7 +406,7 @@ pub mod staking {
         }
         #[cfg(not(feature = "mock-clock"))]
         {
-            return Err(error!(ErrorCode::DebuggingOnly));
+            Err(error!(ErrorCode::DebuggingOnly))
         }
     }
 }

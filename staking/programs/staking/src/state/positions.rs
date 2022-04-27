@@ -25,12 +25,11 @@ impl PositionData {
     /// Finds first index available for a new position
     pub fn get_unused_index(&self) -> Result<usize> {
         for i in 0..MAX_POSITIONS {
-            match self.positions[i] {
-                None => return Ok(i),
-                _ => {}
+            if self.positions[i].is_none() {
+                return Ok(i);
             }
         }
-        return Err(error!(ErrorCode::TooManyPositions));
+        Err(error!(ErrorCode::TooManyPositions))
     }
 }
 
