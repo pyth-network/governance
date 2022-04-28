@@ -32,6 +32,7 @@ import {
   MintMaxVoteWeightSourceType,
   PROGRAM_VERSION_V2,
   VoteThresholdPercentage,
+  VoteTipping,
   withCreateGovernance,
   withCreateNativeTreasury,
   withCreateRealm,
@@ -265,14 +266,15 @@ export async function createGovernance(
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
     new PublicKey(config.programs.localnet.staking),
-    undefined // new PublicKey(config.programs.localnet.staking) //TODO: Restore after max voter weight plugin implemented
+    new PublicKey(config.programs.localnet.staking)
   );
   const governanceConfig = new GovernanceConfig({
-    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    voteThresholdPercentage: new VoteThresholdPercentage({ value: 50 }),
     minCommunityTokensToCreateProposal: MIN_TOKENS_CREATE_PROPOSAL,
     minInstructionHoldUpTime: 1,
     maxVotingTime: maxVotingTime,
     minCouncilTokensToCreateProposal: new BN(1),
+    voteTipping: VoteTipping.Early,
   });
   const governance = await withCreateGovernance(
     tx.instructions,
