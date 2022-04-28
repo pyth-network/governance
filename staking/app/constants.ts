@@ -12,6 +12,10 @@ export const LOCALNET_STAKING_ADDRESS = new PublicKey(
   "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
 );
 
+export const DEVNET_STAKING_ADDRESS = new PublicKey(
+  "J5xdygNvn6dYXgUWf2qqbK23qabo7uqE7QRy6PmhEYaB"
+);
+
 export const LOCALNET_REALM_ID = new PublicKey(
   "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
 );
