@@ -362,9 +362,11 @@ export class StakeConnection {
     );
   }
   public async getMaxVoterWeightAddress(): Promise<PublicKey> {
-    return await PublicKey.findProgramAddress(
-      [utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],
-      this.program.programId
+    return (
+      await PublicKey.findProgramAddress(
+        [utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],
+        this.program.programId
+      )
     )[0];
   }
   public async withUpdateVoterWeight(
