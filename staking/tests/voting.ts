@@ -54,6 +54,7 @@ describe("voting", async () => {
 
   let owner: PublicKey;
   let voterWeightRecordAccount: PublicKey;
+  let maxVoterWeightRecordAccount: PublicKey;
   let tokenOwnerRecord: PublicKey;
   let provider: anchor.AnchorProvider;
 
@@ -100,6 +101,21 @@ describe("voting", async () => {
       )
     )[0];
 
+    maxVoterWeightRecordAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(
+            wasm.Constants.MAX_VOTER_RECORD_SEED()
+          ),
+        ],
+        stakeConnection.program.programId
+      )
+    )[0];
+    assert.equal(
+      maxVoterWeightRecordAccount.toBase58(),
+      (await stakeConnection.getMaxVoterWeightAddress()).toBase58()
+    );
+
     tokenOwnerRecord = await stakeConnection.getTokenOwnerRecordAddress(owner);
   });
 
@@ -110,13 +126,18 @@ describe("voting", async () => {
   ): Promise<PublicKey> {
     if (updateFirst) {
       const stakeAccount = await stakeConnection.getMainAccount(owner);
-      tx.instructions.push(
-        await stakeConnection.program.methods
-          .updateVoterWeight()
-          .accounts({
-            stakeAccountPositions: stakeAccount.address,
-          })
-          .instruction()
+      const { voterWeightAccount, maxVoterWeightAccount } =
+        await stakeConnection.withUpdateVoterWeight(
+          tx.instructions,
+          stakeAccount
+        );
+      assert.equal(
+        voterWeightAccount.toBase58(),
+        voterWeightRecordAccount.toBase58()
+      );
+      assert.equal(
+        maxVoterWeightAccount.toBase58(),
+        maxVoterWeightRecordAccount.toBase58()
       );
     }
     const proposalNumber = (
@@ -186,7 +207,7 @@ describe("voting", async () => {
       }),
       provider.wallet.publicKey,
       voterWeightRecordAccount,
-      undefined
+      maxVoterWeightRecordAccount
     );
   }
 
@@ -245,7 +266,7 @@ describe("voting", async () => {
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
     const vote = await withDefaultCastVote(tx, proposalAddress);
-    await provider.sendAndConfirm(tx);
+    await provider.sendAndConfirm(tx, [], { skipPreflight: true });
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
