@@ -44,6 +44,7 @@ impl TargetMetadata {
                 self.prev_epoch_locked = self.next_epoch_locked()?;
                 self.locked = self.prev_epoch_locked;
                 self.delta_locked = 0;
+                self.prev_epoch_locked = self.locked;
                 Ok(())
             }
         }
