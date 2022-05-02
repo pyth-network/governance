@@ -4,6 +4,7 @@ use crate::state::positions::{
     PositionState,
     MAX_POSITIONS,
 };
+use crate::state::target::TargetMetadata;
 use anchor_lang::prelude::*;
 use std::convert::TryInto;
 

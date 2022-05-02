@@ -48,6 +48,28 @@ impl TargetMetadata {
             }
         }
     }
+
+    pub fn get_current_amount_locked(&self, current_epoch: u64) -> Result<u64> {
+        let current_epoch_signed: i64 = current_epoch
+            .try_into()
+            .map_err(|_| ErrorCode::GenericOverflow)?;
+        let last_update_at_signed: i64 = self
+            .last_update_at
+            .try_into()
+            .map_err(|_| ErrorCode::GenericOverflow)?;
+
+        let diff: i64 = current_epoch_signed
+            .checked_sub(last_update_at_signed)
+            .ok_or(ErrorCode::GenericOverflow)?;
+
+        match diff {
+            i64::MIN..=-2 => Err(error!(ErrorCode::NotImplemented)),
+            -1 => Ok(self.prev_epoch_locked),
+            0 => Ok(self.locked),
+            1..=i64::MAX => Ok(self.add_delta()?),
+        }
+    }
+
     // Computes self.locked + self.delta_locked, handling errors and overflow appropriately
     fn add_delta(&self) -> Result<u64> {
         let x: u64 = (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
