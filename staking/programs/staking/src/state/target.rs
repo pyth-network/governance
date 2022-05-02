@@ -44,10 +44,18 @@ impl TargetMetadata {
                 self.prev_epoch_locked = self.next_epoch_locked()?;
                 self.locked = self.prev_epoch_locked;
                 self.delta_locked = 0;
-                self.prev_epoch_locked = self.locked;
                 Ok(())
             }
         }
+    }
+    // Computes self.locked + self.delta_locked, handling errors and overflow appropriately
+    fn add_delta(&self) -> Result<u64> {
+        let x: u64 = (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
+            .checked_add(self.delta_locked)
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+            .try_into()
+            .or_else(|_| Err(error!(ErrorCode::NegativeBalance)))?;
+        Ok(x)
     }
 
     pub fn get_current_amount_locked(&self, current_epoch: u64) -> Result<u64> {
