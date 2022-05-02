@@ -5,6 +5,8 @@ import BN from "bn.js";
 import { PythBalance } from "../../app";
 import * as wasm from "../../wasm/node/staking";
 import * as anchor from "@project-serum/anchor";
+import { getMint } from "@solana/spl-token";
+import * as gov from "@solana/spl-governance";
 
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
@@ -65,54 +67,61 @@ export async function assertBalanceMatches(
 }
 
 export type VoterWeights = {
-  voterWeight: PythBalance;
-  maxVoterWeight: PythBalance;
+  rawVoterWeight: PythBalance;
+  totalLockedBalance: PythBalance;
 };
+
+async function assertVoterWeightEqualsAt(
+  stakeConnection: StakeConnection,
+  owner: PublicKey,
+  expected: VoterWeights,
+  time: BN
+) {
+  const stakeAccount = await stakeConnection.getMainAccount(owner);
+  const pythMintSupply: BN = new BN(
+    (
+      await getMint(
+        stakeConnection.provider.connection,
+        stakeConnection.config.pythTokenMint
+      )
+    ).supply.toString()
+  );
+
+  // First check expected matches the WASM-computed value
+  const currentActual = stakeAccount.getVoterWeight(time);
+  let expectedScaled = new BN(0);
+  if (expected.totalLockedBalance.toBN().gtn(0))
+    expectedScaled = expected.rawVoterWeight
+      .toBN()
+      .mul(pythMintSupply)
+      .div(expected.totalLockedBalance.toBN());
+  assert.equal(currentActual.toBN().toString(), expectedScaled.toString());
+
+  // Now create a fake proposal, update the voter weight, and make sure the voter record matches expected
+  const tx = new Transaction();
+  const fns = gov.getGovernanceSchemaForAccount(
+    gov.GovernanceAccountType.GovernanceV2
+  );
+  console.dir(fns);
+}
 
 export async function assertVoterWeightEquals(
   stakeConnection: StakeConnection,
   owner: PublicKey,
-  expected: VoterWeights
+  expectedPrevEpoch: VoterWeights,
+  expectedCurrentEpoch: VoterWeights
 ) {
-  const stakeAccount = await stakeConnection.getMainAccount(owner);
-  const actual = stakeAccount.getVoterWeight(await stakeConnection.getTime());
-  assert(actual.eq(expected.voterWeight));
-  const tx = new Transaction();
-  const accounts = await stakeConnection.withUpdateVoterWeight(
-    tx.instructions,
-    stakeAccount
+  assertVoterWeightEqualsAt(
+    stakeConnection,
+    owner,
+    expectedPrevEpoch,
+    (await stakeConnection.getTime()).sub(stakeConnection.config.epochDuration)
   );
-  await stakeConnection.program.provider.sendAndConfirm(tx, []);
-
-  let [voterAccount, voterBump] = await PublicKey.findProgramAddress(
-    [
-      anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-      stakeAccount.address.toBuffer(),
-    ],
-    stakeConnection.program.programId
-  );
-  assert.equal(accounts.voterWeightAccount.toBase58(), voterAccount.toBase58());
-
-  const voterRecord =
-    await stakeConnection.program.account.voterWeightRecord.fetch(voterAccount);
-  assert(voterRecord.voterWeight.eq(expected.voterWeight.toBN()));
-
-  let [maxVoterWeightAccount, maxVoterWeightBump] =
-    await PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],
-      stakeConnection.program.programId
-    );
-  assert.equal(
-    accounts.maxVoterWeightAccount.toBase58(),
-    maxVoterWeightAccount.toBase58()
-  );
-
-  const maxVoterWeightRecord =
-    await stakeConnection.program.account.maxVoterWeightRecord.fetch(
-      maxVoterWeightAccount
-    );
-  assert(
-    maxVoterWeightRecord.maxVoterWeight.eq(expected.maxVoterWeight.toBN())
+  assertVoterWeightEqualsAt(
+    stakeConnection,
+    owner,
+    expectedCurrentEpoch,
+    await stakeConnection.getTime()
   );
 }
 
