@@ -119,14 +119,6 @@ export class StakeConnection {
       )
     )[0];
 
-    const pythMintInfo = await new Token(
-      provider.connection,
-      config.pythTokenMint,
-      TOKEN_PROGRAM_ID,
-      new Keypair()
-    ).getMintInfo();
-    const pythMintSupply: BN = pythMintInfo.supply;
-
     return new StakeConnection(
       program,
       provider,
