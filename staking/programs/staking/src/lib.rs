@@ -387,7 +387,14 @@ pub mod staking {
             _ => {
                 // The other actions are creating a proposal, comment on a proposal and create
                 // governance. It's OK to use current weights for these things.
+                // It is also ok to leave weight_action_target as None because we don't
+                // need to make any extra checks.
+                // For creating a proposal weight_action_target is supposed to be the governance
+                // but we don't have specific logic for different governances
+                // For creating a governance weight_action_target is supposed to be the realm
+                // but we have a single realm.
                 epoch_of_snapshot = current_epoch;
+                voter_record.weight_action_target = None;
             }
         }
 
