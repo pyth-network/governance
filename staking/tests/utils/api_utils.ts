@@ -121,7 +121,7 @@ async function assertVoterWeightEqualsAt(
   assert.equal(currentActual.toBN().toString(), expectedScaled.toString());
 
   const proposalAddress =
-    await new MockProposalCreator().createMockProposalWithTime(
+    await new MockProposalCreator().getMockProposalWithTime(
       stakeConnection,
       time
     );
@@ -146,19 +146,22 @@ async function assertVoterWeightEqualsAt(
 }
 
 class MockProposalCreator {
-  static cache: Map<BN, PublicKey>;
+  // Creating a mock proposal takes a few seconds, and we use a lot of the same times over and over,
+  // so it makes sense to cache them
+  static cache: Map<string, PublicKey> = new Map();
 
   public async getMockProposalWithTime(
     stakeConnection: StakeConnection,
     time: BN
   ) {
-    if (MockProposalCreator.cache.has(time))
-      return MockProposalCreator.cache.get(time);
+    if (MockProposalCreator.cache.has(time.toString())) {
+      return MockProposalCreator.cache.get(time.toString());
+    }
     const proposal = await this.createMockProposalWithTime(
       stakeConnection,
       time
     );
-    MockProposalCreator.cache.set(time, proposal);
+    MockProposalCreator.cache.set(time.toString(), proposal);
     return proposal;
   }
 
