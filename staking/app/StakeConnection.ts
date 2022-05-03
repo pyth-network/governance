@@ -39,6 +39,7 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
+import { Pubkey } from "pyth-staking-wasm";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -51,12 +52,13 @@ type PositionData = IdlAccounts<Staking>["positionData"];
 type Position = IdlTypes<Staking>["Position"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
+type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
 
 export class StakeConnection {
   program: Program<Staking>;
   provider: AnchorProvider;
   config: GlobalConfig;
-  private configAddress: PublicKey;
+  configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
   votingProduct = { voting: {} };
   governanceAddress: PublicKey;
@@ -117,12 +119,22 @@ export class StakeConnection {
         program.programId
       )
     )[0];
+
+    const pythMintInfo = await new Token(
+      provider.connection,
+      config.pythTokenMint,
+      TOKEN_PROGRAM_ID,
+      new Keypair()
+    ).getMintInfo();
+    const pythMintSupply: BN = pythMintInfo.supply;
+
     return new StakeConnection(
       program,
       provider,
       config,
       configAddress,
-      votingProductMetadataAccount
+      votingProductMetadataAccount,
+      pythMintSupply
     );
   }
 
@@ -168,10 +180,18 @@ export class StakeConnection {
     }
   }
 
-  // creates stake account will happen inside deposit
-  // public async createStakeAccount(user: PublicKey): Promise<StakeAccount> {
-  //   return;
-  // }
+  async fetchVotingProductMetadataAccount() {
+    const inbuf = await this.program.provider.connection.getAccountInfo(
+      this.votingProductMetadataAccount
+    );
+
+    const pd = new wasm.WasmTargetMetadata(inbuf!.data);
+
+    const outBuffer = Buffer.alloc(pd.borshLength);
+    pd.asBorsh(outBuffer);
+
+    return pd;
+  }
 
   async fetchPositionAccount(address: PublicKey) {
     const inbuf = await this.program.provider.connection.getAccountInfo(
@@ -237,7 +257,12 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       new Keypair()
     );
+
+    const votingAccountMetadataWasm =
+      await this.fetchVotingProductMetadataAccount();
     const tokenBalance = (await mint.getAccountInfo(custodyAddress)).amount;
+    const totalSupply = (await mint.getMintInfo()).supply;
+
     return new StakeAccount(
       address,
       stakeAccountPositionsWasm,
@@ -246,6 +271,8 @@ export class StakeConnection {
       tokenBalance,
       authorityAddress,
       vestingSchedule,
+      votingAccountMetadataWasm,
+      totalSupply,
       this.config
     );
   }
@@ -364,25 +391,26 @@ export class StakeConnection {
 
   public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
-    stakeAccount: StakeAccount
+    stakeAccount: StakeAccount,
+    action: VoterWeightAction,
+    remainingAccount?: PublicKey
   ): Promise<{
     voterWeightAccount: PublicKey;
-    maxVoterWeightAccount: PublicKey;
   }> {
     const updateVoterWeightIx = this.program.methods
-      .updateVoterWeight()
-      .accounts({ stakeAccountPositions: stakeAccount.address });
+      .updateVoterWeight(action)
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        pythMint: this.config.pythTokenMint,
+      })
+      .remainingAccounts(
+        remainingAccount
+          ? [{ pubkey: remainingAccount, isWritable: false, isSigner: false }]
+          : []
+      );
     instructions.push(await updateVoterWeightIx.instruction());
-
-    const updateMaxVoterWeightIx = this.program.methods
-      .updateMaxVoterWeight()
-      .accounts({ governanceAccount: this.votingProductMetadataAccount });
-    instructions.push(await updateMaxVoterWeightIx.instruction());
-
     return {
       voterWeightAccount: (await updateVoterWeightIx.pubkeys()).voterRecord,
-      maxVoterWeightAccount: (await updateMaxVoterWeightIx.pubkeys())
-        .maxVoterRecord,
     };
   }
 
@@ -614,6 +642,8 @@ export class StakeAccount {
   tokenBalance: u64;
   authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
+  votingAccountMetadataWasm: any;
+  totalSupply: BN;
   config: GlobalConfig;
 
   constructor(
@@ -624,6 +654,8 @@ export class StakeAccount {
     tokenBalance: u64,
     authorityAddress: PublicKey,
     vestingSchedule: Buffer, // Borsh serialized
+    votingAccountMetadataWasm: any,
+    totalSupply: BN,
     config: GlobalConfig
   ) {
     this.address = address;
@@ -633,6 +665,8 @@ export class StakeAccount {
     this.tokenBalance = tokenBalance;
     this.authorityAddress = authorityAddress;
     this.vestingSchedule = vestingSchedule;
+    this.votingAccountMetadataWasm = votingAccountMetadataWasm;
+    this.totalSupply = totalSupply;
     this.config = config;
   }
 
@@ -732,10 +766,18 @@ export class StakeAccount {
   public getVoterWeight(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
+
     const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
       BigInt(currentEpoch.toString()),
-      unlockingDuration
+      unlockingDuration,
+      BigInt(
+        this.votingAccountMetadataWasm.getCurrentAmountLocked(
+          BigInt(currentEpoch.toString())
+        )
+      ),
+      BigInt(this.totalSupply.toString())
     );
+
     return new PythBalance(new BN(voterWeightBI.toString()));
   }
 

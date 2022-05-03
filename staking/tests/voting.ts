@@ -25,6 +25,7 @@ import {
   Vote,
   VoteChoice,
   VoteKind,
+  VoterWeightAction,
   VoteType,
   withCastVote,
   withCreateProposal,
@@ -65,13 +66,20 @@ describe("voting", async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     governanceProgram = new PublicKey(config.programs.localnet.governance);
 
+    let defaultConfig = makeDefaultConfig(pythMintAccount.publicKey);
+    defaultConfig.epochDuration = new BN(10);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+      defaultConfig
     ));
+
+    // Delete the property, which will make the API think it's not using mock clock anymore
+    delete stakeConnection.config.mockClockTime;
+    await syncronizeClock(stakeConnection);
+
     const globalConfig = stakeConnection.config;
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -112,10 +120,12 @@ describe("voting", async () => {
       const stakeAccount = await stakeConnection.getMainAccount(owner);
       tx.instructions.push(
         await stakeConnection.program.methods
-          .updateVoterWeight()
+          .updateVoterWeight({ createProposal: {} })
           .accounts({
             stakeAccountPositions: stakeAccount.address,
+            pythMint: stakeAccount.config.pythTokenMint,
           })
+          .remainingAccounts([])
           .instruction()
       );
     }
@@ -161,10 +171,24 @@ describe("voting", async () => {
     return proposal;
   }
 
-  function withDefaultCastVote(
+  async function withDefaultCastVote(
     tx: Transaction,
     proposalAddress: PublicKey
   ): Promise<PublicKey> {
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+    tx.instructions.push(
+      await stakeConnection.program.methods
+        .updateVoterWeight({ castVote: {} })
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          pythMint: stakeAccount.config.pythTokenMint,
+        })
+        .remainingAccounts([
+          { pubkey: proposalAddress, isWritable: false, isSigner: false },
+        ])
+        .instruction()
+    );
+
     return withCastVote(
       tx.instructions,
       governanceProgram,
@@ -190,6 +214,19 @@ describe("voting", async () => {
     );
   }
 
+  async function syncronizeClock(stakeConnection: StakeConnection) {
+    const time = await stakeConnection.getTime();
+    const mock_clock_time = (
+      await stakeConnection.program.account.globalConfig.fetch(
+        stakeConnection.configAddress
+      )
+    ).mockClockTime;
+    await stakeConnection.program.methods
+      .advanceClock(time.sub(mock_clock_time))
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
+  }
+
   it("tries to create a proposal without updating", async () => {
     const tx = new Transaction();
     await withDefaultCreateProposal(tx, false, false);
@@ -210,22 +247,20 @@ describe("voting", async () => {
   });
 
   it("create a position and then create proposal", async () => {
-    stakeConnection.depositAndLockTokens(
+    await stakeConnection.depositAndLockTokens(
       await stakeConnection.getMainAccount(owner),
       PythBalance.fromString("200")
     );
     // Time hasn't passed yet, so still no weight
     const tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, true, false);
+    await withDefaultCreateProposal(tx, true, false);
     await expectFailGovernance(
       provider.simulate(tx),
       "Owner doesn't have enough governing tokens to create Proposal"
     );
 
-    await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.muln(5))
-      .accounts({})
-      .rpc({ skipPreflight: DEBUG });
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await syncronizeClock(stakeConnection);
 
     // Now it should succeed
     await provider.sendAndConfirm(tx);
@@ -234,7 +269,7 @@ describe("voting", async () => {
     // Slot has probably already increased, but make extra sure by waiting one second
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, false, false);
+    await withDefaultCreateProposal(tx, false, false);
     await expectFailGovernance(
       provider.simulate(tx),
       "VoterWeightRecord expired"
@@ -245,7 +280,7 @@ describe("voting", async () => {
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
     const vote = await withDefaultCastVote(tx, proposalAddress);
-    await provider.sendAndConfirm(tx);
+    await provider.sendAndConfirm(tx, [], { skipPreflight: true });
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(

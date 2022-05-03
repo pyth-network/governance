@@ -1,11 +1,11 @@
 import { StakeConnection, BalanceSummary } from "../../app/StakeConnection";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
 import * as wasm from "../../wasm/node/staking";
 import * as anchor from "@project-serum/anchor";
-import { getMint } from "@solana/spl-token";
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import * as gov from "@solana/spl-governance";
 
 /**
@@ -78,17 +78,17 @@ async function assertVoterWeightEqualsAt(
   time: BN
 ) {
   const stakeAccount = await stakeConnection.getMainAccount(owner);
-  const pythMintSupply: BN = new BN(
-    (
-      await getMint(
-        stakeConnection.provider.connection,
-        stakeConnection.config.pythTokenMint
-      )
-    ).supply.toString()
-  );
+
+  const pythMintInfo = await new Token(
+    stakeConnection.provider.connection,
+    stakeConnection.config.pythTokenMint,
+    TOKEN_PROGRAM_ID,
+    new Keypair()
+  ).getMintInfo();
+  const pythMintSupply: BN = pythMintInfo.supply;
 
   // First check expected matches the WASM-computed value
-  const currentActual = stakeAccount.getVoterWeight(time);
+  const currentActual = await stakeAccount.getVoterWeight(time);
   let expectedScaled = new BN(0);
   if (expected.totalLockedBalance.toBN().gtn(0))
     expectedScaled = expected.rawVoterWeight
@@ -97,12 +97,12 @@ async function assertVoterWeightEqualsAt(
       .div(expected.totalLockedBalance.toBN());
   assert.equal(currentActual.toBN().toString(), expectedScaled.toString());
 
-  // Now create a fake proposal, update the voter weight, and make sure the voter record matches expected
-  const tx = new Transaction();
-  const fns = gov.getGovernanceSchemaForAccount(
-    gov.GovernanceAccountType.GovernanceV2
-  );
-  console.dir(fns);
+  // // Now create a fake proposal, update the voter weight, and make sure the voter record matches expected
+  // const tx = new Transaction();
+  // const fns = gov.getGovernanceSchemaForAccount(
+  //   gov.GovernanceAccountType.GovernanceV2
+  // );
+  // console.dir(fns);
 }
 
 export async function assertVoterWeightEquals(
@@ -111,13 +111,14 @@ export async function assertVoterWeightEquals(
   expectedPrevEpoch: VoterWeights,
   expectedCurrentEpoch: VoterWeights
 ) {
-  assertVoterWeightEqualsAt(
+  await assertVoterWeightEqualsAt(
     stakeConnection,
     owner,
     expectedPrevEpoch,
     (await stakeConnection.getTime()).sub(stakeConnection.config.epochDuration)
   );
-  assertVoterWeightEqualsAt(
+
+  await assertVoterWeightEqualsAt(
     stakeConnection,
     owner,
     expectedCurrentEpoch,
