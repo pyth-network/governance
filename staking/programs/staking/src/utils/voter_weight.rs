@@ -36,3 +36,114 @@ pub fn compute_voter_weight(
         .map_err(|_| ErrorCode::GenericOverflow)?;
     Ok(voter_weight)
 }
+
+
+#[cfg(test)]
+pub mod tests {
+    use anchor_lang::prelude::Pubkey;
+
+    use crate::state::positions::{
+        Position,
+        PositionData,
+        Publisher,
+        TargetWithParameters,
+        MAX_POSITIONS,
+        POSITION_DATA_PADDING,
+    };
+    use crate::utils::voter_weight::compute_voter_weight;
+
+    #[test]
+    fn test_compute_voter_weight() {
+        let mut pd = PositionData {
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
+        };
+
+        pd.positions[0] = Some(Position {
+            activation_epoch:       1,
+            amount:                 7,
+            target_with_parameters: TargetWithParameters::VOTING {},
+            unlocking_start:        Some(3),
+            reserved:               POSITION_DATA_PADDING,
+        });
+        pd.positions[1] = Some(Position {
+            activation_epoch:       3,
+            amount:                 3,
+            target_with_parameters: TargetWithParameters::VOTING {},
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
+        });
+        pd.positions[2] = Some(Position {
+            activation_epoch:       2,
+            amount:                 5,
+            target_with_parameters: TargetWithParameters::VOTING {},
+            unlocking_start:        Some(4),
+            reserved:               POSITION_DATA_PADDING,
+        });
+        pd.positions[3] = Some(Position {
+            activation_epoch:       0,
+            amount:                 10,
+            target_with_parameters: TargetWithParameters::STAKING {
+                product:   Pubkey::new_unique(),
+                publisher: Publisher::DEFAULT,
+            },
+            unlocking_start:        None,
+            reserved:               POSITION_DATA_PADDING,
+        });
+
+        let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
+        assert_eq!(weight, 0);
+
+        let weight = compute_voter_weight(&pd, 1, 1, 100, 150).unwrap();
+        assert_eq!(weight, 7 * 150 / 100);
+
+        let weight = compute_voter_weight(&pd, 2, 1, 100, 150).unwrap();
+        assert_eq!(weight, 12 * 150 / 100);
+
+        let weight = compute_voter_weight(&pd, 3, 1, 100, 150).unwrap();
+        assert_eq!(weight, 8 * 150 / 100);
+
+        let weight = compute_voter_weight(&pd, 4, 1, 100, 150).unwrap();
+        assert_eq!(weight, 3 * 150 / 100);
+    }
+
+    #[test]
+    fn test_overflow() {
+        let mut pd = PositionData {
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
+        };
+
+        pd.positions[0] = Some(Position {
+            activation_epoch:       1,
+            amount:                 u64::MAX / 2,
+            target_with_parameters: TargetWithParameters::VOTING {},
+            unlocking_start:        Some(3),
+            reserved:               POSITION_DATA_PADDING,
+        });
+
+
+        let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
+        assert_eq!(weight, u64::MAX);
+    }
+
+    #[test]
+    fn test_locked_amount_zero() {
+        let mut pd = PositionData {
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
+        };
+
+        pd.positions[0] = Some(Position {
+            activation_epoch:       1,
+            amount:                 u64::MAX / 2,
+            target_with_parameters: TargetWithParameters::VOTING {},
+            unlocking_start:        Some(3),
+            reserved:               POSITION_DATA_PADDING,
+        });
+
+
+        let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
+        assert_eq!(weight, 0);
+    }
+}
