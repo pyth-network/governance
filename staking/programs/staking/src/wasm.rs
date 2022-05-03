@@ -213,22 +213,6 @@ impl WasmTargetMetadata {
         })
     }
 
-    #[wasm_bindgen(getter, js_name=borshLength)]
-    pub fn get_borsh_length(&self) -> usize {
-        TARGET_METADATA_SIZE
-    }
-    /// Serialize this account using Borsh so that Anchor can deserialize it
-    #[wasm_bindgen(js_name=asBorsh)]
-    pub fn as_borsh(&self, output_buffer: &mut [u8]) -> Result<(), JsValue> {
-        convert_error(self.as_borsh_impl(output_buffer))
-    }
-    fn as_borsh_impl(&self, output_buffer: &mut [u8]) -> Result<(), Error> {
-        let mut writer = output_buffer;
-        writer.write_all(&TargetMetadata::discriminator())?;
-        self.wrapped.serialize(&mut writer)?;
-        Ok(())
-    }
-
     #[wasm_bindgen(js_name=getCurrentAmountLocked)]
     pub fn get_current_amount_locked(&self, current_epoch: u64) -> Result<u64, JsValue> {
         convert_error(self.wrapped.get_current_amount_locked(current_epoch))
