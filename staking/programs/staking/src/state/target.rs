@@ -35,13 +35,13 @@ impl TargetMetadata {
             0 => Ok(()),
             1 => {
                 self.prev_epoch_locked = self.locked;
-                self.locked = self.add_delta()?;
+                self.locked = self.apply_delta()?;
                 self.delta_locked = 0;
                 Ok(())
             }
             _ => {
                 // >= 2
-                self.prev_epoch_locked = self.add_delta()?;
+                self.prev_epoch_locked = self.apply_delta()?;
                 self.locked = self.prev_epoch_locked;
                 self.delta_locked = 0;
                 Ok(())
@@ -66,12 +66,12 @@ impl TargetMetadata {
             i64::MIN..=-2 => Err(error!(ErrorCode::NotImplemented)),
             -1 => Ok(self.prev_epoch_locked),
             0 => Ok(self.locked),
-            1..=i64::MAX => Ok(self.add_delta()?),
+            1..=i64::MAX => Ok(self.apply_delta()?),
         }
     }
 
     // Computes self.locked + self.delta_locked, handling errors and overflow appropriately
-    fn add_delta(&self) -> Result<u64> {
+    fn apply_delta(&self) -> Result<u64> {
         let x: u64 = (TryInto::<i64>::try_into(self.locked).or(Err(ErrorCode::GenericOverflow))?)
             .checked_add(self.delta_locked)
             .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
