@@ -231,8 +231,8 @@ pub struct UpdateVoterWeight<'info> {
     // Governance target account:
     #[account(
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
-        bump = governance_account.bump)]
-    pub governance_account:      Account<'info, target::TargetMetadata>,
+        bump = governance_target.bump)]
+    pub governance_target:       Account<'info, target::TargetMetadata>,
     #[account(address = config.pyth_token_mint)]
     pub pyth_mint:               Account<'info, Mint>,
 }

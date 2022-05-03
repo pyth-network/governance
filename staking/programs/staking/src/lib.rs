@@ -347,7 +347,7 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
-        let governance_account = &ctx.accounts.governance_account;
+        let governance_target = &ctx.accounts.governance_target;
         let pyth_mint = &ctx.accounts.pyth_mint;
 
         let current_epoch = get_current_epoch(config).unwrap();
@@ -390,7 +390,7 @@ pub mod staking {
             stake_account_positions,
             epoch_of_snapshot,
             config.unlocking_duration,
-            governance_account.get_current_amount_locked(epoch_of_snapshot)?,
+            governance_target.get_current_amount_locked(epoch_of_snapshot)?,
             pyth_mint.supply,
         )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
