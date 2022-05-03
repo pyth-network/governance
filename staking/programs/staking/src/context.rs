@@ -230,6 +230,7 @@ pub struct UpdateVoterWeight<'info> {
     pub config:                  Account<'info, global_config::GlobalConfig>,
     // Governance target account:
     #[account(
+        mut,
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_target.bump)]
     pub governance_target:       Account<'info, target::TargetMetadata>,

@@ -347,10 +347,11 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
-        let governance_target = &ctx.accounts.governance_target;
+        let governance_target = &mut ctx.accounts.governance_target;
         let pyth_mint = &ctx.accounts.pyth_mint;
 
         let current_epoch = get_current_epoch(config).unwrap();
+        governance_target.update(current_epoch)?;
 
         let unvested_balance = ctx
             .accounts
@@ -382,6 +383,8 @@ pub mod staking {
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }
             _ => {
+                // The other actions are creating a proposal, comment on a proposal and create
+                // governance. It's OK to use current weights for these things.
                 epoch_of_snapshot = current_epoch;
             }
         }
