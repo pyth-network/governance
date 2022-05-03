@@ -26,7 +26,6 @@ import {
   Vote,
   VoteChoice,
   VoteKind,
-  VoterWeightAction,
   VoteType,
   withCastVote,
   withCreateProposal,
