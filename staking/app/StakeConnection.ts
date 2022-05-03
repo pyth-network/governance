@@ -183,12 +183,9 @@ export class StakeConnection {
       this.votingProductMetadataAccount
     );
 
-    const pd = new wasm.WasmTargetMetadata(inbuf!.data);
+    const pm = new wasm.WasmTargetMetadata(inbuf!.data);
 
-    const outBuffer = Buffer.alloc(pd.borshLength);
-    pd.asBorsh(outBuffer);
-
-    return pd;
+    return pm;
   }
 
   async fetchPositionAccount(address: PublicKey) {

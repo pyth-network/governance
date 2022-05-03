@@ -20,7 +20,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "0.2.5",
+    "pyth-staking-wasm": "0.2.6",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
