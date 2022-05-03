@@ -46,34 +46,66 @@ describe("voter_weight_test", async () => {
       undefined,
       PythBalance.fromString("100")
     );
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("0"),
-      maxVoterWeight: PythBalance.fromString("0"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      }
+    );
 
     // undo 50 of the lock
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("0"),
-      maxVoterWeight: PythBalance.fromString("0"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      }
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("50"),
-      maxVoterWeight: PythBalance.fromString("50"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("50"),
+        totalLockedBalance: PythBalance.fromString("50"),
+      }
+    );
   });
 
   it("deposit more while other position unlocking", async () => {
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("50"),
-      maxVoterWeight: PythBalance.fromString("50"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("50"),
+        totalLockedBalance: PythBalance.fromString("50"),
+      }
+    );
 
     // end the epoch so that the tokens start unlocking
     await stakeConnection.program.methods
@@ -81,38 +113,70 @@ describe("voter_weight_test", async () => {
       .rpc();
 
     const stakeAccount = await stakeConnection.getMainAccount(owner);
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("0"),
-      maxVoterWeight: PythBalance.fromString("0"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("50"),
+        totalLockedBalance: PythBalance.fromString("50"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      }
+    );
 
     await stakeConnection.depositAndLockTokens(
       stakeAccount,
       PythBalance.fromString("100")
     );
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("0"),
-      maxVoterWeight: PythBalance.fromString("0"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("50"),
+        totalLockedBalance: PythBalance.fromString("50"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      }
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("100"),
-      maxVoterWeight: PythBalance.fromString("100"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("0"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("100"),
+      }
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(3)))
       .rpc();
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("100"),
-      maxVoterWeight: PythBalance.fromString("100"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("100"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("100"),
+      }
+    );
   });
 
   it("new user, max weight adds up", async () => {
@@ -146,15 +210,31 @@ describe("voter_weight_test", async () => {
       .advanceClock(EPOCH_DURATION.mul(new BN(3)))
       .rpc();
 
-    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
-      voterWeight: PythBalance.fromString("500"),
-      maxVoterWeight: PythBalance.fromString("600"),
-    });
+    await assertVoterWeightEquals(
+      bobConnection,
+      bob.publicKey,
+      {
+        rawVoterWeight: PythBalance.fromString("500"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("500"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      }
+    );
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("100"),
-      maxVoterWeight: PythBalance.fromString("600"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      }
+    );
 
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
 
@@ -164,29 +244,61 @@ describe("voter_weight_test", async () => {
       PythBalance.fromString("50")
     );
 
-    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
-      voterWeight: PythBalance.fromString("500"),
-      maxVoterWeight: PythBalance.fromString("600"),
-    });
+    await assertVoterWeightEquals(
+      bobConnection,
+      bob.publicKey,
+      {
+        rawVoterWeight: PythBalance.fromString("500"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("500"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      }
+    );
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("100"),
-      maxVoterWeight: PythBalance.fromString("600"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      }
+    );
 
     await stakeConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
       .rpc();
 
-    await assertVoterWeightEquals(bobConnection, bob.publicKey, {
-      voterWeight: PythBalance.fromString("550"),
-      maxVoterWeight: PythBalance.fromString("550"),
-    });
+    await assertVoterWeightEquals(
+      bobConnection,
+      bob.publicKey,
+      {
+        rawVoterWeight: PythBalance.fromString("500"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("550"),
+        totalLockedBalance: PythBalance.fromString("550"),
+      }
+    );
 
-    await assertVoterWeightEquals(stakeConnection, owner, {
-      voterWeight: PythBalance.fromString("0"),
-      maxVoterWeight: PythBalance.fromString("550"),
-    });
+    await assertVoterWeightEquals(
+      stakeConnection,
+      owner,
+      {
+        rawVoterWeight: PythBalance.fromString("100"),
+        totalLockedBalance: PythBalance.fromString("600"),
+      },
+      {
+        rawVoterWeight: PythBalance.fromString("0"),
+        totalLockedBalance: PythBalance.fromString("550"),
+      }
+    );
   });
 
   after(async () => {

@@ -4,6 +4,10 @@ use crate::state::positions::{
     PositionData,
     PositionState,
 };
+use crate::state::target::{
+    TargetMetadata,
+    TARGET_METADATA_SIZE,
+};
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
     error,
@@ -171,11 +175,15 @@ impl WasmPositionData {
         &self,
         current_epoch: u64,
         unlocking_duration: u8,
+        current_locked: u64,
+        total_supply: u64,
     ) -> Result<u64, JsValue> {
         convert_error(crate::utils::voter_weight::compute_voter_weight(
             &self.wrapped,
             current_epoch,
             unlocking_duration,
+            current_locked,
+            total_supply,
         ))
     }
 
@@ -183,6 +191,31 @@ impl WasmPositionData {
     #[wasm_bindgen(js_name=getUnusedIndex)]
     pub fn get_unused_index(&self) -> Result<usize, JsValue> {
         convert_error(self.wrapped.get_unused_index())
+    }
+}
+
+#[wasm_bindgen]
+pub struct WasmTargetMetadata {
+    wrapped: TargetMetadata,
+}
+
+#[wasm_bindgen]
+impl WasmTargetMetadata {
+    #[wasm_bindgen(constructor)]
+    pub fn from_buffer(buffer: &[u8]) -> Result<WasmTargetMetadata, JsValue> {
+        convert_error(WasmTargetMetadata::from_buffer_impl(buffer))
+    }
+    fn from_buffer_impl(buffer: &[u8]) -> Result<WasmTargetMetadata, Error> {
+        let mut ptr = buffer;
+        let target_data = TargetMetadata::try_deserialize(&mut ptr)?;
+        Ok(WasmTargetMetadata {
+            wrapped: target_data,
+        })
+    }
+
+    #[wasm_bindgen(js_name=getCurrentAmountLocked)]
+    pub fn get_current_amount_locked(&self, current_epoch: u64) -> Result<u64, JsValue> {
+        convert_error(self.wrapped.get_current_amount_locked(current_epoch))
     }
 }
 
