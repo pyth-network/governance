@@ -39,7 +39,6 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
-import { Pubkey } from "pyth-staking-wasm";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -133,8 +132,7 @@ export class StakeConnection {
       provider,
       config,
       configAddress,
-      votingProductMetadataAccount,
-      pythMintSupply
+      votingProductMetadataAccount
     );
   }
 
