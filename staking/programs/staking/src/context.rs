@@ -207,6 +207,7 @@ pub struct ClosePosition<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(action : voter_weight_record::VoterWeightAction)]
 pub struct UpdateVoterWeight<'info> {
     // Native payer:
     #[account(address = stake_account_metadata.owner)]
@@ -227,23 +228,13 @@ pub struct UpdateVoterWeight<'info> {
     pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateMaxVoterWeight<'info> {
-    // Native payer:
-    #[account(mut)]
-    pub payer:              Signer<'info>,
-    // Governance target accounts:
+    // Governance target account:
     #[account(
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_account.bump)]
-    pub governance_account: Account<'info, target::TargetMetadata>,
-    #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
-    pub max_voter_record:   Account<'info, max_voter_weight::MaxVoterWeightRecord>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:             Account<'info, global_config::GlobalConfig>,
-    pub system_program:     Program<'info, System>,
+    pub governance_account:      Account<'info, target::TargetMetadata>,
+    #[account(address = config.pyth_token_mint)]
+    pub pyth_mint:               Account<'info, Mint>,
 }
 
 #[derive(Accounts)]
