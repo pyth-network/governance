@@ -7,7 +7,6 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
-  TransactionInstruction,
 } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
@@ -23,13 +22,9 @@ import {
   InstructionExecutionFlags,
   VoteThresholdPercentage,
   VoteTypeKind,
-  BPF_UPGRADE_LOADER_ID,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
 
-const SPL_SHARED_MEMORY_ID = new PublicKey(
-  "shmem4EWT2sPdVGvTZCzXXRAURL9G5vpPxNwSeKhHUL"
-);
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */
