@@ -280,7 +280,7 @@ describe("voting", async () => {
     const tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
     const vote = await withDefaultCastVote(tx, proposalAddress);
-    await provider.sendAndConfirm(tx, [], { skipPreflight: true });
+    await provider.sendAndConfirm(tx);
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
