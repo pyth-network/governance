@@ -43,6 +43,8 @@ pub enum ErrorCode {
     InvalidVotingEpoch,
     #[msg("Voting hasn't started")]
     ProposalNotActive,
+    #[msg("Extra governance account required")]
+    NoRemainingAccount,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Other")]

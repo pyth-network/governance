@@ -153,12 +153,20 @@ pub mod tests {
         assert_eq!(target.delta_locked, 10);
         assert_eq!(target.prev_epoch_locked, 0);
 
+        assert_eq!(target.get_current_amount_locked(0).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(69).unwrap(), 10);
+
         // Should be a no-op
         assert!(target.update(target.last_update_at).is_ok());
         assert_eq!(target.last_update_at, 0);
         assert_eq!(target.locked, 0);
         assert_eq!(target.delta_locked, 10);
         assert_eq!(target.prev_epoch_locked, 0);
+
+        assert_eq!(target.get_current_amount_locked(0).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(69).unwrap(), 10);
 
         assert!(target.update(target.last_update_at + 1).is_ok());
 
@@ -167,11 +175,22 @@ pub mod tests {
         assert_eq!(target.delta_locked, 0);
         assert_eq!(target.prev_epoch_locked, 0);
 
+        assert_eq!(target.get_current_amount_locked(0).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(2).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(69).unwrap(), 10);
+
         assert!(target.update(target.last_update_at + 1).is_ok());
         assert_eq!(target.last_update_at, 2);
         assert_eq!(target.locked, 10);
         assert_eq!(target.delta_locked, 0);
         assert_eq!(target.prev_epoch_locked, 10);
+
+        assert!(target.get_current_amount_locked(0).is_err());
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(2).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(3).unwrap(), 10);
+        assert_eq!(target.get_current_amount_locked(69).unwrap(), 10);
     }
 
     #[test]
@@ -180,24 +199,38 @@ pub mod tests {
             bump:              0,
             last_update_at:    0,
             locked:            30,
-            delta_locked:      0,
+            delta_locked:      1,
             prev_epoch_locked: 11,
         };
         // Epoch 0: 30
         // Epoch 1: 0
         // Epoch 2: 0
 
-        assert!(target.add_unlocking(30, target.last_update_at).is_ok());
+        assert_eq!(target.get_current_amount_locked(0).unwrap(), 30);
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 31);
+        assert_eq!(target.get_current_amount_locked(69).unwrap(), 31);
+
+        assert!(target.add_unlocking(31, target.last_update_at).is_ok());
         assert_eq!(target.last_update_at, 0);
         assert_eq!(target.locked, 30);
         assert_eq!(target.delta_locked, -30);
         assert_eq!(target.prev_epoch_locked, 11);
+
+        assert_eq!(target.get_current_amount_locked(0).unwrap(), 30);
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(2).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(72).unwrap(), 0);
+
 
         assert!(target.update(target.last_update_at + 2).is_ok());
         assert_eq!(target.last_update_at, 2);
         assert_eq!(target.locked, 0);
         assert_eq!(target.delta_locked, 0);
         assert_eq!(target.prev_epoch_locked, 0);
+
+        assert!(target.get_current_amount_locked(0).is_err());
+        assert_eq!(target.get_current_amount_locked(1).unwrap(), 0);
+        assert_eq!(target.get_current_amount_locked(2).unwrap(), 0);
     }
 
     #[test]
