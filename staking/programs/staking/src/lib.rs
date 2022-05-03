@@ -380,6 +380,8 @@ pub mod staking {
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
                 epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
+
+
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }
             _ => {
@@ -387,6 +389,10 @@ pub mod staking {
                 // governance. It's OK to use current weights for these things.
                 epoch_of_snapshot = current_epoch;
             }
+        }
+
+        if !((current_epoch <= epoch_of_snapshot + 1) && (epoch_of_snapshot <= current_epoch)) {
+            return Err(error!(ErrorCode::InvalidVotingEpoch));
         }
 
         voter_record.voter_weight = compute_voter_weight(

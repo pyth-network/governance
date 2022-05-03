@@ -39,6 +39,8 @@ pub enum ErrorCode {
     Frozen,
     #[msg("Not allowed when not debugging")]
     DebuggingOnly,
+    #[msg("Voting epoch is either too old or hasn't started")]
+    InvalidVotingEpoch,
     #[msg("Voting hasn't started")]
     ProposalNotActive,
     #[msg("Not implemented")]
