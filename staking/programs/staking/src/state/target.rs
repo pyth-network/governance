@@ -151,12 +151,14 @@ pub mod tests {
         assert_eq!(target.last_update_at, 0);
         assert_eq!(target.locked, 0);
         assert_eq!(target.delta_locked, 10);
+        assert_eq!(target.prev_epoch_locked, 0);
 
         // Should be a no-op
         assert!(target.update(target.last_update_at).is_ok());
         assert_eq!(target.last_update_at, 0);
         assert_eq!(target.locked, 0);
         assert_eq!(target.delta_locked, 10);
+        assert_eq!(target.prev_epoch_locked, 0);
 
         assert!(target.update(target.last_update_at + 1).is_ok());
 
