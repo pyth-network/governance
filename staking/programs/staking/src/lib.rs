@@ -377,7 +377,7 @@ pub mod staking {
                     try_from_slice_unchecked(&proposal_account.data.borrow())?;
                 let proposal_start = proposal_data
                     .voting_at
-                    .ok_or(error!(ErrorCode::ProposalNotActive))?;
+                    .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
                 epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }

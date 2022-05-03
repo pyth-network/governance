@@ -76,7 +76,7 @@ impl TargetMetadata {
             .checked_add(self.delta_locked)
             .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
             .try_into()
-            .or_else(|_| Err(error!(ErrorCode::NegativeBalance)))?;
+            .map_err(|_| error!(ErrorCode::NegativeBalance))?;
         Ok(x)
     }
 
