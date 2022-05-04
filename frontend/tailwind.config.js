@@ -28,6 +28,7 @@ module.exports = {
       darkSlateBlue: '#42428E',
       hoverGray: 'rgba(255, 255, 255, 0.08)',
       ebonyClay: '#563250',
+      blackRussian: '#1A1F2E',
     },
     fontFamily: {
       arboria: 'arboria, sans-serif',
