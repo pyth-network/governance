@@ -7,8 +7,13 @@ use std::convert::TryInto;
 /// Computes Pyth clock.
 /// Right now it's just the current Unix timestamp divided by the epoch length
 pub fn get_current_epoch(global_config: &GlobalConfig) -> Result<u64> {
-    let now_ts: u64 = get_current_time(global_config).try_into().unwrap();
-    now_ts
+    let now_ts: i64 = get_current_time(global_config);
+    time_to_epoch(global_config, now_ts)
+}
+
+pub fn time_to_epoch(global_config: &GlobalConfig, now_ts: UnixTimestamp) -> Result<u64> {
+    TryInto::<u64>::try_into(now_ts)
+        .map_err(|_| ErrorCode::GenericOverflow)?
         .checked_div(global_config.epoch_duration)
         .ok_or_else(|| error!(ErrorCode::ZeroEpochDuration))
 }

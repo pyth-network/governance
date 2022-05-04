@@ -71,6 +71,7 @@ describe("create_product", async () => {
         lastUpdateAt: (await stakeConnection.getTime()).div(
           stakeConnection.config.epochDuration
         ),
+        prevEpochLocked: new BN(0),
         locked: new BN(0),
         deltaLocked: new BN(0),
       })

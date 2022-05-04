@@ -6,8 +6,10 @@
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 use anchor_spl::token::transfer;
 use context::*;
+use spl_governance::state::proposal::ProposalV2;
 use state::global_config::GlobalConfig;
 use state::positions::{
     Position,
@@ -18,8 +20,12 @@ use state::positions::{
     MAX_POSITIONS,
 };
 use state::vesting::VestingSchedule;
+use state::voter_weight_record::VoterWeightAction;
 use std::convert::TryInto;
-use utils::clock::get_current_epoch;
+use utils::clock::{
+    get_current_epoch,
+    time_to_epoch,
+};
 use utils::voter_weight::compute_voter_weight;
 
 mod constants;
@@ -333,13 +339,19 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn update_voter_weight(ctx: Context<UpdateVoterWeight>) -> Result<()> {
+    pub fn update_voter_weight(
+        ctx: Context<UpdateVoterWeight>,
+        action: VoterWeightAction,
+    ) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
-
         let config = &ctx.accounts.config;
+        let governance_target = &mut ctx.accounts.governance_target;
+        let pyth_mint = &ctx.accounts.pyth_mint;
+
         let current_epoch = get_current_epoch(config).unwrap();
+        governance_target.update(current_epoch)?;
 
         let unvested_balance = ctx
             .accounts
@@ -356,26 +368,52 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
+        let epoch_of_snapshot: u64;
+        voter_record.weight_action = Some(action);
+
+        match action {
+            VoterWeightAction::CastVote => {
+                if ctx.remaining_accounts.is_empty() {
+                    return Err(error!(ErrorCode::NoRemainingAccount));
+                }
+                let proposal_account = &ctx.remaining_accounts[0];
+                let proposal_data: ProposalV2 =
+                    try_from_slice_unchecked(&proposal_account.data.borrow())?;
+                let proposal_start = proposal_data
+                    .voting_at
+                    .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
+                epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
+
+
+                voter_record.weight_action_target = Some(*proposal_account.key);
+            }
+            _ => {
+                // The other actions are creating a proposal, comment on a proposal and create
+                // governance. It's OK to use current weights for these things.
+                // It is also ok to leave weight_action_target as None because we don't
+                // need to make any extra checks.
+                // For creating a proposal weight_action_target is supposed to be the governance
+                // but we don't have specific logic for different governances
+                // For creating a governance weight_action_target is supposed to be the realm
+                // but we have a single realm.
+                epoch_of_snapshot = current_epoch;
+                voter_record.weight_action_target = None;
+            }
+        }
+
+        if !((current_epoch <= epoch_of_snapshot + 1) && (epoch_of_snapshot <= current_epoch)) {
+            return Err(error!(ErrorCode::InvalidVotingEpoch));
+        }
+
         voter_record.voter_weight = compute_voter_weight(
             stake_account_positions,
-            current_epoch,
+            epoch_of_snapshot,
             config.unlocking_duration,
+            governance_target.get_current_amount_locked(epoch_of_snapshot)?,
+            pyth_mint.supply,
         )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
-        Ok(())
-    }
 
-    pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
-        let governance_account = &mut ctx.accounts.governance_account;
-        let config = &ctx.accounts.config;
-        let max_voter_record = &mut ctx.accounts.max_voter_record;
-        let current_epoch = get_current_epoch(config)?;
-
-        governance_account.update(current_epoch)?;
-        max_voter_record.realm = config.pyth_governance_realm;
-        max_voter_record.governing_token_mint = config.pyth_token_mint;
-        max_voter_record.max_voter_weight = governance_account.locked;
-        max_voter_record.max_voter_weight_expiry = Some(Clock::get()?.slot);
         Ok(())
     }
 
@@ -389,6 +427,7 @@ pub mod staking {
 
         target_account.bump = *ctx.bumps.get("target_account").unwrap();
         target_account.last_update_at = get_current_epoch(config).unwrap();
+        target_account.prev_epoch_locked = 0;
         target_account.locked = 0;
         target_account.delta_locked = 0;
         Ok(())

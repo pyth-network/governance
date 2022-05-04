@@ -9,6 +9,7 @@ import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
 import path from "path";
+import { expectFail } from "./utils/utils";
 import {
   readAnchorConfig,
   ANCHOR_CONFIG_PATH,
@@ -31,6 +32,7 @@ import {
   withSignOffProposal,
 } from "@solana/spl-governance";
 import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
+import { IdlError, parseIdlErrors } from "@project-serum/anchor";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -65,16 +67,24 @@ describe("voting", async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     governanceProgram = new PublicKey(config.programs.localnet.governance);
 
+    let defaultConfig = makeDefaultConfig(pythMintAccount.publicKey);
+    defaultConfig.epochDuration = new BN(5);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+      defaultConfig
     ));
+
+    // Delete the property, which will make the API think it's not using mock clock anymore
+    delete stakeConnection.config.mockClockTime;
+    await syncronizeClock(stakeConnection);
+
     const globalConfig = stakeConnection.config;
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
+
     provider = stakeConnection.provider;
     owner = provider.wallet.publicKey;
     realm = globalConfig.pythGovernanceRealm;
@@ -112,10 +122,12 @@ describe("voting", async () => {
       const stakeAccount = await stakeConnection.getMainAccount(owner);
       tx.instructions.push(
         await stakeConnection.program.methods
-          .updateVoterWeight()
+          .updateVoterWeight({ createProposal: {} })
           .accounts({
             stakeAccountPositions: stakeAccount.address,
+            pythMint: stakeAccount.config.pythTokenMint,
           })
+          .remainingAccounts([])
           .instruction()
       );
     }
@@ -161,10 +173,27 @@ describe("voting", async () => {
     return proposal;
   }
 
-  function withDefaultCastVote(
+  async function withDefaultCastVote(
     tx: Transaction,
-    proposalAddress: PublicKey
+    proposalAddress: PublicKey,
+    wrongArgument = false
   ): Promise<PublicKey> {
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+    tx.instructions.push(
+      await stakeConnection.program.methods
+        .updateVoterWeight(
+          wrongArgument ? { createProposal: {} } : { castVote: {} }
+        )
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          pythMint: stakeAccount.config.pythTokenMint,
+        })
+        .remainingAccounts([
+          { pubkey: proposalAddress, isWritable: false, isSigner: false },
+        ])
+        .instruction()
+    );
+
     return withCastVote(
       tx.instructions,
       governanceProgram,
@@ -190,6 +219,19 @@ describe("voting", async () => {
     );
   }
 
+  async function syncronizeClock(stakeConnection: StakeConnection) {
+    const time = await stakeConnection.getTime();
+    const mock_clock_time = (
+      await stakeConnection.program.account.globalConfig.fetch(
+        stakeConnection.configAddress
+      )
+    ).mockClockTime;
+    await stakeConnection.program.methods
+      .advanceClock(time.sub(mock_clock_time))
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
+  }
+
   it("tries to create a proposal without updating", async () => {
     const tx = new Transaction();
     await withDefaultCreateProposal(tx, false, false);
@@ -210,22 +252,22 @@ describe("voting", async () => {
   });
 
   it("create a position and then create proposal", async () => {
-    stakeConnection.depositAndLockTokens(
+    await stakeConnection.depositAndLockTokens(
       await stakeConnection.getMainAccount(owner),
       PythBalance.fromString("200")
     );
     // Time hasn't passed yet, so still no weight
     const tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, true, false);
+    await withDefaultCreateProposal(tx, true, false);
     await expectFailGovernance(
       provider.simulate(tx),
       "Owner doesn't have enough governing tokens to create Proposal"
     );
 
-    await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.muln(5))
-      .accounts({})
-      .rpc({ skipPreflight: DEBUG });
+    await new Promise((resolve) =>
+      setTimeout(resolve, EPOCH_DURATION.toNumber() * 1000)
+    );
+    await syncronizeClock(stakeConnection);
 
     // Now it should succeed
     await provider.sendAndConfirm(tx);
@@ -234,7 +276,7 @@ describe("voting", async () => {
     // Slot has probably already increased, but make extra sure by waiting one second
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, false, false);
+    await withDefaultCreateProposal(tx, false, false);
     await expectFailGovernance(
       provider.simulate(tx),
       "VoterWeightRecord expired"
@@ -242,15 +284,66 @@ describe("voting", async () => {
   });
 
   it("create proposal and vote on it", async () => {
-    const tx = new Transaction();
+    let tx = new Transaction();
     const proposalAddress = await withDefaultCreateProposal(tx, true, true);
-    const vote = await withDefaultCastVote(tx, proposalAddress);
+    await withDefaultCastVote(tx, proposalAddress);
+
+    await syncronizeClock(stakeConnection);
     await provider.sendAndConfirm(tx);
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
       proposal.account.getYesVoteCount().toNumber(),
       PythBalance.fromString("200").toBN().toNumber()
+    );
+  });
+
+  it("another proposal, this time we update voter weight for the wrong action", async () => {
+    let tx = new Transaction();
+    const proposalAddress = await withDefaultCreateProposal(tx, true, true);
+    await withDefaultCastVote(tx, proposalAddress, true);
+    await expectFailGovernance(
+      provider.simulate(tx),
+      "VoterWeightRecord invalid action"
+    );
+  });
+
+  it("another proposal, wait a long time, voting should fail", async () => {
+    let tx = new Transaction();
+    const proposalAddress = await withDefaultCreateProposal(tx, true, true);
+    await provider.sendAndConfirm(tx);
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, EPOCH_DURATION.toNumber() * 3000)
+    );
+    await syncronizeClock(stakeConnection);
+
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+
+    await expectFail(
+      stakeConnection.program.methods
+        .updateVoterWeight({ castVote: {} })
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          pythMint: stakeAccount.config.pythTokenMint,
+        })
+        .remainingAccounts([
+          { pubkey: proposalAddress, isWritable: false, isSigner: false },
+        ]),
+      "Voting epoch is either too old or hasn't started",
+      parseIdlErrors(stakeConnection.program.idl)
+    );
+
+    await expectFail(
+      stakeConnection.program.methods
+        .updateVoterWeight({ castVote: {} })
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          pythMint: stakeAccount.config.pythTokenMint,
+        })
+        .remainingAccounts([]),
+      "Extra governance account required",
+      parseIdlErrors(stakeConnection.program.idl)
     );
   });
 });
