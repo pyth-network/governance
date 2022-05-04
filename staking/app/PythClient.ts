@@ -1,5 +1,4 @@
-import { Wallet } from "@project-serum/anchor";
-import { Provider } from "@project-serum/common";
+import { Wallet, AnchorProvider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { DEVNET_STAKING_ADDRESS, LOCALNET_STAKING_ADDRESS } from "./constants";
 import { StakeConnection } from "./StakeConnection";
@@ -17,7 +16,7 @@ export class PythClient {
     };
   }
   static async connect(
-    provider: Provider,
+    provider: AnchorProvider,
     cluster: string
   ): Promise<PythClient> {
     // only supports localnet and devnet for now
