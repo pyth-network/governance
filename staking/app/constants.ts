@@ -19,3 +19,10 @@ export const DEVNET_STAKING_ADDRESS = new PublicKey(
 export const LOCALNET_REALM_ID = new PublicKey(
   "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
 );
+
+export const LOCALNET_PYTH_MINT = new PublicKey(
+  "5nZ7B3rkAvwQEtKfTwQigBkka6DQ7VFtm1KoCi5iDj8b"
+);
+export const DEVNET_PYTH_MINT = new PublicKey(
+  "EajWB4HdGPT311rPsDJyftgZXn4By132iuXaDp28eULf"
+);

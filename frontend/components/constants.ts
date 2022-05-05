@@ -2,6 +2,8 @@ import { PublicKey } from '@solana/web3.js'
 import {
   DEVNET_STAKING_ADDRESS,
   LOCALNET_STAKING_ADDRESS,
+  DEVNET_PYTH_MINT,
+  LOCALNET_PYTH_MINT
 } from 'pyth-staking-api'
 
 export const STAKING_PROGRAM =
@@ -11,5 +13,5 @@ export const STAKING_PROGRAM =
 
 export const PYTH_MINT_ACCOUNT_PUBKEY =
   process.env.ENDPOINT === 'devnet'
-    ? new PublicKey(process.env.DEVNET_PYTH_MINT!)
-    : new PublicKey(process.env.LOCALNET_PYTH_MINT!)
+    ? DEVNET_PYTH_MINT
+    : LOCALNET_PYTH_MINT
