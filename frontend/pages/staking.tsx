@@ -288,7 +288,7 @@ const Staking: NextPage = () => {
                     as="h3"
                     className="text-lg font-medium leading-6 text-white"
                   >
-                    Multiple stake accounts detected!
+                    Select stake account
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-white">
