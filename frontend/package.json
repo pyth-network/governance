@@ -7,7 +7,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@headlessui/react": "^1.5.0",
+    "@headlessui/react": "^1.6.0",
     "@heroicons/react": "^1.0.6",
     "@project-serum/anchor": "^0.22.1",
     "@solana/spl-token": "^0.1.8",
