@@ -13,7 +13,7 @@ export const LOCALNET_STAKING_ADDRESS = new PublicKey(
 );
 
 export const DEVNET_STAKING_ADDRESS = new PublicKey(
-  "J5xdygNvn6dYXgUWf2qqbK23qabo7uqE7QRy6PmhEYaB"
+  "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
 );
 
 export const LOCALNET_REALM_ID = new PublicKey(
