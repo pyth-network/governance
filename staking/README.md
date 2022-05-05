@@ -1,6 +1,6 @@
 The staking package includes a script for running the staking program on a Solana validator running inside docker. This validator is useful for testing programs that interact with the staking program via the Solana API. The script will additionally initialize these programs with some default data.
 
-The general structure of this testing framework is a `.app/scripts/setup.ts` script that launches a localnet validator running on port 8899 and sets up some example accounts.
+The general structure of this testing framework is a `.app/scripts/setup_local.ts` script that launches a localnet validator running on port 8899 and sets up some example accounts.
 
 How to setup:
 ```
