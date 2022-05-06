@@ -75,16 +75,16 @@ const Staking: NextPage = () => {
           anchorWallet as Wallet,
           STAKING_PROGRAM
         )
+        setStakeConnection(stakeConnection)
         const stakeAccounts = await stakeConnection.getStakeAccounts(
           (anchorWallet as Wallet).publicKey
         )
+        setStakeAccounts(stakeAccounts)
         setMainStakeAccount(stakeAccounts[0])
         if (stakeAccounts.length > 1) {
           setIsModalOpen(true)
           setModalOption(stakeAccounts[0])
         }
-        setStakeAccounts(stakeAccounts)
-        setStakeConnection(stakeConnection)
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
