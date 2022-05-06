@@ -470,109 +470,105 @@ const Staking: NextPage = () => {
                   ))}
               </Tab.List>
               <Tab.Panels className="mt-4 sm:mt-12">
-                {isReady &&
-                  Object.keys(TabEnum)
-                    .slice(3)
-                    .map((v, idx) => (
-                      <Tab.Panel key={idx}>
-                        <div className="col-span-12 font-inter text-xs">
-                          <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
-                            {tabDescriptions[v as keyof typeof TabEnum]}
+                {Object.keys(TabEnum)
+                  .slice(3)
+                  .map((v, idx) => (
+                    <Tab.Panel key={idx}>
+                      <div className="col-span-12 font-inter text-xs">
+                        <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
+                          {tabDescriptions[v as keyof typeof TabEnum]}
+                        </div>
+                        <div className="mb-2 flex">
+                          <div className="ml-auto mr-0 space-x-2 sm:hidden">
+                            <button
+                              className="outlined-btn"
+                              onClick={handleHalfBalanceClick}
+                            >
+                              Half
+                            </button>
+                            <button
+                              className="outlined-btn"
+                              onClick={handleMaxBalanceClick}
+                            >
+                              Max
+                            </button>
                           </div>
-                          <div className="mb-2 flex">
-                            <div className="ml-auto mr-0 space-x-2 sm:hidden">
+                        </div>
+                        <div className="mb-4 flex items-center justify-between">
+                          <label htmlFor="amount" className="block text-white">
+                            Amount (PYTH)
+                          </label>
+                          <div className="ml-auto mr-0 flex items-center space-x-2">
+                            {isBalanceLoading ? (
+                              <div className="h-5 w-14 animate-pulse rounded-lg bg-ebonyClay" />
+                            ) : (
+                              <p className="text-white">
+                                {currentTab === TabEnum.Lock
+                                  ? 'Balance'
+                                  : currentTab === TabEnum.Unlock
+                                  ? 'Locked Tokens'
+                                  : 'Withdrawable'}
+                                : {balance?.toString()}
+                              </p>
+                            )}
+                            <div className="hidden space-x-2 sm:flex">
                               <button
-                                className="outlined-btn"
+                                className="outlined-btn hover:bg-valhalla"
                                 onClick={handleHalfBalanceClick}
                               >
                                 Half
                               </button>
                               <button
-                                className="outlined-btn"
+                                className="outlined-btn hover:bg-valhalla"
                                 onClick={handleMaxBalanceClick}
                               >
                                 Max
                               </button>
                             </div>
                           </div>
-                          <div className="mb-4 flex items-center justify-between">
-                            <label
-                              htmlFor="amount"
-                              className="block text-white"
-                            >
-                              Amount (PYTH)
-                            </label>
-                            <div className="ml-auto mr-0 flex items-center space-x-2">
-                              {isBalanceLoading ? (
-                                <div className="h-5 w-14 animate-pulse rounded-lg bg-ebonyClay" />
-                              ) : (
-                                <p className="text-white">
-                                  {currentTab === TabEnum.Lock
-                                    ? 'Balance'
-                                    : currentTab === TabEnum.Unlock
-                                    ? 'Locked Tokens'
-                                    : 'Withdrawable'}
-                                  : {balance?.toString()}
-                                </p>
-                              )}
-                              <div className="hidden space-x-2 sm:flex">
-                                <button
-                                  className="outlined-btn hover:bg-valhalla"
-                                  onClick={handleHalfBalanceClick}
-                                >
-                                  Half
-                                </button>
-                                <button
-                                  className="outlined-btn hover:bg-valhalla"
-                                  onClick={handleMaxBalanceClick}
-                                >
-                                  Max
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <input
-                            type="text"
-                            name="amount"
-                            id="amount"
-                            autoComplete="amount"
-                            value={amount}
-                            onChange={handleAmountChange}
-                            className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
-                          />
-                          <div className="flex items-center justify-center">
-                            {!connected ? (
-                              <WalletModalButton
-                                className="primary-btn py-3 px-14"
-                                text-base
-                                font-semibold
-                              />
-                            ) : currentTab === TabEnum.Lock ? (
-                              <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                                onClick={handleDeposit}
-                              >
-                                Lock
-                              </button>
-                            ) : currentTab === TabEnum.Unlock ? (
-                              <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                                onClick={handleUnlock}
-                              >
-                                Unlock
-                              </button>
-                            ) : (
-                              <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                                onClick={handleWithdraw}
-                              >
-                                Withdraw
-                              </button>
-                            )}
-                          </div>
                         </div>
-                      </Tab.Panel>
-                    ))}
+                        <input
+                          type="text"
+                          name="amount"
+                          id="amount"
+                          autoComplete="amount"
+                          value={amount}
+                          onChange={handleAmountChange}
+                          className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
+                        />
+                        <div className="flex items-center justify-center">
+                          {!connected ? (
+                            <WalletModalButton
+                              className="primary-btn py-3 px-14"
+                              text-base
+                              font-semibold
+                            />
+                          ) : currentTab === TabEnum.Lock ? (
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
+                              onClick={handleDeposit}
+                            >
+                              Lock
+                            </button>
+                          ) : currentTab === TabEnum.Unlock ? (
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
+                              onClick={handleUnlock}
+                            >
+                              Unlock
+                            </button>
+                          ) : (
+                            <button
+                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
+                              onClick={handleWithdraw}
+                            >
+                              Withdraw
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Tab.Panel>
+                  ))}
               </Tab.Panels>
             </Tab.Group>
           </div>
