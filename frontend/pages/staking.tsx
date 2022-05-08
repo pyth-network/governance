@@ -217,21 +217,23 @@ const Staking: NextPage = () => {
     setIsBalanceLoading(true)
     if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
-      const stakeAccount = await stakeConnection.getMainAccount(publicKey)
-      if (stakeAccount) {
-        setStakeAccount(stakeAccount)
-        const { withdrawable, locked, unvested } =
-          stakeAccount.getBalanceSummary(await stakeConnection.getTime())
-        setLockingPythBalance(locked.locking)
-        setLockedPythBalance(locked.locked)
-        setUnlockingPythBalance(
-          new PythBalance(
-            locked.unlocking.toBN().add(locked.preunlocking.toBN())
+      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
+      for (const acc of stakeAccounts) {
+        if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
+          setStakeAccount(acc)
+          const { withdrawable, locked, unvested } = acc.getBalanceSummary(
+            await stakeConnection.getTime()
           )
-        )
-
-        setUnlockedPythBalance(withdrawable)
-        setUnvestedPythBalance(unvested)
+          setLockingPythBalance(locked.locking)
+          setLockedPythBalance(locked.locked)
+          setUnlockingPythBalance(
+            new PythBalance(
+              locked.unlocking.toBN().add(locked.preunlocking.toBN())
+            )
+          )
+          setUnvestedPythBalance(unvested)
+          setUnlockedPythBalance(withdrawable)
+        }
       }
     }
     setIsBalanceLoading(false)
