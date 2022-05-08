@@ -100,7 +100,7 @@ const Staking: NextPage = () => {
   // refresh balances after getting stake accounts
   useEffect(() => {
     refreshBalance()
-  }, [mainStakeAccount])
+  }, [stakeConnection, mainStakeAccount])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
