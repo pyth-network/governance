@@ -27,7 +27,13 @@ const Header = () => {
               Staking
             </a>
           </Link>
-          <Link href="https://realms.today/realms">
+          <Link
+            href={`https://realms.today/dao/PYTH?cluster=${
+              process.env.ENDPOINT?.startsWith('http://localhost:')
+                ? 'localnet'
+                : 'devnet'
+            }`}
+          >
             <a
               className={
                 router.pathname == '/governance'
@@ -98,7 +104,13 @@ const Header = () => {
                   Staking
                 </a>
               </Link>
-              <Link href="https://realms.today/realms">
+              <Link
+                href={`https://realms.today/dao/PYTH?cluster=${
+                  process.env.ENDPOINT?.startsWith('http://localhost:')
+                    ? 'localnet'
+                    : 'devnet'
+                }`}
+              >
                 <a
                   className={classNames(
                     'font-arboria text-4xl',
