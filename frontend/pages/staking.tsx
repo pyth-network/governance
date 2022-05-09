@@ -92,6 +92,7 @@ const Staking: NextPage = () => {
     if (!connected) {
       setStakeConnection(undefined)
       setStakeAccount(undefined)
+      resetBalance()
     } else {
       initialize()
     }
@@ -126,6 +127,15 @@ const Staking: NextPage = () => {
     lockedPythBalance,
     unlockedPythBalance,
   ])
+
+  const resetBalance = () => {
+    setPythBalance(new PythBalance(new BN(0)))
+    setLockingPythBalance(new PythBalance(new BN(0)))
+    setLockedPythBalance(new PythBalance(new BN(0)))
+    setUnlockingPythBalance(new PythBalance(new BN(0)))
+    setUnvestedPythBalance(new PythBalance(new BN(0)))
+    setUnlockedPythBalance(new PythBalance(new BN(0)))
+  }
 
   // set amount when input changes
   const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -214,8 +224,8 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
-    setIsBalanceLoading(true)
     if (stakeConnection && publicKey) {
+      setIsBalanceLoading(true)
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       for (const acc of stakeAccounts) {
@@ -233,10 +243,10 @@ const Staking: NextPage = () => {
           )
           setUnvestedPythBalance(unvested)
           setUnlockedPythBalance(withdrawable)
+          setIsBalanceLoading(false)
         }
       }
     }
-    setIsBalanceLoading(false)
   }
 
   // set current tab value when tab is clicked
