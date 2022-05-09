@@ -39,6 +39,7 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
+import { isQualifiedName } from "typescript";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -513,7 +514,7 @@ export class StakeConnection {
     }
 
     if (
-      unvestedBalance.toBN().gt(new BN(0)) &&
+      stakeAccount.hasUnvestedTokens(await this.getTime()) &&
       stakeAccount
         .getInactiveUnvestedTokens(await this.getTime())
         .eq(unvestedBalance)

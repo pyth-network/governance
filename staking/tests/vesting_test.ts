@@ -103,7 +103,6 @@ describe("vesting", async () => {
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!stakeAccount.hasBrokenState(await samConnection.getTime()));
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
@@ -121,7 +120,6 @@ describe("vesting", async () => {
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!stakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       stakeAccount
@@ -158,7 +156,6 @@ describe("vesting", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!samStakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       samStakeAccount
@@ -190,7 +187,6 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!samStakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       samStakeAccount
@@ -221,7 +217,6 @@ describe("vesting", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!samStakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       samStakeAccount
@@ -243,7 +238,6 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!samStakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       samStakeAccount
@@ -279,7 +273,6 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!samStakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       samStakeAccount
@@ -352,7 +345,6 @@ describe("vesting", async () => {
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!stakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       stakeAccount
@@ -414,7 +406,6 @@ describe("vesting", async () => {
     stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!stakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       stakeAccount
@@ -445,7 +436,6 @@ describe("vesting", async () => {
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(!stakeAccount.hasBrokenState(await samConnection.getTime()));
 
     assert(
       stakeAccount
