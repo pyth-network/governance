@@ -228,6 +228,9 @@ const Staking: NextPage = () => {
       setIsBalanceLoading(true)
       setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
+      if (stakeAccounts.length === 0) {
+        setIsBalanceLoading(false)
+      }
       for (const acc of stakeAccounts) {
         if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
           setStakeAccount(acc)
