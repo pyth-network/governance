@@ -519,11 +519,11 @@ export class StakeConnection {
         .eq(unvestedBalance)
     ) {
       await this.program.methods
-        .createPosition(this.votingProduct, null, unvestedBalance.toBN())
+        .createPosition(this.votingProduct, unvestedBalance.toBN())
         .preInstructions(ixs)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          productAccount: this.votingProductMetadataAccount,
+          targetAccount: this.votingProductMetadataAccount,
         })
         .rpc({ skipPreflight: true });
     }

@@ -54,14 +54,14 @@ describe("vesting", async () => {
     );
 
     aliceConnection = await StakeConnection.createStakeConnection(
-      stakeConnection.program.provider.connection,
+      stakeConnection.provider.connection,
       new Wallet(alice),
       stakeConnection.program.programId
     );
   });
 
   it("create acccount with a lockup", async () => {
-    await samConnection.program.provider.connection.requestAirdrop(
+    await samConnection.provider.connection.requestAirdrop(
       sam.publicKey,
       1_000_000_000_000
     );
@@ -70,7 +70,7 @@ describe("vesting", async () => {
       pythMintAccount.publicKey,
       pythMintAuthority,
       PythBalance.fromString("200"),
-      samConnection.program.provider.connection
+      samConnection.provider.connection
     );
 
     const transaction = new Transaction();
@@ -95,7 +95,7 @@ describe("vesting", async () => {
       )
     );
 
-    await samConnection.program.provider.send(
+    await samConnection.provider.sendAndConfirm(
       transaction,
       [stakeAccountKeypair],
       { skipPreflight: true }
@@ -309,7 +309,7 @@ describe("vesting", async () => {
   });
 
   it("create acccount that does not opt into governance", async () => {
-    await aliceConnection.program.provider.connection.requestAirdrop(
+    await aliceConnection.provider.connection.requestAirdrop(
       alice.publicKey,
       1_000_000_000_000
     );
@@ -318,7 +318,7 @@ describe("vesting", async () => {
       pythMintAccount.publicKey,
       pythMintAuthority,
       PythBalance.fromString("200"),
-      aliceConnection.program.provider.connection
+      aliceConnection.provider.connection
     );
     ``;
     const transaction = new Transaction();
@@ -343,7 +343,7 @@ describe("vesting", async () => {
       )
     );
 
-    await aliceConnection.program.provider.send(
+    await aliceConnection.provider.sendAndConfirm(
       transaction,
       [stakeAccountKeypair],
       { skipPreflight: true }
