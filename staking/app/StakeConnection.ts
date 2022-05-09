@@ -249,9 +249,6 @@ export class StakeConnection {
       await this.fetchVotingProductMetadataAccount();
     const tokenBalance = (await mint.getAccountInfo(custodyAddress)).amount;
     const totalSupply = (await mint.getMintInfo()).supply;
-    const hasGovernanceRecord = await this.hasGovernanceRecord(
-      stakeAccountPositionsJs.owner
-    );
 
     return new StakeAccount(
       address,
@@ -263,8 +260,7 @@ export class StakeConnection {
       vestingSchedule,
       votingAccountMetadataWasm,
       totalSupply,
-      this.config,
-      hasGovernanceRecord
+      this.config
     );
   }
 
@@ -676,7 +672,6 @@ export class StakeAccount {
   votingAccountMetadataWasm: any;
   totalSupply: BN;
   config: GlobalConfig;
-  hasGovernanceRecord: boolean;
 
   constructor(
     address: PublicKey,
@@ -688,8 +683,7 @@ export class StakeAccount {
     vestingSchedule: Buffer, // Borsh serialized
     votingAccountMetadataWasm: any,
     totalSupply: BN,
-    config: GlobalConfig,
-    hasGovernanceRecord: boolean
+    config: GlobalConfig
   ) {
     this.address = address;
     this.stakeAccountPositionsWasm = stakeAccountPositionsWasm;
@@ -701,7 +695,6 @@ export class StakeAccount {
     this.votingAccountMetadataWasm = votingAccountMetadataWasm;
     this.totalSupply = totalSupply;
     this.config = config;
-    this.hasGovernanceRecord = true;
   }
 
   // Withdrawable
@@ -859,8 +852,7 @@ export class StakeAccount {
   public isVestingAccountWithoutGovernance(unixTime: BN) {
     return (
       this.hasUnvestedTokens(unixTime) &&
-      (!this.hasGovernanceRecord ||
-        this.getGovernanceExposure(unixTime).toBN().eq(new BN(0)))
+      this.getGovernanceExposure(unixTime).toBN().eq(new BN(0))
     );
   }
 }
