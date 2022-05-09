@@ -547,7 +547,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    if (!this.hasGovernanceRecord(owner)) {
+    if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -594,7 +594,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    if (!this.hasGovernanceRecord(owner)) {
+    if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
