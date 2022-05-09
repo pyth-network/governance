@@ -39,7 +39,6 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
-import { isQualifiedName } from "typescript";
 let wasm = wasm2;
 
 interface ClosingItem {
