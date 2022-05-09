@@ -501,7 +501,7 @@ export class StakeConnection {
 
     const ixs: TransactionInstruction[] = [];
 
-    if (!this.hasGovernanceRecord(owner)) {
+    if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -865,17 +865,6 @@ export class StakeAccount {
 
     return new PythBalance(
       lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN)
-    );
-  }
-
-  /**
-   * A stake account is in a broken state if some unvested tokens participate in governance, but not all of them.
-   * TODO : Create a function to repair accounts
-   */
-  public hasBrokenState(unixTime: BN): boolean {
-    return (
-      this.getGovernanceExposure(unixTime).toBN().gt(new BN(0)) &&
-      this.getInactiveUnvestedTokens(unixTime).toBN().gt(new BN(0))
     );
   }
 
