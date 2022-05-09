@@ -249,6 +249,9 @@ export class StakeConnection {
       await this.fetchVotingProductMetadataAccount();
     const tokenBalance = (await mint.getAccountInfo(custodyAddress)).amount;
     const totalSupply = (await mint.getMintInfo()).supply;
+    const hasGovernanceRecord = await this.hasGovernanceRecord(
+      stakeAccountPositionsJs.owner
+    );
 
     return new StakeAccount(
       address,
@@ -260,7 +263,8 @@ export class StakeConnection {
       vestingSchedule,
       votingAccountMetadataWasm,
       totalSupply,
-      this.config
+      this.config,
+      hasGovernanceRecord
     );
   }
 
@@ -493,17 +497,20 @@ export class StakeConnection {
    * TODO : Function for opting out of governance
    */
   public async optIntoGovernance(stakeAccount: StakeAccount) {
-    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+    assert(
+      stakeAccount.isVestingAccountWithoutGovernance(await this.getTime())
+    );
 
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const unvestedBalance = stakeAccount.getBalanceSummary(
       await this.getTime()
     ).unvested;
 
-    const ixs: TransactionInstruction[] = [];
+    const transaction: Transaction = new Transaction();
 
     if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
-        ixs,
+        transaction.instructions,
         this.governanceAddress,
         this.config.pythGovernanceRealm,
         owner,
@@ -512,21 +519,17 @@ export class StakeConnection {
       );
     }
 
-    if (
-      stakeAccount.hasUnvestedTokens(await this.getTime()) &&
-      stakeAccount
-        .getInactiveUnvestedTokens(await this.getTime())
-        .eq(unvestedBalance)
-    ) {
+    transaction.instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, unvestedBalance.toBN())
-        .preInstructions(ixs)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
           targetAccount: this.votingProductMetadataAccount,
         })
-        .rpc({ skipPreflight: true });
-    }
+        .instruction()
+    );
+
+    await this.provider.sendAndConfirm(transaction);
   }
 
   public async depositTokens(
@@ -673,6 +676,7 @@ export class StakeAccount {
   votingAccountMetadataWasm: any;
   totalSupply: BN;
   config: GlobalConfig;
+  hasGovernanceRecord: boolean;
 
   constructor(
     address: PublicKey,
@@ -684,7 +688,8 @@ export class StakeAccount {
     vestingSchedule: Buffer, // Borsh serialized
     votingAccountMetadataWasm: any,
     totalSupply: BN,
-    config: GlobalConfig
+    config: GlobalConfig,
+    hasGovernanceRecord: boolean
   ) {
     this.address = address;
     this.stakeAccountPositionsWasm = stakeAccountPositionsWasm;
@@ -696,6 +701,7 @@ export class StakeAccount {
     this.votingAccountMetadataWasm = votingAccountMetadataWasm;
     this.totalSupply = totalSupply;
     this.config = config;
+    this.hasGovernanceRecord = true;
   }
 
   // Withdrawable
@@ -825,28 +831,6 @@ export class StakeAccount {
     return buffer.slice(0, length);
   }
 
-  public getInactiveUnvestedTokens(unixTime: BN): PythBalance {
-    let currentEpoch = unixTime.div(this.config.epochDuration);
-    let unlockingDuration = this.config.unlockingDuration;
-    let currentEpochBI = BigInt(currentEpoch.toString());
-
-    const lockedSummaryBI =
-      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
-        currentEpochBI,
-        unlockingDuration
-      );
-
-    const unvested = this.getBalanceSummary(unixTime).unvested.toBN();
-
-    let lockingBN = new BN(lockedSummaryBI.locking.toString());
-    let lockedBN = new BN(lockedSummaryBI.locked.toString());
-
-    if (lockingBN.add(lockedBN).lt(unvested)) {
-      return new PythBalance(unvested.sub(lockingBN).sub(lockedBN));
-    }
-    return PythBalance.fromString("0");
-  }
-
   public getGovernanceExposure(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
@@ -870,5 +854,13 @@ export class StakeAccount {
 
   public hasUnvestedTokens(unixTime: BN): boolean {
     return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
+  }
+
+  public isVestingAccountWithoutGovernance(unixTime: BN) {
+    return (
+      this.hasUnvestedTokens(unixTime) &&
+      (!this.hasGovernanceRecord ||
+        this.getGovernanceExposure(unixTime).toBN().eq(new BN(0)))
+    );
   }
 }
