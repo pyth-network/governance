@@ -404,7 +404,7 @@ export class StakeConnection {
   public async withCreateAccount(
     instructions: TransactionInstruction[],
     owner: PublicKey,
-    vesting: Object = {
+    vesting: VestingSchedule = {
       fullyVested: {},
     }
   ): Promise<Keypair> {
@@ -419,7 +419,7 @@ export class StakeConnection {
 
     instructions.push(
       await this.program.methods
-        .createStakeAccount(this.provider.wallet.publicKey, vesting)
+        .createStakeAccount(owner, vesting)
         .accounts({
           stakeAccountPositions: stakeAccountKeypair.publicKey,
           mint: this.config.pythTokenMint,
@@ -526,6 +526,33 @@ export class StakeConnection {
     );
 
     await this.provider.sendAndConfirm(transaction);
+  }
+
+  public async setupVestingAccount(
+    amount: PythBalance,
+    owner: PublicKey,
+    vestingSchedule
+  ) {
+    const transaction: Transaction = new Transaction();
+
+    //Forgive me, I didn't find a better way to check the enum variant
+    assert(vestingSchedule.periodicVesting);
+    assert(vestingSchedule.periodicVesting.initialBalance);
+    assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
+
+    const stakeAccountKeypair = await this.withCreateAccount(
+      transaction.instructions,
+      owner,
+      vestingSchedule
+    );
+    transaction.instructions.push(
+      await this.buildTransferInstruction(
+        stakeAccountKeypair.publicKey,
+        amount.toBN()
+      )
+    );
+
+    await this.provider.sendAndConfirm(transaction, [stakeAccountKeypair]);
   }
 
   public async depositTokens(
