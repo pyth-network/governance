@@ -195,8 +195,8 @@ pub mod tests {
     fn test_voting() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 2,
+            positions:  [None; MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
@@ -230,8 +230,8 @@ pub mod tests {
     fn test_double_product() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 2,
+            positions:  [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
@@ -266,8 +266,8 @@ pub mod tests {
     fn test_risk() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -307,8 +307,8 @@ pub mod tests {
     fn test_multiple_voting() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -331,8 +331,8 @@ pub mod tests {
     fn test_overflow_total() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -352,8 +352,8 @@ pub mod tests {
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
             owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
             next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {
