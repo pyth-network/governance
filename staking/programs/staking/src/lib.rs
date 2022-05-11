@@ -103,6 +103,7 @@ pub mod staking {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
         stake_account_positions.positions = [None; MAX_POSITIONS];
+        stake_account_positions.next_index = 0;
 
         let voter_record = &mut ctx.accounts.voter_record;
 
@@ -149,6 +150,8 @@ pub mod staking {
                 stake_account_positions.positions[i] = Some(new_position);
             }
         }
+
+        stake_account_positions.next_index += 1;
 
         let unvested_balance = ctx
             .accounts
@@ -227,6 +230,7 @@ pub mod staking {
                                 unlocking_start: Some(current_epoch + 1),
                                 reserved: POSITION_DATA_PADDING,
                             });
+                            stake_account_positions.next_index += 1;
 
                             assert_ne!(i, j);
                             assert_eq!(
@@ -252,7 +256,11 @@ pub mod staking {
             // tokens become "free"
             PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
+                    let next_index = stake_account_positions.next_index - 1;
+                    stake_account_positions.positions[i] =
+                        stake_account_positions.positions[next_index as usize];
+                    stake_account_positions.positions[next_index as usize] = None;
+                    stake_account_positions.next_index = next_index;
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -260,7 +268,11 @@ pub mod staking {
             }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
+                    let next_index = stake_account_positions.next_index - 1;
+                    stake_account_positions.positions[i] =
+                        stake_account_positions.positions[next_index as usize];
+                    stake_account_positions.positions[next_index as usize] = None;
+                    stake_account_positions.next_index = next_index;
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
