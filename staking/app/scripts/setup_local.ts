@@ -1,18 +1,10 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
-import { Staking } from "../../target/types/staking";
 import BN from "bn.js";
-import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   readAnchorConfig,
   standardSetup,
   ANCHOR_CONFIG_PATH,
-  getPortNumber,
   requestPythAirdrop,
   CustomAbortController,
 } from "../../tests/utils/before";
@@ -112,12 +104,25 @@ async function main() {
     stakeConnection.program.programId
   );
 
-  for (let connection of [aliceStakeConnection, bobStakeConnection]) {
-    await connection.depositAndLockTokens(
-      undefined,
-      PythBalance.fromString("500")
-    );
-  }
+  await aliceStakeConnection.depositAndLockTokens(
+    undefined,
+    PythBalance.fromString("500")
+  );
+
+  const vestingSchedule = {
+    periodicVesting: {
+      initialBalance: PythBalance.fromString("100").toBN(),
+      startDate: await stakeConnection.getTime(),
+      periodDuration: new BN(3600),
+      numPeriods: new BN(1000),
+    },
+  };
+
+  await bobStakeConnection.setupVestingAccount(
+    PythBalance.fromString("500"),
+    bob.publicKey,
+    vestingSchedule
+  );
 
   const envPath = fs.existsSync(FRONTEND_ENV_FILE)
     ? FRONTEND_ENV_FILE
@@ -125,11 +130,6 @@ async function main() {
   setEnvValue(
     "LOCALNET_PYTH_MINT",
     pythMintAccount.publicKey.toBase58(),
-    envPath
-  );
-  setEnvValue(
-    "LOCALNET_GOVERNANCE_REALM",
-    stakeConnection.config.pythGovernanceRealm.toBase58(),
     envPath
   );
 

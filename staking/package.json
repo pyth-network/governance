@@ -20,6 +20,7 @@
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
     "pyth-staking-wasm": "0.2.6",
+    "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
