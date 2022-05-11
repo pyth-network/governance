@@ -445,7 +445,7 @@ export class StakeConnection {
       .rpc();
   }
 
-  private async buildTransferInstruction(
+  public async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: BN
   ): Promise<TransactionInstruction> {
@@ -478,6 +478,56 @@ export class StakeConnection {
     return ix;
   }
 
+  public async hasGovernanceRecord(user: PublicKey): Promise<boolean> {
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(user)
+      );
+
+    return Boolean(voterAccountInfo);
+  }
+  /**
+   * This function is intended for accounts that want to participate in governance.
+   * It creates a token record in spl governance and creates a voting position with all unvested balance
+   * if it exists.
+   * TODO : Function for opting out of governance
+   */
+  public async optIntoGovernance(stakeAccount: StakeAccount) {
+    assert(
+      stakeAccount.isVestingAccountWithoutGovernance(await this.getTime())
+    );
+
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+    const unvestedBalance = stakeAccount.getBalanceSummary(
+      await this.getTime()
+    ).unvested;
+
+    const transaction: Transaction = new Transaction();
+
+    if (!(await this.hasGovernanceRecord(owner))) {
+      await withCreateTokenOwnerRecord(
+        transaction.instructions,
+        this.governanceAddress,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
+    }
+
+    transaction.instructions.push(
+      await this.program.methods
+        .createPosition(this.votingProduct, unvestedBalance.toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          targetAccount: this.votingProductMetadataAccount,
+        })
+        .instruction()
+    );
+
+    await this.provider.sendAndConfirm(transaction);
+  }
+
   public async depositTokens(
     stakeAccount: StakeAccount | undefined,
     amount: PythBalance
@@ -496,12 +546,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    const voterAccountInfo =
-      await this.program.provider.connection.getAccountInfo(
-        await this.getTokenOwnerRecordAddress(owner)
-      );
-
-    if (!voterAccountInfo) {
+    if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -548,12 +593,7 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccount.address;
     }
 
-    const voterAccountInfo =
-      await this.program.provider.connection.getAccountInfo(
-        await this.getTokenOwnerRecordAddress(owner)
-      );
-
-    if (!voterAccountInfo) {
+    if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
@@ -782,5 +822,37 @@ export class StakeAccount {
     );
     const length = vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
+  }
+
+  public getGovernanceExposure(unixTime: BN): PythBalance {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    let currentEpochBI = BigInt(currentEpoch.toString());
+
+    const lockedSummaryBI =
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
+        currentEpochBI,
+        unlockingDuration
+      );
+
+    let lockingBN = new BN(lockedSummaryBI.locking.toString());
+    let lockedBN = new BN(lockedSummaryBI.locked.toString());
+    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
+
+    return new PythBalance(
+      lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN)
+    );
+  }
+
+  public hasUnvestedTokens(unixTime: BN): boolean {
+    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
+  }
+
+  public isVestingAccountWithoutGovernance(unixTime: BN) {
+    return (
+      this.hasUnvestedTokens(unixTime) &&
+      this.getGovernanceExposure(unixTime).toBN().eq(new BN(0))
+    );
   }
 }
