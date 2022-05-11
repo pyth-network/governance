@@ -484,6 +484,9 @@ const Staking: NextPage = () => {
                     <p className="text-sm text-white">
                       Your vesting account is not enrolled in governance.
                     </p>
+                    <p className="text-sm text-white">
+                      Disclaimer : Participating in governance requires to lock your unvested tokens. This means when your tokens vest, you'll have to manually unlock them through this UI and wait for a one epoch cooldown before being able to withdraw. Opting into governance is currently irreversible.
+                    </p>
                   </div>
 
                   <div className="space-x-10 text-center">
