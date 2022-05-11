@@ -104,6 +104,7 @@ async function main() {
     stakeConnection.program.programId
   );
 
+  // Alice tokens are fully vested
   await aliceStakeConnection.depositAndLockTokens(
     undefined,
     PythBalance.fromString("500")
@@ -118,6 +119,7 @@ async function main() {
     },
   };
 
+  // Bob has a vesting schedule
   await bobStakeConnection.setupVestingAccount(
     PythBalance.fromString("500"),
     bob.publicKey,
@@ -132,6 +134,8 @@ async function main() {
     pythMintAccount.publicKey.toBase58(),
     envPath
   );
+
+  setEnvValue("ENDPOINT", "http://localhost:8899", envPath);
 
   while (true) {}
 }
