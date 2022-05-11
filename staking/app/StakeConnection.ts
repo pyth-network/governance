@@ -667,8 +667,23 @@ export class StakeConnection {
       this.provider.wallet.publicKey
     );
 
+    const preIxs: TransactionInstruction[] = [];
+    if ((await this.provider.connection.getAccountInfo(toAccount)) == null) {
+      preIxs.push(
+        Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          this.config.pythTokenMint,
+          toAccount,
+          this.provider.wallet.publicKey,
+          this.provider.wallet.publicKey
+        )
+      );
+    }
+
     await this.program.methods
       .withdrawStake(amount.toBN())
+      .preInstructions(preIxs)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
