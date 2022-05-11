@@ -12,8 +12,9 @@ pub const MAX_POSITIONS: usize = 100;
 pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
-/// staking to We mostly fill it front to back, but indicies don't mean much.
-/// Because users can close positions, it might get fragmented.
+/// staking to.
+/// The invariant we preserve is : For i < next_index, positions[i] == Some
+/// For i >= next_index, positions[i] == None
 #[account(zero_copy)]
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
@@ -23,13 +24,22 @@ pub struct PositionData {
 }
 
 impl PositionData {
-    /// Finds first index available for a new position
-    pub fn get_unused_index(&self) -> Result<usize> {
-        if (self.next_index as usize) < MAX_POSITIONS {
-            Ok(self.next_index as usize)
+    /// Finds first index available for a new position, increments the internal counter
+    pub fn get_unused_index(&mut self) -> Result<usize> {
+        let res = self.next_index as usize;
+        self.next_index += 1;
+        if res < MAX_POSITIONS {
+            Ok(res)
         } else {
             Err(error!(ErrorCode::TooManyPositions))
         }
+    }
+
+    // Makes position at index i none, and swaps positions to preserve the invariant
+    pub fn make_none(&mut self, i: usize) {
+        self.next_index -= 1;
+        self.positions[i] = self.positions[self.next_index as usize];
+        self.positions[self.next_index as usize] = None;
     }
 }
 

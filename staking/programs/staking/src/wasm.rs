@@ -189,7 +189,7 @@ impl WasmPositionData {
 
     /// Finds first index available for a new position
     #[wasm_bindgen(js_name=getUnusedIndex)]
-    pub fn get_unused_index(&self) -> Result<usize, JsValue> {
+    pub fn get_unused_index(&mut self) -> Result<usize, JsValue> {
         convert_error(self.wrapped.get_unused_index())
     }
 }

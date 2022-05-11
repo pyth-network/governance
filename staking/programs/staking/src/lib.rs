@@ -151,8 +151,6 @@ pub mod staking {
             }
         }
 
-        stake_account_positions.next_index += 1;
-
         let unvested_balance = ctx
             .accounts
             .stake_account_metadata
@@ -230,7 +228,6 @@ pub mod staking {
                                 unlocking_start: Some(current_epoch + 1),
                                 reserved: POSITION_DATA_PADDING,
                             });
-                            stake_account_positions.next_index += 1;
 
                             assert_ne!(i, j);
                             assert_eq!(
@@ -256,11 +253,7 @@ pub mod staking {
             // tokens become "free"
             PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
-                    let next_index = stake_account_positions.next_index - 1;
-                    stake_account_positions.positions[i] =
-                        stake_account_positions.positions[next_index as usize];
-                    stake_account_positions.positions[next_index as usize] = None;
-                    stake_account_positions.next_index = next_index;
+                    stake_account_positions.make_none(i);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -268,11 +261,7 @@ pub mod staking {
             }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
-                    let next_index = stake_account_positions.next_index - 1;
-                    stake_account_positions.positions[i] =
-                        stake_account_positions.positions[next_index as usize];
-                    stake_account_positions.positions[next_index as usize] = None;
-                    stake_account_positions.next_index = next_index;
+                    stake_account_positions.make_none(i);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -395,7 +384,6 @@ pub mod staking {
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
                 epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
-
 
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }
