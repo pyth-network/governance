@@ -749,7 +749,6 @@ const Staking: NextPage = () => {
                               <button
                                 className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleWithdraw}
-                                disabled={isVestingAccountWithoutGovernance}
                               >
                                 Withdraw
                               </button>
