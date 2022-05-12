@@ -752,13 +752,7 @@ const Staking: NextPage = () => {
                                 onClick={handleWithdraw}
                                 disabled={isVestingAccountWithoutGovernance}
                               >
-                                {isVestingAccountWithoutGovernance ? (
-                                  <Tooltip content="You are currently not enrolled in governance.">
-                                    Withdraw
-                                  </Tooltip>
-                                ) : (
-                                  'Withdraw'
-                                )}
+                                Withdraw
                               </button>
                             )}
                           </div>
