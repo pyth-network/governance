@@ -20,7 +20,6 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import BN from 'bn.js'
 import Tooltip from '@components/Tooltip'
 import { useRouter } from 'next/router'
-import WarningIcon from '@components/icons/WarningIcon'
 
 enum TabEnum {
   Lock,
