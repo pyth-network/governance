@@ -84,7 +84,7 @@ pub fn validate(
                 // If there are multiple voting positions, they've been aggregated at this point
                 governance_exposure = *exposure;
             }
-            _ => {
+            Target::STAKING { .. } => {
                 // A normal position
                 max_target_exposure = cmp::max(max_target_exposure, *exposure);
                 total_exposure = total_exposure
@@ -141,8 +141,9 @@ pub mod tests {
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 2,
+            positions:  [None; MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
         pd.positions[0] = Some(Position {
@@ -193,8 +194,9 @@ pub mod tests {
     #[test]
     fn test_voting() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 2,
+            positions:  [None; MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
@@ -204,7 +206,7 @@ pub mod tests {
             unlocking_start:        None,
             reserved:               POSITION_DATA_PADDING,
         });
-        pd.positions[4] = Some(Position {
+        pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
             target_with_parameters: TargetWithParameters::STAKING {
@@ -227,8 +229,9 @@ pub mod tests {
     #[test]
     fn test_double_product() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 2,
+            positions:  [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
@@ -242,7 +245,7 @@ pub mod tests {
             unlocking_start:        None,
             reserved:               POSITION_DATA_PADDING,
         });
-        pd.positions[3] = Some(Position {
+        pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
             target_with_parameters: TargetWithParameters::STAKING {
@@ -262,8 +265,9 @@ pub mod tests {
     #[test]
     fn test_risk() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -302,8 +306,9 @@ pub mod tests {
     #[test]
     fn test_multiple_voting() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -325,8 +330,9 @@ pub mod tests {
     #[test]
     fn test_overflow_total() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -345,8 +351,9 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            owner:      Pubkey::new_unique(),
+            next_index: 6,
+            positions:  [None; MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {

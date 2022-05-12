@@ -12,24 +12,34 @@ pub const MAX_POSITIONS: usize = 100;
 pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
-/// staking to We mostly fill it front to back, but indicies don't mean much.
-/// Because users can close positions, it might get fragmented.
+/// staking to.
+/// The invariant we preserve is : For i < next_index, positions[i] == Some
+/// For i >= next_index, positions[i] == None
 #[account(zero_copy)]
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
-    pub owner:     Pubkey,
-    pub positions: [Option<Position>; MAX_POSITIONS],
+    pub owner:      Pubkey,
+    pub next_index: u8,
+    pub positions:  [Option<Position>; MAX_POSITIONS],
 }
 
 impl PositionData {
-    /// Finds first index available for a new position
-    pub fn get_unused_index(&self) -> Result<usize> {
-        for i in 0..MAX_POSITIONS {
-            if self.positions[i].is_none() {
-                return Ok(i);
-            }
+    /// Finds first index available for a new position, increments the internal counter
+    pub fn get_unused_index(&mut self) -> Result<usize> {
+        let res = self.next_index as usize;
+        self.next_index += 1;
+        if res < MAX_POSITIONS {
+            Ok(res)
+        } else {
+            Err(error!(ErrorCode::TooManyPositions))
         }
-        Err(error!(ErrorCode::TooManyPositions))
+    }
+
+    // Makes position at index i none, and swaps positions to preserve the invariant
+    pub fn make_none(&mut self, i: usize) {
+        self.next_index -= 1;
+        self.positions[i] = self.positions[self.next_index as usize];
+        self.positions[self.next_index as usize] = None;
     }
 }
 
@@ -120,12 +130,14 @@ impl Position {
             match self.unlocking_start {
                 None => Ok(PositionState::LOCKED),
                 Some(unlocking_start) => {
-                    if (self.activation_epoch <= current_epoch) && (current_epoch < unlocking_start)
-                    {
+                    let has_activated: bool = self.activation_epoch <= current_epoch;
+                    let unlock_started: bool = unlocking_start <= current_epoch;
+                    let unlock_ended: bool =
+                        unlocking_start + unlocking_duration as u64 <= current_epoch;
+
+                    if has_activated && !unlock_started {
                         Ok(PositionState::PREUNLOCKING)
-                    } else if (unlocking_start <= current_epoch)
-                        && (current_epoch < unlocking_start + unlocking_duration as u64)
-                    {
+                    } else if unlock_started && !unlock_ended {
                         Ok(PositionState::UNLOCKING)
                     } else {
                         Ok(PositionState::UNLOCKED)
@@ -236,6 +248,6 @@ pub mod tests {
         assert_eq!(std::mem::size_of::<Option<Position>>(), 200);
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
-        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
+        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 8 + 100 * 200);
     }
 }

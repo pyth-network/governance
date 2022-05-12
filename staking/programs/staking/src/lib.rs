@@ -103,6 +103,7 @@ pub mod staking {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
         stake_account_positions.positions = [None; MAX_POSITIONS];
+        stake_account_positions.next_index = 0;
 
         let voter_record = &mut ctx.accounts.voter_record;
 
@@ -252,7 +253,7 @@ pub mod staking {
             // tokens become "free"
             PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
+                    stake_account_positions.make_none(i);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -260,7 +261,7 @@ pub mod staking {
             }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
-                    stake_account_positions.positions[i] = None;
+                    stake_account_positions.make_none(i);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -383,7 +384,6 @@ pub mod staking {
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
                 epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
-
 
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }
