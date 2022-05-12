@@ -12,8 +12,8 @@ import { STAKING_PROGRAM } from '@components/constants'
 import { PythBalance, StakeAccount, StakeConnection } from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
-import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
-import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
+import { Dialog, Disclosure, Listbox, Tab, Transition } from '@headlessui/react'
+import { CheckIcon, ChevronUpIcon, SelectorIcon } from '@heroicons/react/solid'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
@@ -40,13 +40,26 @@ const Staking: NextPage = () => {
   const anchorWallet = useAnchorWallet()
   const { publicKey, connected } = useWallet()
   const { isReady } = useRouter()
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
-  const [modalOption, setModalOption] = useState<StakeAccount>()
+  const [
+    isMultipleStakeAccountsModalOpen,
+    setIsMultipleStakeAccountsModalOpen,
+  ] = useState<boolean>(false)
+  const [
+    isVestingAccountWithoutGovernanceModalOpen,
+    setIsVestingAccountWithoutGovernanceModalOpen,
+  ] = useState<boolean>(false)
+  const [
+    isVestingAccountWithoutGovernance,
+    setIsVestingAccountWithoutGovernance,
+  ] = useState<boolean>(false)
+  const [
+    multipleStakeAccountsModalOption,
+    setMultipleStakeAccountsModalOption,
+  ] = useState<StakeAccount>()
   const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>([])
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
-  const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
   const [balance, setBalance] = useState<PythBalance>()
   const [pythBalance, setPythBalance] = useState<PythBalance>(
     new PythBalance(new BN(0))
@@ -80,10 +93,11 @@ const Staking: NextPage = () => {
           (anchorWallet as Wallet).publicKey
         )
         setStakeAccounts(stakeAccounts)
-        setMainStakeAccount(stakeAccounts[0])
-        if (stakeAccounts.length > 1) {
-          setIsModalOpen(true)
-          setModalOption(stakeAccounts[0])
+        if (stakeAccounts.length === 1) {
+          setMainStakeAccount(stakeAccounts[0])
+        } else if (stakeAccounts.length > 1) {
+          setIsMultipleStakeAccountsModalOpen(true)
+          setMultipleStakeAccountsModalOption(stakeAccounts[0])
         }
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -91,17 +105,20 @@ const Staking: NextPage = () => {
     }
     if (!connected) {
       setStakeConnection(undefined)
-      setStakeAccount(undefined)
+      setMainStakeAccount(undefined)
       resetBalance()
     } else {
       initialize()
     }
   }, [connected])
 
-  // refresh balances after getting stake accounts
+  // check if vesting account without governance exists and refresh balances after getting stake accounts
   useEffect(() => {
+    checkVestingAccountWithoutGovernance()
     refreshBalance()
   }, [stakeConnection, mainStakeAccount])
+
+  useEffect(() => {}, [stakeConnection, mainStakeAccount])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
@@ -137,6 +154,19 @@ const Staking: NextPage = () => {
     setUnlockedPythBalance(new PythBalance(new BN(0)))
   }
 
+  const checkVestingAccountWithoutGovernance = async () => {
+    if (
+      stakeConnection &&
+      mainStakeAccount &&
+      mainStakeAccount.isVestingAccountWithoutGovernance(
+        await stakeConnection.getTime()
+      )
+    ) {
+      setIsVestingAccountWithoutGovernance(true)
+      setIsVestingAccountWithoutGovernanceModalOpen(true)
+    }
+  }
+
   // set amount when input changes
   const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
     const re = /^(\d*\.)?\d{0,6}$/
@@ -154,7 +184,10 @@ const Staking: NextPage = () => {
     const depositAmount = PythBalance.fromString(amount)
     if (depositAmount.toBN().gt(new BN(0))) {
       try {
-        await stakeConnection?.depositAndLockTokens(stakeAccount, depositAmount)
+        await stakeConnection?.depositAndLockTokens(
+          mainStakeAccount,
+          depositAmount
+        )
         toast.success(`Deposit and locked ${amount} PYTH tokens!`)
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -165,8 +198,12 @@ const Staking: NextPage = () => {
     }
   }
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
+  const handleCloseMultipleStakeAccountsModal = () => {
+    setIsMultipleStakeAccountsModalOpen(false)
+  }
+
+  const handleCloseVestingAccountWithoutGovernanceModal = () => {
+    setIsVestingAccountWithoutGovernanceModalOpen(false)
   }
 
   // call unlock api when unlock button is clicked
@@ -177,9 +214,9 @@ const Staking: NextPage = () => {
     }
     const unlockAmount = PythBalance.fromString(amount)
     if (unlockAmount.toBN().gt(new BN(0))) {
-      if (stakeAccount) {
+      if (mainStakeAccount) {
         try {
-          await stakeConnection?.unlockTokens(stakeAccount, unlockAmount)
+          await stakeConnection?.unlockTokens(mainStakeAccount, unlockAmount)
           toast.success('Unlock successful!')
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
@@ -193,9 +230,21 @@ const Staking: NextPage = () => {
     }
   }
 
-  const handleMultipleStakeAccountsModal = () => {
-    setMainStakeAccount(modalOption)
-    handleCloseModal()
+  const handleMultipleStakeAccountsConnectButton = () => {
+    setMainStakeAccount(multipleStakeAccountsModalOption)
+    handleCloseMultipleStakeAccountsModal()
+  }
+
+  const handleVestingAccountWithoutGovernanceOptInButton = async () => {
+    if (stakeConnection && mainStakeAccount) {
+      await stakeConnection.optIntoGovernance(mainStakeAccount)
+      setIsVestingAccountWithoutGovernance(false)
+    }
+    handleCloseVestingAccountWithoutGovernanceModal()
+  }
+
+  const handleVestingAccountWithoutGovernanceNoThanksButton = () => {
+    handleCloseVestingAccountWithoutGovernanceModal()
   }
 
   // withdraw unlocked PYTH tokens to wallet
@@ -206,9 +255,12 @@ const Staking: NextPage = () => {
     }
     const withdrawAmount = PythBalance.fromString(amount)
     if (withdrawAmount.toBN().gt(new BN(0))) {
-      if (stakeAccount) {
+      if (mainStakeAccount) {
         try {
-          await stakeConnection?.withdrawTokens(stakeAccount, withdrawAmount)
+          await stakeConnection?.withdrawTokens(
+            mainStakeAccount,
+            withdrawAmount
+          )
           toast.success('Withdraw successful!')
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
@@ -233,7 +285,6 @@ const Staking: NextPage = () => {
       }
       for (const acc of stakeAccounts) {
         if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
-          setStakeAccount(acc)
           const { withdrawable, locked, unvested } = acc.getBalanceSummary(
             await stakeConnection.getTime()
           )
@@ -274,7 +325,7 @@ const Staking: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Staking'} />
-      <Transition appear show={isModalOpen} as={Fragment}>
+      <Transition appear show={isMultipleStakeAccountsModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-10" onClose={() => {}}>
           <Transition.Child
             as={Fragment}
@@ -298,7 +349,7 @@ const Staking: NextPage = () => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform rounded-2xl bg-[rgb(29,25,51)] p-10 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
                     className="text-lg font-medium leading-6 text-white"
@@ -310,13 +361,20 @@ const Staking: NextPage = () => {
                       Please choose the stake account you wish to connect to.
                     </p>
                   </div>
-                  <Listbox value={modalOption} onChange={setModalOption}>
+                  <Listbox
+                    value={multipleStakeAccountsModalOption}
+                    onChange={setMultipleStakeAccountsModalOption}
+                  >
                     <div className="relative mt-1">
-                      <Listbox.Button className="focus-visible:border-indigo-500 focus-visible:ring-white focus-visible:ring-offset-orange-300 relative my-4 w-full cursor-default rounded-lg bg-[#34304e] py-2 pl-3 pr-10 text-left text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm">
+                      <Listbox.Button className="focus-visible:border-indigo-500 focus-visible:ring-white focus-visible:ring-offset-orange-300 relative my-4 w-full cursor-default rounded-lg bg-cherryPie py-2 pl-3 pr-10 text-left text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-offset-2 sm:text-sm">
                         <span className="block truncate">
-                          {modalOption?.address.toBase58().slice(0, 8) +
+                          {multipleStakeAccountsModalOption?.address
+                            .toBase58()
+                            .slice(0, 8) +
                             '..' +
-                            modalOption?.address.toBase58().slice(-8)}
+                            multipleStakeAccountsModalOption?.address
+                              .toBase58()
+                              .slice(-8)}
                         </span>
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                           <SelectorIcon
@@ -331,7 +389,7 @@ const Staking: NextPage = () => {
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                       >
-                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-[#34304e] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                        <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-cherryPie py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                           {stakeAccounts.map((acc, idx) => (
                             <Listbox.Option
                               key={idx}
@@ -374,10 +432,107 @@ const Staking: NextPage = () => {
                   <div className="mt-4">
                     <button
                       type="button"
-                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-[#34304e] px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      onClick={handleMultipleStakeAccountsModal}
+                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      onClick={handleMultipleStakeAccountsConnectButton}
                     >
                       Connect
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <Transition
+        appear
+        show={isVestingAccountWithoutGovernanceModalOpen}
+        as={Fragment}
+      >
+        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-white"
+                  >
+                    Enroll in governance
+                  </Dialog.Title>
+                  <div className="mt-2 mb-10 space-y-4">
+                    <p className="text-sm text-white">
+                      Your vesting account is not enrolled in governance.
+                    </p>
+                    {/* <p className="text-sm text-[#696890]">
+                      Disclaimer: Participating in governance requires you to
+                      lock your unvested tokens. This means that when your
+                      tokens vest, you will have to manually unlock them through
+                      by interacting with the UI and wait for a one epoch
+                      cooldown before being able to withdraw them. Opting into
+                      governance is currently irreversible.
+                    </p> */}
+                    <Disclosure>
+                      {({ open }) => (
+                        <>
+                          <Disclosure.Button className="hover:bg-purple-200 focus-visible:ring-purple-500 flex w-full justify-between rounded-lg bg-valhalla px-4 py-2 text-left text-sm font-medium text-white hover:bg-paynesGray focus:outline-none focus-visible:ring focus-visible:ring-opacity-75">
+                            <span>Disclaimer</span>
+                            <ChevronUpIcon
+                              className={`${
+                                open ? 'rotate-180 transform' : ''
+                              } text-purple-500 h-5 w-5`}
+                            />
+                          </Disclosure.Button>
+                          <Disclosure.Panel className="px-4 pb-2 text-sm text-scampi">
+                            Participating in governance requires you to lock
+                            your unvested tokens. This means that when your
+                            tokens vest, you will have to manually unlock them
+                            through by interacting with the UI and wait for a
+                            one epoch cooldown before being able to withdraw
+                            them. Opting into governance is currently
+                            irreversible.
+                          </Disclosure.Panel>
+                        </>
+                      )}
+                    </Disclosure>
+                  </div>
+
+                  <div className="space-x-10 text-center">
+                    <button
+                      type="button"
+                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      onClick={handleVestingAccountWithoutGovernanceOptInButton}
+                    >
+                      Opt in
+                    </button>
+                    <button
+                      type="button"
+                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      onClick={
+                        handleVestingAccountWithoutGovernanceNoThanksButton
+                      }
+                    >
+                      No, thank you
                     </button>
                   </div>
                 </Dialog.Panel>
@@ -485,105 +640,123 @@ const Staking: NextPage = () => {
                   ))}
               </Tab.List>
               <Tab.Panels className="mt-4 sm:mt-12">
-                {Object.keys(TabEnum)
-                  .slice(3)
-                  .map((v, idx) => (
-                    <Tab.Panel key={idx}>
-                      <div className="col-span-12 font-inter text-xs">
-                        <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
-                          {tabDescriptions[v as keyof typeof TabEnum]}
-                        </div>
-                        <div className="mb-2 flex">
-                          <div className="ml-auto mr-0 space-x-2 sm:hidden">
-                            <button
-                              className="outlined-btn"
-                              onClick={handleHalfBalanceClick}
-                            >
-                              Half
-                            </button>
-                            <button
-                              className="outlined-btn"
-                              onClick={handleMaxBalanceClick}
-                            >
-                              Max
-                            </button>
+                {isReady &&
+                  Object.keys(TabEnum)
+                    .slice(3)
+                    .map((v, idx) => (
+                      <Tab.Panel key={idx}>
+                        <div className="col-span-12 font-inter text-xs">
+                          <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
+                            {tabDescriptions[v as keyof typeof TabEnum]}
                           </div>
-                        </div>
-                        <div className="mb-4 flex items-center justify-between">
-                          <label htmlFor="amount" className="block text-white">
-                            Amount (PYTH)
-                          </label>
-                          <div className="ml-auto mr-0 flex items-center space-x-2">
-                            {isBalanceLoading ? (
-                              <div className="h-5 w-14 animate-pulse rounded-lg bg-ebonyClay" />
-                            ) : (
-                              <p className="text-white">
-                                {currentTab === TabEnum.Lock
-                                  ? 'Balance'
-                                  : currentTab === TabEnum.Unlock
-                                  ? 'Locked Tokens'
-                                  : 'Withdrawable'}
-                                : {balance?.toString()}
-                              </p>
-                            )}
-                            <div className="hidden space-x-2 sm:flex">
+                          <div className="mb-2 flex">
+                            <div className="ml-auto mr-0 space-x-2 sm:hidden">
                               <button
-                                className="outlined-btn hover:bg-valhalla"
+                                className="outlined-btn"
                                 onClick={handleHalfBalanceClick}
                               >
                                 Half
                               </button>
                               <button
-                                className="outlined-btn hover:bg-valhalla"
+                                className="outlined-btn"
                                 onClick={handleMaxBalanceClick}
                               >
                                 Max
                               </button>
                             </div>
                           </div>
+                          <div className="mb-4 flex items-center justify-between">
+                            <label
+                              htmlFor="amount"
+                              className="block text-white"
+                            >
+                              Amount (PYTH)
+                            </label>
+                            <div className="ml-auto mr-0 flex items-center space-x-2">
+                              {isBalanceLoading ? (
+                                <div className="h-5 w-14 animate-pulse rounded-lg bg-ebonyClay" />
+                              ) : (
+                                <p className="text-white">
+                                  {currentTab === TabEnum.Lock
+                                    ? 'Balance'
+                                    : currentTab === TabEnum.Unlock
+                                    ? 'Locked Tokens'
+                                    : 'Withdrawable'}
+                                  : {balance?.toString()}
+                                </p>
+                              )}
+                              <div className="hidden space-x-2 sm:flex">
+                                <button
+                                  className="outlined-btn hover:bg-valhalla"
+                                  onClick={handleHalfBalanceClick}
+                                >
+                                  Half
+                                </button>
+                                <button
+                                  className="outlined-btn hover:bg-valhalla"
+                                  onClick={handleMaxBalanceClick}
+                                >
+                                  Max
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <input
+                            type="text"
+                            name="amount"
+                            id="amount"
+                            autoComplete="amount"
+                            value={amount}
+                            onChange={handleAmountChange}
+                            className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
+                          />
+                          <div className="flex items-center justify-center">
+                            {!connected ? (
+                              <WalletModalButton
+                                className="primary-btn py-3 px-14"
+                                text-base
+                                font-semibold
+                              />
+                            ) : currentTab === TabEnum.Lock ? (
+                              <button
+                                className="primary-btn disabled:hover: py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                onClick={handleDeposit}
+                                disabled={isVestingAccountWithoutGovernance}
+                              >
+                                {isVestingAccountWithoutGovernance ? (
+                                  <Tooltip content="You are currently not enrolled in governance.">
+                                    Lock
+                                  </Tooltip>
+                                ) : (
+                                  'Lock'
+                                )}
+                              </button>
+                            ) : currentTab === TabEnum.Unlock ? (
+                              <button
+                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                onClick={handleUnlock}
+                                disabled={isVestingAccountWithoutGovernance}
+                              >
+                                {isVestingAccountWithoutGovernance ? (
+                                  <Tooltip content="You are currently not enrolled in governance.">
+                                    Unlock
+                                  </Tooltip>
+                                ) : (
+                                  'Unlock'
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                onClick={handleWithdraw}
+                              >
+                                Withdraw
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <input
-                          type="text"
-                          name="amount"
-                          id="amount"
-                          autoComplete="amount"
-                          value={amount}
-                          onChange={handleAmountChange}
-                          className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
-                        />
-                        <div className="flex items-center justify-center">
-                          {!connected ? (
-                            <WalletModalButton
-                              className="primary-btn py-3 px-14"
-                              text-base
-                              font-semibold
-                            />
-                          ) : currentTab === TabEnum.Lock ? (
-                            <button
-                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                              onClick={handleDeposit}
-                            >
-                              Lock
-                            </button>
-                          ) : currentTab === TabEnum.Unlock ? (
-                            <button
-                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                              onClick={handleUnlock}
-                            >
-                              Unlock
-                            </button>
-                          ) : (
-                            <button
-                              className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian"
-                              onClick={handleWithdraw}
-                            >
-                              Withdraw
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </Tab.Panel>
-                  ))}
+                      </Tab.Panel>
+                    ))}
               </Tab.Panels>
             </Tab.Group>
           </div>

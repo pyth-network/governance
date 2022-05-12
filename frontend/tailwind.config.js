@@ -29,6 +29,10 @@ module.exports = {
       hoverGray: 'rgba(255, 255, 255, 0.08)',
       ebonyClay: '#563250',
       blackRussian: '#1A1F2E',
+      bunting: '#283047',
+      purpleHeart: '#5E3CC4',
+      paynesGray: '#383852',
+      cherryPie: '#34304E',
     },
     fontFamily: {
       arboria: 'arboria, sans-serif',
