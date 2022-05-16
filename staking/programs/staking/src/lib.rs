@@ -279,6 +279,7 @@ pub mod staking {
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
 
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.payer;
@@ -299,9 +300,7 @@ pub mod staking {
         }
 
         // Pre-check
-        let remaining_balance = ctx
-            .accounts
-            .stake_account_custody
+        let remaining_balance = stake_account_custody
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
