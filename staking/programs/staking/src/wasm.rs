@@ -218,13 +218,13 @@ impl WasmTargetMetadata {
 pub fn get_next_vesting(
     vestingSchedBorsh: &[u8],
     currentTime: i64,
-) -> Result<VestingEvent, JsValue> {
+) -> Result<Option<VestingEvent>, JsValue> {
     convert_error(get_next_vesting_impl(vestingSchedBorsh, currentTime))
 }
 fn get_next_vesting_impl(
     vesting_sched_borsh: &[u8],
     current_time: i64,
-) -> anchor_lang::Result<VestingEvent> {
+) -> anchor_lang::Result<Option<VestingEvent>> {
     let mut ptr = vesting_sched_borsh;
     let vs = VestingSchedule::deserialize(&mut ptr)?;
     vs.get_next_vesting(current_time)
