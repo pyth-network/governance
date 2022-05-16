@@ -54,7 +54,7 @@ impl VestingSchedule {
         }
     }
 
-    pub fn get_next_unlock(&self, current_time: i64) -> Result<Option<VestingEvent>> {
+    pub fn get_next_vesting(&self, current_time: i64) -> Result<Option<VestingEvent>> {
         match *self {
             VestingSchedule::FullyVested => Ok(None),
             VestingSchedule::PeriodicVesting {
@@ -167,9 +167,9 @@ pub mod tests {
     fn test_novesting() {
         let v = VestingSchedule::FullyVested;
         assert_eq!(v.get_unvested_balance(0).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(0).unwrap(), None);
+        assert_eq!(v.get_next_vesting(0).unwrap(), None);
         assert_eq!(v.get_unvested_balance(10).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(10).unwrap(), None);
+        assert_eq!(v.get_next_vesting(10).unwrap(), None);
     }
 
     #[test]
@@ -184,7 +184,7 @@ pub mod tests {
             if t <= 4 {
                 assert_eq!(v.get_unvested_balance(t).unwrap(), 20);
                 assert_eq!(
-                    v.get_next_unlock(t).unwrap(),
+                    v.get_next_vesting(t).unwrap(),
                     Some(VestingEvent {
                         time:   6,
                         amount: 3,
@@ -198,7 +198,7 @@ pub mod tests {
                     locked_float.ceil() as u64
                 );
                 assert_eq!(
-                    v.get_next_unlock(t).unwrap(),
+                    v.get_next_vesting(t).unwrap(),
                     Some(VestingEvent {
                         time:   t + 1,
                         amount: v.get_unvested_balance(t).unwrap()
@@ -209,7 +209,7 @@ pub mod tests {
                 // Linearly interpolate between (5, 20) and (11, 0)
                 let locked_float = 0;
                 assert_eq!(v.get_unvested_balance(t).unwrap(), locked_float);
-                assert_eq!(v.get_next_unlock(t).unwrap(), None);
+                assert_eq!(v.get_next_vesting(t).unwrap(), None);
             }
         }
     }
@@ -224,7 +224,7 @@ pub mod tests {
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(
-            v.get_next_unlock(0).unwrap(),
+            v.get_next_vesting(0).unwrap(),
             Some(VestingEvent {
                 time:   5,
                 amount: 20,
@@ -232,7 +232,7 @@ pub mod tests {
         );
         assert_eq!(v.get_unvested_balance(4).unwrap(), 20);
         assert_eq!(
-            v.get_next_unlock(4).unwrap(),
+            v.get_next_vesting(4).unwrap(),
             Some(VestingEvent {
                 time:   5,
                 amount: 20,
@@ -240,9 +240,9 @@ pub mod tests {
         );
         // This one could go either way, but say (t>=cliff_date) has vested
         assert_eq!(v.get_unvested_balance(5).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(5).unwrap(), None);
+        assert_eq!(v.get_next_vesting(5).unwrap(), None);
         assert_eq!(v.get_unvested_balance(100).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(100).unwrap(), None);
+        assert_eq!(v.get_next_vesting(100).unwrap(), None);
     }
 
     #[test]
@@ -255,7 +255,7 @@ pub mod tests {
         };
         assert_eq!(v.get_unvested_balance(0).unwrap(), 20);
         assert_eq!(
-            v.get_next_unlock(0).unwrap(),
+            v.get_next_vesting(0).unwrap(),
             Some(VestingEvent {
                 time:   8,
                 amount: 2,
@@ -263,16 +263,16 @@ pub mod tests {
         );
         assert_eq!(v.get_unvested_balance(5).unwrap(), 20);
         assert_eq!(
-            v.get_next_unlock(5).unwrap(),
+            v.get_next_vesting(5).unwrap(),
             Some(VestingEvent {
                 time:   8,
                 amount: 2,
             })
         );
         assert_eq!(v.get_unvested_balance(5 + 7 * 3).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(5 + 7 * 3).unwrap(), None);
+        assert_eq!(v.get_next_vesting(5 + 7 * 3).unwrap(), None);
         assert_eq!(v.get_unvested_balance(100).unwrap(), 0);
-        assert_eq!(v.get_next_unlock(100).unwrap(), None);
+        assert_eq!(v.get_next_vesting(100).unwrap(), None);
         let mut t = 5;
         for period in 0..8 {
             let locked_for_period = v.get_unvested_balance(t).unwrap();
@@ -283,7 +283,7 @@ pub mod tests {
                 assert_eq!(v.get_unvested_balance(t).unwrap(), locked_for_period);
                 if period < 7 {
                     assert_eq!(
-                        v.get_next_unlock(t).unwrap(),
+                        v.get_next_vesting(t).unwrap(),
                         Some(VestingEvent {
                             time:   t + 3 - _t_in_period,
                             amount: v.get_unvested_balance(t).unwrap()
@@ -291,7 +291,7 @@ pub mod tests {
                         })
                     );
                 } else {
-                    assert_eq!(v.get_next_unlock(t).unwrap(), None)
+                    assert_eq!(v.get_next_vesting(t).unwrap(), None)
                 }
                 t += 1;
             }
@@ -322,7 +322,7 @@ pub mod tests {
         let value = v.get_unvested_balance(1 << 60).unwrap();
         assert!(value <= 1_000_000_000);
         assert_eq!(
-            v.get_next_unlock(1 << 60).unwrap(),
+            v.get_next_vesting(1 << 60).unwrap(),
             Some(VestingEvent {
                 time:   (1 << 60) + 1,
                 amount: 0,
@@ -345,7 +345,7 @@ pub mod tests {
         let value = v.get_unvested_balance(1).unwrap();
         assert_eq!(value, 1000);
         assert_eq!(
-            v.get_next_unlock(1).unwrap(),
+            v.get_next_vesting(1).unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
                 amount: 13,
@@ -357,7 +357,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 1000);
         assert_eq!(
-            v.get_next_unlock((one_month - 1).try_into().unwrap())
+            v.get_next_vesting((one_month - 1).try_into().unwrap())
                 .unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
@@ -370,7 +370,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 1000 - tokens_per_period);
         assert_eq!(
-            v.get_next_unlock(one_month.try_into().unwrap()).unwrap(),
+            v.get_next_vesting(one_month.try_into().unwrap()).unwrap(),
             Some(VestingEvent {
                 time:   (2 * one_month).try_into().unwrap(),
                 amount: 14,
@@ -382,7 +382,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 1000 - tokens_per_period);
         assert_eq!(
-            v.get_next_unlock((one_month * 2 - 1).try_into().unwrap())
+            v.get_next_vesting((one_month * 2 - 1).try_into().unwrap())
                 .unwrap(),
             Some(VestingEvent {
                 time:   (2 * one_month).try_into().unwrap(),
@@ -395,7 +395,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 973);
         assert_eq!(
-            v.get_next_unlock((one_month * 2).try_into().unwrap())
+            v.get_next_vesting((one_month * 2).try_into().unwrap())
                 .unwrap(),
             Some(VestingEvent {
                 time:   (3 * one_month).try_into().unwrap(),
@@ -409,7 +409,7 @@ pub mod tests {
         assert_eq!(value, 14);
 
         assert_eq!(
-            v.get_next_unlock((one_month * 72 - 1).try_into().unwrap())
+            v.get_next_vesting((one_month * 72 - 1).try_into().unwrap())
                 .unwrap(),
             Some(VestingEvent {
                 time:   (one_month * 72).try_into().unwrap(),
@@ -422,7 +422,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 0);
         assert_eq!(
-            v.get_next_unlock((one_month * 72).try_into().unwrap())
+            v.get_next_vesting((one_month * 72).try_into().unwrap())
                 .unwrap(),
             None
         );
@@ -432,7 +432,7 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 0);
         assert_eq!(
-            v.get_next_unlock((one_month * 73).try_into().unwrap())
+            v.get_next_vesting((one_month * 73).try_into().unwrap())
                 .unwrap(),
             None
         );
