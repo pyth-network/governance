@@ -37,7 +37,6 @@ pub fn compute_voter_weight(
     Ok(voter_weight)
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use anchor_lang::prelude::Pubkey;
@@ -122,7 +121,6 @@ pub mod tests {
             reserved:               POSITION_DATA_PADDING,
         });
 
-
         let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
     }
@@ -141,7 +139,6 @@ pub mod tests {
             unlocking_start:        Some(3),
             reserved:               POSITION_DATA_PADDING,
         });
-
 
         let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);

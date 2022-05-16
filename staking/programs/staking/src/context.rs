@@ -257,7 +257,6 @@ pub struct CreateTarget<'info> {
     pub system_program:    Program<'info, System>,
 }
 
-
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed
 // up if we try to use it here. We can just keep the definition the same.
 #[derive(Accounts)]
