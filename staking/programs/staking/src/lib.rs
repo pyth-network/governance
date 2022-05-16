@@ -325,9 +325,11 @@ pub mod staking {
             amount,
         )?;
 
+        ctx.accounts.stake_account_custody.reload()?;
+
         if utils::risk::validate(
             stake_account_positions,
-            stake_account_custody.amount,
+            ctx.accounts.stake_account_custody.amount,
             unvested_balance,
             current_epoch,
             config.unlocking_duration,
