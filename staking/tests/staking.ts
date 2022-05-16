@@ -155,6 +155,7 @@ describe("staking", async () => {
         voterBump,
         owner,
         lock: { fullyVested: {} },
+        nextIndex: 0,
       })
     );
   });

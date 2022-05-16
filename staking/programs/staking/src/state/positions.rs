@@ -1,6 +1,5 @@
 use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
-use crate::state::stake_account::StakeAccountMetadata;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
