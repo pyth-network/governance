@@ -192,7 +192,7 @@ pub mod tests {
                 );
             } else if t <= 10 {
                 // Linearly interpolate between (5, 20) and (11, 0)
-                let locked_float = f64::max(20.0 + (t - 5) as f64 * -20.0 / 6.0, 0.0);
+                let locked_float = 20.0 + (t - 5) as f64 * -20.0 / 6.0;
                 assert_eq!(
                     v.get_unvested_balance(t).unwrap(),
                     locked_float.ceil() as u64
@@ -207,11 +207,8 @@ pub mod tests {
                 );
             } else {
                 // Linearly interpolate between (5, 20) and (11, 0)
-                let locked_float = f64::max(20.0 + (t - 5) as f64 * -20.0 / 6.0, 0.0);
-                assert_eq!(
-                    v.get_unvested_balance(t).unwrap(),
-                    locked_float.ceil() as u64
-                );
+                let locked_float = 0;
+                assert_eq!(v.get_unvested_balance(t).unwrap(), locked_float);
                 assert_eq!(v.get_next_unlock(t).unwrap(), None);
             }
         }
@@ -421,6 +418,7 @@ pub mod tests {
         let value = v
             .get_unvested_balance((one_month * 73).try_into().unwrap())
             .unwrap();
+        assert_eq!(value, 0);
         assert_eq!(
             v.get_next_unlock((one_month * 73).try_into().unwrap())
                 .unwrap(),
