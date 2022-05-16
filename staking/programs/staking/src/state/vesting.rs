@@ -14,7 +14,7 @@ use std::convert::TryInto;
 /// Represents how a given initial balance vests over time
 /// It is unit-less, but units must be consistent
 #[repr(u8)]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum VestingSchedule {
     /// No vesting, i.e. balance is fully vested at all time
     FullyVested,

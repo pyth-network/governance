@@ -145,7 +145,7 @@ describe("staking", async () => {
       });
 
     const stake_account_metadata_data =
-      await program.account.stakeAccountMetadata.fetch(metadataAccount);
+      await program.account.stakeAccountMetadataV2.fetch(metadataAccount);
 
     assert.equal(
       JSON.stringify(stake_account_metadata_data),
