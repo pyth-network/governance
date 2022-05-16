@@ -24,7 +24,7 @@ pub struct PositionData {
 
 impl PositionData {
     /// Finds first index available for a new position, increments the internal counter
-    pub fn get_unused_index(&mut self, next_index: &mut u8) -> Result<usize> {
+    pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
         let res = *next_index as usize;
         *next_index += 1;
         if res < MAX_POSITIONS {

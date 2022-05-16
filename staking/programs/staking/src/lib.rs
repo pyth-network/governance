@@ -145,7 +145,7 @@ pub mod staking {
             reserved: POSITION_DATA_PADDING,
         };
 
-        match PositionData::get_unused_index(
+        match PositionData::reserve_new_index(
             stake_account_positions,
             &mut ctx.accounts.stake_account_metadata.next_index,
         ) {
@@ -222,7 +222,7 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
 
-                    match PositionData::get_unused_index(
+                    match PositionData::reserve_new_index(
                         stake_account_positions,
                         &mut ctx.accounts.stake_account_metadata.next_index,
                     ) {
