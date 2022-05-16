@@ -274,13 +274,21 @@ pub mod tests {
         assert_eq!(v.get_unvested_balance(100).unwrap(), 0);
         assert_eq!(v.get_next_unlock(100).unwrap(), None);
         let mut t = 5;
-        for period in 0..8 {
+        for period in 0..7 {
             let locked_for_period = v.get_unvested_balance(t).unwrap();
             // Linearly interpolate from (0, 20) to (7, 0)
             let locked_float = f64::max(20.0 * (1.0 - period as f64 / 7.0), 0.0);
             assert_eq!(locked_for_period, locked_float.ceil() as u64);
             for _t_in_period in 0..3 {
                 assert_eq!(v.get_unvested_balance(t).unwrap(), locked_for_period);
+                assert_eq!(
+                    v.get_next_unlock(t).unwrap(),
+                    Some(VestingEvent {
+                        time:   t + 3 - _t_in_period,
+                        amount: v.get_unvested_balance(t).unwrap()
+                            - v.get_unvested_balance(t + 3).unwrap(),
+                    })
+                );
                 t += 1;
             }
         }
