@@ -102,6 +102,10 @@ describe("vesting", async () => {
     );
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    console.log(
+      stakeAccount.getNextUnlock(await samConnection.getTime()).time,
+      stakeAccount.getNextUnlock(await samConnection.getTime()).amount
+    );
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
     assert(
       stakeAccount
