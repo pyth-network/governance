@@ -107,8 +107,8 @@ impl VestingSchedule {
                     .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
 
                 Ok(Some(VestingEvent {
-                    time:   start_of_next_period,
-                    amount: amount,
+                    time: start_of_next_period,
+                    amount,
                 }))
             }
         }
