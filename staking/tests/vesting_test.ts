@@ -102,9 +102,9 @@ describe("vesting", async () => {
     );
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
-    console.log(
-      stakeAccount.getNextUnlock(await samConnection.getTime()).time,
-      stakeAccount.getNextUnlock(await samConnection.getTime()).amount
+
+    assert(
+      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
     );
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
     assert(
@@ -118,6 +118,14 @@ describe("vesting", async () => {
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
+    );
+    assert(
+      stakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("1.388888").toBN())
+    );
 
     assert(
       stakeAccount
@@ -263,6 +271,94 @@ describe("vesting", async () => {
     );
   });
 
+  it("unlock before vesting event", async () => {
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("3.777777").toBN())
+    );
+    await samConnection.unlockBeforeVestingEvent(samStakeAccount);
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+
+    assert(
+      samStakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("0").toBN())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: PythBalance.fromString("98.611112"),
+        locked: {
+          preunlocking: PythBalance.fromString("3.388888"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.program.methods.advanceClock(ONE_MONTH).rpc();
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: PythBalance.fromString("97.222223"),
+        withdrawable: PythBalance.fromString("4.777777"),
+      },
+      await samConnection.getTime()
+    );
+  });
+
+  it("unlock before vesting but during the last epoch", async () => {
+    await samConnection.program.methods
+      .advanceClock(ONE_MONTH.sub(EPOCH_DURATION))
+      .rpc();
+
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("1.388889").toBN())
+    );
+
+    await samConnection.unlockBeforeVestingEvent(samStakeAccount);
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("0").toBN())
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: PythBalance.fromString("97.222223"),
+        withdrawable: PythBalance.fromString("4.777777"),
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: PythBalance.fromString("95.833334"),
+        withdrawable: PythBalance.fromString("4.777777"),
+        locked: {
+          unlocking: PythBalance.fromString("1.388889"),
+        },
+      },
+      await samConnection.getTime()
+    );
+  });
+
   it("create acccount that does not opt into governance", async () => {
     await aliceConnection.provider.connection.requestAirdrop(
       alice.publicKey,
@@ -275,7 +371,7 @@ describe("vesting", async () => {
       PythBalance.fromString("200"),
       aliceConnection.provider.connection
     );
-    ``;
+
     const transaction = new Transaction();
 
     const stakeAccountKeypair = await aliceConnection.withCreateAccount(
@@ -312,6 +408,14 @@ describe("vesting", async () => {
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
         .eq(PythBalance.fromString("0"))
+    );
+    assert(
+      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
+    );
+    assert(
+      stakeAccount
+        .getGovernanceExcessPosition(await samConnection.getTime())
+        .eq(PythBalance.fromString("0").toBN())
     );
 
     await assertBalanceMatches(
