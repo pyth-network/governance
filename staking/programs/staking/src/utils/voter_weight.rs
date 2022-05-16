@@ -55,9 +55,8 @@ pub mod tests {
     #[test]
     fn test_compute_voter_weight() {
         let mut pd = PositionData {
-            owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
-            next_index: 4,
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
@@ -111,9 +110,8 @@ pub mod tests {
     #[test]
     fn test_overflow() {
         let mut pd = PositionData {
-            owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
-            next_index: 1,
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
@@ -132,9 +130,8 @@ pub mod tests {
     #[test]
     fn test_locked_amount_zero() {
         let mut pd = PositionData {
-            owner:      Pubkey::new_unique(),
-            positions:  [None; MAX_POSITIONS],
-            next_index: 1,
+            owner:     Pubkey::new_unique(),
+            positions: [None; MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
