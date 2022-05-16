@@ -25,6 +25,13 @@ pub enum VestingSchedule {
     },
 }
 
+#[wasm_bindgen]
+#[derive(PartialEq, Debug)]
+pub struct VestingEvent {
+    pub time:   i64,
+    pub amount: u64,
+}
+
 impl VestingSchedule {
     /// For a vesting schedule and the current time (in the same units used in the vesting
     /// schedule), gets the _unvested_ amount. If the unvested balance is fractional, it rounds
@@ -146,13 +153,6 @@ impl VestingSchedule {
             }
         }
     }
-}
-
-#[wasm_bindgen]
-#[derive(PartialEq, Debug)]
-pub struct VestingEvent {
-    pub time:   i64,
-    pub amount: u64,
 }
 
 #[cfg(test)]
