@@ -1,5 +1,6 @@
 use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
+use crate::state::stake_account::StakeAccountMetadata;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
@@ -18,16 +19,15 @@ pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 #[account(zero_copy)]
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
-    pub owner:      Pubkey,
-    pub next_index: u8,
-    pub positions:  [Option<Position>; MAX_POSITIONS],
+    pub owner:     Pubkey,
+    pub positions: [Option<Position>; MAX_POSITIONS],
 }
 
 impl PositionData {
     /// Finds first index available for a new position, increments the internal counter
-    pub fn get_unused_index(&mut self) -> Result<usize> {
-        let res = self.next_index as usize;
-        self.next_index += 1;
+    pub fn get_unused_index(&mut self, next_index: &mut u8) -> Result<usize> {
+        let res = *next_index as usize;
+        *next_index += 1;
         if res < MAX_POSITIONS {
             Ok(res)
         } else {
@@ -36,10 +36,10 @@ impl PositionData {
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
-    pub fn make_none(&mut self, i: usize) {
-        self.next_index -= 1;
-        self.positions[i] = self.positions[self.next_index as usize];
-        self.positions[self.next_index as usize] = None;
+    pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
+        *next_index -= 1;
+        self.positions[i] = self.positions[*next_index as usize];
+        self.positions[*next_index as usize] = None;
     }
 }
 
@@ -248,6 +248,6 @@ pub mod tests {
         assert_eq!(std::mem::size_of::<Option<Position>>(), 200);
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
-        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 8 + 100 * 200);
+        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
     }
 }

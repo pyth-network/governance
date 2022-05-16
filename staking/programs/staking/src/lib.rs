@@ -97,13 +97,14 @@ pub mod staking {
         stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
         stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
         stake_account_metadata.owner = owner;
+        stake_account_metadata.next_index = 0;
 
         stake_account_metadata.lock = lock;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
         stake_account_positions.positions = [None; MAX_POSITIONS];
-        stake_account_positions.next_index = 0;
+
 
         let voter_record = &mut ctx.accounts.voter_record;
 
@@ -144,7 +145,10 @@ pub mod staking {
             reserved: POSITION_DATA_PADDING,
         };
 
-        match PositionData::get_unused_index(stake_account_positions) {
+        match PositionData::get_unused_index(
+            stake_account_positions,
+            &mut ctx.accounts.stake_account_metadata.next_index,
+        ) {
             Err(x) => return Err(x),
             Ok(i) => {
                 stake_account_positions.positions[i] = Some(new_position);
@@ -218,7 +222,10 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
 
-                    match PositionData::get_unused_index(stake_account_positions) {
+                    match PositionData::get_unused_index(
+                        stake_account_positions,
+                        &mut ctx.accounts.stake_account_metadata.next_index,
+                    ) {
                         Err(x) => return Err(x),
                         Ok(j) => {
                             stake_account_positions.positions[j] = Some(Position {
@@ -253,7 +260,8 @@ pub mod staking {
             // tokens become "free"
             PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
-                    stake_account_positions.make_none(i);
+                    stake_account_positions
+                        .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);
@@ -261,7 +269,8 @@ pub mod staking {
             }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
-                    stake_account_positions.make_none(i);
+                    stake_account_positions
+                        .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index);
                 } else {
                     current_position.amount = remaining_amount;
                     stake_account_positions.positions[i] = Some(*current_position);

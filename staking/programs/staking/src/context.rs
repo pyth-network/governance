@@ -162,7 +162,7 @@ pub struct CreatePosition<'info> {
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -189,7 +189,7 @@ pub struct ClosePosition<'info> {
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],

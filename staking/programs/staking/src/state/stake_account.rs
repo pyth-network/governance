@@ -17,6 +17,7 @@ pub struct StakeAccountMetadata {
     pub voter_bump:     u8,
     pub owner:          Pubkey,
     pub lock:           VestingSchedule,
+    pub next_index:     u8,
 }
 
 #[cfg(test)]
