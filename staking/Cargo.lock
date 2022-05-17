@@ -1232,6 +1232,7 @@ dependencies = [
  "anchor-spl",
  "bincode",
  "borsh",
+ "bytemuck",
  "js-sys",
  "spl-governance",
  "wasm-bindgen",
