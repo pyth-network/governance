@@ -95,10 +95,11 @@ impl VestingSchedule {
                     .try_into()
                     .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
-                let next_period_vested: u64 = ((((periods_passed
+                let periods_passed_incremented = periods_passed
                     .checked_add(1)
-                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?)
-                    as u128)
+                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+
+                let next_period_vested: u64 = (((periods_passed_incremented as u128)
                     * (initial_balance as u128))
                     / (num_periods as u128))
                     .try_into()
