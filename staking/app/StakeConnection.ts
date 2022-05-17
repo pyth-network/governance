@@ -297,11 +297,14 @@ export class StakeConnection {
       throw new Error("Amount greater than locked amount");
     }
 
-    await this.unlock(stakeAccount, amount);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
   }
 
   // Unchecked unlock
-  public async unlock(stakeAccount: StakeAccount, amount: PythBalance) {
+  public async unlockTokensUnchecked(
+    stakeAccount: StakeAccount,
+    amount: PythBalance
+  ) {
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
 
@@ -613,7 +616,7 @@ export class StakeConnection {
     assert(amountBN.gt(new BN(0)));
 
     const amount = new PythBalance(amountBN);
-    await this.unlock(stakeAccount, amount);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
   }
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
