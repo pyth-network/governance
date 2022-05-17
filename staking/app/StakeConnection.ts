@@ -867,7 +867,6 @@ export class StakeAccount {
     return new PythBalance(new BN(voterWeightBI.toString()));
   }
 
-  // What is the best way to represent current vesting schedule in the UI
   public getNextVesting(unixTime: BN) {
     return wasm.getNextVesting(
       this.vestingSchedule,
