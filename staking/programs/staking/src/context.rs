@@ -267,8 +267,6 @@ pub struct CreateTarget<'info> {
     pub system_program:    Program<'info, System>,
 }
 
-<<<<<<< HEAD
-=======
 #[derive(Accounts)]
 pub struct UpgradeStakeAccountMetadata<'info> {
     // Native payer:
@@ -282,7 +280,6 @@ pub struct UpgradeStakeAccountMetadata<'info> {
 }
 
 
->>>>>>> 06d7a4a (Switch StakeAccountMetadata to StakeAccountMetadataV2 and add upgrade)
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed
 // up if we try to use it here. We can just keep the definition the same.
 #[derive(Accounts)]

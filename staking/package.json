@@ -27,6 +27,7 @@
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/mocha": "^9.0.0",
+    "@types/node": "^17.0.34",
     "@types/shelljs": "^0.8.11",
     "chai": "^4.3.4",
     "husky": "^7.0.4",
@@ -35,7 +36,8 @@
     "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
-    "wasm-pack": "^0.10.2"
+    "wasm-pack": "^0.10.2",
+    "readline-promise": "^1.0.5"
   },
   "scripts": {
     "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn dump_governance && yarn run ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
