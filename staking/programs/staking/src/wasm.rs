@@ -2,13 +2,18 @@
 use crate::error::ErrorCode;
 use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use crate::state::positions::{
+    Position,
     PositionData,
+    PositionPod,
     PositionState,
 };
 use crate::state::target::{
     TargetMetadata,
     TARGET_METADATA_SIZE,
 };
+
+use std::convert::TryInto;
+
 use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
@@ -68,7 +73,8 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        match self.wrapped.positions[index as usize] {
+        match TryInto::<Option<Position>>::try_into(self.wrapped.positions[index as usize]).unwrap()
+        {
             Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
             None => Err(error!(ErrorCode::PositionNotInUse)),
         }
@@ -78,7 +84,8 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        match self.wrapped.positions[index as usize] {
+        match TryInto::<Option<Position>>::try_into(self.wrapped.positions[index as usize]).unwrap()
+        {
             Some(pos) => Ok(pos.is_voting()),
             None => Err(error!(ErrorCode::PositionNotInUse)),
         }
@@ -86,7 +93,7 @@ impl WasmPositionData {
 
     #[wasm_bindgen(getter, js_name=borshLength)]
     pub fn get_borsh_length(&self) -> usize {
-        get_packed_len::<PositionData>()
+        get_packed_len::<PositionData>() + PositionData::discriminator().len()
     }
     /// Serialize this account using Borsh so that Anchor can deserialize it
     #[wasm_bindgen(js_name=asBorsh)]
@@ -121,7 +128,9 @@ impl WasmPositionData {
         let mut preunlocking: u64 = 0;
 
         for i in 0..crate::MAX_POSITIONS {
-            if let Some(position) = self.wrapped.positions[i] {
+            if let Some(position) =
+                TryInto::<Option<Position>>::try_into(self.wrapped.positions[i]).unwrap()
+            {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
                         locking = locking

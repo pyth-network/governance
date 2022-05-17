@@ -14,7 +14,7 @@ use std::fmt::{
 };
 
 pub const MAX_POSITIONS: usize = 100;
-pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
+pub const POSITION_DATA_PADDING: [u64; 10] = [0u64; 10];
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
@@ -24,7 +24,7 @@ pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
     pub owner:     Pubkey,
-    pub positions: [Option<Position>; MAX_POSITIONS],
+    pub positions: [OptionPod; MAX_POSITIONS],
 }
 
 impl PositionData {
@@ -43,7 +43,7 @@ impl PositionData {
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        self.positions[*next_index as usize] = None;
+        self.positions[*next_index as usize] = None.try_into().unwrap();
     }
 }
 
@@ -74,10 +74,10 @@ pub struct Position {
 }
 
 
-#[derive(Pod, Zeroable, Copy, Clone)]
+#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
 #[repr(C)]
 pub struct UnlockingStartPod {
-    tag:             usize,
+    tag:             u64,
     unlocking_start: u64,
 }
 
@@ -105,19 +105,20 @@ impl Into<Option<u64>> for UnlockingStartPod {
         match self.tag {
             0 => return None,
             1 => return Some(self.unlocking_start),
+            _ => panic!(),
         }
     }
 }
 
 
-#[derive(Pod, Zeroable, Copy, Clone)]
+#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
 #[repr(C)]
 pub struct PositionPod {
     pub amount:                 u64,
     pub activation_epoch:       u64,
     pub unlocking_start:        UnlockingStartPod,
     pub target_with_parameters: TargetWithParametersPod,
-    pub reserved:               [u64; 12],
+    pub reserved:               [u64; 10],
 }
 
 impl Into<PositionPod> for Position {
@@ -127,7 +128,7 @@ impl Into<PositionPod> for Position {
             activation_epoch:       self.activation_epoch.try_into().unwrap(),
             unlocking_start:        self.unlocking_start.try_into().unwrap(),
             target_with_parameters: self.target_with_parameters.try_into().unwrap(),
-            reserved:               [0u64; 12],
+            reserved:               POSITION_DATA_PADDING,
         };
     }
 }
@@ -177,10 +178,10 @@ pub enum Publisher {
 }
 
 
-#[derive(Pod, Zeroable, Copy, Clone)]
+#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
 #[repr(C)]
 pub struct PublisherPod {
-    tag:     usize,
+    tag:     u64,
     address: Pubkey,
 }
 
@@ -288,6 +289,7 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{
+        OptionPod,
         Position,
         PositionData,
         PositionState,
@@ -301,7 +303,6 @@ pub mod tests {
             unlocking_start:        Some(12),
             target_with_parameters: TargetWithParameters::VOTING,
             amount:                 10,
-            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -336,7 +337,6 @@ pub mod tests {
             unlocking_start:        None,
             target_with_parameters: TargetWithParameters::VOTING,
             amount:                 10,
-            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -360,7 +360,7 @@ pub mod tests {
     fn test_serialized_size() {
         // These are 0-copy serialized, so use std::mem::size_of instead of borsh::get_packed_len
         // If this fails, we need a migration
-        assert_eq!(std::mem::size_of::<Option<Position>>(), 200);
+        assert_eq!(std::mem::size_of::<OptionPod>(), 200);
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
         assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
