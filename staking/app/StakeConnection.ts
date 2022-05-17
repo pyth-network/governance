@@ -7,7 +7,6 @@ import {
   IdlAccounts,
   IdlTypes,
   AnchorProvider,
-  validateAccounts,
 } from "@project-serum/anchor";
 import {
   PublicKey,
@@ -40,7 +39,6 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
-import { sort } from "shelljs";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -50,7 +48,6 @@ interface ClosingItem {
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
-type Position = IdlTypes<Staking>["Position"];
 type OptionPod = IdlTypes<Staking>["OptionPod"];
 type PositionPod = IdlTypes<Staking>["PositionPod"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
