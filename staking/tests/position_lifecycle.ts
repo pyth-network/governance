@@ -203,7 +203,7 @@ describe("position_lifecycle", async () => {
         targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
-      .rpc({ skipPreflight: true });
+      .rpc();
 
     // No time has passed, so preunlocking until the end of the epoch
     await assertBalanceMatches(
