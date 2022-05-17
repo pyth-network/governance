@@ -1,3 +1,5 @@
+#![allow(clippy::unused_unit)]
+
 use crate::error::ErrorCode;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
