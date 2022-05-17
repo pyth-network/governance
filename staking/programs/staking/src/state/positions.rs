@@ -58,19 +58,6 @@ pub struct Position {
     pub activation_epoch:       u64,
     pub unlocking_start:        Option<u64>,
     pub target_with_parameters: TargetWithParameters,
-    /* Current representation of an Option<Position>:
-       0: amount
-       8: activation_epoch
-       16: 1 if unlocking_start is Some, 2 if the outer option is None
-       24: unlocking_start
-       32: product
-       64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
-       65: publisher address
-       98: compiler padding
-       104: reserved
-
-       total: 200 bytes
-    */
 }
 
 
