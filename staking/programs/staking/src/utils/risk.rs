@@ -3,6 +3,7 @@ use std::cmp;
 use std::collections::BTreeMap;
 
 use crate::state::positions::{
+    Position,
     PositionData,
     PositionState,
     Target,
@@ -14,6 +15,7 @@ use crate::ErrorCode::{
     TooMuchExposureToGovernance,
     TooMuchExposureToProduct,
 };
+use std::convert::TryInto;
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -30,8 +32,12 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if stake_account_positions.positions[i].is_some() {
-            match stake_account_positions.positions[i]
+        if TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
+            .unwrap()
+            .is_some()
+        {
+            match TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
+                .unwrap()
                 .unwrap()
                 .get_current_position(current_epoch, unlocking_duration)
                 .unwrap()
@@ -40,7 +46,10 @@ pub fn validate(
                 | PositionState::PREUNLOCKING
                 | PositionState::UNLOCKING
                 | PositionState::LOCKING => {
-                    let this_position = stake_account_positions.positions[i].unwrap();
+                    let this_position: Position =
+                        TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
+                            .unwrap()
+                            .unwrap();
                     let prod_exposure: &mut u64 = current_exposures
                         .entry(this_position.target_with_parameters.get_target())
                         .or_default();
@@ -128,8 +137,10 @@ pub mod tests {
     use anchor_lang::prelude::Pubkey;
 
     use crate::state::positions::{
+        OptionPod,
         Position,
         PositionData,
+        PositionPod,
         PositionState,
         Publisher,
         TargetWithParameters,
@@ -137,15 +148,16 @@ pub mod tests {
         POSITION_DATA_PADDING,
     };
     use crate::utils::risk::validate;
+    use std::convert::TryInto;
 
     #[test]
     fn test_disjoint() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
-        pd.positions[0] = Some(Position {
+        pd.positions[0] = Option::Some(Position {
             activation_epoch:       1,
             amount:                 7,
             target_with_parameters: TargetWithParameters::STAKING {
@@ -155,8 +167,9 @@ pub mod tests {
                 },
             },
             unlocking_start:        Some(50),
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -167,8 +180,9 @@ pub mod tests {
                 },
             },
             unlocking_start:        Some(50),
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         let tests = [
             (0, PositionState::LOCKING),
             (44, PositionState::PREUNLOCKING),
@@ -176,7 +190,8 @@ pub mod tests {
         ];
         for (current_epoch, desired_state) in tests {
             assert_eq!(
-                pd.positions[0]
+                TryInto::<Option<Position>>::try_into(pd.positions[0])
+                    .unwrap()
                     .unwrap()
                     .get_current_position(current_epoch, 1)
                     .unwrap(),
@@ -195,7 +210,7 @@ pub mod tests {
         let mut pd = PositionData {
             owner: Pubkey::new_unique(),
 
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
@@ -203,8 +218,9 @@ pub mod tests {
             amount:                 7,
             target_with_parameters: TargetWithParameters::VOTING,
             unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -215,8 +231,9 @@ pub mod tests {
                 },
             },
             unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
         assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0);
@@ -229,7 +246,7 @@ pub mod tests {
     fn test_double_product() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
@@ -241,8 +258,9 @@ pub mod tests {
                 publisher: Publisher::DEFAULT,
             },
             unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -251,8 +269,9 @@ pub mod tests {
                 publisher: Publisher::DEFAULT,
             },
             unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 2);
@@ -264,7 +283,7 @@ pub mod tests {
     fn test_risk() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -277,8 +296,9 @@ pub mod tests {
                     },
                 },
                 unlocking_start:        None,
-                reserved:               POSITION_DATA_PADDING,
-            });
+            })
+            .try_into()
+            .unwrap();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
@@ -293,8 +313,9 @@ pub mod tests {
                 },
             },
             unlocking_start:        None,
-            reserved:               POSITION_DATA_PADDING,
-        });
+        })
+        .try_into()
+        .unwrap();
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);
@@ -304,7 +325,7 @@ pub mod tests {
     fn test_multiple_voting() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -312,8 +333,9 @@ pub mod tests {
                 amount:                 10,
                 target_with_parameters: TargetWithParameters::VOTING,
                 unlocking_start:        None,
-                reserved:               POSITION_DATA_PADDING,
-            });
+            })
+            .try_into()
+            .unwrap();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 100, 0, current_epoch, 1).unwrap(), 50);
@@ -327,7 +349,7 @@ pub mod tests {
     fn test_overflow_total() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -335,8 +357,9 @@ pub mod tests {
                 amount:                 u64::MAX / 3,
                 target_with_parameters: TargetWithParameters::VOTING,
                 unlocking_start:        None,
-                reserved:               POSITION_DATA_PADDING,
-            });
+            })
+            .try_into()
+            .unwrap();
         }
         let current_epoch = 44;
         // Overflows in the total exposure computation
@@ -347,7 +370,7 @@ pub mod tests {
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
+            positions: [None.try_into().unwrap(); MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {
@@ -361,8 +384,9 @@ pub mod tests {
                     },
                 },
                 unlocking_start:        None,
-                reserved:               POSITION_DATA_PADDING,
-            });
+            })
+            .try_into()
+            .unwrap();
         }
         let current_epoch = 44;
         // Overflows in the aggregation computation

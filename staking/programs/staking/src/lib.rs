@@ -103,7 +103,7 @@ pub mod staking {
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
-        stake_account_positions.positions = [None; MAX_POSITIONS];
+        stake_account_positions.positions = [None.try_into().unwrap(); MAX_POSITIONS];
 
 
         let voter_record = &mut ctx.accounts.voter_record;
@@ -142,7 +142,6 @@ pub mod staking {
             target_with_parameters,
             activation_epoch: current_epoch + 1,
             unlocking_start: None,
-            reserved: POSITION_DATA_PADDING,
         };
 
         match PositionData::reserve_new_index(
@@ -151,7 +150,7 @@ pub mod staking {
         ) {
             Err(x) => return Err(x),
             Ok(i) => {
-                stake_account_positions.positions[i] = Some(new_position);
+                stake_account_positions.positions[i] = Some(new_position).try_into().unwrap();
             }
         }
 
@@ -188,8 +187,10 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let current_position = &mut stake_account_positions.positions[i]
-            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
+        let current_position =
+            &mut TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
+                .unwrap()
+                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
 
         if current_position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
@@ -207,20 +208,23 @@ pub mod staking {
                 // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
                     current_position.unlocking_start = Some(current_epoch + 1);
-                    stake_account_positions.positions[i] = Some(*current_position);
+                    stake_account_positions.positions[i] =
+                        Some(*current_position).try_into().unwrap();
                     // Otherwise leave remaining amount in the current position and
                     // create another position with the rest. The newly created position
                     // will unlock after unlocking_duration epochs.
 
                     assert_eq!(
                         original_amount,
-                        stake_account_positions.positions[i]
+                        TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
+                            .unwrap()
                             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                             .amount
                     );
                 } else {
                     current_position.amount = remaining_amount;
-                    stake_account_positions.positions[i] = Some(*current_position);
+                    stake_account_positions.positions[i] =
+                        Some(*current_position).try_into().unwrap();
 
                     match PositionData::reserve_new_index(
                         stake_account_positions,
@@ -233,21 +237,28 @@ pub mod staking {
                                 target_with_parameters: current_position.target_with_parameters,
                                 activation_epoch: current_position.activation_epoch,
                                 unlocking_start: Some(current_epoch + 1),
-                                reserved: POSITION_DATA_PADDING,
-                            });
+                            })
+                            .try_into()
+                            .unwrap();
 
                             assert_ne!(i, j);
                             assert_eq!(
                                 original_amount,
-                                stake_account_positions.positions[i]
+                                TryInto::<Option<Position>>::try_into(
+                                    stake_account_positions.positions[i]
+                                )
+                                .unwrap()
+                                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                .amount
+                                .checked_add(
+                                    TryInto::<Option<Position>>::try_into(
+                                        stake_account_positions.positions[j]
+                                    )
+                                    .unwrap()
                                     .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
-                                    .checked_add(
-                                        stake_account_positions.positions[j]
-                                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                            .amount
-                                    )
-                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                                )
+                                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }
@@ -264,7 +275,8 @@ pub mod staking {
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index);
                 } else {
                     current_position.amount = remaining_amount;
-                    stake_account_positions.positions[i] = Some(*current_position);
+                    stake_account_positions.positions[i] =
+                        Some(*current_position).try_into().unwrap();
                 }
             }
             PositionState::LOCKING => {
@@ -273,7 +285,8 @@ pub mod staking {
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index);
                 } else {
                     current_position.amount = remaining_amount;
-                    stake_account_positions.positions[i] = Some(*current_position);
+                    stake_account_positions.positions[i] =
+                        Some(*current_position).try_into().unwrap();
                 }
                 target_account.add_unlocking(amount, current_epoch)?;
             }
