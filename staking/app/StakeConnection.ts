@@ -7,6 +7,7 @@ import {
   IdlAccounts,
   IdlTypes,
   AnchorProvider,
+  validateAccounts,
 } from "@project-serum/anchor";
 import {
   PublicKey,
@@ -17,7 +18,7 @@ import {
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
-import * as wasm2 from "pyth-staking-wasm";
+import * as wasm2 from "../wasm";
 import {
   Token,
   TOKEN_PROGRAM_ID,
@@ -39,6 +40,7 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
+import { sort } from "shelljs";
 let wasm = wasm2;
 
 interface ClosingItem {
@@ -49,6 +51,8 @@ interface ClosingItem {
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
 type Position = IdlTypes<Staking>["Position"];
+type OptionPod = IdlTypes<Staking>["OptionPod"];
+type PositionPod = IdlTypes<Staking>["PositionPod"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
@@ -306,16 +310,16 @@ export class StakeConnection {
     amount: PythBalance
   ) {
     const positions = stakeAccount.stakeAccountPositionsJs
-      .positions as Position[];
+      .positions as OptionPod[];
 
     const time = await this.getTime();
     const currentEpoch = time.div(this.config.epochDuration);
 
     const sortPositions = positions
+      .filter((el) => el.tag.eq(new BN(1))) // position not null
       .map((value, index) => {
-        return { index, value };
+        return { index, value: value.position as PositionPod };
       })
-      .filter((el) => el.value) // position not null
       .filter(
         (
           el // position is voting

@@ -210,7 +210,7 @@ describe("staking", async () => {
     pd.asBorsh(outbuffer);
     const positions = program.coder.accounts.decode("PositionData", outbuffer);
     for (let index = 0; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+      assert(positions.positions[index].tag.eq(new BN(0)));
     }
   });
 
@@ -250,28 +250,33 @@ describe("staking", async () => {
     assert.equal(
       JSON.stringify(positions.positions[0]),
       JSON.stringify({
-        amount: new BN(1),
-        activationEpoch: new BN(1),
-        unlockingStart: null,
-        targetWithParameters: votingProduct,
-        reserved: [
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-        ],
+        tag: new BN(1),
+        position: {
+          amount: new BN(1),
+          activationEpoch: new BN(1),
+          unlockingStart: { tag: new BN(0), unlockingStart: new BN(0) },
+          targetWithParameters: {
+            tag: new BN(0),
+            product: zeroPubkey,
+            publisher: { tag: new BN(0), address: zeroPubkey },
+          },
+          reserved: [
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+            "00",
+          ],
+        },
       })
     );
     for (let index = 1; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+      assert(positions.positions[index].tag.eq(new BN(0)));
     }
   });
 

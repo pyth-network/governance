@@ -76,7 +76,7 @@ describe("api", async () => {
       owner.toBase58()
     );
     assert(
-      stakeAccount.stakeAccountPositionsJs.positions[0].amount.eq(
+      stakeAccount.stakeAccountPositionsJs.positions[0].position.amount.eq(
         PythBalance.fromString("600").toBN()
       )
     );
@@ -96,7 +96,7 @@ describe("api", async () => {
     const afterAccount = await stakeConnection.getMainAccount(owner);
 
     assert(
-      afterAccount.stakeAccountPositionsJs.positions[1].amount.eq(
+      afterAccount.stakeAccountPositionsJs.positions[1].position.amount.eq(
         PythBalance.fromString("100").toBN()
       )
     );
