@@ -270,7 +270,7 @@ pub struct CreateTarget<'info> {
 #[derive(Accounts)]
 pub struct UpgradeStakeAccountMetadata<'info> {
     // Native payer:
-    #[account( address = stake_account_metadata_v1.owner)]
+    #[account(mut)]
     pub payer:                     Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions:   AccountLoader<'info, positions::PositionData>,
