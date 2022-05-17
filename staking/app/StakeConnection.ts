@@ -297,6 +297,11 @@ export class StakeConnection {
       throw new Error("Amount greater than locked amount");
     }
 
+    await this.unlock(stakeAccount, amount);
+  }
+
+  // Unchecked unlock
+  public async unlock(stakeAccount: StakeAccount, amount: PythBalance) {
     const positions = stakeAccount.stakeAccountPositionsJs
       .positions as Position[];
 
@@ -375,7 +380,6 @@ export class StakeConnection {
       })
     );
   }
-
   public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
     stakeAccount: StakeAccount,
@@ -602,6 +606,15 @@ export class StakeConnection {
     );
   }
 
+  public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
+    const amountBN = stakeAccount.getGovernanceExcessPosition(
+      await this.getTime()
+    );
+    assert(amountBN.gt(new BN(0)));
+
+    const amount = new PythBalance(amountBN);
+    await this.unlock(stakeAccount, amount);
+  }
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
     amount: PythBalance
@@ -797,6 +810,10 @@ export class StakeAccount {
     // we want that token to appear as locking
     [excess, lockingBN] = this.adjustLockedAmount(excess, lockingBN);
 
+    // Needed to represent vesting accounts unlocking before the vesting event
+    [excess, preunlockingBN] = this.adjustLockedAmount(excess, preunlockingBN);
+    [excess, unlockingBN] = this.adjustLockedAmount(excess, unlockingBN);
+
     //Enforce the invariant
     assert(
       lockingBN
@@ -850,8 +867,12 @@ export class StakeAccount {
     return new PythBalance(new BN(voterWeightBI.toString()));
   }
 
-  // What is the best way to represent current vesting schedule in the UI
-  public getVestingSchedule() {}
+  public getNextVesting(unixTime: BN) {
+    return wasm.getNextVesting(
+      this.vestingSchedule,
+      BigInt(unixTime.toString())
+    );
+  }
 
   static serializeVesting(lock: VestingSchedule, idl: Idl): Buffer {
     const VESTING_SCHED_MAX_BORSH_LEN = 4 * 8 + 1;
@@ -896,5 +917,36 @@ export class StakeAccount {
       this.hasUnvestedTokens(unixTime) &&
       this.getGovernanceExposure(unixTime).toBN().eq(new BN(0))
     );
+  }
+
+  private addUnlockingPeriod(unixTime: BN) {
+    return unixTime.add(
+      this.config.epochDuration.mul(
+        new BN(this.config.unlockingDuration).add(new BN(1))
+      )
+    );
+  }
+
+  public getGovernanceExcessPosition(unixTime: BN): BN {
+    const nextVestingEvent = this.getNextVesting(unixTime);
+    if (!nextVestingEvent) {
+      return new BN(0);
+    }
+    const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
+    const timeOfEval = BN.max(
+      nextVestingEventTimeBn,
+      this.addUnlockingPeriod(unixTime)
+    );
+
+    return BN.max(
+      this.getGovernanceExposure(timeOfEval)
+        .toBN()
+        .sub(this.getBalanceSummary(timeOfEval).unvested.toBN()),
+      new BN(0)
+    );
+  }
+
+  public hasGovernanceExcessPosition(unixTime: BN) {
+    return this.getGovernanceExcessPosition(unixTime).gt(new BN(0));
   }
 }
