@@ -221,7 +221,6 @@ pub mod tests {
         assert_eq!(target.get_current_amount_locked(2).unwrap(), 0);
         assert_eq!(target.get_current_amount_locked(72).unwrap(), 0);
 
-
         assert!(target.update(target.last_update_at + 2).is_ok());
         assert_eq!(target.last_update_at, 2);
         assert_eq!(target.locked, 0);

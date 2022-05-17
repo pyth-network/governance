@@ -8,6 +8,7 @@ use crate::state::target::{
     TargetMetadata,
     TARGET_METADATA_SIZE,
 };
+use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
     error,
@@ -211,6 +212,22 @@ impl WasmTargetMetadata {
     pub fn get_current_amount_locked(&self, current_epoch: u64) -> Result<u64, JsValue> {
         convert_error(self.wrapped.get_current_amount_locked(current_epoch))
     }
+}
+
+#[wasm_bindgen(js_name=getNextVesting)]
+pub fn get_next_vesting(
+    vestingSchedBorsh: &[u8],
+    currentTime: i64,
+) -> Result<Option<VestingEvent>, JsValue> {
+    convert_error(get_next_vesting_impl(vestingSchedBorsh, currentTime))
+}
+fn get_next_vesting_impl(
+    vesting_sched_borsh: &[u8],
+    current_time: i64,
+) -> anchor_lang::Result<Option<VestingEvent>> {
+    let mut ptr = vesting_sched_borsh;
+    let vs = VestingSchedule::deserialize(&mut ptr)?;
+    vs.get_next_vesting(current_time)
 }
 
 #[wasm_bindgen(js_name=getUnvestedBalance)]
