@@ -3,6 +3,11 @@ use crate::error::ErrorCode;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
+use bytemuck::{
+    Pod,
+    Zeroable,
+};
+use std::convert::TryInto;
 use std::fmt::{
     self,
     Debug,
@@ -53,19 +58,90 @@ pub struct Position {
     pub activation_epoch:       u64,
     pub unlocking_start:        Option<u64>,
     pub target_with_parameters: TargetWithParameters,
-    pub reserved:               [u64; 12], /* Current representation of an Option<Position>:
-                                              0: amount
-                                              8: activation_epoch
-                                              16: 1 if unlocking_start is Some, 2 if the outer option is None
-                                              24: unlocking_start
-                                              32: product
-                                              64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
-                                              65: publisher address
-                                              98: compiler padding
-                                              104: reserved
+    /* Current representation of an Option<Position>:
+       0: amount
+       8: activation_epoch
+       16: 1 if unlocking_start is Some, 2 if the outer option is None
+       24: unlocking_start
+       32: product
+       64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
+       65: publisher address
+       98: compiler padding
+       104: reserved
 
-                                              total: 200 bytes
-                                           */
+       total: 200 bytes
+    */
+}
+
+
+#[derive(Pod, Zeroable, Copy, Clone)]
+#[repr(C)]
+pub struct UnlockingStartPod {
+    tag:             usize,
+    unlocking_start: u64,
+}
+
+impl Into<UnlockingStartPod> for Option<u64> {
+    fn into(self) -> UnlockingStartPod {
+        match self {
+            None => {
+                return UnlockingStartPod {
+                    tag:             0,
+                    unlocking_start: u64::zeroed(),
+                }
+            }
+            Some(unlocking_start) => {
+                return UnlockingStartPod {
+                    tag: 1,
+                    unlocking_start,
+                }
+            }
+        }
+    }
+}
+
+impl Into<Option<u64>> for UnlockingStartPod {
+    fn into(self) -> Option<u64> {
+        match self.tag {
+            0 => return None,
+            1 => return Some(self.unlocking_start),
+        }
+    }
+}
+
+
+#[derive(Pod, Zeroable, Copy, Clone)]
+#[repr(C)]
+pub struct PositionPod {
+    pub amount:                 u64,
+    pub activation_epoch:       u64,
+    pub unlocking_start:        UnlockingStartPod,
+    pub target_with_parameters: TargetWithParametersPod,
+    pub reserved:               [u64; 12],
+}
+
+impl Into<PositionPod> for Position {
+    fn into(self) -> PositionPod {
+        return PositionPod {
+            amount:                 self.amount,
+            activation_epoch:       self.activation_epoch.try_into().unwrap(),
+            unlocking_start:        self.unlocking_start.try_into().unwrap(),
+            target_with_parameters: self.target_with_parameters.try_into().unwrap(),
+            reserved:               [0u64; 12],
+        };
+    }
+}
+
+
+impl Into<Position> for PositionPod {
+    fn into(self) -> Position {
+        return Position {
+            amount:                 self.amount,
+            activation_epoch:       self.activation_epoch.try_into().unwrap(),
+            unlocking_start:        self.unlocking_start.try_into().unwrap(),
+            target_with_parameters: self.target_with_parameters.try_into().unwrap(),
+        };
+    }
 }
 
 #[derive(
@@ -99,6 +175,46 @@ pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
 }
+
+
+#[derive(Pod, Zeroable, Copy, Clone)]
+#[repr(C)]
+pub struct PublisherPod {
+    tag:     usize,
+    address: Pubkey,
+}
+
+impl Into<PublisherPod> for Publisher {
+    fn into(self) -> PublisherPod {
+        match self {
+            Publisher::DEFAULT => {
+                return PublisherPod {
+                    tag:     0,
+                    address: Pubkey::default(),
+                }
+            }
+            Publisher::SOME { address } => return PublisherPod { tag: 1, address },
+        }
+    }
+}
+
+impl Into<Publisher> for PublisherPod {
+    fn into(self) -> Publisher {
+        match self.tag {
+            0 => return Publisher::DEFAULT,
+
+            1 => {
+                return Publisher::SOME {
+                    address: self.address,
+                }
+            }
+            _ => {
+                panic!()
+            }
+        }
+    }
+}
+
 
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
