@@ -48,7 +48,6 @@ pub mod tests {
         Publisher,
         TargetWithParameters,
         MAX_POSITIONS,
-        POSITION_DATA_PADDING,
     };
     use crate::utils::voter_weight::compute_voter_weight;
     use anchor_lang::prelude::Pubkey;

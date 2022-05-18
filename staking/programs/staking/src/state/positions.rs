@@ -72,18 +72,14 @@ pub struct UnlockingStartPod {
 impl Into<UnlockingStartPod> for Option<u64> {
     fn into(self) -> UnlockingStartPod {
         match self {
-            None => {
-                return UnlockingStartPod {
-                    tag:             0,
-                    unlocking_start: u64::zeroed(),
-                }
-            }
-            Some(unlocking_start) => {
-                return UnlockingStartPod {
-                    tag: 1,
-                    unlocking_start,
-                }
-            }
+            None => UnlockingStartPod {
+                tag:             0,
+                unlocking_start: u64::zeroed(),
+            },
+            Some(unlocking_start) => UnlockingStartPod {
+                tag: 1,
+                unlocking_start,
+            },
         }
     }
 }
@@ -92,8 +88,8 @@ impl TryInto<Option<u64>> for UnlockingStartPod {
     type Error = Error;
     fn try_into(self) -> Result<Option<u64>> {
         match self.tag {
-            0 => return Ok(None),
-            1 => return Ok(Some(self.unlocking_start)),
+            0 => Ok(None),
+            1 => Ok(Some(self.unlocking_start)),
             _ => Err(error!(ErrorCode::IllegalPositionPod)),
         }
     }
@@ -112,13 +108,13 @@ pub struct PositionPod {
 
 impl Into<PositionPod> for Position {
     fn into(self) -> PositionPod {
-        return PositionPod {
+        PositionPod {
             amount:                 self.amount,
             activation_epoch:       self.activation_epoch,
             unlocking_start:        self.unlocking_start.into(),
             target_with_parameters: self.target_with_parameters.into(),
             reserved:               POSITION_DATA_PADDING,
-        };
+        }
     }
 }
 
@@ -126,12 +122,12 @@ impl Into<PositionPod> for Position {
 impl TryInto<Position> for PositionPod {
     type Error = Error;
     fn try_into(self) -> Result<Position> {
-        return Ok(Position {
+        Ok(Position {
             amount:                 self.amount,
-            activation_epoch:       self.activation_epoch.into(),
+            activation_epoch:       self.activation_epoch,
             unlocking_start:        self.unlocking_start.try_into()?,
             target_with_parameters: self.target_with_parameters.try_into()?,
-        });
+        })
     }
 }
 
@@ -178,13 +174,11 @@ pub struct PublisherPod {
 impl Into<PublisherPod> for Publisher {
     fn into(self) -> PublisherPod {
         match self {
-            Publisher::DEFAULT => {
-                return PublisherPod {
-                    tag:     0,
-                    address: Pubkey::default(),
-                }
-            }
-            Publisher::SOME { address } => return PublisherPod { tag: 1, address },
+            Publisher::DEFAULT => PublisherPod {
+                tag:     0,
+                address: Pubkey::default(),
+            },
+            Publisher::SOME { address } => PublisherPod { tag: 1, address },
         }
     }
 }
@@ -193,14 +187,12 @@ impl TryInto<Publisher> for PublisherPod {
     type Error = Error;
     fn try_into(self) -> Result<Publisher> {
         match self.tag {
-            0 => return Ok(Publisher::DEFAULT),
+            0 => Ok(Publisher::DEFAULT),
 
-            1 => {
-                return Ok(Publisher::SOME {
-                    address: self.address,
-                })
-            }
-            _ => return Err(error!(ErrorCode::IllegalPositionPod)),
+            1 => Ok(Publisher::SOME {
+                address: self.address,
+            }),
+            _ => Err(error!(ErrorCode::IllegalPositionPod)),
         }
     }
 }
