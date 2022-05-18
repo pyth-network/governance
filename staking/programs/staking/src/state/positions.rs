@@ -8,7 +8,10 @@ use bytemuck::{
     Pod,
     Zeroable,
 };
-use std::convert::TryInto;
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 use std::fmt::{
     self,
     Debug,
