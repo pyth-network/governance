@@ -150,7 +150,9 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
-//To use zerocop
+//To use zerocopy we need to store the positions as Pod. Enums are not Pod, but we still want to
+// use them in our code the solution is having a Pod version which is what is actually stored, and a
+// non Pod version that we use in the code and From, Into functions to convert between one another
 #[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
 #[repr(C)]
 pub struct OptionPod {
