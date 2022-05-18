@@ -8,7 +8,10 @@ use bytemuck::{
     Pod,
     Zeroable,
 };
-use std::convert::TryInto;
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 use std::fmt::{
     self,
     Debug,
@@ -172,13 +175,13 @@ impl From<Option<Position>> for OptionPod {
 }
 
 
-impl TryInto<Option<Position>> for OptionPod {
+impl TryFrom<OptionPod> for Option<Position> {
     type Error = Error;
-    fn try_into(self) -> Result<Option<Position>> {
-        match self.tag {
+    fn try_from(option_pod: OptionPod) -> Result<Self> {
+        match option_pod.tag {
             0 => Ok(None),
 
-            1 => Ok(Some(self.position.try_into()?)),
+            1 => Ok(Some(option_pod.position.try_into()?)),
 
             _ => Err(error!(ErrorCode::IllegalPositionPod)),
         }

@@ -21,7 +21,10 @@ use state::positions::{
 };
 use state::vesting::VestingSchedule;
 use state::voter_weight_record::VoterWeightAction;
-use std::convert::TryInto;
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 use utils::clock::{
     get_current_epoch,
     time_to_epoch,
@@ -188,7 +191,7 @@ pub mod staking {
         config.check_frozen()?;
 
         let current_position: &mut Position =
-            &mut TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?
+            &mut <Option<Position>>::try_from(stake_account_positions.positions[i])?
                 .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
 
         if current_position.target_with_parameters != target_with_parameters {
@@ -214,11 +217,9 @@ pub mod staking {
 
                     assert_eq!(
                         original_amount,
-                        TryInto::<Option<Position>>::try_into(
-                            stake_account_positions.positions[i]
-                        )?
-                        .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                        .amount
+                        <Option<Position>>::try_from(stake_account_positions.positions[i])?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            .amount
                     );
                 } else {
                     current_position.amount = remaining_amount;
@@ -236,25 +237,22 @@ pub mod staking {
                                 activation_epoch: current_position.activation_epoch,
                                 unlocking_start: Some(current_epoch + 1),
                             })
-                            .try_into()
-                            .unwrap();
+                            .into();
 
                             assert_ne!(i, j);
                             assert_eq!(
                                 original_amount,
-                                TryInto::<Option<Position>>::try_into(
-                                    stake_account_positions.positions[i]
-                                )?
-                                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                .amount
-                                .checked_add(
-                                    TryInto::<Option<Position>>::try_into(
-                                        stake_account_positions.positions[j]
-                                    )?
+                                <Option<Position>>::try_from(stake_account_positions.positions[i])?
                                     .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
-                                )
-                                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                                    .checked_add(
+                                        <Option<Position>>::try_from(
+                                            stake_account_positions.positions[j]
+                                        )?
+                                        .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                        .amount
+                                    )
+                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }

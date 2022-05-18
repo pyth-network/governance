@@ -15,7 +15,7 @@ use crate::ErrorCode::{
     TooMuchExposureToGovernance,
     TooMuchExposureToProduct,
 };
-use std::convert::TryInto;
+use std::convert::TryFrom;
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -32,8 +32,8 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?.is_some() {
-            match TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?
+        if <Option<Position>>::try_from(stake_account_positions.positions[i])?.is_some() {
+            match <Option<Position>>::try_from(stake_account_positions.positions[i])?
                 .unwrap()
                 .get_current_position(current_epoch, unlocking_duration)
                 .unwrap()
@@ -42,10 +42,9 @@ pub fn validate(
                 | PositionState::PREUNLOCKING
                 | PositionState::UNLOCKING
                 | PositionState::LOCKING => {
-                    let this_position: Position = TryInto::<Option<Position>>::try_into(
-                        stake_account_positions.positions[i],
-                    )?
-                    .unwrap();
+                    let this_position: Position =
+                        <Option<Position>>::try_from(stake_account_positions.positions[i])?
+                            .unwrap();
                     let prod_exposure: &mut u64 = current_exposures
                         .entry(this_position.target_with_parameters.get_target())
                         .or_default();
@@ -141,7 +140,10 @@ pub mod tests {
         MAX_POSITIONS,
     };
     use crate::utils::risk::validate;
-    use std::convert::TryInto;
+    use std::convert::{
+        TryFrom,
+        TryInto,
+    };
 
     #[test]
     fn test_disjoint() {
@@ -183,7 +185,7 @@ pub mod tests {
         ];
         for (current_epoch, desired_state) in tests {
             assert_eq!(
-                TryInto::<Option<Position>>::try_into(pd.positions[0])
+                <Option<Position>>::try_from(pd.positions[0])
                     .unwrap()
                     .unwrap()
                     .get_current_position(current_epoch, 1)
