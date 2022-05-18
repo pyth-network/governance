@@ -281,7 +281,6 @@ pub mod tests {
         PositionData,
         PositionState,
         TargetWithParameters,
-        POSITION_DATA_PADDING,
     };
     #[test]
     fn lifecycle_lock_unlock() {
