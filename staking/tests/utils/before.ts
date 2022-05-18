@@ -103,44 +103,23 @@ export class CustomAbortController {
 }
 
 /**
- * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
- * Also takes config as an argument, config is obtained by parsing Anchor.toml
+ * Starts a validator at port portNumber with the command line arguments specified after a few basic ones
  *
- * ```const config = readAnchorConfig(ANCHOR_CONFIG_PATH)```
- *
- * returns a `{controller, program}` struct. Users of this method have to terminate the
+ * returns a `{ controller, connection }` struct. Users of this method have to terminate the
  * validator by calling :
  * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: AnchorConfig) {
+export async function startValidatorRaw(portNumber: number, otherArgs: string) {
   const connection: Connection = getConnection(portNumber);
+  const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
 
   const internalController: AbortController = new AbortController();
   const { signal } = internalController;
 
-  const ledgerDir = await mkdtemp(path.join(os.tmpdir(), "ledger-"));
-  const programAddress = new PublicKey(config.programs.localnet.staking);
-  const idlPath = config.path.idl_path;
-  const binaryPath = config.path.binary_path;
-
-  const user = Keypair.fromSecretKey(
-    new Uint8Array(
-      JSON.parse(fs.readFileSync(config.provider.wallet).toString())
-    )
-  );
-
   exec(
-    `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --mint ${
-      user.publicKey
-    } --reset --bpf-program ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
-      config.programs.localnet.governance
-    } ${config.path.governance_path} --bpf-program ${
-      config.programs.localnet.chat
-    } ${
-      config.path.chat_path
-    } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -um --faucet-port ${
+    `solana-test-validator --ledger ${ledgerDir} --rpc-port ${portNumber} --faucet-port ${
       portNumber + 101
-    }`,
+    } ${otherArgs}`,
     { signal },
     (error, stdout, stderr) => {
       if (error.name.includes("AbortError")) {
@@ -155,6 +134,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
       console.error(`stderr: ${stderr}`);
     }
   );
+  const controller = new CustomAbortController(internalController);
 
   while (true) {
     try {
@@ -163,6 +143,44 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
       break;
     } catch (e) {}
   }
+  return { controller, connection };
+}
+
+/**
+ * Starts a validator at port portNumber with the staking program deployed the address defined in lib.rs.
+ * Also takes config as an argument, config is obtained by parsing Anchor.toml
+ *
+ * ```const config = readAnchorConfig(ANCHOR_CONFIG_PATH)```
+ *
+ * returns a `{controller, program, provider}` struct. Users of this method have to terminate the
+ * validator by calling :
+ * ```controller.abort()```
+ */
+export async function startValidator(portNumber: number, config: AnchorConfig) {
+  const programAddress = new PublicKey(config.programs.localnet.staking);
+  const idlPath = config.path.idl_path;
+  const binaryPath = config.path.binary_path;
+
+  const user = Keypair.fromSecretKey(
+    new Uint8Array(
+      JSON.parse(fs.readFileSync(config.provider.wallet).toString())
+    )
+  );
+
+  const otherArgs = `--mint ${
+    user.publicKey
+  } --reset --bpf-program ${programAddress.toBase58()} ${binaryPath} --bpf-program ${
+    config.programs.localnet.governance
+  } ${config.path.governance_path} --bpf-program ${
+    config.programs.localnet.chat
+  } ${
+    config.path.chat_path
+  } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -um`;
+
+  const { controller, connection } = await startValidatorRaw(
+    portNumber,
+    otherArgs
+  );
 
   const provider = new AnchorProvider(connection, new Wallet(user), {});
   const program = new Program(
@@ -172,9 +190,11 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   );
 
   shell.exec(
-    `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${`http://localhost:${portNumber}`}`
+    `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${
+      connection.rpcEndpoint
+    }`
   );
-  const controller = new CustomAbortController(internalController);
+
   return { controller, program, provider };
 }
 

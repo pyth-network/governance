@@ -1,15 +1,19 @@
 import * as anchor from "@project-serum/anchor";
 import { AnchorProvider, Program, utils } from "@project-serum/anchor";
 import {
-  BpfLoader,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
-import { DEVNET_STAKING_ADDRESS } from "../constants";
+import { DEVNET_ENDPOINT, DEVNET_STAKING_ADDRESS } from "../constants";
+import {
+  ANCHOR_CONFIG_PATH,
+  CustomAbortController,
+  readAnchorConfig,
+  startValidatorRaw,
+} from "../../tests/utils/before";
 import { Staking } from "../../target/types/staking";
-import * as readline from "node:readline";
 import { assert } from "node:console";
 import * as wasm from "../../wasm";
 import { idlAddress } from "@project-serum/anchor/dist/cjs/idl";
@@ -21,10 +25,6 @@ import fs from "fs";
 const DRY_RUN = true;
 const UPGRADE_AUTH_KEYPAIR_PATH =
   "/Users/philip/.config/solana/pyth_devnet_upgrade_auth.json";
-const NEW_BINARY_PATH =
-  "/Users/philip/pyth-gov/staking/target/deploy/staking.so";
-const NEW_IDL_PATH = "/Users/philip/pyth-gov/staking/target/idl/staking.json";
-const UPGRADE_AUTHORITY = "upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr";
 
 interface ToPairAccountInterface {
   publicKey: PublicKey;
@@ -32,7 +32,11 @@ interface ToPairAccountInterface {
     owner: PublicKey;
   };
 }
-// Assumes each metadata account maps to one position account but there might be position accounts without a metadata account (if they've already been upgraded)
+// Matches each metadata account to the position account that it corresponds to. This is optimized to avoid RPC calls
+// and reduce the number of findProgramAddress calls.
+// Assumes each metadata account maps to one position account but there might be position accounts without a metadata
+// account (if they've already been upgraded). If this assumption is not true, you can rewite this to use only the
+// second pass.
 async function pairAccounts(
   positionAccounts: ToPairAccountInterface[],
   metadataAccounts: ToPairAccountInterface[],
@@ -96,78 +100,85 @@ async function pairAccounts(
   }
 }
 
-async function prepare(dryRun): Promise<Connection> {
-  const devnetConnection = new Connection("https://api.devnet.solana.com");
-  if (!dryRun) return devnetConnection;
+async function getBPFUpgradeableUtilAccounts(
+  connection: Connection,
+  program: PublicKey
+) {
+  const programInfo = await connection.getAccountInfo(program);
+  const programDataPubkey = new PublicKey(programInfo.data.slice(4)); // skip the 4 byte account type
+  const programData = await connection.getAccountInfo(programDataPubkey);
+  // Skip the u32 account type, the u64 slot
+  assert(
+    programData.data[4 + 8] == 1,
+    "Program doesn't have an upgrade authority"
+  );
+  const upgradeAuth = new PublicKey(
+    programData.data.slice(4 + 8 + 1, 4 + 8 + 1 + 32)
+  );
+  return { programData: programDataPubkey, upgradeAuthority: upgradeAuth };
+}
+
+async function launchClonedValidator(
+  sourceConnection: Connection,
+  program: PublicKey
+): Promise<{ controller: CustomAbortController; connection: Connection }> {
   // Clone all of the staking program from devnet into localnet
+  const { programData, upgradeAuthority } = await getBPFUpgradeableUtilAccounts(
+    sourceConnection,
+    program
+  );
+
   const toClone: string[] = [];
-  toClone.push(DEVNET_STAKING_ADDRESS.toBase58());
-  toClone.push("44pm2sLV2xC7pjEk2UxUR3hPPFDbLSykAcPoU9YKrwJe"); // The executable data address is a pain to get programatically
-  toClone.push(UPGRADE_AUTHORITY); // Upgrade authority
-  toClone.push((await idlAddress(DEVNET_STAKING_ADDRESS)).toBase58());
+  toClone.push(program.toBase58());
+  toClone.push(programData.toBase58());
+  toClone.push(upgradeAuthority.toBase58()); // Upgrade authority
+  toClone.push((await idlAddress(program)).toBase58());
 
-  const devnetProvider = new AnchorProvider(
-    devnetConnection,
-    new anchor.Wallet(Keypair.generate()), // We don't submit any transactions, only RPC
-    {}
-  );
-  const devnetIdl = (await Program.fetchIdl(
-    DEVNET_STAKING_ADDRESS,
-    devnetProvider
-  ))!;
-
-  const devnetProgram = new Program(
-    devnetIdl,
-    DEVNET_STAKING_ADDRESS,
-    devnetProvider
-  ) as unknown as Program<Staking>;
-  const allAccts = await devnetConnection.getProgramAccounts(
-    DEVNET_STAKING_ADDRESS
-  );
+  const allAccts = await sourceConnection.getProgramAccounts(program);
   allAccts.forEach((v) => toClone.push(v.pubkey.toBase58()));
   console.log("Cloning %d accounts", toClone.length);
   // Skipping custody token accounts
-  let command = "solana-test-validator --reset -u d ";
+  let command = "-u d ";
   for (const pubkey of toClone) {
     command += " -c " + pubkey;
   }
-  const internalController: AbortController = new AbortController();
-  const { signal } = internalController;
-  exec(command, { signal }, (error, stdout, stderr) => {
-    if (error.name.includes("AbortError")) {
-      // Test complete, this is expected.
-      return;
-    }
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
-  });
-  const connection = new Connection("http://localhost:8899");
-
-  while (true) {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await connection.getEpochInfo();
-      break;
-    } catch (e) {}
-  }
-  console.log("Localnet is running");
-  return connection;
+  return await startValidatorRaw(8899, command);
 }
 
 async function main() {
+  const devnet = new Connection(DEVNET_ENDPOINT);
   const upgradeAuth = Keypair.fromSecretKey(
     new Uint8Array(
       JSON.parse(fs.readFileSync(UPGRADE_AUTH_KEYPAIR_PATH).toString())
     )
   );
-  assert(upgradeAuth.publicKey.toBase58() == UPGRADE_AUTHORITY);
+  const bpfAccounts = await getBPFUpgradeableUtilAccounts(
+    devnet,
+    DEVNET_STAKING_ADDRESS
+  );
 
-  const connection = await prepare(DRY_RUN);
-  await upgradeProgram(connection, NEW_BINARY_PATH, NEW_IDL_PATH);
+  assert(upgradeAuth.publicKey.equals(bpfAccounts.upgradeAuthority));
+
+  let connection: Connection;
+  let controller: CustomAbortController;
+  if (DRY_RUN) {
+    ({ controller, connection } = await launchClonedValidator(
+      devnet,
+      DEVNET_STAKING_ADDRESS
+    ));
+    console.log("Localnet is running");
+  } else {
+    connection = devnet;
+    controller = { abort: function () {}, abortController: null };
+  }
+
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+
+  await upgradeProgram(
+    connection,
+    config.path.binary_path,
+    config.path.idl_path
+  );
 
   await upgradeAccounts(connection);
 }
@@ -185,13 +196,19 @@ async function upgradeProgram(
     } --upgrade-authority ${UPGRADE_AUTH_KEYPAIR_PATH}`
   );
   console.log("Upgraded program");
-
+  const idlAddressKey = await idlAddress(DEVNET_STAKING_ADDRESS);
+  const idlFinished = new Promise((resolve) => {
+    connection.onAccountChange(idlAddressKey, resolve, "finalized");
+  });
+  connection.onAccountChange;
   let idlResult = shell.exec(
     `anchor idl upgrade --provider.cluster ${
       connection.rpcEndpoint
     } --provider.wallet ${UPGRADE_AUTH_KEYPAIR_PATH} --filepath ${idlPath}  ${DEVNET_STAKING_ADDRESS.toBase58()}`
   );
-  console.log("Upgraded IDL: %s", idlResult);
+  console.log("Waiting for IDL: %s", idlResult);
+  await idlFinished;
+  console.log("IDL updated");
 }
 
 async function upgradeAccounts(connection: anchor.web3.Connection) {
@@ -202,13 +219,7 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
     new anchor.Wallet(feePayer),
     {}
   );
-  let idl: anchor.Idl;
-  while (true) {
-    idl = await Program.fetchIdl(DEVNET_STAKING_ADDRESS, provider)!;
-    // HACK: wait for IDL to be upgraded
-    if (idl.instructions.length > 10) break;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
+  let idl = await Program.fetchIdl(DEVNET_STAKING_ADDRESS, provider)!;
 
   const program = new Program(
     idl,
