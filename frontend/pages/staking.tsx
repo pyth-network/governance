@@ -884,7 +884,7 @@ const Staking: NextPage = () => {
                         unlockingPythBalance.toString() !== '0' ? (
                           <div>
                             <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                              <div className="text-scampi">
+                              <div className="mx-1 text-scampi">
                                 (+{unlockingPythBalance.toString()})
                               </div>
                             </Tooltip>
