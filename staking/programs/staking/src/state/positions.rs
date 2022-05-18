@@ -69,9 +69,9 @@ pub struct UnlockingStartPod {
     unlocking_start: u64,
 }
 
-impl Into<UnlockingStartPod> for Option<u64> {
-    fn into(self) -> UnlockingStartPod {
-        match self {
+impl From<Option<u64>> for UnlockingStartPod {
+    fn from(option: Option<u64>) -> Self {
+        match option {
             None => UnlockingStartPod {
                 tag:             0,
                 unlocking_start: u64::zeroed(),
@@ -106,18 +106,17 @@ pub struct PositionPod {
     pub reserved:               [u64; 10],
 }
 
-impl Into<PositionPod> for Position {
-    fn into(self) -> PositionPod {
-        PositionPod {
-            amount:                 self.amount,
-            activation_epoch:       self.activation_epoch,
-            unlocking_start:        self.unlocking_start.into(),
-            target_with_parameters: self.target_with_parameters.into(),
+impl From<Position> for PositionPod {
+    fn from(position: Position) -> Self {
+        return PositionPod {
+            amount:                 position.amount,
+            activation_epoch:       position.activation_epoch,
+            unlocking_start:        position.unlocking_start.into(),
+            target_with_parameters: position.target_with_parameters.into(),
             reserved:               POSITION_DATA_PADDING,
-        }
+        };
     }
 }
-
 
 impl TryInto<Position> for PositionPod {
     type Error = Error;
@@ -171,9 +170,9 @@ pub struct PublisherPod {
     address: Pubkey,
 }
 
-impl Into<PublisherPod> for Publisher {
-    fn into(self) -> PublisherPod {
-        match self {
+impl From<Publisher> for PublisherPod {
+    fn from(publisher: Publisher) -> Self {
+        match publisher {
             Publisher::DEFAULT => PublisherPod {
                 tag:     0,
                 address: Pubkey::default(),
