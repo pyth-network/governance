@@ -108,13 +108,13 @@ pub struct PositionPod {
 
 impl From<Position> for PositionPod {
     fn from(position: Position) -> Self {
-        return PositionPod {
+        PositionPod {
             amount:                 position.amount,
             activation_epoch:       position.activation_epoch,
             unlocking_start:        position.unlocking_start.into(),
             target_with_parameters: position.target_with_parameters.into(),
             reserved:               POSITION_DATA_PADDING,
-        };
+        }
     }
 }
 
