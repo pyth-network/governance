@@ -48,6 +48,9 @@ const Staking: NextPage = () => {
     isVestingAccountWithoutGovernanceModalOpen,
     setIsVestingAccountWithoutGovernanceModalOpen,
   ] = useState<boolean>(false)
+  const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
+  const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
+  const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
   const [
     isVestingAccountWithoutGovernance,
     setIsVestingAccountWithoutGovernance,
@@ -78,6 +81,14 @@ const Staking: NextPage = () => {
     useState<PythBalance>()
   const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
+  const [nextVestingAmount, setNextVestingAmount] = useState<PythBalance>(
+    new PythBalance(new BN(0))
+  )
+  const [nextVestingDate, setNextVestingDate] = useState<Date>()
+  const [
+    isEligibleForPreliminaryUnstaking,
+    setIsEligibleForPreliminaryUnstaking,
+  ] = useState<boolean>(false)
 
   // create stake connection and get stake accounts when wallet is connected
   useEffect(() => {
@@ -118,6 +129,23 @@ const Staking: NextPage = () => {
     refreshBalance()
   }, [stakeConnection, mainStakeAccount])
 
+  useEffect(() => {
+    const getVestingInfo = async () => {
+      if (stakeConnection && mainStakeAccount) {
+        const currentTime = await stakeConnection.getTime()
+        const nextVestingEvent = mainStakeAccount.getNextVesting(currentTime)
+        setNextVestingAmount(
+          new PythBalance(new BN(nextVestingEvent.amount.toString()))
+        )
+        setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
+        setIsEligibleForPreliminaryUnstaking(
+          mainStakeAccount.hasGovernanceExcessPosition(currentTime)
+        )
+      }
+    }
+    getVestingInfo()
+  }, [unvestedPythBalance])
+
   useEffect(() => {}, [stakeConnection, mainStakeAccount])
 
   // set ui balance amount whenever current tab changes
@@ -152,6 +180,7 @@ const Staking: NextPage = () => {
     setUnlockingPythBalance(new PythBalance(new BN(0)))
     setUnvestedPythBalance(new PythBalance(new BN(0)))
     setUnlockedPythBalance(new PythBalance(new BN(0)))
+    setNextVestingAmount(new PythBalance(new BN(0)))
   }
 
   const checkVestingAccountWithoutGovernance = async () => {
@@ -322,6 +351,45 @@ const Staking: NextPage = () => {
     }
   }
 
+  const openLockedModal = () => {
+    setIsLockedModalOpen(true)
+  }
+
+  const closeLockedModal = () => {
+    setIsLockedModalOpen(false)
+  }
+
+  const openUnlockedModal = () => {
+    setIsUnlockedModalOpen(true)
+  }
+
+  const closeUnlockedModal = () => {
+    setIsUnlockedModalOpen(false)
+  }
+
+  const openUnvestedModal = () => {
+    setIsUnvestedModalOpen(true)
+  }
+
+  const closeUnvestedModal = () => {
+    setIsUnvestedModalOpen(false)
+  }
+
+  const handlePreliminaryUnstakeVestingAccount = async () => {
+    if (stakeConnection && mainStakeAccount) {
+      try {
+        await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
+        toast.success(
+          `${nextVestingAmount.toString()} unvested tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
+        )
+        setIsEligibleForPreliminaryUnstaking(false)
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
+      closeUnvestedModal()
+    }
+  }
+
   return (
     <Layout>
       <SEO title={'Staking'} />
@@ -352,12 +420,12 @@ const Staking: NextPage = () => {
                 <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-white"
+                    className="text-md font-inter font-bold leading-6 text-white"
                   >
                     Select stake account
                   </Dialog.Title>
-                  <div className="mt-2">
-                    <p className="text-sm text-white">
+                  <div className="mt-3">
+                    <p className="font-poppins text-sm text-scampi">
                       Please choose the stake account you wish to connect to.
                     </p>
                   </div>
@@ -476,22 +544,14 @@ const Staking: NextPage = () => {
                 <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-white"
+                    className="text-md font-inter font-bold leading-6 text-white"
                   >
                     Enroll in governance
                   </Dialog.Title>
-                  <div className="mt-2 mb-10 space-y-4">
-                    <p className="text-sm text-white">
+                  <div className="mt-3 mb-10 space-y-4">
+                    <p className="font-poppins text-sm text-scampi">
                       Your vesting account is not enrolled in governance.
                     </p>
-                    {/* <p className="text-sm text-[#696890]">
-                      Disclaimer: Participating in governance requires you to
-                      lock your unvested tokens. This means that when your
-                      tokens vest, you will have to manually unlock them through
-                      by interacting with the UI and wait for a one epoch
-                      cooldown before being able to withdraw them. Opting into
-                      governance is currently irreversible.
-                    </p> */}
                     <Disclosure>
                       {({ open }) => (
                         <>
@@ -503,7 +563,7 @@ const Staking: NextPage = () => {
                               } text-purple-500 h-5 w-5`}
                             />
                           </Disclosure.Button>
-                          <Disclosure.Panel className="px-4 pb-2 text-sm text-scampi">
+                          <Disclosure.Panel className="px-4 pb-2 font-poppins text-sm text-scampi">
                             Participating in governance requires you to lock
                             your unvested tokens. This means that when your
                             tokens vest, you will have to manually unlock them
@@ -542,82 +602,356 @@ const Staking: NextPage = () => {
         </Dialog>
       </Transition>
 
-      <div className="mb-20 flex flex-col items-center px-8">
-        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:mt-12 sm:px-14">
-          <div className="mx-auto mt-5 mb-5 grid w-full grid-cols-3 gap-3 text-center sm:text-left">
-            <div className="text-white sm:grid sm:grid-cols-3">
-              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
-                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
-              </div>
-              <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="mx-auto flex text-sm font-bold sm:m-0">
-                  Locked{' '}
-                </div>
-                {isBalanceLoading ? (
-                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
-                ) : (
-                  <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                    {lockedPythBalance?.toString()}{' '}
+      <Transition appear show={isLockedModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-md font-inter font-bold leading-6 text-white"
+                  >
+                    Locked tokens
+                  </Dialog.Title>
+                  <div className="mt-3 mb-10 space-y-4">
+                    <p className="font-poppins text-sm text-scampi">
+                      You currently have {lockedPythBalance?.toString()} locked
+                      tokens.
+                    </p>
                     {lockingPythBalance &&
                     lockingPythBalance.toString() !== '0' ? (
-                      <div>
-                        <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                          <div className="mx-1 text-scampi">
-                            (+{lockingPythBalance.toString()})
-                          </div>
-                        </Tooltip>
-                      </div>
+                      <p className="font-poppins text-sm text-scampi">
+                        {lockingPythBalance.toString()} tokens will be locked
+                        from the beginning of the next epoch.
+                      </p>
                     ) : null}
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="text-white sm:grid sm:grid-cols-3">
-              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
-                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
-              </div>
-              <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="mx-auto flex text-sm font-bold sm:m-0">
-                  Unlocked{' '}
-                </div>
-                {isBalanceLoading ? (
-                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
-                ) : (
-                  <div className="mx-auto justify-center text-sm sm:m-0 sm:justify-start">
-                    {unlockedPythBalance?.toString()}{' '}
-                    {unlockingPythBalance &&
-                    unlockingPythBalance.toString() !== '0' ? (
-                      <div>
-                        <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                          <div className="text-scampi">
-                            (+{unlockingPythBalance.toString()})
-                          </div>
-                        </Tooltip>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="text-white sm:grid sm:grid-cols-3">
-              <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
-                <img src="/pyth-coin-logo.svg" className="m-auto h-8 sm:h-10" />
-              </div>
-              <div className="my-auto flex flex-col sm:col-span-2">
-                <div className="text-sm font-bold">Unvested</div>
-                {isBalanceLoading ? (
-                  <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
-                ) : (
-                  <div className="text-sm">
-                    {unvestedPythBalance?.toString()}
-                  </div>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    onClick={closeLockedModal}
+                  >
+                    Got it
+                  </button>
+                </Dialog.Panel>
+              </Transition.Child>
             </div>
           </div>
+        </Dialog>
+      </Transition>
+
+      <Transition appear show={isUnlockedModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-md font-inter font-bold leading-6 text-white"
+                  >
+                    Unlocked tokens
+                  </Dialog.Title>
+                  <div className="mt-3 mb-10 space-y-4">
+                    <p className="font-poppins text-sm text-scampi">
+                      You currently have {unlockedPythBalance?.toString()}{' '}
+                      unlocked tokens.
+                    </p>
+                    {unlockingPythBalance &&
+                    unlockingPythBalance.toString() !== '0' ? (
+                      <p className="font-poppins text-sm text-scampi">
+                        {unlockingPythBalance.toString()} tokens have to go
+                        through a cool-down period for 2 epochs before they can
+                        be withdrawn.
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    onClick={closeUnlockedModal}
+                  >
+                    Got it
+                  </button>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <Transition appear show={isUnvestedModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-50" />
+          </Transition.Child>
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-md font-inter font-bold leading-6 text-white"
+                  >
+                    Unvested tokens
+                  </Dialog.Title>
+                  <div className="mt-3 mb-10 space-y-4">
+                    <p className="font-poppins text-sm text-scampi">
+                      You currently have {unvestedPythBalance?.toString()}{' '}
+                      unvested tokens. {nextVestingAmount.toString()} tokens
+                      will vest on {nextVestingDate?.toLocaleString()}.
+                    </p>
+                    {isEligibleForPreliminaryUnstaking ? (
+                      <p className="font-poppins text-sm text-scampi">
+                        You are eligible to unlock{' '}
+                        {nextVestingAmount.toString()} unvested tokens.
+                        Unlocking tokens enables you to withdraw them from the
+                        program after a cooldown period of two epochs. Unlocked
+                        tokens cannot participate in governance.
+                      </p>
+                    ) : null}
+                  </div>
+                  {isEligibleForPreliminaryUnstaking ? (
+                    <div className="space-x-10 text-center">
+                      <button
+                        type="button"
+                        className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        onClick={handlePreliminaryUnstakeVestingAccount}
+                      >
+                        Unlock
+                      </button>
+                      <button
+                        type="button"
+                        className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        onClick={closeUnvestedModal}
+                      >
+                        No, thank you
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      onClick={closeUnvestedModal}
+                    >
+                      Got it
+                    </button>
+                  )}
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <div className="mb-20 flex flex-col items-center px-8">
+        <div className="mt-2 w-full max-w-xl rounded-xl border-2 border-blueGem bg-jaguar sm:mt-12">
+          <div className="mx-auto grid w-full grid-cols-3 text-center sm:text-left">
+            {connected ? (
+              <button
+                className="rounded-xl py-6 hover:bg-[#232239]"
+                onClick={openLockedModal}
+              >
+                <div className="text-white sm:grid sm:grid-cols-2 sm:px-6">
+                  <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                    <img
+                      src="/pyth-coin-logo.svg"
+                      className="m-auto h-8 sm:h-12"
+                    />
+                  </div>
+                  <div className="my-auto flex flex-col">
+                    <div className="mx-auto flex text-sm font-bold sm:m-0">
+                      Locked{' '}
+                    </div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                    ) : (
+                      <div className="mx-auto flex text-sm sm:m-0">
+                        {lockedPythBalance?.toString()}{' '}
+                        {lockingPythBalance &&
+                        lockingPythBalance.toString() !== '0' ? (
+                          <div>
+                            <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                              <div className="mx-1 text-scampi">
+                                (+{lockingPythBalance.toString()})
+                              </div>
+                            </Tooltip>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div className="py-6 text-white sm:grid sm:grid-cols-2 sm:px-6">
+                <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                  <img
+                    src="/pyth-coin-logo.svg"
+                    className="m-auto h-8 sm:h-12"
+                  />
+                </div>
+                <div className="my-auto flex flex-col">
+                  <div className="mx-auto flex text-sm font-bold sm:m-0">
+                    Locked
+                  </div>
+                  <div className="mx-auto flex text-sm sm:m-0">-</div>
+                </div>
+              </div>
+            )}
+            {connected ? (
+              <button
+                className="rounded-xl py-6 hover:bg-[#232239]"
+                onClick={openUnlockedModal}
+              >
+                <div className="text-white sm:grid sm:grid-cols-2 sm:px-6">
+                  <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                    <img
+                      src="/pyth-coin-logo.svg"
+                      className="m-auto h-8 sm:h-12"
+                    />
+                  </div>
+                  <div className="my-auto flex flex-col">
+                    <div className="mx-auto flex text-sm font-bold sm:m-0">
+                      Unlocked{' '}
+                    </div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                    ) : (
+                      <div className="mx-auto flex text-sm sm:m-0">
+                        {unlockedPythBalance?.toString()}{' '}
+                        {unlockingPythBalance &&
+                        unlockingPythBalance.toString() !== '0' ? (
+                          <div>
+                            <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
+                              <div className="text-scampi">
+                                (+{unlockingPythBalance.toString()})
+                              </div>
+                            </Tooltip>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div className="py-6 text-white sm:grid sm:grid-cols-2 sm:px-6">
+                <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                  <img
+                    src="/pyth-coin-logo.svg"
+                    className="m-auto h-8 sm:h-12"
+                  />
+                </div>
+                <div className="my-auto flex flex-col">
+                  <div className="mx-auto flex text-sm font-bold sm:m-0">
+                    Unlocked
+                  </div>
+                  <div className="mx-auto flex text-sm sm:m-0">-</div>
+                </div>
+              </div>
+            )}
+            {connected ? (
+              <button
+                className="rounded-xl py-6 hover:bg-[#232239]"
+                onClick={openUnvestedModal}
+              >
+                <div className="text-white sm:grid sm:grid-cols-2 sm:px-6">
+                  <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                    <img
+                      src="/pyth-coin-logo.svg"
+                      className="m-auto h-8 sm:h-12"
+                    />
+                  </div>
+                  <div className="my-auto flex flex-col">
+                    <div className="mx-auto flex text-sm font-bold sm:m-0">
+                      Unvested
+                    </div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
+                    ) : (
+                      <div className="mx-auto flex text-sm sm:m-0">
+                        {unvestedPythBalance?.toString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div className="py-6 text-white sm:grid sm:grid-cols-2 sm:px-6">
+                <div className="mb-2 flex content-center sm:mr-2 sm:mb-0">
+                  <img
+                    src="/pyth-coin-logo.svg"
+                    className="m-auto h-8 sm:h-12"
+                  />
+                </div>
+                <div className="my-auto flex flex-col">
+                  <div className="mx-auto flex text-sm font-bold sm:m-0">
+                    Unvested
+                  </div>
+                  <div className="mx-auto flex text-sm sm:m-0">-</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="mt-2 w-full max-w-2xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14">
-          <div className="w-full py-8">
+        <div className="mt-2 w-full max-w-xl rounded-xl border-2 border-blueGem bg-jaguar px-5 sm:px-14">
+          <div className="w-full py-8 font-inter">
             <Tab.Group onChange={handleChangeTab}>
               <Tab.List className="flex justify-center space-x-2">
                 {Object.values(TabEnum)
@@ -627,7 +961,7 @@ const Staking: NextPage = () => {
                       key={v}
                       className={({ selected }) =>
                         classNames(
-                          'py-2.5 px-5 text-xs font-medium sm:text-sm',
+                          'py-2.5 px-5 text-xs font-semibold sm:text-sm',
 
                           selected
                             ? 'primary-btn text-white'
@@ -645,8 +979,8 @@ const Staking: NextPage = () => {
                     .slice(3)
                     .map((v, idx) => (
                       <Tab.Panel key={idx}>
-                        <div className="col-span-12 font-inter text-xs">
-                          <div className="mb-4 h-16 text-white sm:mb-12 sm:h-12">
+                        <div className="col-span-12 text-xs leading-5">
+                          <div className="mb-4 h-24 font-poppins text-white sm:mb-12 sm:h-16">
                             {tabDescriptions[v as keyof typeof TabEnum]}
                           </div>
                           <div className="mb-2 flex">
@@ -665,7 +999,7 @@ const Staking: NextPage = () => {
                               </button>
                             </div>
                           </div>
-                          <div className="mb-4 flex items-center justify-between">
+                          <div className="mb-4 flex items-center justify-between font-poppins">
                             <label
                               htmlFor="amount"
                               className="block text-white"
@@ -710,7 +1044,7 @@ const Staking: NextPage = () => {
                             onChange={handleAmountChange}
                             className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-valhalla px-4 text-lg font-semibold text-white focus:outline-none"
                           />
-                          <div className="flex items-center justify-center">
+                          <div className="flex items-center justify-center font-inter">
                             {!connected ? (
                               <WalletModalButton
                                 className="primary-btn py-3 px-14"
@@ -719,7 +1053,7 @@ const Staking: NextPage = () => {
                               />
                             ) : currentTab === TabEnum.Lock ? (
                               <button
-                                className="primary-btn disabled:hover: py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleDeposit}
                                 disabled={isVestingAccountWithoutGovernance}
                               >

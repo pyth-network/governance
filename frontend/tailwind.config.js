@@ -39,6 +39,7 @@ module.exports = {
       roboto: 'roboto, sans-serif',
       robotoMono: 'roboto-mono, monospace',
       inter: 'inter, sans-serif',
+      poppins: 'poppins, sans-serif',
     },
     extend: {
       spacing: {
