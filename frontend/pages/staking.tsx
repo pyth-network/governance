@@ -757,13 +757,18 @@ const Staking: NextPage = () => {
                       will vest on {nextVestingDate?.toLocaleString()}.
                     </p>
                     {isEligibleForPreliminaryUnstaking ? (
-                      <p className="font-poppins text-sm text-scampi">
-                        You are eligible to unlock{' '}
-                        {nextVestingAmount.toString()} unvested tokens.
-                        Unlocking tokens enables you to withdraw them from the
-                        program after a cooldown period of two epochs. Unlocked
-                        tokens cannot participate in governance.
-                      </p>
+                      <>
+                        <p className="font-poppins text-sm text-scampi">
+                          You are eligible to unlock{' '}
+                          {nextVestingAmount.toString()} unvested tokens.
+                          Unlocking your unvested tokens will enable you to
+                          withdraw them from the program as soon as they vest.
+                          Unlocked tokens cannot participate in governance.
+                        </p>
+                        <p className="font-poppins text-sm text-scampi">
+                          Would you like to unlock your tokens?
+                        </p>
+                      </>
                     ) : null}
                   </div>
                   {isEligibleForPreliminaryUnstaking ? (
