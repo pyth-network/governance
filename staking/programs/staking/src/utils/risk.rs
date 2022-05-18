@@ -133,15 +133,12 @@ pub mod tests {
     use anchor_lang::prelude::Pubkey;
 
     use crate::state::positions::{
-        OptionPod,
         Position,
         PositionData,
-        PositionPod,
         PositionState,
         Publisher,
         TargetWithParameters,
         MAX_POSITIONS,
-        POSITION_DATA_PADDING,
     };
     use crate::utils::risk::validate;
     use std::convert::TryInto;

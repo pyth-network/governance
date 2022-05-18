@@ -40,7 +40,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
-    use crate::state::positions::POSITION_DATA_PADDING;
+
 
     /// Creates a global config for the program
     use super::*;
