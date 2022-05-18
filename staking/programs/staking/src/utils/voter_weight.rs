@@ -18,7 +18,7 @@ pub fn compute_voter_weight(
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
         if let Some(position) =
-            TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i]).unwrap()
+            TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?
         {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
@@ -58,7 +58,7 @@ pub mod tests {
     fn test_compute_voter_weight() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
@@ -117,7 +117,7 @@ pub mod tests {
     fn test_overflow() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
@@ -137,7 +137,7 @@ pub mod tests {
     fn test_locked_amount_zero() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
 
         pd.positions[0] = Some(Position {
