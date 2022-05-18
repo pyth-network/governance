@@ -149,6 +149,7 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
+//To use zerocop
 #[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
 #[repr(C)]
 pub struct OptionPod {
@@ -370,7 +371,6 @@ pub mod tests {
         PositionData,
         PositionState,
         TargetWithParameters,
-        POSITION_DATA_PADDING,
     };
     #[test]
     fn lifecycle_lock_unlock() {
