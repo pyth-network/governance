@@ -1,5 +1,6 @@
 use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
+use anchor_lang::error::Error;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
@@ -43,7 +44,7 @@ impl PositionData {
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        self.positions[*next_index as usize] = None.try_into().unwrap();
+        self.positions[*next_index as usize] = None.into();
     }
 }
 
@@ -87,12 +88,13 @@ impl Into<UnlockingStartPod> for Option<u64> {
     }
 }
 
-impl Into<Option<u64>> for UnlockingStartPod {
-    fn into(self) -> Option<u64> {
+impl TryInto<Option<u64>> for UnlockingStartPod {
+    type Error = Error;
+    fn try_into(self) -> Result<Option<u64>> {
         match self.tag {
-            0 => return None,
-            1 => return Some(self.unlocking_start),
-            _ => panic!(),
+            0 => return Ok(None),
+            1 => return Ok(Some(self.unlocking_start)),
+            _ => Err(error!(ErrorCode::IllegalPositionPod)),
         }
     }
 }
@@ -112,23 +114,24 @@ impl Into<PositionPod> for Position {
     fn into(self) -> PositionPod {
         return PositionPod {
             amount:                 self.amount,
-            activation_epoch:       self.activation_epoch.try_into().unwrap(),
-            unlocking_start:        self.unlocking_start.try_into().unwrap(),
-            target_with_parameters: self.target_with_parameters.try_into().unwrap(),
+            activation_epoch:       self.activation_epoch,
+            unlocking_start:        self.unlocking_start.into(),
+            target_with_parameters: self.target_with_parameters.into(),
             reserved:               POSITION_DATA_PADDING,
         };
     }
 }
 
 
-impl Into<Position> for PositionPod {
-    fn into(self) -> Position {
-        return Position {
+impl TryInto<Position> for PositionPod {
+    type Error = Error;
+    fn try_into(self) -> Result<Position> {
+        return Ok(Position {
             amount:                 self.amount,
-            activation_epoch:       self.activation_epoch.try_into().unwrap(),
-            unlocking_start:        self.unlocking_start.try_into().unwrap(),
-            target_with_parameters: self.target_with_parameters.try_into().unwrap(),
-        };
+            activation_epoch:       self.activation_epoch.into(),
+            unlocking_start:        self.unlocking_start.try_into()?,
+            target_with_parameters: self.target_with_parameters.try_into()?,
+        });
     }
 }
 
@@ -186,19 +189,18 @@ impl Into<PublisherPod> for Publisher {
     }
 }
 
-impl Into<Publisher> for PublisherPod {
-    fn into(self) -> Publisher {
+impl TryInto<Publisher> for PublisherPod {
+    type Error = Error;
+    fn try_into(self) -> Result<Publisher> {
         match self.tag {
-            0 => return Publisher::DEFAULT,
+            0 => return Ok(Publisher::DEFAULT),
 
             1 => {
-                return Publisher::SOME {
+                return Ok(Publisher::SOME {
                     address: self.address,
-                }
+                })
             }
-            _ => {
-                panic!()
-            }
+            _ => return Err(error!(ErrorCode::IllegalPositionPod)),
         }
     }
 }

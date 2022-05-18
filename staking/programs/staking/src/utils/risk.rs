@@ -32,12 +32,8 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
-            .unwrap()
-            .is_some()
-        {
-            match TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
-                .unwrap()
+        if TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?.is_some() {
+            match TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?
                 .unwrap()
                 .get_current_position(current_epoch, unlocking_duration)
                 .unwrap()
@@ -46,10 +42,10 @@ pub fn validate(
                 | PositionState::PREUNLOCKING
                 | PositionState::UNLOCKING
                 | PositionState::LOCKING => {
-                    let this_position: Position =
-                        TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])
-                            .unwrap()
-                            .unwrap();
+                    let this_position: Position = TryInto::<Option<Position>>::try_into(
+                        stake_account_positions.positions[i],
+                    )?
+                    .unwrap();
                     let prod_exposure: &mut u64 = current_exposures
                         .entry(this_position.target_with_parameters.get_target())
                         .or_default();
@@ -154,7 +150,7 @@ pub mod tests {
     fn test_disjoint() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         // We need at least 7 vested tokens to support these positions
         pd.positions[0] = Option::Some(Position {
@@ -210,7 +206,7 @@ pub mod tests {
         let mut pd = PositionData {
             owner: Pubkey::new_unique(),
 
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         // We need at least 3 vested, 7 total
         pd.positions[0] = Some(Position {
@@ -246,7 +242,7 @@ pub mod tests {
     fn test_double_product() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
@@ -283,7 +279,7 @@ pub mod tests {
     fn test_risk() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -325,7 +321,7 @@ pub mod tests {
     fn test_multiple_voting() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -349,7 +345,7 @@ pub mod tests {
     fn test_overflow_total() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         for i in 0..5 {
             pd.positions[i] = Some(Position {
@@ -370,7 +366,7 @@ pub mod tests {
     fn test_overflow_aggregation() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.try_into().unwrap(); MAX_POSITIONS],
+            positions: [None.into(); MAX_POSITIONS],
         };
         let product = Pubkey::new_unique();
         for i in 0..5 {
