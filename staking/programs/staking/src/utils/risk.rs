@@ -32,23 +32,17 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if <Option<Position>>::try_from(stake_account_positions.positions[i])?.is_some() {
-            match <Option<Position>>::try_from(stake_account_positions.positions[i])?
-                .unwrap()
-                .get_current_position(current_epoch, unlocking_duration)
-                .unwrap()
-            {
+        if let Some(position) = <Option<Position>>::try_from(stake_account_positions.positions[i])?
+        {
+            match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED
                 | PositionState::PREUNLOCKING
                 | PositionState::UNLOCKING
                 | PositionState::LOCKING => {
-                    let this_position: Position =
-                        <Option<Position>>::try_from(stake_account_positions.positions[i])?
-                            .unwrap();
                     let prod_exposure: &mut u64 = current_exposures
-                        .entry(this_position.target_with_parameters.get_target())
+                        .entry(position.target_with_parameters.get_target())
                         .or_default();
-                    *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
+                    *prod_exposure = prod_exposure.checked_add(position.amount).unwrap();
                 }
                 _ => {}
             }
@@ -286,8 +280,7 @@ pub mod tests {
                 },
                 unlocking_start:        None,
             })
-            .try_into()
-            .unwrap();
+            .into();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
@@ -322,8 +315,7 @@ pub mod tests {
                 target_with_parameters: TargetWithParameters::VOTING,
                 unlocking_start:        None,
             })
-            .try_into()
-            .unwrap();
+            .into();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 100, 0, current_epoch, 1).unwrap(), 50);
@@ -346,8 +338,7 @@ pub mod tests {
                 target_with_parameters: TargetWithParameters::VOTING,
                 unlocking_start:        None,
             })
-            .try_into()
-            .unwrap();
+            .into();
         }
         let current_epoch = 44;
         // Overflows in the total exposure computation
@@ -373,8 +364,7 @@ pub mod tests {
                 },
                 unlocking_start:        None,
             })
-            .try_into()
-            .unwrap();
+            .into();
         }
         let current_epoch = 44;
         // Overflows in the aggregation computation
