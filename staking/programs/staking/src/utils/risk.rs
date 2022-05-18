@@ -163,8 +163,7 @@ pub mod tests {
             },
             unlocking_start:        Some(50),
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -176,8 +175,7 @@ pub mod tests {
             },
             unlocking_start:        Some(50),
         })
-        .try_into()
-        .unwrap();
+        .into();
         let tests = [
             (0, PositionState::LOCKING),
             (44, PositionState::PREUNLOCKING),
@@ -214,8 +212,7 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::VOTING,
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -227,8 +224,7 @@ pub mod tests {
             },
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
         assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0);
@@ -254,8 +250,7 @@ pub mod tests {
             },
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[1] = Some(Position {
             activation_epoch:       1,
             amount:                 3,
@@ -265,8 +260,7 @@ pub mod tests {
             },
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 2);
@@ -309,8 +303,7 @@ pub mod tests {
             },
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);

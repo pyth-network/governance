@@ -66,24 +66,21 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[1] = Some(Position {
             activation_epoch:       3,
             amount:                 3,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[2] = Some(Position {
             activation_epoch:       2,
             amount:                 5,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(4),
         })
-        .try_into()
-        .unwrap();
+        .into();
         pd.positions[3] = Some(Position {
             activation_epoch:       0,
             amount:                 10,
@@ -93,8 +90,7 @@ pub mod tests {
             },
             unlocking_start:        None,
         })
-        .try_into()
-        .unwrap();
+        .into();
 
         let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
         assert_eq!(weight, 0);
@@ -125,8 +121,7 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
         })
-        .try_into()
-        .unwrap();
+        .into();
 
         let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
@@ -145,8 +140,7 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
         })
-        .try_into()
-        .unwrap();
+        .into();
 
         let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);
