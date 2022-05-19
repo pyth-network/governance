@@ -4,6 +4,7 @@ use anchor_lang::error::Error;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::wasm_bindgen;
+
 use bytemuck::{
     Pod,
     Zeroable,
@@ -60,7 +61,7 @@ pub fn into_buffer(option: Option<Position>) -> [u8; 200] {
 }
 
 pub fn from_buffer(buffer: [u8; 200]) -> Option<Position> {
-    Option::<Position>::try_from_slice(&buffer).unwrap()
+    anchor_lang::solana_program::borsh::try_from_slice_unchecked(&buffer).unwrap()
 }
 
 

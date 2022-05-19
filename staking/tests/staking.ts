@@ -26,6 +26,7 @@ import {
   CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
+import { PositionAccountJs } from "../app/PositionAccountJs";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -204,13 +205,9 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-
-    const pd = new wasm.WasmPositionData(inbuf.data);
-    const outbuffer = Buffer.alloc(pd.borshLength);
-    pd.asBorsh(outbuffer);
-    const positions = program.coder.accounts.decode("PositionData", outbuffer);
-    for (let index = 0; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
+    for (let index = 0; index < positionAccount.positions.length; index++) {
+      assert.equal(positionAccount.positions[index], null);
     }
   });
 
@@ -243,12 +240,9 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-    let wPositions = new wasm.WasmPositionData(inbuf.data);
-    const outbuffer = Buffer.alloc(wPositions.borshLength);
-    wPositions.asBorsh(outbuffer);
-    const positions = program.coder.accounts.decode("PositionData", outbuffer);
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
     assert.equal(
-      JSON.stringify(positions.positions[0]),
+      JSON.stringify(positionAccount.positions[0]),
       JSON.stringify({
         amount: new BN(1),
         activationEpoch: new BN(1),
@@ -270,8 +264,8 @@ describe("staking", async () => {
         ],
       })
     );
-    for (let index = 1; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+    for (let index = 1; index < positionAccount.positions.length; index++) {
+      assert.equal(positionAccount.positions[index], null);
     }
   });
 
