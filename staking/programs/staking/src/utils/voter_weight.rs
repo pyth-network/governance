@@ -1,7 +1,6 @@
 use crate::error::ErrorCode;
 use crate::state::positions::{
     from_buffer,
-    Position,
     PositionData,
     PositionState,
     MAX_POSITIONS,
@@ -42,6 +41,7 @@ pub fn compute_voter_weight(
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{
+        into_buffer,
         Position,
         PositionData,
         Publisher,
@@ -56,31 +56,30 @@ pub mod tests {
     fn test_compute_voter_weight() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.into(); MAX_POSITIONS],
+            positions: [into_buffer(None); MAX_POSITIONS],
         };
 
-        pd.positions[0] = Some(Position {
+        pd.positions[0] = into_buffer(Some(Position {
             activation_epoch:       1,
             amount:                 7,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        })
-        .into();
-        pd.positions[1] = Some(Position {
+        }));
+
+        pd.positions[1] = into_buffer(Some(Position {
             activation_epoch:       3,
             amount:                 3,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        None,
-        })
-        .into();
-        pd.positions[2] = Some(Position {
+        }));
+
+        pd.positions[2] = into_buffer(Some(Position {
             activation_epoch:       2,
             amount:                 5,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(4),
-        })
-        .into();
-        pd.positions[3] = Some(Position {
+        }));
+        pd.positions[3] = into_buffer(Some(Position {
             activation_epoch:       0,
             amount:                 10,
             target_with_parameters: TargetWithParameters::STAKING {
@@ -88,8 +87,7 @@ pub mod tests {
                 publisher: Publisher::DEFAULT,
             },
             unlocking_start:        None,
-        })
-        .into();
+        }));
 
         let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
         assert_eq!(weight, 0);
@@ -111,16 +109,15 @@ pub mod tests {
     fn test_overflow() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.into(); MAX_POSITIONS],
+            positions: [into_buffer(None); MAX_POSITIONS],
         };
 
-        pd.positions[0] = Some(Position {
+        pd.positions[0] = into_buffer(Some(Position {
             activation_epoch:       1,
             amount:                 u64::MAX / 2,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        })
-        .into();
+        }));
 
         let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
@@ -130,16 +127,15 @@ pub mod tests {
     fn test_locked_amount_zero() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [None.into(); MAX_POSITIONS],
+            positions: [into_buffer(None); MAX_POSITIONS],
         };
 
-        pd.positions[0] = Some(Position {
+        pd.positions[0] = into_buffer(Some(Position {
             activation_epoch:       1,
             amount:                 u64::MAX / 2,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        })
-        .into();
+        }));
 
         let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);
