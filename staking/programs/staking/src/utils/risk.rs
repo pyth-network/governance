@@ -3,6 +3,7 @@ use std::cmp;
 use std::collections::BTreeMap;
 
 use crate::state::positions::{
+    from_buffer,
     Position,
     PositionData,
     PositionState,
@@ -32,8 +33,7 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = <Option<Position>>::try_from(stake_account_positions.positions[i])?
-        {
+        if let Some(position) = from_buffer(stake_account_positions.positions[i]) {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED
                 | PositionState::PREUNLOCKING

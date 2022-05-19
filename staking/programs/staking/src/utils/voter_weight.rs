@@ -1,5 +1,6 @@
 use crate::error::ErrorCode;
 use crate::state::positions::{
+    from_buffer,
     Position,
     PositionData,
     PositionState,
@@ -17,9 +18,7 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Some(position) =
-            TryInto::<Option<Position>>::try_into(stake_account_positions.positions[i])?
-        {
+        if let Some(position) = from_buffer(stake_account_positions.positions[i]) {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {

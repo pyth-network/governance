@@ -28,7 +28,7 @@ pub const POSITION_DATA_PADDING: [u64; 10] = [0u64; 10];
 #[derive(BorshSchema, BorshSerialize)]
 pub struct PositionData {
     pub owner:     Pubkey,
-    pub positions: [OptionPod; MAX_POSITIONS],
+    pub positions: [[u8; 200]; MAX_POSITIONS],
 }
 
 impl PositionData {
@@ -47,9 +47,18 @@ impl PositionData {
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        self.positions[*next_index as usize] = None.into();
+        self.positions[*next_index as usize] = into_buffer(None);
     }
 }
+
+pub fn into_buffer(option: Option<Position>) -> [u8; 200] {
+    return option.try_to_vec().unwrap().try_into().unwrap();
+}
+
+pub fn from_buffer(buffer: [u8; 200]) -> Option<Position> {
+    return Option::<Position>::try_from_slice(&buffer).unwrap();
+}
+
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular
 /// target. This is one of the core pieces of our staking design, and stores all
@@ -86,6 +95,7 @@ impl From<Option<u64>> for UnlockingStartPod {
         }
     }
 }
+
 
 impl TryInto<Option<u64>> for UnlockingStartPod {
     type Error = Error;
