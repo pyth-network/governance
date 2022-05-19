@@ -23,10 +23,7 @@ use state::positions::{
 };
 use state::vesting::VestingSchedule;
 use state::voter_weight_record::VoterWeightAction;
-use std::convert::{
-    TryFrom,
-    TryInto,
-};
+use std::convert::TryInto;
 use utils::clock::{
     get_current_epoch,
     time_to_epoch,
@@ -201,7 +198,7 @@ pub mod staking {
             return Err(error!(ErrorCode::WrongTarget));
         }
 
-        let original_amount = current_position.amount;
+        let _original_amount = current_position.amount;
 
         let remaining_amount = current_position
             .amount

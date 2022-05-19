@@ -52,11 +52,15 @@ impl PositionData {
 }
 
 pub fn into_buffer(option: Option<Position>) -> [u8; 200] {
-    return option.try_to_vec().unwrap().try_into().unwrap();
+    let mut vec = option.try_to_vec().unwrap();
+    while (vec.len() < 200) {
+        vec.push(0);
+    }
+    return vec.try_into().unwrap();
 }
 
 pub fn from_buffer(buffer: [u8; 200]) -> Option<Position> {
-    return Option::<Position>::try_from_slice(&buffer).unwrap();
+    Option::<Position>::try_from_slice(&buffer).unwrap()
 }
 
 
@@ -288,6 +292,7 @@ pub mod tests {
         PositionState,
         TargetWithParameters,
     };
+    use anchor_lang::solana_program::borsh::get_packed_len;
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
@@ -356,5 +361,6 @@ pub mod tests {
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
         assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
+        assert_eq!(get_packed_len::<Position>(), 91);
     }
 }
