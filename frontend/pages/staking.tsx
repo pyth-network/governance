@@ -753,22 +753,34 @@ const Staking: NextPage = () => {
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
                       You currently have {unvestedPythBalance?.toString()}{' '}
-                      unvested tokens. {nextVestingAmount.toString()} tokens
-                      will vest on {nextVestingDate?.toLocaleString()}.
+                      unvested tokens.{' '}
+                      {unvestedPythBalance.toString() !== '0'
+                        ? `${nextVestingAmount.toString()} tokens
+                      will vest on ${nextVestingDate?.toLocaleString()}.`
+                        : null}
                     </p>
+                    {unvestedPythBalance.toString() !== '0' ? (
+                      <p className="font-poppins text-sm text-scampi">
+                        Your unvested tokens are locked in the contract to
+                        participate in governance. On vest, they will become
+                        locked tokens, which require a 2 epoch cooldown to
+                        withdraw.
+                      </p>
+                    ) : null}
                     {isEligibleForPreliminaryUnstaking ? (
                       <>
                         <p className="font-poppins text-sm text-scampi">
                           You are eligible to unlock{' '}
                           {nextVestingAmount.toString()} unvested tokens.
-                          Unlocking your unvested tokens will enable you to
-                          withdraw them from the program as soon as they vest.
-                          This action will also unlock all locked tokens you
-                          currently have. Unlocked tokens cannot participate in
-                          governance.
                         </p>
                         <p className="font-poppins text-sm text-scampi">
-                          Would you like to unlock your tokens?
+                          If you would like to withdraw them immediately on
+                          vest, you may unlock them now. This action will:{' '}
+                          <br />
+                          (1) unlock all of your currently locked tokens,
+                          immediately reducing your governance power, and <br />
+                          (2) cause your unvested tokens to become unlocked
+                          tokens on vest.
                         </p>
                       </>
                     ) : null}
