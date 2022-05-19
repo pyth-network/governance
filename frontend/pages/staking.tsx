@@ -763,7 +763,9 @@ const Staking: NextPage = () => {
                           {nextVestingAmount.toString()} unvested tokens.
                           Unlocking your unvested tokens will enable you to
                           withdraw them from the program as soon as they vest.
-                          Unlocked tokens cannot participate in governance.
+                          This action will also unlock all locked tokens you
+                          currently have. Unlocked tokens cannot participate in
+                          governance.
                         </p>
                         <p className="font-poppins text-sm text-scampi">
                           Would you like to unlock your tokens?
