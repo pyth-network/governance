@@ -248,20 +248,6 @@ describe("staking", async () => {
         activationEpoch: new BN(1),
         unlockingStart: null,
         targetWithParameters: votingProduct,
-        reserved: [
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-          "00",
-        ],
       })
     );
     for (let index = 1; index < positionAccount.positions.length; index++) {
