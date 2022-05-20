@@ -73,7 +73,7 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        match crate::state::positions::from_buffer(self.wrapped.positions[index as usize]) {
+        match crate::state::positions::from_buffer(&self.wrapped.positions[index as usize]) {
             Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
             None => Err(error!(ErrorCode::PositionNotInUse)),
         }
@@ -83,7 +83,7 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        match crate::state::positions::from_buffer(self.wrapped.positions[index as usize]) {
+        match crate::state::positions::from_buffer(&self.wrapped.positions[index as usize]) {
             Some(pos) => Ok(pos.is_voting()),
             None => Err(error!(ErrorCode::PositionNotInUse)),
         }
@@ -112,7 +112,7 @@ impl WasmPositionData {
         let mut preunlocking: u64 = 0;
 
         for i in 0..crate::MAX_POSITIONS {
-            if let Some(position) = crate::state::positions::from_buffer(self.wrapped.positions[i])
+            if let Some(position) = crate::state::positions::from_buffer(&self.wrapped.positions[i])
             {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
