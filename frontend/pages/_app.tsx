@@ -65,7 +65,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
             position="bottom-left"
             toastOptions={{
               style: {
-                wordBreak: 'break-all',
+                wordBreak: 'break-word',
               },
             }}
             reverseOrder={false}
