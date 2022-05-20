@@ -380,7 +380,9 @@ const Staking: NextPage = () => {
       try {
         await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
         toast.success(
-          `${nextVestingAmount.toString()} unvested tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
+          `${new PythBalance(
+            nextVestingAmount.toBN().add(lockedPythBalance.toBN())
+          ).toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
         setIsEligibleForPreliminaryUnstaking(false)
       } catch (e) {
@@ -552,29 +554,14 @@ const Staking: NextPage = () => {
                     <p className="font-poppins text-sm text-scampi">
                       Your vesting account is not enrolled in governance.
                     </p>
-                    <Disclosure>
-                      {({ open }) => (
-                        <>
-                          <Disclosure.Button className="hover:bg-purple-200 focus-visible:ring-purple-500 flex w-full justify-between rounded-lg bg-valhalla px-4 py-2 text-left text-sm font-medium text-white hover:bg-paynesGray focus:outline-none focus-visible:ring focus-visible:ring-opacity-75">
-                            <span>Disclaimer</span>
-                            <ChevronUpIcon
-                              className={`${
-                                open ? 'rotate-180 transform' : ''
-                              } text-purple-500 h-5 w-5`}
-                            />
-                          </Disclosure.Button>
-                          <Disclosure.Panel className="px-4 pb-2 font-poppins text-sm text-scampi">
-                            Participating in governance requires you to lock
-                            your unvested tokens. This means that when your
-                            tokens vest, you will have to manually unlock them
-                            through by interacting with the UI and wait for a
-                            one epoch cooldown before being able to withdraw
-                            them. Opting into governance is currently
-                            irreversible.
-                          </Disclosure.Panel>
-                        </>
-                      )}
-                    </Disclosure>
+                    <p className="font-poppins text-sm text-scampi">
+                      Participating in governance requires you to lock your
+                      unvested tokens. This means that when your tokens vest,
+                      you will have to manually unlock them through by
+                      interacting with the UI and wait for a one epoch cooldown
+                      before being able to withdraw them. Opting into governance
+                      is currently irreversible.
+                    </p>
                   </div>
 
                   <div className="space-x-10 text-center">
@@ -635,6 +622,11 @@ const Staking: NextPage = () => {
                   </Dialog.Title>
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
+                      Locked tokens enables you to participate in Pyth Network
+                      governance. Newly-locked tokens become eligible to vote in
+                      governance at the beginning of the next epoch.
+                    </p>
+                    <p className="font-poppins text-sm text-scampi">
                       You currently have {lockedPythBalance?.toString()} locked
                       tokens.
                     </p>
@@ -692,6 +684,12 @@ const Staking: NextPage = () => {
                     Unlocked tokens
                   </Dialog.Title>
                   <div className="mt-3 mb-10 space-y-4">
+                    <p className="font-poppins text-sm text-scampi">
+                      Unlocking tokens enables you to withdraw them from the
+                      program after a cooldown period of two epochs of which
+                      they become unlocked tokens. Unlocked tokens cannot
+                      participate in governance.
+                    </p>
                     <p className="font-poppins text-sm text-scampi">
                       You currently have {unlockedPythBalance?.toString()}{' '}
                       unlocked tokens.
@@ -768,21 +766,14 @@ const Staking: NextPage = () => {
                       </p>
                     ) : null}
                     {isEligibleForPreliminaryUnstaking ? (
-                      <>
-                        <p className="font-poppins text-sm text-scampi">
-                          You are eligible to unlock{' '}
-                          {nextVestingAmount.toString()} unvested tokens.
-                        </p>
-                        <p className="font-poppins text-sm text-scampi">
-                          If you would like to withdraw them immediately on
-                          vest, you may unlock them now. This action will:{' '}
-                          <br />
-                          (1) unlock all of your currently locked tokens,
-                          immediately reducing your governance power, and <br />
-                          (2) cause your unvested tokens to become unlocked
-                          tokens on vest.
-                        </p>
-                      </>
+                      <p className="font-poppins text-sm text-scampi">
+                        If you would like to withdraw them immediately on vest,
+                        you may unlock them now. This action will: <br />
+                        (1) unlock all of your currently locked tokens,
+                        immediately reducing your governance power, and <br />
+                        (2) cause your unvested tokens to become unlocked tokens
+                        on vest.
+                      </p>
                     ) : null}
                   </div>
                   {isEligibleForPreliminaryUnstaking ? (
