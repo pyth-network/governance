@@ -11,9 +11,6 @@ use crate::state::target::{
     TargetMetadata,
     TARGET_METADATA_SIZE,
 };
-
-use std::convert::TryInto;
-
 use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
@@ -21,14 +18,11 @@ use anchor_lang::prelude::{
     Clock,
     Error,
 };
-use anchor_lang::solana_program::borsh::get_packed_len;
 use anchor_lang::{
     AccountDeserialize,
     AnchorDeserialize,
     Discriminator,
 };
-use borsh::BorshSerialize;
-use std::io::Write;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -299,6 +293,8 @@ impl Constants {
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {
         crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT
+    pub fn POSITION_BUFFER_SIZE() -> usize {
+        crate::state::positions::POSITION_BUFFER_SIZE
     }
 }
 
