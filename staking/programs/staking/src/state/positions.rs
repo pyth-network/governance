@@ -10,10 +10,7 @@ use bytemuck::{
     Pod,
     Zeroable,
 };
-use std::convert::{
-    TryFrom,
-    TryInto,
-};
+use std::convert::TryInto;
 use std::fmt::{
     self,
     Debug,
@@ -65,7 +62,7 @@ pub trait TryBorsh {
 
 impl TryBorsh for Option<Position> {
     fn try_read(slice: &[u8]) -> Result<Self> {
-        try_from_slice_unchecked(&slice).map_err(|_| error!(ErrorCode::PositionSerDe))
+        try_from_slice_unchecked(slice).map_err(|_| error!(ErrorCode::PositionSerDe))
     }
 
     fn try_write(self, slice: &mut [u8]) -> Result<()> {
@@ -75,9 +72,7 @@ impl TryBorsh for Option<Position> {
         if slice.len() <= vec.len() {
             return Err(error!(ErrorCode::PositionSerDe));
         }
-        for i in 0..vec.len() {
-            slice[i] = vec[i];
-        }
+        slice[..vec.len()].copy_from_slice(&vec[..]);
         Ok(())
     }
 }

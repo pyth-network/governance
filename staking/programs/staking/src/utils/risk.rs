@@ -135,10 +135,6 @@ pub mod tests {
         POSITION_BUFFER_SIZE,
     };
     use crate::utils::risk::validate;
-    use std::convert::{
-        TryFrom,
-        TryInto,
-    };
 
 
     #[test]
@@ -179,7 +175,7 @@ pub mod tests {
             (44, PositionState::PREUNLOCKING),
             (50, PositionState::UNLOCKING),
         ];
-        for (current_epoch, desired_state) in tests {
+        for (current_epoch, _desired_state) in tests {
             // assert_eq!(
             //     <Option<Position>>::try_from(pd.positions[0])
             //         .unwrap()
