@@ -7,10 +7,7 @@ use crate::state::positions::{
     PositionState,
     TryBorsh,
 };
-use crate::state::target::{
-    TargetMetadata,
-    TARGET_METADATA_SIZE,
-};
+use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
