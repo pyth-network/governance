@@ -1,7 +1,7 @@
 {
   "name": "pyth-staking-wasm",
   "description": "Web Assembly files for Pyth staking",
-  "version": "0.2.10",
+  "version": "0.3.0",
   "files": [
     "bundle/staking_bg.wasm",
     "bundle/staking.js",
