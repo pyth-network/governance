@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
