@@ -6,10 +6,6 @@ use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 use anchor_lang::solana_program::wasm_bindgen;
-use bytemuck::{
-    Pod,
-    Zeroable,
-};
 use std::convert::TryInto;
 use std::fmt::{
     self,
@@ -89,41 +85,6 @@ pub struct Position {
     pub activation_epoch:       u64,
     pub unlocking_start:        Option<u64>,
     pub target_with_parameters: TargetWithParameters,
-}
-
-
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct UnlockingStartPod {
-    tag:             u64,
-    unlocking_start: u64,
-}
-
-impl From<Option<u64>> for UnlockingStartPod {
-    fn from(option: Option<u64>) -> Self {
-        match option {
-            None => UnlockingStartPod {
-                tag:             0,
-                unlocking_start: u64::zeroed(),
-            },
-            Some(unlocking_start) => UnlockingStartPod {
-                tag: 1,
-                unlocking_start,
-            },
-        }
-    }
-}
-
-
-impl TryInto<Option<u64>> for UnlockingStartPod {
-    type Error = Error;
-    fn try_into(self) -> Result<Option<u64>> {
-        match self.tag {
-            0 => Ok(None),
-            1 => Ok(Some(self.unlocking_start)),
-            _ => Err(error!(ErrorCode::PositionSerDe)),
-        }
-    }
 }
 
 
