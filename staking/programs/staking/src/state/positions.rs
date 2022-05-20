@@ -132,40 +132,6 @@ impl TryInto<Option<u64>> for UnlockingStartPod {
 }
 
 
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct PositionPod {
-    pub amount:                 u64,
-    pub activation_epoch:       u64,
-    pub unlocking_start:        UnlockingStartPod,
-    pub target_with_parameters: TargetWithParametersPod,
-    pub reserved:               [u64; 10],
-}
-
-impl From<Position> for PositionPod {
-    fn from(position: Position) -> Self {
-        PositionPod {
-            amount:                 position.amount,
-            activation_epoch:       position.activation_epoch,
-            unlocking_start:        position.unlocking_start.into(),
-            target_with_parameters: position.target_with_parameters.into(),
-            reserved:               POSITION_DATA_PADDING,
-        }
-    }
-}
-
-impl TryInto<Position> for PositionPod {
-    type Error = Error;
-    fn try_into(self) -> Result<Position> {
-        Ok(Position {
-            amount:                 self.amount,
-            activation_epoch:       self.activation_epoch,
-            unlocking_start:        self.unlocking_start.try_into()?,
-            target_with_parameters: self.target_with_parameters.try_into()?,
-        })
-    }
-}
-
 #[derive(
     AnchorSerialize,
     AnchorDeserialize,
@@ -183,46 +149,6 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
-//To use zerocopy we need to store the positions as Pod. Enums are not Pod, but we still want to
-// use them in our code the solution is having a Pod version which is what is actually stored, and a
-// non Pod version that we use in the code and From, Into functions to convert between one another
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct OptionPod {
-    tag:      u64,
-    position: PositionPod,
-}
-
-impl From<Option<Position>> for OptionPod {
-    fn from(option: Option<Position>) -> Self {
-        match option {
-            None => OptionPod {
-                tag:      0,
-                position: PositionPod::zeroed(),
-            },
-
-            Some(position) => OptionPod {
-                tag:      1,
-                position: position.into(),
-            },
-        }
-    }
-}
-
-
-impl TryFrom<OptionPod> for Option<Position> {
-    type Error = Error;
-    fn try_from(option_pod: OptionPod) -> Result<Self> {
-        match option_pod.tag {
-            0 => Ok(None),
-
-            1 => Ok(Some(option_pod.position.try_into()?)),
-
-            _ => Err(error!(ErrorCode::PositionSerDe)),
-        }
-    }
-}
-
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum TargetWithParameters {
     VOTING,
@@ -232,86 +158,11 @@ pub enum TargetWithParameters {
     },
 }
 
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct TargetWithParametersPod {
-    tag:       u64,
-    product:   Pubkey,
-    publisher: PublisherPod,
-}
-
-impl From<TargetWithParameters> for TargetWithParametersPod {
-    fn from(target_with_parameters: TargetWithParameters) -> Self {
-        match target_with_parameters {
-            TargetWithParameters::VOTING => TargetWithParametersPod {
-                tag:       0,
-                product:   Pubkey::zeroed(),
-                publisher: PublisherPod::zeroed(),
-            },
-            TargetWithParameters::STAKING { product, publisher } => TargetWithParametersPod {
-                tag: 1,
-                product,
-                publisher: publisher.into(),
-            },
-        }
-    }
-}
-
-impl TryInto<TargetWithParameters> for TargetWithParametersPod {
-    type Error = Error;
-    fn try_into(self) -> Result<TargetWithParameters> {
-        match self.tag {
-            0 => Ok(TargetWithParameters::VOTING),
-
-            1 => Ok(TargetWithParameters::STAKING {
-                product:   self.product,
-                publisher: self.publisher.try_into()?,
-            }),
-            _ => Err(error!(ErrorCode::PositionSerDe)),
-        }
-    }
-}
-
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
 pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
 }
-
-
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct PublisherPod {
-    tag:     u64,
-    address: Pubkey,
-}
-
-impl From<Publisher> for PublisherPod {
-    fn from(publisher: Publisher) -> Self {
-        match publisher {
-            Publisher::DEFAULT => PublisherPod {
-                tag:     0,
-                address: Pubkey::default(),
-            },
-            Publisher::SOME { address } => PublisherPod { tag: 1, address },
-        }
-    }
-}
-
-impl TryInto<Publisher> for PublisherPod {
-    type Error = Error;
-    fn try_into(self) -> Result<Publisher> {
-        match self.tag {
-            0 => Ok(Publisher::DEFAULT),
-
-            1 => Ok(Publisher::SOME {
-                address: self.address,
-            }),
-            _ => Err(error!(ErrorCode::PositionSerDe)),
-        }
-    }
-}
-
 
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
