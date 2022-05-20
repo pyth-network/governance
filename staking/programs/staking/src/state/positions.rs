@@ -88,6 +88,7 @@ where
     }
 
     fn try_write(self, slice: &mut [u8]) -> Result<()> {
+        slice.fill(0);
         let mut ptr = slice;
         self.serialize(&mut ptr)
             .map_err(|_| error!(ErrorCode::PositionSerDe))
