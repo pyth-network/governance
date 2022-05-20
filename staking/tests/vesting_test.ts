@@ -445,7 +445,7 @@ describe("vesting", async () => {
         stakeAccount,
         PythBalance.fromString("1.388889")
       ),
-      "Amount exceeds withdrawable"
+      "Amount exceeds withdrawable."
     );
 
     await aliceConnection.withdrawTokens(
