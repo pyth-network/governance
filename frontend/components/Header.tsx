@@ -12,7 +12,7 @@ const Header = () => {
   return (
     <div className="mb-3 grid grid-cols-12">
       <div className="col-span-12 flex h-24 items-center justify-between px-8 md:px-8 xl:col-span-10 xl:col-start-2">
-        <div className="flex cursor-pointer items-center md:w-36">
+        <div className="flex cursor-pointer items-center md:w-44">
           <Link href="/staking">
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
           </Link>
@@ -34,15 +34,30 @@ const Header = () => {
                 : 'devnet'
             }`}
           >
-            <a
-              className={
-                router.pathname == '/governance'
-                  ? 'nav-link-active'
-                  : 'nav-link'
-              }
-            >
+            <a className="nav-link">
               <div className="flex">
                 Governance{' '}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="my-auto ml-1 h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </div>
+            </a>
+          </Link>
+          <Link href="https://pyth.network">
+            <a className="nav-link">
+              <div className="flex">
+                Pyth Network{' '}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="my-auto ml-1 h-4 w-4"
@@ -112,15 +127,33 @@ const Header = () => {
                 }`}
               >
                 <a
-                  className={classNames(
-                    'font-arboria text-4xl',
-                    router.pathname == '/governance'
-                      ? 'text-pink'
-                      : 'text-white'
-                  )}
+                  className={classNames('font-arboria text-4xl', 'text-white')}
                 >
                   <div className="flex justify-center">
                     <div className="my-auto">Governance</div>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mt-auto mb-1 ml-1 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </div>
+                </a>
+              </Link>
+              <Link href="https://pyth.network">
+                <a
+                  className={classNames('font-arboria text-4xl', 'text-white')}
+                >
+                  <div className="flex justify-center">
+                    <div className="my-auto">Pyth Network</div>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="mt-auto mb-1 ml-1 h-6 w-6"
