@@ -1,8 +1,8 @@
 use crate::error::ErrorCode;
 use crate::state::positions::{
-    from_buffer,
     PositionData,
     PositionState,
+    TryBorsh,
     MAX_POSITIONS,
 };
 use anchor_lang::prelude::*;
@@ -17,7 +17,7 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = from_buffer(stake_account_positions.positions[i]) {
+        if let Some(position) = TryBorsh::try_read(&stake_account_positions.positions[i])? {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
@@ -41,12 +41,13 @@ pub fn compute_voter_weight(
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{
-        into_buffer,
         Position,
         PositionData,
         Publisher,
         TargetWithParameters,
+        TryBorsh,
         MAX_POSITIONS,
+        POSITION_BUFFER_SIZE,
     };
     use crate::utils::voter_weight::compute_voter_weight;
     use anchor_lang::prelude::Pubkey;
@@ -56,30 +57,36 @@ pub mod tests {
     fn test_compute_voter_weight() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [into_buffer(None); MAX_POSITIONS],
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
         };
 
-        pd.positions[0] = into_buffer(Some(Position {
+        Some(Position {
             activation_epoch:       1,
             amount:                 7,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        }));
+        })
+        .try_write(&mut pd.positions[0])
+        .unwrap();
 
-        pd.positions[1] = into_buffer(Some(Position {
+        Some(Position {
             activation_epoch:       3,
             amount:                 3,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        None,
-        }));
+        })
+        .try_write(&mut pd.positions[1])
+        .unwrap();
 
-        pd.positions[2] = into_buffer(Some(Position {
+        Some(Position {
             activation_epoch:       2,
             amount:                 5,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(4),
-        }));
-        pd.positions[3] = into_buffer(Some(Position {
+        })
+        .try_write(&mut pd.positions[2])
+        .unwrap();
+        Some(Position {
             activation_epoch:       0,
             amount:                 10,
             target_with_parameters: TargetWithParameters::STAKING {
@@ -87,7 +94,9 @@ pub mod tests {
                 publisher: Publisher::DEFAULT,
             },
             unlocking_start:        None,
-        }));
+        })
+        .try_write(&mut pd.positions[3])
+        .unwrap();
 
         let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
         assert_eq!(weight, 0);
@@ -109,15 +118,17 @@ pub mod tests {
     fn test_overflow() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [into_buffer(None); MAX_POSITIONS],
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
         };
 
-        pd.positions[0] = into_buffer(Some(Position {
+        Some(Position {
             activation_epoch:       1,
             amount:                 u64::MAX / 2,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        }));
+        })
+        .try_write(&mut pd.positions[0])
+        .unwrap();
 
         let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
@@ -127,15 +138,17 @@ pub mod tests {
     fn test_locked_amount_zero() {
         let mut pd = PositionData {
             owner:     Pubkey::new_unique(),
-            positions: [into_buffer(None); MAX_POSITIONS],
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
         };
 
-        pd.positions[0] = into_buffer(Some(Position {
+        Some(Position {
             activation_epoch:       1,
             amount:                 u64::MAX / 2,
             target_with_parameters: TargetWithParameters::VOTING {},
             unlocking_start:        Some(3),
-        }));
+        })
+        .try_write(&mut pd.positions[0])
+        .unwrap();
 
         let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);

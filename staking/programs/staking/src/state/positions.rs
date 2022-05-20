@@ -2,9 +2,10 @@ use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
 use anchor_lang::error::Error;
 use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::wasm_bindgen;
 
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
+use anchor_lang::solana_program::wasm_bindgen;
 use bytemuck::{
     Pod,
     Zeroable,
@@ -19,17 +20,20 @@ use std::fmt::{
 };
 
 pub const MAX_POSITIONS: usize = 100;
+pub const POSITION_BUFFER_SIZE: usize = 200;
 pub const POSITION_DATA_PADDING: [u64; 10] = [0u64; 10];
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
 /// The invariant we preserve is : For i < next_index, positions[i] == Some
 /// For i >= next_index, positions[i] == None
+
 #[account(zero_copy)]
 #[derive(BorshSchema, BorshSerialize)]
+#[repr(C)]
 pub struct PositionData {
     pub owner:     Pubkey,
-    pub positions: [[u8; 200]; MAX_POSITIONS],
+    pub positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
 impl PositionData {
@@ -45,23 +49,37 @@ impl PositionData {
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
-    pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
+    pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        self.positions[*next_index as usize] = into_buffer(None);
+        None.try_write(&mut self.positions[i])
     }
 }
 
-pub fn into_buffer(option: Option<Position>) -> [u8; 200] {
-    let mut vec = option.try_to_vec().unwrap();
-    while (vec.len() < 200) {
-        vec.push(0);
-    }
-    return vec.try_into().unwrap();
+pub trait TryBorsh {
+    fn try_read(slice: &[u8]) -> Result<Self>
+    where
+        Self: std::marker::Sized;
+    fn try_write(self, slice: &mut [u8]) -> Result<()>;
 }
 
-pub fn from_buffer(buffer: [u8; 200]) -> Option<Position> {
-    anchor_lang::solana_program::borsh::try_from_slice_unchecked(&buffer).unwrap()
+impl TryBorsh for Option<Position> {
+    fn try_read(slice: &[u8]) -> Result<Self> {
+        try_from_slice_unchecked(&slice).map_err(|_| error!(ErrorCode::IllegalPositionPod))
+    }
+
+    fn try_write(self, slice: &mut [u8]) -> Result<()> {
+        let vec = self
+            .try_to_vec()
+            .map_err(|_| error!(ErrorCode::IllegalPositionPod))?;
+        if slice.len() <= vec.len() {
+            return Err(error!(ErrorCode::IllegalPositionPod));
+        }
+        for i in 0..vec.len() {
+            slice[i] = vec[i];
+        }
+        Ok(())
+    }
 }
 
 
@@ -372,6 +390,9 @@ pub mod tests {
         PositionData,
         PositionState,
         TargetWithParameters,
+        TryBorsh,
+        MAX_POSITIONS,
+        POSITION_BUFFER_SIZE,
     };
     use anchor_lang::solana_program::borsh::get_packed_len;
     #[test]
@@ -438,10 +459,19 @@ pub mod tests {
     fn test_serialized_size() {
         // These are 0-copy serialized, so use std::mem::size_of instead of borsh::get_packed_len
         // If this fails, we need a migration
-        assert_eq!(std::mem::size_of::<OptionPod>(), 200);
+        assert_eq!(std::mem::size_of::<OptionPod>(), POSITION_BUFFER_SIZE);
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
-        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
+        assert_eq!(
+            std::mem::size_of::<PositionData>(),
+            32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
+        );
         assert_eq!(get_packed_len::<Position>(), 91);
+    }
+
+    #[test]
+    fn test_none_is_zero() {
+        let buffer = [0u8; POSITION_BUFFER_SIZE];
+        assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
     }
 }
