@@ -146,8 +146,6 @@ const Staking: NextPage = () => {
     getVestingInfo()
   }, [unvestedPythBalance])
 
-  useEffect(() => {}, [stakeConnection, mainStakeAccount])
-
   // set ui balance amount whenever current tab changes
   useEffect(() => {
     if (connected) {
@@ -210,6 +208,12 @@ const Staking: NextPage = () => {
       toast.error('Please enter a valid amount!')
       return
     }
+    if (PythBalance.fromString(amount) > pythBalance) {
+      toast.error(
+        'Amount is greater than balance. Please enter a valid amount!'
+      )
+      return
+    }
     const depositAmount = PythBalance.fromString(amount)
     if (depositAmount.toBN().gt(new BN(0))) {
       try {
@@ -239,6 +243,12 @@ const Staking: NextPage = () => {
   const handleUnlock = async () => {
     if (!amount) {
       toast.error('Please enter a valid amount!')
+      return
+    }
+    if (PythBalance.fromString(amount) > lockedPythBalance) {
+      toast.error(
+        'Amount is greater than balance. Please enter a valid amount!'
+      )
       return
     }
     const unlockAmount = PythBalance.fromString(amount)
@@ -280,6 +290,12 @@ const Staking: NextPage = () => {
   const handleWithdraw = async () => {
     if (!amount) {
       toast.error('Please enter a valid amount!')
+      return
+    }
+    if (PythBalance.fromString(amount) > unlockedPythBalance) {
+      toast.error(
+        'Amount is greater than balance. Please enter a valid amount!'
+      )
       return
     }
     const withdrawAmount = PythBalance.fromString(amount)
