@@ -36,11 +36,13 @@ mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
 
 #[program]
 pub mod staking {
 
+
+    use std::mem::transmute_copy;
 
     /// Creates a global config for the program
     use super::*;
@@ -449,7 +451,7 @@ pub mod staking {
     }
 
     pub fn upgrade_stake_account_metadata(ctx: Context<UpgradeStakeAccountMetadata>) -> Result<()> {
-        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let mut stake_account_positions = ctx.accounts.stake_account_positions.load_mut()?;
         let v1_metadata = &ctx.accounts.stake_account_metadata_v1;
         if ctx.remaining_accounts.len() != 1 {
             return Err(error!(ErrorCode::AccountUpgradeFailed));
@@ -466,17 +468,18 @@ pub mod staking {
         // First count how many are used
         let mut used_count = 0usize;
         for i in 0..MAX_POSITIONS {
-            if stake_account_positions.positions[i].is_some() {
-                used_count += 1;
-            } else {
-                break;
+            unsafe {
+                let v1_position: Option<Position> =
+                    transmute_copy(&stake_account_positions.positions[i]);
+                if v1_position.is_some() {
+                    v1_position.try_write(&mut stake_account_positions.positions[used_count])?;
+                    used_count += 1;
+                }
             }
         }
-        // From that position all, they should all be None
+        // From that position all, write all None's
         for i in used_count..MAX_POSITIONS {
-            if stake_account_positions.positions[i].is_some() {
-                return Err(error!(ErrorCode::AccountUpgradeFailed));
-            }
+            None.try_write(&mut stake_account_positions.positions[i])?
         }
         let upgraded = v1_metadata.as_v2(
             used_count

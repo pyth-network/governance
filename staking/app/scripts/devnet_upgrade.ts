@@ -1,5 +1,10 @@
 import * as anchor from "@project-serum/anchor";
-import { AnchorProvider, Program, utils } from "@project-serum/anchor";
+import {
+  AnchorProvider,
+  IdlAccounts,
+  Program,
+  utils,
+} from "@project-serum/anchor";
 import {
   Connection,
   Keypair,
@@ -21,6 +26,7 @@ import { exec } from "child_process";
 import shell from "shelljs";
 
 import fs from "fs";
+import { PositionAccountJs } from "../PositionAccountJs";
 
 const DRY_RUN = true;
 const UPGRADE_AUTH_KEYPAIR_PATH =
@@ -37,15 +43,14 @@ interface ToPairAccountInterface {
 // Assumes each metadata account maps to one position account but there might be position accounts without a metadata
 // account (if they've already been upgraded). If this assumption is not true, you can rewite this to use only the
 // second pass.
-async function pairAccounts(
-  positionAccounts: ToPairAccountInterface[],
-  metadataAccounts: ToPairAccountInterface[],
-  programId: PublicKey
-) {
+async function pairAccounts<
+  P extends ToPairAccountInterface,
+  M extends ToPairAccountInterface
+>(positionAccounts: P[], metadataAccounts: M[], programId: PublicKey) {
   // First pass: Among owners with only one account, pair them
   let paired: {
-    position: ToPairAccountInterface;
-    metadata: ToPairAccountInterface;
+    position: P;
+    metadata: M;
   }[] = [];
   let positionByOwner = groupByOwner(positionAccounts);
   let metadataByOwner = groupByOwner(metadataAccounts);
@@ -88,9 +93,9 @@ async function pairAccounts(
   assert(paired.length == metadataAccounts.length);
   return paired;
 
-  function groupByOwner(list: ToPairAccountInterface[]) {
+  function groupByOwner<T extends ToPairAccountInterface>(list: T[]) {
     // JS map doesn't use the right equality for a Pubkey, so the keys are strings
-    let grouped: Map<string, ToPairAccountInterface[]> = new Map();
+    let grouped: Map<string, T[]> = new Map();
     list.forEach((elem) => {
       if (grouped.has(elem.account.owner.toBase58()))
         grouped.get(elem.account.owner.toBase58()).push(elem);
@@ -200,7 +205,6 @@ async function upgradeProgram(
   const idlFinished = new Promise((resolve) => {
     connection.onAccountChange(idlAddressKey, resolve, "finalized");
   });
-  connection.onAccountChange;
   let idlResult = shell.exec(
     `anchor idl upgrade --provider.cluster ${
       connection.rpcEndpoint
@@ -213,7 +217,10 @@ async function upgradeProgram(
 
 async function upgradeAccounts(connection: anchor.web3.Connection) {
   const feePayer = Keypair.generate();
-  await connection.requestAirdrop(feePayer.publicKey, LAMPORTS_PER_SOL);
+  const airDropSignature = await connection.requestAirdrop(
+    feePayer.publicKey,
+    LAMPORTS_PER_SOL
+  );
   const provider = new AnchorProvider(
     connection,
     new anchor.Wallet(feePayer),
@@ -245,6 +252,7 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
     allV1,
     DEVNET_STAKING_ADDRESS
   );
+  await connection.confirmTransaction(airDropSignature);
   console.log("%d accounts found in need of upgrade", allV1.length);
   // Upgrade one of our accounts first to make sure everything is working
   const testAccount = pairs.find(
@@ -296,6 +304,20 @@ async function upgrade(
       ])
       .rpc()
   );
+  const newMetadata = await program.account.stakeAccountMetadataV2.fetch(
+    account.metadata.publicKey
+  );
+  const newPosition = await program.account.positionData.fetch(
+    account.position.publicKey
+  );
+  const nextIndex = newMetadata.nextIndex;
+  const parsedPositions = PositionAccountJs.fromAnchor(
+    newPosition,
+    program.idl
+  );
+  if (nextIndex > 0) assert(parsedPositions.positions[nextIndex - 1] != null);
+  assert(parsedPositions.positions[nextIndex] == null);
+  console.log("Success. %d positions", nextIndex);
 }
 
 main();

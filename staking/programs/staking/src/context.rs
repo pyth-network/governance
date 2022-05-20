@@ -273,6 +273,7 @@ pub struct UpgradeStakeAccountMetadata<'info> {
     #[account(mut)]
     pub payer:                     Signer<'info>,
     // Stake program accounts:
+    #[account(mut)]
     pub stake_account_positions:   AccountLoader<'info, positions::PositionData>,
     // Must not be mut or the upgrade will be overwritten
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata_v1.metadata_bump)]
