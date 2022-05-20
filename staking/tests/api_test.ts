@@ -115,7 +115,7 @@ describe("api", async () => {
 
     await expectFailApi(
       stakeConnection.unlockTokens(stakeAccount, PythBalance.fromString("701")),
-      "Amount greater than locked amount"
+      "Amount greater than locked amount."
     );
 
     await assertBalanceMatches(
@@ -153,7 +153,7 @@ describe("api", async () => {
         stakeAccount,
         PythBalance.fromString("601")
       ),
-      "Amount exceeds withdrawable"
+      "Amount exceeds withdrawable."
     );
 
     await assertBalanceMatches(
