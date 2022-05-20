@@ -65,15 +65,15 @@ pub trait TryBorsh {
 
 impl TryBorsh for Option<Position> {
     fn try_read(slice: &[u8]) -> Result<Self> {
-        try_from_slice_unchecked(&slice).map_err(|_| error!(ErrorCode::IllegalPositionPod))
+        try_from_slice_unchecked(&slice).map_err(|_| error!(ErrorCode::PositionSerDe))
     }
 
     fn try_write(self, slice: &mut [u8]) -> Result<()> {
         let vec = self
             .try_to_vec()
-            .map_err(|_| error!(ErrorCode::IllegalPositionPod))?;
+            .map_err(|_| error!(ErrorCode::PositionSerDe))?;
         if slice.len() <= vec.len() {
-            return Err(error!(ErrorCode::IllegalPositionPod));
+            return Err(error!(ErrorCode::PositionSerDe));
         }
         for i in 0..vec.len() {
             slice[i] = vec[i];
@@ -126,7 +126,7 @@ impl TryInto<Option<u64>> for UnlockingStartPod {
         match self.tag {
             0 => Ok(None),
             1 => Ok(Some(self.unlocking_start)),
-            _ => Err(error!(ErrorCode::IllegalPositionPod)),
+            _ => Err(error!(ErrorCode::PositionSerDe)),
         }
     }
 }
@@ -218,7 +218,7 @@ impl TryFrom<OptionPod> for Option<Position> {
 
             1 => Ok(Some(option_pod.position.try_into()?)),
 
-            _ => Err(error!(ErrorCode::IllegalPositionPod)),
+            _ => Err(error!(ErrorCode::PositionSerDe)),
         }
     }
 }
@@ -267,7 +267,7 @@ impl TryInto<TargetWithParameters> for TargetWithParametersPod {
                 product:   self.product,
                 publisher: self.publisher.try_into()?,
             }),
-            _ => Err(error!(ErrorCode::IllegalPositionPod)),
+            _ => Err(error!(ErrorCode::PositionSerDe)),
         }
     }
 }
@@ -307,7 +307,7 @@ impl TryInto<Publisher> for PublisherPod {
             1 => Ok(Publisher::SOME {
                 address: self.address,
             }),
-            _ => Err(error!(ErrorCode::IllegalPositionPod)),
+            _ => Err(error!(ErrorCode::PositionSerDe)),
         }
     }
 }

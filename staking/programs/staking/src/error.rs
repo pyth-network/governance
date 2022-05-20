@@ -48,7 +48,7 @@ pub enum ErrorCode {
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Error deserializing position")]
-    IllegalPositionPod,
+    PositionSerDe,
     #[msg("Other")]
     Other,
 }
