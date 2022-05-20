@@ -10,9 +10,6 @@ use crate::state::target::{
     TargetMetadata,
     TARGET_METADATA_SIZE,
 };
-
-use std::convert::TryInto;
-
 use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
@@ -20,14 +17,11 @@ use anchor_lang::prelude::{
     Clock,
     Error,
 };
-use anchor_lang::solana_program::borsh::get_packed_len;
 use anchor_lang::{
     AccountDeserialize,
     AnchorDeserialize,
     Discriminator,
 };
-use borsh::BorshSerialize;
-use std::io::Write;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -295,6 +289,10 @@ impl Constants {
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
         PositionData::discriminator().len() + std::mem::size_of::<PositionData>()
+    }
+    #[wasm_bindgen]
+    pub fn POSITION_BUFFER_SIZE() -> usize {
+        crate::state::positions::POSITION_BUFFER_SIZE
     }
 }
 

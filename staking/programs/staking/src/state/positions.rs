@@ -62,14 +62,9 @@ impl TryBorsh for Option<Position> {
     }
 
     fn try_write(self, slice: &mut [u8]) -> Result<()> {
-        let vec = self
-            .try_to_vec()
-            .map_err(|_| error!(ErrorCode::PositionSerDe))?;
-        if slice.len() <= vec.len() {
-            return Err(error!(ErrorCode::PositionSerDe));
-        }
-        slice[..vec.len()].copy_from_slice(&vec[..]);
-        Ok(())
+        let mut ptr = slice;
+        self.serialize(&mut ptr)
+            .map_err(|_| error!(ErrorCode::PositionSerDe))
     }
 }
 
