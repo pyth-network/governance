@@ -132,40 +132,6 @@ impl TryInto<Option<u64>> for UnlockingStartPod {
 }
 
 
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct PositionPod {
-    pub amount:                 u64,
-    pub activation_epoch:       u64,
-    pub unlocking_start:        UnlockingStartPod,
-    pub target_with_parameters: TargetWithParametersPod,
-    pub reserved:               [u64; 10],
-}
-
-impl From<Position> for PositionPod {
-    fn from(position: Position) -> Self {
-        PositionPod {
-            amount:                 position.amount,
-            activation_epoch:       position.activation_epoch,
-            unlocking_start:        position.unlocking_start.into(),
-            target_with_parameters: position.target_with_parameters.into(),
-            reserved:               POSITION_DATA_PADDING,
-        }
-    }
-}
-
-impl TryInto<Position> for PositionPod {
-    type Error = Error;
-    fn try_into(self) -> Result<Position> {
-        Ok(Position {
-            amount:                 self.amount,
-            activation_epoch:       self.activation_epoch,
-            unlocking_start:        self.unlocking_start.try_into()?,
-            target_with_parameters: self.target_with_parameters.try_into()?,
-        })
-    }
-}
-
 #[derive(
     AnchorSerialize,
     AnchorDeserialize,
@@ -197,41 +163,6 @@ pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
 }
-
-
-#[derive(Pod, Zeroable, Copy, Clone, BorshSchema, AnchorSerialize, AnchorDeserialize)]
-#[repr(C)]
-pub struct PublisherPod {
-    tag:     u64,
-    address: Pubkey,
-}
-
-impl From<Publisher> for PublisherPod {
-    fn from(publisher: Publisher) -> Self {
-        match publisher {
-            Publisher::DEFAULT => PublisherPod {
-                tag:     0,
-                address: Pubkey::default(),
-            },
-            Publisher::SOME { address } => PublisherPod { tag: 1, address },
-        }
-    }
-}
-
-impl TryInto<Publisher> for PublisherPod {
-    type Error = Error;
-    fn try_into(self) -> Result<Publisher> {
-        match self.tag {
-            0 => Ok(Publisher::DEFAULT),
-
-            1 => Ok(Publisher::SOME {
-                address: self.address,
-            }),
-            _ => Err(error!(ErrorCode::PositionSerDe)),
-        }
-    }
-}
-
 
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
