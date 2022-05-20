@@ -294,7 +294,7 @@ export class StakeConnection {
         .toBN()
         .gt(lockedSummary.locked.toBN().add(lockedSummary.locking.toBN()))
     ) {
-      throw new Error("Amount greater than locked amount");
+      throw new Error("Amount greater than locked amount.");
     }
 
     await this.unlockTokensUnchecked(stakeAccount, amount);
@@ -673,7 +673,7 @@ export class StakeConnection {
             .withdrawable.toBN()
         )
     ) {
-      throw new Error("Amount exceeds withdrawable");
+      throw new Error("Amount exceeds withdrawable.");
     }
 
     const toAccount = await Token.getAssociatedTokenAddress(
