@@ -197,7 +197,7 @@ pub mod staking {
             return Err(error!(ErrorCode::WrongTarget));
         }
 
-        let _original_amount = current_position.amount;
+        let original_amount = current_position.amount;
 
         let remaining_amount = current_position
             .amount
@@ -214,12 +214,12 @@ pub mod staking {
                     // create another position with the rest. The newly created position
                     // will unlock after unlocking_duration epochs.
 
-                    // assert_eq!(
-                    //     original_amount,
-                    //     <Option<Position>>::try_from(stake_account_positions.positions[i])?
-                    //         .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                    //         .amount
-                    // );
+                    assert_eq!(
+                        original_amount,
+                        <Option<Position>>::try_read(&stake_account_positions.positions[i])?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            .amount
+                    );
                 } else {
                     current_position.amount = remaining_amount;
                     Some(*current_position).try_write(&mut stake_account_positions.positions[i])?;
@@ -238,22 +238,23 @@ pub mod staking {
                             })
                             .try_write(&mut stake_account_positions.positions[j])?;
 
-                            // assert_ne!(i, j);
-                            // assert_eq!(
-                            //     original_amount,
-                            //     <Option<Position>>::try_from(stake_account_positions.
-                            // positions[i])?         .ok_or_else(||
-                            // error!(ErrorCode::PositionNotInUse))?
-                            //         .amount
-                            //         .checked_add(
-                            //             <Option<Position>>::try_from(
-                            //                 stake_account_positions.positions[j]
-                            //             )?
-                            //             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                            //             .amount
-                            //         )
-                            //         .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
-                            // );
+                            assert_ne!(i, j);
+                            assert_eq!(
+                                original_amount,
+                                <Option<Position>>::try_read(
+                                    &stake_account_positions.positions[i]
+                                )?
+                                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                .amount
+                                .checked_add(
+                                    <Option<Position>>::try_read(
+                                        &stake_account_positions.positions[j]
+                                    )?
+                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                    .amount
+                                )
+                                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                            );
                         }
                     }
                 }
