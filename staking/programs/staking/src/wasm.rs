@@ -4,7 +4,6 @@ use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use crate::state::positions::{
     Position,
     PositionData,
-    PositionPod,
     PositionState,
     TryBorsh,
 };
