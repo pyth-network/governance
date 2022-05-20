@@ -41,20 +41,7 @@ const Footer = () => {
           <DiscordIcon />
         </a>
       </div>
-      <div className=" hidden items-center justify-center gap-x-1 md:flex ">
-        <p className="cursor-default text-base font-light text-white ">
-          Powered by
-        </p>
-
-        <a
-          rel="noreferrer"
-          href="https://solana.com/"
-          target="_blank"
-          className="text-base font-bold text-white transition-all duration-200 hover:text-pink"
-        >
-          Solana
-        </a>
-      </div>
+      <div className="hidden items-center justify-center gap-x-1 md:w-36 md:flex "></div>
     </div>
   )
 }
