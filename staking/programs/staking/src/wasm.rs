@@ -3,7 +3,6 @@ use crate::error::ErrorCode;
 use crate::state::positions::{
     Position,
     PositionData,
-    PositionPod,
     PositionState,
     TryBorsh,
 };
