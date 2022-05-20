@@ -236,7 +236,6 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use crate::state::positions::{
-        OptionPod,
         Position,
         PositionData,
         PositionState,
@@ -308,16 +307,13 @@ pub mod tests {
     }
     #[test]
     fn test_serialized_size() {
-        // These are 0-copy serialized, so use std::mem::size_of instead of borsh::get_packed_len
-        // If this fails, we need a migration
-        assert_eq!(std::mem::size_of::<OptionPod>(), POSITION_BUFFER_SIZE);
         // This one failing is much worse. If so, just change the number of positions and/or add
         // padding
         assert_eq!(
             std::mem::size_of::<PositionData>(),
             32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
-        assert_eq!(get_packed_len::<Position>(), 91);
+        assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
     }
 
     #[test]
