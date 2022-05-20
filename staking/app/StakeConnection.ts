@@ -186,7 +186,7 @@ export class StakeConnection {
       address
     );
     const stakeAccountPositionsWasm = new wasm.WasmPositionData(inbuf!.data);
-    const stakeAccountPositionsJs = new PositionAccountJs(
+    const stakeAccountPositionsJs = PositionAccountJs.fromBuffer(
       inbuf!.data,
       this.program.idl
     );
