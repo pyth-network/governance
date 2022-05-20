@@ -175,15 +175,15 @@ pub mod tests {
             (44, PositionState::PREUNLOCKING),
             (50, PositionState::UNLOCKING),
         ];
-        for (current_epoch, _desired_state) in tests {
-            // assert_eq!(
-            //     <Option<Position>>::try_from(pd.positions[0])
-            //         .unwrap()
-            //         .unwrap()
-            //         .get_current_position(current_epoch, 1)
-            //         .unwrap(),
-            //     desired_state
-            // );
+        for (current_epoch, desired_state) in tests {
+            assert_eq!(
+                <Option<Position>>::try_read(&pd.positions[0])
+                    .unwrap()
+                    .unwrap()
+                    .get_current_position(current_epoch, 1)
+                    .unwrap(),
+                desired_state
+            );
             assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3); // 10 vested
             assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0); // 7 vested, the limit
             assert_eq!(validate(&pd, 10, 3, current_epoch, 1).unwrap(), 0); // 7 vested
