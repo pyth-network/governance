@@ -221,7 +221,7 @@ const Staking: NextPage = () => {
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
-      await refreshBalance()
+      await refreshStakeAccount()
     } else {
       toast.error('Amount must be greater than 0.')
     }
@@ -250,7 +250,7 @@ const Staking: NextPage = () => {
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
         }
-        await refreshBalance()
+        await refreshStakeAccount()
       } else {
         toast.error('Stake account is undefined.')
       }
@@ -294,7 +294,7 @@ const Staking: NextPage = () => {
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
         }
-        await refreshBalance()
+        await refreshStakeAccount()
       } else {
         toast.error('Stake account is undefined.')
       }
@@ -305,16 +305,8 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
-    if (stakeConnection && publicKey) {
-      setIsBalanceLoading(true)
-      setPythBalance(await getPythTokenBalance(connection, publicKey))
-      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
-      if (stakeAccounts.length === 0) {
-        setIsBalanceLoading(false)
-      }
-      for (const acc of stakeAccounts) {
-        if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
-          const { withdrawable, locked, unvested } = acc.getBalanceSummary(
+    if (stakeConnection && publicKey && mainStakeAccount) {
+          const { withdrawable, locked, unvested } = mainStakeAccount.getBalanceSummary(
             await stakeConnection.getTime()
           )
           setLockingPythBalance(locked.locking)
@@ -328,9 +320,25 @@ const Staking: NextPage = () => {
           setUnlockedPythBalance(withdrawable)
           setIsBalanceLoading(false)
         }
-      }
+      
     }
+  
+
+  const refreshStakeAccount = async () => {
+    if (stakeConnection && publicKey) {
+      setIsBalanceLoading(true)
+      setPythBalance(await getPythTokenBalance(connection, publicKey))
+      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
+      if (stakeAccounts.length === 0) {
+        setIsBalanceLoading(false)
+      }
+      for (const acc of stakeAccounts) {
+        if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
+          setMainStakeAccount(acc);
+        }
+      }    
   }
+}
 
   // set current tab value when tab is clicked
   const handleChangeTab = (index: number) => {
