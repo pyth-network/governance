@@ -36,7 +36,7 @@ mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
+declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {

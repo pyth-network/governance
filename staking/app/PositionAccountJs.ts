@@ -10,7 +10,7 @@ export class PositionAccountJs {
   public owner: PublicKey;
   public positions: Position[];
 
-    constructor(buffer: Buffer, idl: Idl) {
+  constructor(buffer: Buffer, idl: Idl) {
     // Fabricate a fake IDL for this so that we can leverage Anchor's Borsh decoding
     const optionPositionType = {
       name: "OptionPosition",

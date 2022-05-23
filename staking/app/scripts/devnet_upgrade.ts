@@ -307,14 +307,11 @@ async function upgrade(
   const newMetadata = await program.account.stakeAccountMetadataV2.fetch(
     account.metadata.publicKey
   );
-  const newPosition = await program.account.positionData.fetch(
+  const newPosition = await program.provider.connection.getAccountInfo(
     account.position.publicKey
   );
   const nextIndex = newMetadata.nextIndex;
-  const parsedPositions = PositionAccountJs.fromAnchor(
-    newPosition,
-    program.idl
-  );
+  const parsedPositions = new PositionAccountJs(newPosition.data, program.idl);
   if (nextIndex > 0) assert(parsedPositions.positions[nextIndex - 1] != null);
   assert(parsedPositions.positions[nextIndex] == null);
   console.log("Success. %d positions", nextIndex);
