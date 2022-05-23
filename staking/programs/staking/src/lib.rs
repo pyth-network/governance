@@ -17,7 +17,6 @@ use state::positions::{
     PositionState,
     Target,
     TargetWithParameters,
-    TryBorsh,
     MAX_POSITIONS,
     POSITION_BUFFER_SIZE,
 };
@@ -195,7 +194,7 @@ pub mod staking {
             return Err(error!(ErrorCode::WrongTarget));
         }
 
-        let original_amount = wrapped_current_position.position.amount;
+        // let original_amount = wrapped_current_position.position.amount;
 
         let remaining_amount = wrapped_current_position
             .position
