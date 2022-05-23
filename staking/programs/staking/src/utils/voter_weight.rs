@@ -1,5 +1,6 @@
 use crate::error::ErrorCode;
 use crate::state::positions::{
+    Position,
     PositionData,
     PositionState,
     TryBorsh,
@@ -17,7 +18,8 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = TryBorsh::try_read(&stake_account_positions.positions[i])? {
+        if let Some(position) = <Option<Position>>::try_read(&stake_account_positions.positions[i])?
+        {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
