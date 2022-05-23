@@ -1,4 +1,3 @@
-use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
@@ -19,7 +18,6 @@ pub const POSITION_BUFFER_SIZE: usize = 200;
 /// For i >= next_index, positions[i] == None
 
 #[account(zero_copy)]
-#[derive(BorshSchema, BorshSerialize)]
 #[repr(C)]
 pub struct PositionData {
     pub owner:     Pubkey,
@@ -42,7 +40,7 @@ impl PositionData {
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        None.try_write(&mut self.positions[i])
+        None::<Option<Position>>.try_write(&mut self.positions[i])
     }
 }
 
@@ -53,7 +51,10 @@ pub trait TryBorsh {
     fn try_write(self, slice: &mut [u8]) -> Result<()>;
 }
 
-impl TryBorsh for Option<Position> {
+impl<T> TryBorsh for T
+where
+    T: AnchorDeserialize + AnchorSerialize,
+{
     fn try_read(slice: &[u8]) -> Result<Self> {
         try_from_slice_unchecked(slice).map_err(|_| error!(ErrorCode::PositionSerDe))
     }
