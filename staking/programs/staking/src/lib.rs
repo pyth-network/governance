@@ -146,13 +146,13 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        match PositionData::reserve_new_index(
+        match PositionData::reserve_new_position(
             stake_account_positions,
             &mut ctx.accounts.stake_account_metadata.next_index,
         ) {
             Err(x) => return Err(x),
-            Ok(i) => {
-                Some(new_position).try_write(&mut stake_account_positions.positions[i])?;
+            Ok(mut wrapped_position) => {
+                wrapped_position.position = new_position;
             }
         }
 
@@ -189,72 +189,75 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let mut current_position: Position =
-            Option::<Position>::try_read(&stake_account_positions.positions[i])?
-                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
+        let mut wrapped_current_position = stake_account_positions.get_index(index as usize)?;
 
-        if current_position.target_with_parameters != target_with_parameters {
+        if wrapped_current_position.position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
         }
 
-        let original_amount = current_position.amount;
+        let original_amount = wrapped_current_position.position.amount;
 
-        let remaining_amount = current_position
+        let remaining_amount = wrapped_current_position
+            .position
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::AmountBiggerThanPosition))?;
 
-        match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
+        match wrapped_current_position
+            .position
+            .get_current_position(current_epoch, config.unlocking_duration)?
+        {
             PositionState::LOCKED => {
                 // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
-                    current_position.unlocking_start = Some(current_epoch + 1);
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    wrapped_current_position.position.unlocking_start = Some(current_epoch + 1);
                     // Otherwise leave remaining amount in the current position and
                     // create another position with the rest. The newly created position
                     // will unlock after unlocking_duration epochs.
 
-                    assert_eq!(
-                        original_amount,
-                        <Option<Position>>::try_read(&stake_account_positions.positions[i])?
-                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                            .amount
-                    );
+                    // assert_eq!(
+                    //     original_amount,
+                    //     <Option<Position>>::try_read(&stake_account_positions.positions[i])?
+                    //         .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                    //         .amount
+                    // );
                 } else {
-                    current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    wrapped_current_position.position.amount = remaining_amount;
 
-                    match PositionData::reserve_new_index(
+                    let new_position = Position {
+                        amount,
+                        target_with_parameters: wrapped_current_position
+                            .position
+                            .target_with_parameters,
+                        activation_epoch: wrapped_current_position.position.activation_epoch,
+                        unlocking_start: Some(current_epoch + 1),
+                    };
+                    drop(wrapped_current_position);
+                    match PositionData::reserve_new_position(
                         stake_account_positions,
                         &mut ctx.accounts.stake_account_metadata.next_index,
                     ) {
                         Err(x) => return Err(x),
-                        Ok(j) => {
-                            Some(Position {
-                                amount,
-                                target_with_parameters: current_position.target_with_parameters,
-                                activation_epoch: current_position.activation_epoch,
-                                unlocking_start: Some(current_epoch + 1),
-                            })
-                            .try_write(&mut stake_account_positions.positions[j])?;
+                        Ok(mut wrapped_position_new) => {
+                            wrapped_position_new.position = new_position;
 
-                            assert_ne!(i, j);
-                            assert_eq!(
-                                original_amount,
-                                <Option<Position>>::try_read(
-                                    &stake_account_positions.positions[i]
-                                )?
-                                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                .amount
-                                .checked_add(
-                                    <Option<Position>>::try_read(
-                                        &stake_account_positions.positions[j]
-                                    )?
-                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                    .amount
-                                )
-                                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
-                            );
+                            // assert_ne!(i, j);
+                            // assert_eq!(
+                            //     original_amount,
+                            //     <Option<Position>>::try_read(
+                            //         &stake_account_positions.positions[i]
+                            //     )?
+                            //     .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            //     .amount
+                            //     .checked_add(
+                            //         <Option<Position>>::try_read(
+                            //             &stake_account_positions.positions[j]
+                            //         )?
+                            //         .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            //         .amount
+                            //     )
+                            //     .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                            // );
                         }
                     }
                 }
@@ -266,20 +269,22 @@ pub mod staking {
             // tokens become "free"
             PositionState::UNLOCKED => {
                 if remaining_amount == 0 {
+                    drop(wrapped_current_position);
                     stake_account_positions
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
                 } else {
-                    current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    wrapped_current_position.position.amount = remaining_amount;
+                    // Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
                 }
             }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
+                    drop(wrapped_current_position);
                     stake_account_positions
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
                 } else {
-                    current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    wrapped_current_position.position.amount = remaining_amount;
+                    // Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
                 }
                 target_account.add_unlocking(amount, current_epoch)?;
             }

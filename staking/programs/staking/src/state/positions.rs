@@ -26,11 +26,19 @@ pub struct PositionData {
 
 impl PositionData {
     /// Finds first index available for a new position, increments the internal counter
-    pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
+    pub fn reserve_new_position(&mut self, next_index: &mut u8) -> Result<WrappedPosition> {
         let res = *next_index as usize;
         *next_index += 1;
         if res < MAX_POSITIONS {
-            Ok(res)
+            Ok(WrappedPosition {
+                buffer:   &mut self.positions[res],
+                position: Position {
+                    amount:                 0,
+                    activation_epoch:       0,
+                    unlocking_start:        None,
+                    target_with_parameters: TargetWithParameters::VOTING,
+                },
+            })
         } else {
             Err(error!(ErrorCode::TooManyPositions))
         }
@@ -41,6 +49,27 @@ impl PositionData {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
         None::<Option<Position>>.try_write(&mut self.positions[i])
+    }
+
+    pub fn get_index(&mut self, i: usize) -> Result<WrappedPosition> {
+        let position = Option::<Position>::try_read(&self.positions[i])?
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
+        Ok(WrappedPosition {
+            buffer: &mut self.positions[i],
+            position,
+        })
+    }
+}
+
+
+pub struct WrappedPosition<'a> {
+    buffer:       &'a mut [u8],
+    pub position: Position,
+}
+
+impl<'a> Drop for WrappedPosition<'a> {
+    fn drop(&mut self) {
+        Some(self.position).try_write(self.buffer).unwrap();
     }
 }
 
@@ -78,7 +107,6 @@ pub struct Position {
     pub unlocking_start:        Option<u64>,
     pub target_with_parameters: TargetWithParameters,
 }
-
 
 #[derive(
     AnchorSerialize,
