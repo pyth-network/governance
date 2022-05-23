@@ -10,8 +10,8 @@ use std::fmt::{
 };
 
 pub const MAX_POSITIONS: usize = 100;
+// Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
-pub const POSITION_DATA_PADDING: [u64; 10] = [0u64; 10];
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
@@ -71,7 +71,6 @@ impl TryBorsh for Option<Position> {
 /// of the state related to a position The voting position is a position where the
 /// target_with_parameters is VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
-#[repr(C)]
 pub struct Position {
     pub amount:                 u64,
     pub activation_epoch:       u64,
