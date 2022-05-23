@@ -863,8 +863,7 @@ export class StakeAccount {
         this.votingAccountMetadataWasm.getCurrentAmountLocked(
           BigInt(currentEpoch.toString())
         )
-      ),
-      BigInt(this.totalSupply.toString())
+      )
     );
 
     return new PythBalance(new BN(voterWeightBI.toString()));

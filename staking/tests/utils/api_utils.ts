@@ -24,7 +24,7 @@ import {
   VoteTypeKind,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
-
+import * as wasm from "../../wasm";
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */
@@ -95,17 +95,11 @@ async function assertVoterWeightEqualsAt(
   time: BN
 ) {
   const stakeAccount = await stakeConnection.getMainAccount(owner);
-
-  const pythMintInfo = await new Token(
-    stakeConnection.provider.connection,
-    stakeConnection.config.pythTokenMint,
-    TOKEN_PROGRAM_ID,
-    new Keypair()
-  ).getMintInfo();
-  const pythMintSupply: BN = pythMintInfo.supply;
+  const pythMintSupply: BN = new BN(
+    wasm.Constants.MAX_VOTER_WEIGHT().toString()
+  );
 
   // First check expected matches the WASM-computed value
-
   let expectedScaled = new BN(0);
   if (expected.totalLockedBalance.toBN().gtn(0))
     expectedScaled = expected.rawVoterWeight

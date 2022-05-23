@@ -234,9 +234,19 @@ pub struct UpdateVoterWeight<'info> {
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_target.bump)]
     pub governance_target:       Account<'info, target::TargetMetadata>,
-    #[account(address = config.pyth_token_mint)]
-    pub pyth_mint:               Account<'info, Mint>,
 }
+#[derive(Accounts)]
+pub struct UpdateMaxVoterWeight<'info> {
+    // Native payer:
+    #[account(mut)]
+    pub payer:            Signer<'info>,
+    #[account(init_if_needed, payer = payer, space = max_voter_weight_record::MAX_VOTER_WEIGHT_RECORD_SIZE ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
+    pub max_voter_record: Account<'info, max_voter_weight_record::MaxVoterWeightRecord>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:           Account<'info, global_config::GlobalConfig>,
+    pub system_program:   Program<'info, System>,
+}
+
 
 #[derive(Accounts)]
 #[instruction(target : positions::Target)]

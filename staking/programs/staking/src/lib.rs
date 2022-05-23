@@ -40,6 +40,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
+    use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
     use crate::state::positions::POSITION_DATA_PADDING;
 
     /// Creates a global config for the program
@@ -360,7 +361,6 @@ pub mod staking {
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
         let governance_target = &mut ctx.accounts.governance_target;
-        let pyth_mint = &ctx.accounts.pyth_mint;
 
         let current_epoch = get_current_epoch(config).unwrap();
         governance_target.update(current_epoch)?;
@@ -421,10 +421,21 @@ pub mod staking {
             epoch_of_snapshot,
             config.unlocking_duration,
             governance_target.get_current_amount_locked(epoch_of_snapshot)?,
-            pyth_mint.supply,
+            MAX_VOTER_WEIGHT,
         )?;
         voter_record.voter_weight_expiry = Some(Clock::get()?.slot);
 
+        Ok(())
+    }
+
+    pub fn update_max_voter_weight(ctx: Context<UpdateMaxVoterWeight>) -> Result<()> {
+        let config = &ctx.accounts.config;
+        let max_voter_record = &mut ctx.accounts.max_voter_record;
+
+        max_voter_record.realm = config.pyth_governance_realm;
+        max_voter_record.governing_token_mint = config.pyth_token_mint;
+        max_voter_record.max_voter_weight = MAX_VOTER_WEIGHT;
+        max_voter_record.max_voter_weight_expiry = None; // never expires
         Ok(())
     }
 
