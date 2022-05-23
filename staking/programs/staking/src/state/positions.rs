@@ -254,17 +254,17 @@ pub mod tests {
     }
     #[test]
     fn test_serialized_size() {
-        // This one failing is much worse. If so, just change the number of positions and/or add
-        // padding
         assert_eq!(
             std::mem::size_of::<PositionData>(),
             32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
+        // Checks that the position struct fits in the individual position buffer
         assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
     }
 
     #[test]
     fn test_none_is_zero() {
+        // Checks that it's fine to initialize a position buffer with zeros
         let buffer = [0u8; POSITION_BUFFER_SIZE];
         assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
     }
