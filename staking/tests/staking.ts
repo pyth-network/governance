@@ -205,11 +205,7 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-    const positionAccount = new PositionAccountJs(
-      inbuf.data,
-      program.idl,
-      program.coder
-    );
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
     for (let index = 0; index < positionAccount.positions.length; index++) {
       assert.equal(positionAccount.positions[index], null);
     }
@@ -244,11 +240,7 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-    const positionAccount = new PositionAccountJs(
-      inbuf.data,
-      program.idl,
-      program.coder
-    );
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
     assert.equal(
       JSON.stringify(positionAccount.positions[0]),
       JSON.stringify({
