@@ -41,6 +41,7 @@ import {
 import assert from "assert";
 import { PositionAccountJs, Position } from "./PositionAccountJs";
 let wasm = wasm2;
+export { wasm };
 
 interface ClosingItem {
   amount: BN;
@@ -187,8 +188,7 @@ export class StakeConnection {
     const stakeAccountPositionsWasm = new wasm.WasmPositionData(inbuf!.data);
     const stakeAccountPositionsJs = new PositionAccountJs(
       inbuf!.data,
-      this.program.idl,
-      this.program.coder
+      this.program.idl
     );
 
     return { stakeAccountPositionsWasm, stakeAccountPositionsJs };
