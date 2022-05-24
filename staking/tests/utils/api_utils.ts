@@ -195,13 +195,9 @@ class MockProposalCreator {
     const schema = getGovernanceSchemaForAccount(
       GovernanceAccountType.ProposalV2
     );
-    const serializedProp = serialize(
-      schema,
-      proposal,
-      this.GovernanceBinaryWriter
-    );
+    const serializedProp = serialize(schema, proposal);
     const sharedMemData = new BinaryWriter();
-    sharedMemData.writeU64(0); // Offset
+    sharedMemData.writeU64(new BN(0)); // Offset
     sharedMemData.writeFixedArray(serializedProp);
 
     // BpfLoader.load requires the fee payer to be a Keypair, so we need to transfer some Sol to a new fee-payer

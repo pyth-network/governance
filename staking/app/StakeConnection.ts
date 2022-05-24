@@ -395,7 +395,6 @@ export class StakeConnection {
       .updateVoterWeight(action)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
-        pythMint: this.config.pythTokenMint,
       })
       .remainingAccounts(
         remainingAccount
