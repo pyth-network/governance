@@ -134,7 +134,6 @@ const Staking: NextPage = () => {
     if (amount && balance) {
       if (amount.slice(-1) !== '.') {
         if (PythBalance.fromString(amount) > balance) {
-          console.log('here')
           setIsSufficientBalance(false)
         } else {
           setIsSufficientBalance(true)
