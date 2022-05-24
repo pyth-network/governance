@@ -452,52 +452,6 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn upgrade_stake_account_metadata(ctx: Context<UpgradeStakeAccountMetadata>) -> Result<()> {
-        let mut stake_account_positions = ctx.accounts.stake_account_positions.load_mut()?;
-        let v1_metadata = &ctx.accounts.stake_account_metadata_v1;
-        if ctx.remaining_accounts.len() != 1 {
-            return Err(error!(ErrorCode::AccountUpgradeFailed));
-        }
-        // Even though this is a raw AccountInfo, it's the same account as v1_metadata, so we know
-        // the owner is this program
-        let v2_version = &ctx.remaining_accounts[0];
-        if !v2_version.is_writable {
-            return Err(error!(ErrorCode::AccountUpgradeFailed));
-        }
-        if *v2_version.key != v1_metadata.key() {
-            return Err(error!(ErrorCode::AccountUpgradeFailed));
-        }
-        // First count how many are used
-        let mut used_count = 0usize;
-        for i in 0..MAX_POSITIONS {
-            unsafe {
-                let v1_position: Option<Position> =
-                    transmute_copy(&stake_account_positions.positions[i]);
-                if let Some(position) = v1_position {
-                    stake_account_positions.write_position(used_count, &position)?;
-                    used_count += 1;
-                }
-            }
-        }
-        // From that position all, write all None's
-        for i in used_count..MAX_POSITIONS {
-            state::positions::TryBorsh::try_write(
-                None::<Position>,
-                &mut stake_account_positions.positions[i],
-            )?
-        }
-        let upgraded = v1_metadata.as_v2(
-            used_count
-                .try_into()
-                .map_err(|_| error!(ErrorCode::GenericOverflow))?,
-        );
-        let mut acct_data = v2_version.try_borrow_mut_data()?;
-        // Scary! This overwrites the discriminator and then writes the data
-        upgraded.try_serialize(&mut *acct_data)?;
-
-        Ok(())
-    }
-
     // Unfortunately Anchor doesn't seem to allow conditional compilation of an instruction,
     // so we have to keep it, but make it a no-op.
     #[allow(unused_variables)]
