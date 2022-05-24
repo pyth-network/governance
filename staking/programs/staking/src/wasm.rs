@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 use crate::error::ErrorCode;
+use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use crate::state::positions::{
     PositionData,
     PositionState,
@@ -177,14 +178,13 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
         current_locked: u64,
-        total_supply: u64,
     ) -> Result<u64, JsValue> {
         convert_error(crate::utils::voter_weight::compute_voter_weight(
             &self.wrapped,
             current_epoch,
             unlocking_duration,
             current_locked,
-            total_supply,
+            MAX_VOTER_WEIGHT,
         ))
     }
 }
@@ -304,6 +304,10 @@ impl Constants {
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
         PositionData::discriminator().len() + std::mem::size_of::<PositionData>()
+    }
+    #[wasm_bindgen]
+    pub fn MAX_VOTER_WEIGHT() -> u64 {
+        crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT
     }
 }
 

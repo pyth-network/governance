@@ -395,7 +395,6 @@ export class StakeConnection {
       .updateVoterWeight(action)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
-        pythMint: this.config.pythTokenMint,
       })
       .remainingAccounts(
         remainingAccount
@@ -863,8 +862,7 @@ export class StakeAccount {
         this.votingAccountMetadataWasm.getCurrentAmountLocked(
           BigInt(currentEpoch.toString())
         )
-      ),
-      BigInt(this.totalSupply.toString())
+      )
     );
 
     return new PythBalance(new BN(voterWeightBI.toString()));

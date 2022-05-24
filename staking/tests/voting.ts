@@ -56,6 +56,7 @@ describe("voting", async () => {
 
   let owner: PublicKey;
   let voterWeightRecordAccount: PublicKey;
+  let maxVoterWeightRecordAccount: PublicKey;
   let tokenOwnerRecord: PublicKey;
   let provider: anchor.AnchorProvider;
 
@@ -110,6 +111,17 @@ describe("voting", async () => {
       )
     )[0];
 
+    maxVoterWeightRecordAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          anchor.utils.bytes.utf8.encode(
+            wasm.Constants.MAX_VOTER_RECORD_SEED()
+          ),
+        ],
+        stakeConnection.program.programId
+      )
+    )[0];
+
     tokenOwnerRecord = await stakeConnection.getTokenOwnerRecordAddress(owner);
   });
 
@@ -125,7 +137,6 @@ describe("voting", async () => {
           .updateVoterWeight({ createProposal: {} })
           .accounts({
             stakeAccountPositions: stakeAccount.address,
-            pythMint: stakeAccount.config.pythTokenMint,
           })
           .remainingAccounts([])
           .instruction()
@@ -186,7 +197,6 @@ describe("voting", async () => {
         )
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          pythMint: stakeAccount.config.pythTokenMint,
         })
         .remainingAccounts([
           { pubkey: proposalAddress, isWritable: false, isSigner: false },
@@ -215,7 +225,7 @@ describe("voting", async () => {
       }),
       provider.wallet.publicKey,
       voterWeightRecordAccount,
-      undefined
+      maxVoterWeightRecordAccount
     );
   }
 
@@ -231,6 +241,12 @@ describe("voting", async () => {
       .accounts({})
       .rpc({ skipPreflight: DEBUG });
   }
+  it("creates max voter weight record", async () => {
+    await stakeConnection.program.methods
+      .updateMaxVoterWeight()
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
+  });
 
   it("tries to create a proposal without updating", async () => {
     const tx = new Transaction();
@@ -293,8 +309,8 @@ describe("voting", async () => {
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
-      proposal.account.getYesVoteCount().toNumber(),
-      PythBalance.fromString("200").toBN().toNumber()
+      proposal.account.getYesVoteCount().toString(),
+      PythBalance.fromString("10000000000").toBN().toString()
     );
   });
 
@@ -325,7 +341,6 @@ describe("voting", async () => {
         .updateVoterWeight({ castVote: {} })
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          pythMint: stakeAccount.config.pythTokenMint,
         })
         .remainingAccounts([
           { pubkey: proposalAddress, isWritable: false, isSigner: false },
@@ -339,7 +354,6 @@ describe("voting", async () => {
         .updateVoterWeight({ castVote: {} })
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          pythMint: stakeAccount.config.pythTokenMint,
         })
         .remainingAccounts([]),
       "Extra governance account required",

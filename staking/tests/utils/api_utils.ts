@@ -11,7 +11,6 @@ import {
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   Proposal,
   getGovernanceSchemaForAccount,
@@ -24,7 +23,7 @@ import {
   VoteTypeKind,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
-
+import * as wasm from "../../wasm";
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */
@@ -95,17 +94,11 @@ async function assertVoterWeightEqualsAt(
   time: BN
 ) {
   const stakeAccount = await stakeConnection.getMainAccount(owner);
-
-  const pythMintInfo = await new Token(
-    stakeConnection.provider.connection,
-    stakeConnection.config.pythTokenMint,
-    TOKEN_PROGRAM_ID,
-    new Keypair()
-  ).getMintInfo();
-  const pythMintSupply: BN = pythMintInfo.supply;
+  const pythMintSupply: BN = new BN(
+    wasm.Constants.MAX_VOTER_WEIGHT().toString()
+  );
 
   // First check expected matches the WASM-computed value
-
   let expectedScaled = new BN(0);
   if (expected.totalLockedBalance.toBN().gtn(0))
     expectedScaled = expected.rawVoterWeight
@@ -201,13 +194,12 @@ class MockProposalCreator {
     const schema = getGovernanceSchemaForAccount(
       GovernanceAccountType.ProposalV2
     );
-    const serializedProp = serialize(
-      schema,
-      proposal,
-      this.GovernanceBinaryWriter
-    );
+    // serialize creates a new borsh BinaryWriter. spl-governance adds a few methods to the prototype of BinaryWriter so that
+    // it can serialize and deserialize governance objects properly. I'm not sure if this is SPL-gov using undefined behavior
+    // or not, but it seems to work.
+    const serializedProp = serialize(schema, proposal);
     const sharedMemData = new BinaryWriter();
-    sharedMemData.writeU64(0); // Offset
+    sharedMemData.writeU64(new BN(0)); // Offset
     sharedMemData.writeFixedArray(serializedProp);
 
     // BpfLoader.load requires the fee payer to be a Keypair, so we need to transfer some Sol to a new fee-payer
@@ -237,24 +229,6 @@ class MockProposalCreator {
     }
     return proposalAddress.publicKey;
   }
-  // Uggh gross. In order to serialize this, we need to take a few functions from various parts of the governance API package
-  GovernanceBinaryWriter = class extends BinaryWriter {
-    writePubkey(value: PublicKey) {
-      this.maybeResize();
-      this.writeFixedArray(value.toBuffer());
-    }
-    writeVoteType(value: VoteType) {
-      const writer = this as unknown as BinaryWriter;
-      writer.maybeResize();
-      writer.buf.writeUInt8(value.type, writer.length);
-      writer.length += 1;
-
-      if (value.type === VoteTypeKind.MultiChoice) {
-        writer.buf.writeUInt16LE(value.choiceCount!, writer.length);
-        writer.length += 2;
-      }
-    }
-  };
 }
 
 export async function assertVoterWeightEquals(

@@ -265,7 +265,7 @@ export async function createGovernance(
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
     new PublicKey(config.programs.localnet.staking),
-    undefined // new PublicKey(config.programs.localnet.staking) //TODO: Restore after max voter weight plugin implemented
+    new PublicKey(config.programs.localnet.staking)
   );
   const governanceConfig = new GovernanceConfig({
     voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
