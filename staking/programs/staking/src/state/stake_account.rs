@@ -20,34 +20,6 @@ pub struct StakeAccountMetadataV2 {
     pub next_index:     u8,
 }
 
-#[account]
-#[derive(BorshSchema)]
-pub struct StakeAccountMetadata {
-    pub metadata_bump:  u8,
-    pub custody_bump:   u8,
-    pub authority_bump: u8,
-    pub voter_bump:     u8,
-    pub owner:          Pubkey,
-    pub lock:           VestingSchedule,
-}
-
-impl StakeAccountMetadata {
-    /// Returns a StakeAccountMetadataV2 with the same values as self and the provided value for
-    /// next_index (the new field)
-    pub fn as_v2(&self, next_index: u8) -> StakeAccountMetadataV2 {
-        StakeAccountMetadataV2 {
-            metadata_bump: self.metadata_bump,
-            custody_bump: self.custody_bump,
-            authority_bump: self.authority_bump,
-            voter_bump: self.voter_bump,
-            owner: self.owner,
-            lock: self.lock,
-            next_index,
-        }
-    }
-}
-
-
 #[cfg(test)]
 pub mod tests {
     use crate::state::stake_account::{
