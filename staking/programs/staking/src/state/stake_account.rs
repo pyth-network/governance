@@ -26,11 +26,8 @@ pub mod tests {
         StakeAccountMetadataV2,
         STAKE_ACCOUNT_METADATA_SIZE,
     };
-    use crate::state::vesting::VestingSchedule;
-    use anchor_lang::prelude::Pubkey;
-    use anchor_lang::Discriminator;
 
-    use super::StakeAccountMetadata;
+    use anchor_lang::Discriminator;
 
     #[test]
     fn check_size() {
@@ -39,36 +36,5 @@ pub mod tests {
                 + StakeAccountMetadataV2::discriminator().len()
                 <= STAKE_ACCOUNT_METADATA_SIZE
         );
-    }
-    #[test]
-    fn check_upgrade() {
-        // Make sure I didn't get one of the bumps wrong
-        let v1 = StakeAccountMetadata {
-            metadata_bump:  1,
-            custody_bump:   2,
-            authority_bump: 3,
-            voter_bump:     4,
-            owner:          Pubkey::new_unique(),
-            lock:           VestingSchedule::PeriodicVesting {
-                initial_balance: 5,
-                start_date:      6,
-                period_duration: 7,
-                num_periods:     8,
-            },
-        };
-        let v2 = v1.as_v2(9);
-        macro_rules! assert_v1_v2_match {
-            ( $c:ident ) => {
-                assert_eq!(v1.$c, v2.$c);
-            };
-        }
-
-        assert_v1_v2_match!(metadata_bump);
-        assert_v1_v2_match!(custody_bump);
-        assert_v1_v2_match!(authority_bump);
-        assert_v1_v2_match!(voter_bump);
-        assert_v1_v2_match!(owner);
-        assert_v1_v2_match!(lock);
-        assert_eq!(v2.next_index, 9);
     }
 }
