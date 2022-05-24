@@ -44,6 +44,8 @@ pub mod staking {
 
     use std::mem::transmute_copy;
 
+    use crate::state::positions::MAX_POSITIONS;
+
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -471,15 +473,18 @@ pub mod staking {
             unsafe {
                 let v1_position: Option<Position> =
                     transmute_copy(&stake_account_positions.positions[i]);
-                if v1_position.is_some() {
-                    v1_position.try_write(&mut stake_account_positions.positions[used_count])?;
+                if let Some(position) = v1_position {
+                    stake_account_positions.write_position(used_count, &position)?;
                     used_count += 1;
                 }
             }
         }
         // From that position all, write all None's
         for i in used_count..MAX_POSITIONS {
-            None.try_write(&mut stake_account_positions.positions[i])?
+            state::positions::TryBorsh::try_write(
+                None::<Position>,
+                &mut stake_account_positions.positions[i],
+            )?
         }
         let upgraded = v1_metadata.as_v2(
             used_count
