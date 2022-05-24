@@ -102,7 +102,6 @@ pub mod staking {
         stake_account_metadata.lock = lock;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.initialize()?;
         stake_account_positions.owner = owner;
 
         let voter_record = &mut ctx.accounts.voter_record;
