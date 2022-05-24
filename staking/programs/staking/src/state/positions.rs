@@ -61,8 +61,11 @@ impl PositionData {
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))
     }
 
-    pub fn zero(&mut self) {
-        self.positions = [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS];
+    pub fn initialize(&mut self) -> Result<()> {
+        for i in 0..MAX_POSITIONS {
+            None::<Position>.try_write(&mut self.positions[i])?;
+        }
+        Ok(())
     }
 }
 
