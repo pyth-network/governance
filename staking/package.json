@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.1.32",
+  "version": "1.2.3",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
@@ -11,7 +11,8 @@
     "app/transaction.{js,d.ts}",
     "app/pythBalance.{js,d.ts}",
     "app/constants.{js,d.ts}",
-    "app/PythClient.{js,d.ts}"
+    "app/PythClient.{js,d.ts}",
+    "app/PositionAccountJs.{js,d.ts}"
   ],
   "dependencies": {
     "@project-serum/anchor": "0.24.2",
@@ -19,7 +20,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "0.2.10",
+    "pyth-staking-wasm": "0.3.1",
     "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },

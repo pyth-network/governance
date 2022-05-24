@@ -1,7 +1,7 @@
-use crate::borsh::BorshSerialize;
 use crate::error::ErrorCode;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 use anchor_lang::solana_program::wasm_bindgen;
 use std::fmt::{
     self,
@@ -9,19 +9,32 @@ use std::fmt::{
 };
 
 pub const MAX_POSITIONS: usize = 100;
-pub const POSITION_DATA_PADDING: [u64; 12] = [0u64; 12];
+// Intentionally make the buffer for positions bigger than it needs for migrations
+pub const POSITION_BUFFER_SIZE: usize = 200;
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
 /// The invariant we preserve is : For i < next_index, positions[i] == Some
 /// For i >= next_index, positions[i] == None
+
 #[account(zero_copy)]
-#[derive(BorshSchema, BorshSerialize)]
+#[repr(C)]
 pub struct PositionData {
-    pub owner:     Pubkey,
-    pub positions: [Option<Position>; MAX_POSITIONS],
+    pub owner: Pubkey,
+    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
+impl Default for PositionData {
+    // Only used for testing, so unwrap is acceptable
+    fn default() -> Self {
+        let mut res = PositionData {
+            owner:     Pubkey::new_unique(),
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+        };
+        res.initialize().unwrap();
+        res
+    }
+}
 impl PositionData {
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
@@ -35,38 +48,65 @@ impl PositionData {
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
-    pub fn make_none(&mut self, i: usize, next_index: &mut u8) {
+    pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        self.positions[*next_index as usize] = None;
+        None::<Option<Position>>.try_write(&mut self.positions[i])
+    }
+
+    // Makes position at index i none, and swaps positions to preserve the invariant
+    pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
+        Some(position).try_write(&mut self.positions[i])
+    }
+
+    pub fn read_position(&self, i: usize) -> Result<Position> {
+        Option::<Position>::try_read(&self.positions[i])?
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))
+    }
+
+    pub fn initialize(&mut self) -> Result<()> {
+        for i in 0..MAX_POSITIONS {
+            None::<Position>.try_write(&mut self.positions[i])?;
+        }
+        Ok(())
     }
 }
+
+pub trait TryBorsh {
+    fn try_read(slice: &[u8]) -> Result<Self>
+    where
+        Self: std::marker::Sized;
+    fn try_write(self, slice: &mut [u8]) -> Result<()>;
+}
+
+impl<T> TryBorsh for T
+where
+    T: AnchorDeserialize + AnchorSerialize,
+{
+    fn try_read(slice: &[u8]) -> Result<Self> {
+        try_from_slice_unchecked(slice).map_err(|_| error!(ErrorCode::PositionSerDe))
+    }
+
+    fn try_write(self, slice: &mut [u8]) -> Result<()> {
+        let mut ptr = slice;
+        self.serialize(&mut ptr)
+            .map_err(|_| error!(ErrorCode::PositionSerDe))
+    }
+}
+
 
 /// This represents a staking position, i.e. an amount that someone has staked to a particular
 /// target. This is one of the core pieces of our staking design, and stores all
 /// of the state related to a position The voting position is a position where the
 /// target_with_parameters is VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
-#[repr(C)]
 pub struct Position {
     pub amount:                 u64,
     pub activation_epoch:       u64,
     pub unlocking_start:        Option<u64>,
     pub target_with_parameters: TargetWithParameters,
-    pub reserved:               [u64; 12], /* Current representation of an Option<Position>:
-                                              0: amount
-                                              8: activation_epoch
-                                              16: 1 if unlocking_start is Some, 2 if the outer option is None
-                                              24: unlocking_start
-                                              32: product
-                                              64: 2 if VOTING, 0 if STAKING DEFAULT, 1 if STAKING SOME
-                                              65: publisher address
-                                              98: compiler padding
-                                              104: reserved
-
-                                              total: 200 bytes
-                                           */
 }
+
 
 #[derive(
     AnchorSerialize,
@@ -176,8 +216,10 @@ pub mod tests {
         PositionData,
         PositionState,
         TargetWithParameters,
-        POSITION_DATA_PADDING,
+        MAX_POSITIONS,
+        POSITION_BUFFER_SIZE,
     };
+    use anchor_lang::solana_program::borsh::get_packed_len;
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
@@ -185,7 +227,6 @@ pub mod tests {
             unlocking_start:        Some(12),
             target_with_parameters: TargetWithParameters::VOTING,
             amount:                 10,
-            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -220,7 +261,6 @@ pub mod tests {
             unlocking_start:        None,
             target_with_parameters: TargetWithParameters::VOTING,
             amount:                 10,
-            reserved:               POSITION_DATA_PADDING,
         };
         assert_eq!(
             PositionState::LOCKING,
@@ -242,11 +282,11 @@ pub mod tests {
     }
     #[test]
     fn test_serialized_size() {
-        // These are 0-copy serialized, so use std::mem::size_of instead of borsh::get_packed_len
-        // If this fails, we need a migration
-        assert_eq!(std::mem::size_of::<Option<Position>>(), 200);
-        // This one failing is much worse. If so, just change the number of positions and/or add
-        // padding
-        assert_eq!(std::mem::size_of::<PositionData>(), 32 + 100 * 200);
+        assert_eq!(
+            std::mem::size_of::<PositionData>(),
+            32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
+        );
+        // Checks that the position struct fits in the individual position buffer
+        assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
     }
 }

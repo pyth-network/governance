@@ -39,7 +39,9 @@ import {
   LOCALNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
+import { PositionAccountJs, Position } from "./PositionAccountJs";
 let wasm = wasm2;
+export { wasm };
 
 interface ClosingItem {
   amount: BN;
@@ -48,7 +50,6 @@ interface ClosingItem {
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
-type Position = IdlTypes<Staking>["Position"];
 type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
@@ -184,19 +185,18 @@ export class StakeConnection {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
-    const pd = new wasm.WasmPositionData(inbuf!.data);
-    const outBuffer = Buffer.alloc(pd.borshLength);
-    pd.asBorsh(outBuffer);
-    const positions = this.program.coder.accounts.decode(
-      "PositionData",
-      outBuffer
+    const stakeAccountPositionsWasm = new wasm.WasmPositionData(inbuf!.data);
+    const stakeAccountPositionsJs = new PositionAccountJs(
+      inbuf!.data,
+      this.program.idl
     );
-    return [pd, positions];
+
+    return { stakeAccountPositionsWasm, stakeAccountPositionsJs };
   }
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
-    const [stakeAccountPositionsWasm, stakeAccountPositionsJs] =
+    const { stakeAccountPositionsWasm, stakeAccountPositionsJs } =
       await this.fetchPositionAccount(address);
 
     const metadataAddress = (
@@ -305,8 +305,7 @@ export class StakeConnection {
     stakeAccount: StakeAccount,
     amount: PythBalance
   ) {
-    const positions = stakeAccount.stakeAccountPositionsJs
-      .positions as Position[];
+    const positions = stakeAccount.stakeAccountPositionsJs.positions;
 
     const time = await this.getTime();
     const currentEpoch = time.div(this.config.epochDuration);
@@ -721,7 +720,7 @@ export interface BalanceSummary {
 export class StakeAccount {
   address: PublicKey;
   stakeAccountPositionsWasm: any;
-  stakeAccountPositionsJs: PositionData;
+  stakeAccountPositionsJs: PositionAccountJs;
   stakeAccountMetadata: StakeAccountMetadata;
   tokenBalance: u64;
   authorityAddress: PublicKey;
@@ -733,7 +732,7 @@ export class StakeAccount {
   constructor(
     address: PublicKey,
     stakeAccountPositionsWasm: any,
-    stakeAccountPositionsJs: PositionData,
+    stakeAccountPositionsJs: PositionAccountJs,
     stakeAccountMetadata: StakeAccountMetadata,
     tokenBalance: u64,
     authorityAddress: PublicKey,

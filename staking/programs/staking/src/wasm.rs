@@ -4,11 +4,9 @@ use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use crate::state::positions::{
     PositionData,
     PositionState,
+    MAX_POSITIONS,
 };
-use crate::state::target::{
-    TargetMetadata,
-    TARGET_METADATA_SIZE,
-};
+use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
 use crate::VestingSchedule;
 use anchor_lang::prelude::{
@@ -16,14 +14,11 @@ use anchor_lang::prelude::{
     Clock,
     Error,
 };
-use anchor_lang::solana_program::borsh::get_packed_len;
 use anchor_lang::{
     AccountDeserialize,
     AnchorDeserialize,
     Discriminator,
 };
-use borsh::BorshSerialize;
-use std::io::Write;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -68,37 +63,19 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        match self.wrapped.positions[index as usize] {
-            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
-            None => Err(error!(ErrorCode::PositionNotInUse)),
-        }
+        self.wrapped
+            .read_position(index as usize)?
+            .get_current_position(current_epoch, unlocking_duration)
     }
     #[wasm_bindgen(js_name=isPositionVoting)]
     pub fn is_position_voting(&self, index: u16) -> Result<bool, JsValue> {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        match self.wrapped.positions[index as usize] {
-            Some(pos) => Ok(pos.is_voting()),
-            None => Err(error!(ErrorCode::PositionNotInUse)),
-        }
+        Ok(self.wrapped.read_position(index as usize)?.is_voting())
     }
 
-    #[wasm_bindgen(getter, js_name=borshLength)]
-    pub fn get_borsh_length(&self) -> usize {
-        get_packed_len::<PositionData>()
-    }
-    /// Serialize this account using Borsh so that Anchor can deserialize it
-    #[wasm_bindgen(js_name=asBorsh)]
-    pub fn as_borsh(&self, output_buffer: &mut [u8]) -> Result<(), JsValue> {
-        convert_error(self.as_borsh_impl(output_buffer))
-    }
-    fn as_borsh_impl(&self, output_buffer: &mut [u8]) -> Result<(), Error> {
-        let mut writer = output_buffer;
-        writer.write_all(&PositionData::discriminator())?;
-        self.wrapped.serialize(&mut writer)?;
-        Ok(())
-    }
+
     /// Adds up the balance of positions grouped by position state: locking, locked, and unlocking.
     /// This way of computing balances only makes sense in the pre-data staking world, but it's
     /// helpful for now.
@@ -120,8 +97,8 @@ impl WasmPositionData {
         let mut unlocking: u64 = 0;
         let mut preunlocking: u64 = 0;
 
-        for i in 0..crate::MAX_POSITIONS {
-            if let Some(position) = self.wrapped.positions[i] {
+        for i in 0..MAX_POSITIONS {
+            if let Some(position) = self.wrapped.read_position(i).ok() {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
                         locking = locking
@@ -308,6 +285,9 @@ impl Constants {
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {
         crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT
+    }
+    pub fn POSITION_BUFFER_SIZE() -> usize {
+        crate::state::positions::POSITION_BUFFER_SIZE
     }
 }
 

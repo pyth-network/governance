@@ -47,6 +47,8 @@ pub enum ErrorCode {
     NoRemainingAccount,
     #[msg("Not implemented")]
     NotImplemented,
+    #[msg("Error deserializing position")]
+    PositionSerDe,
     #[msg("Other")]
     Other,
 }
