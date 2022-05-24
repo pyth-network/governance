@@ -42,10 +42,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod staking {
 
 
-    use std::mem::transmute_copy;
-
-    use crate::state::positions::MAX_POSITIONS;
-
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
