@@ -64,20 +64,16 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        match Option::<Position>::try_read(&self.wrapped.positions[index as usize])? {
-            Some(pos) => Ok(pos.get_current_position(current_epoch, unlocking_duration)?),
-            None => Err(error!(ErrorCode::PositionNotInUse)),
-        }
+        self.wrapped
+            .read_position(index as usize)?
+            .get_current_position(current_epoch, unlocking_duration)
     }
     #[wasm_bindgen(js_name=isPositionVoting)]
     pub fn is_position_voting(&self, index: u16) -> Result<bool, JsValue> {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        match Option::<Position>::try_read(&self.wrapped.positions[index as usize])? {
-            Some(pos) => Ok(pos.is_voting()),
-            None => Err(error!(ErrorCode::PositionNotInUse)),
-        }
+        Ok(self.wrapped.read_position(index as usize)?.is_voting())
     }
 
 
@@ -103,7 +99,7 @@ impl WasmPositionData {
         let mut preunlocking: u64 = 0;
 
         for i in 0..crate::MAX_POSITIONS {
-            if let Some(position) = Option::<Position>::try_read(&self.wrapped.positions[i])? {
+            if let Some(position) = self.wrapped.read_position(i).ok() {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
                         locking = locking

@@ -20,10 +20,18 @@ pub const POSITION_BUFFER_SIZE: usize = 200;
 #[account(zero_copy)]
 #[repr(C)]
 pub struct PositionData {
-    pub owner:     Pubkey,
-    pub positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+    pub owner: Pubkey,
+    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
+impl Default for PositionData {
+    fn default() -> Self {
+        return PositionData {
+            owner:     Pubkey::new_unique(),
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+        };
+    }
+}
 impl PositionData {
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
@@ -41,6 +49,20 @@ impl PositionData {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
         None::<Option<Position>>.try_write(&mut self.positions[i])
+    }
+
+    // Makes position at index i none, and swaps positions to preserve the invariant
+    pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
+        Some(position).try_write(&mut self.positions[i])
+    }
+
+    pub fn read_position(&self, i: usize) -> Result<Position> {
+        Option::<Position>::try_read(&self.positions[i])?
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))
+    }
+
+    pub fn zero(&mut self) -> () {
+        self.positions = [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS];
     }
 }
 

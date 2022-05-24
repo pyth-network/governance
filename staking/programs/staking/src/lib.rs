@@ -105,9 +105,8 @@ pub mod staking {
         stake_account_metadata.lock = lock;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
+        stake_account_positions.zero();
         stake_account_positions.owner = owner;
-        stake_account_positions.positions = [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS];
-
 
         let voter_record = &mut ctx.accounts.voter_record;
 
@@ -153,7 +152,7 @@ pub mod staking {
         ) {
             Err(x) => return Err(x),
             Ok(i) => {
-                Some(new_position).try_write(&mut stake_account_positions.positions[i])?;
+                stake_account_positions.write_position(i, &new_position)?;
             }
         }
 
@@ -190,9 +189,7 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let mut current_position: Position =
-            Option::<Position>::try_read(&stake_account_positions.positions[i])?
-                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
+        let mut current_position: Position = stake_account_positions.read_position(i)?;
 
         if current_position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
@@ -210,20 +207,18 @@ pub mod staking {
                 // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
                     current_position.unlocking_start = Some(current_epoch + 1);
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    stake_account_positions.write_position(i, &current_position)?;
                     // Otherwise leave remaining amount in the current position and
                     // create another position with the rest. The newly created position
                     // will unlock after unlocking_duration epochs.
 
                     assert_eq!(
                         original_amount,
-                        <Option<Position>>::try_read(&stake_account_positions.positions[i])?
-                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                            .amount
+                        stake_account_positions.read_position(i)?.amount
                     );
                 } else {
                     current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    stake_account_positions.write_position(i, &current_position)?;
 
                     match PositionData::reserve_new_index(
                         stake_account_positions,
@@ -231,30 +226,25 @@ pub mod staking {
                     ) {
                         Err(x) => return Err(x),
                         Ok(j) => {
-                            Some(Position {
-                                amount,
-                                target_with_parameters: current_position.target_with_parameters,
-                                activation_epoch: current_position.activation_epoch,
-                                unlocking_start: Some(current_epoch + 1),
-                            })
-                            .try_write(&mut stake_account_positions.positions[j])?;
+                            stake_account_positions.write_position(
+                                j,
+                                &Position {
+                                    amount,
+                                    target_with_parameters: current_position.target_with_parameters,
+                                    activation_epoch: current_position.activation_epoch,
+                                    unlocking_start: Some(current_epoch + 1),
+                                },
+                            )?;
+
 
                             assert_ne!(i, j);
                             assert_eq!(
                                 original_amount,
-                                <Option<Position>>::try_read(
-                                    &stake_account_positions.positions[i]
-                                )?
-                                .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                .amount
-                                .checked_add(
-                                    <Option<Position>>::try_read(
-                                        &stake_account_positions.positions[j]
-                                    )?
-                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                stake_account_positions
+                                    .read_position(i)?
                                     .amount
-                                )
-                                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                                    .checked_add(stake_account_positions.read_position(j)?.amount)
+                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }
                     }
@@ -271,7 +261,7 @@ pub mod staking {
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
                 } else {
                     current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    stake_account_positions.write_position(i, &current_position)?;
                 }
             }
             PositionState::LOCKING => {
@@ -280,7 +270,7 @@ pub mod staking {
                         .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
                 } else {
                     current_position.amount = remaining_amount;
-                    Some(current_position).try_write(&mut stake_account_positions.positions[i])?;
+                    stake_account_positions.write_position(i, &current_position)?;
                 }
                 target_account.add_unlocking(amount, current_epoch)?;
             }

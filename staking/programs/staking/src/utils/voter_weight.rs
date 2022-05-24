@@ -18,8 +18,7 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = <Option<Position>>::try_read(&stake_account_positions.positions[i])?
-        {
+        if let Some(position) = stake_account_positions.read_position(i).ok() {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
@@ -57,47 +56,52 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
 
-        Some(Position {
-            activation_epoch:       1,
-            amount:                 7,
-            target_with_parameters: TargetWithParameters::VOTING {},
-            unlocking_start:        Some(3),
-        })
-        .try_write(&mut pd.positions[0])
-        .unwrap();
-
-        Some(Position {
-            activation_epoch:       3,
-            amount:                 3,
-            target_with_parameters: TargetWithParameters::VOTING {},
-            unlocking_start:        None,
-        })
-        .try_write(&mut pd.positions[1])
-        .unwrap();
-
-        Some(Position {
-            activation_epoch:       2,
-            amount:                 5,
-            target_with_parameters: TargetWithParameters::VOTING {},
-            unlocking_start:        Some(4),
-        })
-        .try_write(&mut pd.positions[2])
-        .unwrap();
-        Some(Position {
-            activation_epoch:       0,
-            amount:                 10,
-            target_with_parameters: TargetWithParameters::STAKING {
-                product:   Pubkey::new_unique(),
-                publisher: Publisher::DEFAULT,
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 7,
+                target_with_parameters: TargetWithParameters::VOTING {},
+                unlocking_start:        Some(3),
             },
-            unlocking_start:        None,
-        })
-        .try_write(&mut pd.positions[3])
+        )
+        .unwrap();
+
+        pd.write_position(
+            1,
+            &Position {
+                activation_epoch:       3,
+                amount:                 3,
+                target_with_parameters: TargetWithParameters::VOTING {},
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
+
+        pd.write_position(
+            2,
+            &Position {
+                activation_epoch:       2,
+                amount:                 5,
+                target_with_parameters: TargetWithParameters::VOTING {},
+                unlocking_start:        Some(4),
+            },
+        )
+        .unwrap();
+        pd.write_position(
+            3,
+            &Position {
+                activation_epoch:       0,
+                amount:                 10,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::DEFAULT,
+                },
+                unlocking_start:        None,
+            },
+        )
         .unwrap();
 
         let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
@@ -118,18 +122,17 @@ pub mod tests {
 
     #[test]
     fn test_overflow() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
 
-        Some(Position {
-            activation_epoch:       1,
-            amount:                 u64::MAX / 2,
-            target_with_parameters: TargetWithParameters::VOTING {},
-            unlocking_start:        Some(3),
-        })
-        .try_write(&mut pd.positions[0])
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 u64::MAX / 2,
+                target_with_parameters: TargetWithParameters::VOTING {},
+                unlocking_start:        Some(3),
+            },
+        )
         .unwrap();
 
         let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
@@ -138,18 +141,17 @@ pub mod tests {
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
 
-        Some(Position {
-            activation_epoch:       1,
-            amount:                 u64::MAX / 2,
-            target_with_parameters: TargetWithParameters::VOTING {},
-            unlocking_start:        Some(3),
-        })
-        .try_write(&mut pd.positions[0])
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 u64::MAX / 2,
+                target_with_parameters: TargetWithParameters::VOTING {},
+                unlocking_start:        Some(3),
+            },
+        )
         .unwrap();
 
         let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
