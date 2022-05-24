@@ -25,11 +25,14 @@ pub struct PositionData {
 }
 
 impl Default for PositionData {
+    // Only used for testing, so unwrap is acceptable
     fn default() -> Self {
-        PositionData {
+        let mut res = PositionData {
             owner:     Pubkey::new_unique(),
             positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        }
+        };
+        res.initialize().unwrap();
+        return res;
     }
 }
 impl PositionData {
@@ -213,7 +216,6 @@ pub mod tests {
         PositionData,
         PositionState,
         TargetWithParameters,
-        TryBorsh,
         MAX_POSITIONS,
         POSITION_BUFFER_SIZE,
     };
@@ -286,12 +288,5 @@ pub mod tests {
         );
         // Checks that the position struct fits in the individual position buffer
         assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
-    }
-
-    #[test]
-    fn test_none_is_zero() {
-        // Checks that it's fine to initialize a position buffer with zeros
-        let buffer = [0u8; POSITION_BUFFER_SIZE];
-        assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
     }
 }
