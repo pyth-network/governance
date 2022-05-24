@@ -11,6 +11,7 @@ use anchor_spl::token::transfer;
 use context::*;
 use spl_governance::state::proposal::ProposalV2;
 use state::global_config::GlobalConfig;
+use state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use state::positions::{
     Position,
     PositionData,
@@ -39,8 +40,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod staking {
-    use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
-    use crate::state::positions::POSITION_DATA_PADDING;
+
 
     /// Creates a global config for the program
     use super::*;

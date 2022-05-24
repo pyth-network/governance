@@ -2,10 +2,9 @@
 use crate::error::ErrorCode;
 use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use crate::state::positions::{
-    Position,
     PositionData,
     PositionState,
-    TryBorsh,
+    MAX_POSITIONS,
 };
 use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
@@ -98,7 +97,7 @@ impl WasmPositionData {
         let mut unlocking: u64 = 0;
         let mut preunlocking: u64 = 0;
 
-        for i in 0..crate::MAX_POSITIONS {
+        for i in 0..MAX_POSITIONS {
             if let Some(position) = self.wrapped.read_position(i).ok() {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
@@ -286,6 +285,7 @@ impl Constants {
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {
         crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT
+    }
     pub fn POSITION_BUFFER_SIZE() -> usize {
         crate::state::positions::POSITION_BUFFER_SIZE
     }
