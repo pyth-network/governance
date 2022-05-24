@@ -17,9 +17,6 @@ use state::positions::{
     PositionState,
     Target,
     TargetWithParameters,
-    TryBorsh,
-    MAX_POSITIONS,
-    POSITION_BUFFER_SIZE,
 };
 use state::vesting::VestingSchedule;
 use state::voter_weight_record::VoterWeightAction;

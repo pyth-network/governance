@@ -3,11 +3,9 @@ use std::cmp;
 use std::collections::BTreeMap;
 
 use crate::state::positions::{
-    Position,
     PositionData,
     PositionState,
     Target,
-    TryBorsh,
     MAX_POSITIONS,
 };
 use crate::ErrorCode::{
@@ -33,7 +31,7 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = stake_account_positions.read_position(i).ok() {
+        if let Ok(position) = stake_account_positions.read_position(i) {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED
                 | PositionState::PREUNLOCKING
@@ -131,9 +129,6 @@ pub mod tests {
         PositionState,
         Publisher,
         TargetWithParameters,
-        TryBorsh,
-        MAX_POSITIONS,
-        POSITION_BUFFER_SIZE,
     };
     use crate::utils::risk::validate;
 

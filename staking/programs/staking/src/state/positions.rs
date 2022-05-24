@@ -26,10 +26,10 @@ pub struct PositionData {
 
 impl Default for PositionData {
     fn default() -> Self {
-        return PositionData {
+        PositionData {
             owner:     Pubkey::new_unique(),
             positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        };
+        }
     }
 }
 impl PositionData {
@@ -61,7 +61,7 @@ impl PositionData {
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))
     }
 
-    pub fn zero(&mut self) -> () {
+    pub fn zero(&mut self) {
         self.positions = [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS];
     }
 }

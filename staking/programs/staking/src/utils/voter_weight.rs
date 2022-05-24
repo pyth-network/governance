@@ -1,9 +1,7 @@
 use crate::error::ErrorCode;
 use crate::state::positions::{
-    Position,
     PositionData,
     PositionState,
-    TryBorsh,
     MAX_POSITIONS,
 };
 use anchor_lang::prelude::*;
@@ -18,7 +16,7 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Some(position) = stake_account_positions.read_position(i).ok() {
+        if let Ok(position) = stake_account_positions.read_position(i) {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
@@ -46,9 +44,6 @@ pub mod tests {
         PositionData,
         Publisher,
         TargetWithParameters,
-        TryBorsh,
-        MAX_POSITIONS,
-        POSITION_BUFFER_SIZE,
     };
     use crate::utils::voter_weight::compute_voter_weight;
     use anchor_lang::prelude::Pubkey;
