@@ -60,6 +60,7 @@ const Staking: NextPage = () => {
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
   const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
+  const [isSufficientBalance, setIsSufficientBalance] = useState<boolean>(true)
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>([])
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
@@ -128,6 +129,21 @@ const Staking: NextPage = () => {
     checkVestingAccountWithoutGovernance()
     refreshBalance()
   }, [stakeConnection, mainStakeAccount])
+
+  useEffect(() => {
+    if (amount && balance) {
+      if (amount.slice(-1) !== '.') {
+        if (PythBalance.fromString(amount) > balance) {
+          console.log('here')
+          setIsSufficientBalance(false)
+        } else {
+          setIsSufficientBalance(true)
+        }
+      }
+    } else {
+      setIsSufficientBalance(true)
+    }
+  }, [amount])
 
   useEffect(() => {
     const getVestingInfo = async () => {
@@ -206,7 +222,7 @@ const Staking: NextPage = () => {
 
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const handleDeposit = async () => {
-    if (!amount) {
+    if (!amount || amount.slice(-1) === '.') {
       toast.error('Please enter a valid amount!')
       return
     }
@@ -237,7 +253,7 @@ const Staking: NextPage = () => {
 
   // call unlock api when unlock button is clicked
   const handleUnlock = async () => {
-    if (!amount) {
+    if (!amount || amount.slice(-1) === '.') {
       toast.error('Please enter a valid amount!')
       return
     }
@@ -278,7 +294,7 @@ const Staking: NextPage = () => {
 
   // withdraw unlocked PYTH tokens to wallet
   const handleWithdraw = async () => {
-    if (!amount) {
+    if (!amount || amount.slice(-1) === '.') {
       toast.error('Please enter a valid amount!')
       return
     }
@@ -1066,38 +1082,51 @@ const Staking: NextPage = () => {
                               />
                             ) : currentTab === TabEnum.Lock ? (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleDeposit}
-                                disabled={isVestingAccountWithoutGovernance}
+                                disabled={
+                                  isVestingAccountWithoutGovernance ||
+                                  !isSufficientBalance
+                                }
                               >
                                 {isVestingAccountWithoutGovernance ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Lock
                                   </Tooltip>
-                                ) : (
+                                ) : isSufficientBalance ? (
                                   'Lock'
+                                ) : (
+                                  'Insufficient Balance'
                                 )}
                               </button>
                             ) : currentTab === TabEnum.Unlock ? (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleUnlock}
-                                disabled={isVestingAccountWithoutGovernance}
+                                disabled={
+                                  isVestingAccountWithoutGovernance ||
+                                  !isSufficientBalance
+                                }
                               >
                                 {isVestingAccountWithoutGovernance ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Unlock
                                   </Tooltip>
-                                ) : (
+                                ) : isSufficientBalance ? (
                                   'Unlock'
+                                ) : (
+                                  'Insufficient Balance'
                                 )}
                               </button>
                             ) : (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleWithdraw}
+                                disabled={!isSufficientBalance}
                               >
-                                Withdraw
+                                {isSufficientBalance
+                                  ? 'Withdraw'
+                                  : 'Insufficient Balance'}
                               </button>
                             )}
                           </div>
