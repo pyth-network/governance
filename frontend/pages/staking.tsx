@@ -134,19 +134,19 @@ const Staking: NextPage = () => {
       if (stakeConnection && mainStakeAccount) {
         const currentTime = await stakeConnection.getTime()
         const nextVestingEvent = mainStakeAccount.getNextVesting(currentTime)
-        setNextVestingAmount(
-          new PythBalance(new BN(nextVestingEvent.amount.toString()))
-        )
-        setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
-        setIsEligibleForPreliminaryUnstaking(
-          mainStakeAccount.hasGovernanceExcessPosition(currentTime)
-        )
+        if (nextVestingEvent) {
+          setNextVestingAmount(
+            new PythBalance(new BN(nextVestingEvent.amount.toString()))
+          )
+          setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
+          setIsEligibleForPreliminaryUnstaking(
+            mainStakeAccount.hasGovernanceExcessPosition(currentTime)
+          )
+        }
       }
     }
     getVestingInfo()
   }, [unvestedPythBalance])
-
-  useEffect(() => {}, [stakeConnection, mainStakeAccount])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
@@ -306,23 +306,18 @@ const Staking: NextPage = () => {
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey && mainStakeAccount) {
-          const { withdrawable, locked, unvested } = mainStakeAccount.getBalanceSummary(
-            await stakeConnection.getTime()
-          )
-          setLockingPythBalance(locked.locking)
-          setLockedPythBalance(locked.locked)
-          setUnlockingPythBalance(
-            new PythBalance(
-              locked.unlocking.toBN().add(locked.preunlocking.toBN())
-            )
-          )
-          setUnvestedPythBalance(unvested)
-          setUnlockedPythBalance(withdrawable)
-          setIsBalanceLoading(false)
-        }
-      
+      const { withdrawable, locked, unvested } =
+        mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
+      setLockingPythBalance(locked.locking)
+      setLockedPythBalance(locked.locked)
+      setUnlockingPythBalance(
+        new PythBalance(locked.unlocking.toBN().add(locked.preunlocking.toBN()))
+      )
+      setUnvestedPythBalance(unvested)
+      setUnlockedPythBalance(withdrawable)
+      setIsBalanceLoading(false)
     }
-  
+  }
 
   const refreshStakeAccount = async () => {
     if (stakeConnection && publicKey) {
@@ -334,11 +329,11 @@ const Staking: NextPage = () => {
       }
       for (const acc of stakeAccounts) {
         if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
-          setMainStakeAccount(acc);
+          setMainStakeAccount(acc)
         }
-      }    
+      }
+    }
   }
-}
 
   // set current tab value when tab is clicked
   const handleChangeTab = (index: number) => {
