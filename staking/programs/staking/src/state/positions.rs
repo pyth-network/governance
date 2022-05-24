@@ -85,7 +85,7 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
 pub enum TargetWithParameters {
     VOTING,
     STAKING {
@@ -94,7 +94,7 @@ pub enum TargetWithParameters {
     },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
 pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
@@ -154,7 +154,7 @@ impl Position {
 /// The core states that a position can be in
 #[repr(u8)]
 #[wasm_bindgen]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PositionState {
     UNLOCKED,
     LOCKING,

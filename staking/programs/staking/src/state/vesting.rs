@@ -28,7 +28,7 @@ pub enum VestingSchedule {
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct VestingEvent {
     pub time:   i64,
     pub amount: u64,

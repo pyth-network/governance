@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[error_code]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum ErrorCode {
     #[msg("Too much exposure to product")]
     TooMuchExposureToProduct,
