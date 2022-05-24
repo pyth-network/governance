@@ -32,7 +32,7 @@ impl Default for PositionData {
             positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
         };
         res.initialize().unwrap();
-        return res;
+        res
     }
 }
 impl PositionData {
