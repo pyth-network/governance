@@ -11,7 +11,6 @@ import {
 import assert from "assert";
 import BN from "bn.js";
 import { PythBalance } from "../../app";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   Proposal,
   getGovernanceSchemaForAccount,
@@ -195,6 +194,9 @@ class MockProposalCreator {
     const schema = getGovernanceSchemaForAccount(
       GovernanceAccountType.ProposalV2
     );
+    // serialize creates a new borsh BinaryWriter. spl-governance adds a few methods to the prototype of BinaryWriter so that
+    // it can serialize and deserialize governance objects properly. I'm not sure if this is SPL-gov using undefined behavior
+    // or not, but it seems to work.
     const serializedProp = serialize(schema, proposal);
     const sharedMemData = new BinaryWriter();
     sharedMemData.writeU64(new BN(0)); // Offset
@@ -227,24 +229,6 @@ class MockProposalCreator {
     }
     return proposalAddress.publicKey;
   }
-  // Uggh gross. In order to serialize this, we need to take a few functions from various parts of the governance API package
-  GovernanceBinaryWriter = class extends BinaryWriter {
-    writePubkey(value: PublicKey) {
-      this.maybeResize();
-      this.writeFixedArray(value.toBuffer());
-    }
-    writeVoteType(value: VoteType) {
-      const writer = this as unknown as BinaryWriter;
-      writer.maybeResize();
-      writer.buf.writeUInt8(value.type, writer.length);
-      writer.length += 1;
-
-      if (value.type === VoteTypeKind.MultiChoice) {
-        writer.buf.writeUInt16LE(value.choiceCount!, writer.length);
-        writer.length += 2;
-      }
-    }
-  };
 }
 
 export async function assertVoterWeightEquals(
