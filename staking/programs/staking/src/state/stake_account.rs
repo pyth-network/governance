@@ -10,7 +10,7 @@ pub const STAKE_ACCOUNT_METADATA_SIZE: usize = 10240;
 
 #[account]
 #[derive(BorshSchema)]
-pub struct StakeAccountMetadata {
+pub struct StakeAccountMetadataV2 {
     pub metadata_bump:  u8,
     pub custody_bump:   u8,
     pub authority_bump: u8,
@@ -23,16 +23,17 @@ pub struct StakeAccountMetadata {
 #[cfg(test)]
 pub mod tests {
     use crate::state::stake_account::{
-        StakeAccountMetadata,
+        StakeAccountMetadataV2,
         STAKE_ACCOUNT_METADATA_SIZE,
     };
+
     use anchor_lang::Discriminator;
 
     #[test]
     fn check_size() {
         assert!(
-            anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadata>()
-                + StakeAccountMetadata::discriminator().len()
+            anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadataV2>()
+                + StakeAccountMetadataV2::discriminator().len()
                 <= STAKE_ACCOUNT_METADATA_SIZE
         );
     }

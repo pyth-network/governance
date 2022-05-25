@@ -12,6 +12,7 @@ pub const MAX_POSITIONS: usize = 100;
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
+pub const POSITIONS_ACCOUNT_SIZE: usize = 20040;
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
 /// The invariant we preserve is : For i < next_index, positions[i] == Some
@@ -217,6 +218,7 @@ pub mod tests {
         PositionState,
         TargetWithParameters,
         MAX_POSITIONS,
+        POSITIONS_ACCOUNT_SIZE,
         POSITION_BUFFER_SIZE,
     };
     use anchor_lang::solana_program::borsh::get_packed_len;
@@ -285,6 +287,10 @@ pub mod tests {
         assert_eq!(
             std::mem::size_of::<PositionData>(),
             32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
+        );
+        assert_eq!(
+            POSITIONS_ACCOUNT_SIZE,
+            8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
         // Checks that the position struct fits in the individual position buffer
         assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);

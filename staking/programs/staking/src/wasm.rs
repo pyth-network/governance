@@ -5,6 +5,7 @@ use crate::state::positions::{
     PositionData,
     PositionState,
     MAX_POSITIONS,
+    POSITIONS_ACCOUNT_SIZE,
 };
 use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
@@ -38,7 +39,9 @@ pub struct LockedBalanceSummary {
 impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
-        convert_error(WasmPositionData::from_buffer_impl(buffer))
+        convert_error(WasmPositionData::from_buffer_impl(
+            &buffer[..POSITIONS_ACCOUNT_SIZE],
+        ))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
         let mut ptr = buffer;
@@ -280,7 +283,7 @@ impl Constants {
     }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
-        PositionData::discriminator().len() + std::mem::size_of::<PositionData>()
+        POSITIONS_ACCOUNT_SIZE
     }
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {

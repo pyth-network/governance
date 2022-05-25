@@ -45,6 +45,8 @@ pub enum ErrorCode {
     ProposalNotActive,
     #[msg("Extra governance account required")]
     NoRemainingAccount,
+    #[msg("Precondition to upgrade account violated")]
+    AccountUpgradeFailed,
     #[msg("Not implemented")]
     NotImplemented,
     #[msg("Error deserializing position")]

@@ -80,7 +80,7 @@ pub struct CreateStakeAccount<'info> {
     #[account(zero)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(init, payer = payer, space = stake_account::STAKE_ACCOUNT_METADATA_SIZE, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
-    pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadata>>,
+    pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -123,7 +123,7 @@ pub struct WithdrawStake<'info> {
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         mut,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -163,7 +163,7 @@ pub struct CreatePosition<'info> {
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
@@ -190,7 +190,7 @@ pub struct ClosePosition<'info> {
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
@@ -215,7 +215,7 @@ pub struct UpdateVoterWeight<'info> {
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
