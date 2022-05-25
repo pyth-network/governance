@@ -324,8 +324,11 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
-    if (stakeConnection && publicKey && mainStakeAccount) {
+
+    if (stakeConnection && publicKey){
       setPythBalance(await getPythTokenBalance(connection, publicKey))
+    }
+    if (stakeConnection && publicKey && mainStakeAccount) {
       const { withdrawable, locked, unvested } =
         mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
       setLockingPythBalance(locked.locking)
