@@ -349,6 +349,9 @@ const Staking: NextPage = () => {
       if (stakeAccounts.length === 0) {
         setIsBalanceLoading(false)
       }
+      else if (stakeAccounts.length === 1){
+        setMainStakeAccount(stakeAccounts[0])
+      }
       for (const acc of stakeAccounts) {
         if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
           setMainStakeAccount(acc)
