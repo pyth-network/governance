@@ -133,9 +133,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     if (amount && balance) {
       if (
-        (amount.slice(-1) === '.'
-          ? PythBalance.fromString(amount.slice(0, -1))
-          : PythBalance.fromString(amount)) > balance
+          PythBalance.fromString(amount) > balance
       ) {
         setIsSufficientBalance(false)
       } else {
@@ -227,10 +225,7 @@ const Staking: NextPage = () => {
       toast.error('Please enter a valid amount!')
       return
     }
-    const depositAmount =
-      amount.slice(-1) === '.'
-        ? PythBalance.fromString(amount.slice(0, -1))
-        : PythBalance.fromString(amount)
+    const depositAmount = PythBalance.fromString(amount)
     if (depositAmount.toBN().gt(new BN(0))) {
       try {
         await stakeConnection?.depositAndLockTokens(
@@ -261,10 +256,7 @@ const Staking: NextPage = () => {
       toast.error('Please enter a valid amount!')
       return
     }
-    const unlockAmount =
-      amount.slice(-1) === '.'
-        ? PythBalance.fromString(amount.slice(0, -1))
-        : PythBalance.fromString(amount)
+    const unlockAmount = PythBalance.fromString(amount)
     if (unlockAmount.toBN().gt(new BN(0))) {
       if (mainStakeAccount) {
         try {
@@ -305,10 +297,7 @@ const Staking: NextPage = () => {
       toast.error('Please enter a valid amount!')
       return
     }
-    const withdrawAmount =
-      amount.slice(-1) === '.'
-        ? PythBalance.fromString(amount.slice(0, -1))
-        : PythBalance.fromString(amount)
+    const withdrawAmount = PythBalance.fromString(amount)
     if (withdrawAmount.toBN().gt(new BN(0))) {
       if (mainStakeAccount) {
         try {
