@@ -95,6 +95,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     const initialize = async () => {
       try {
+        setIsBalanceLoading(true)
         const stakeConnection = await StakeConnection.createStakeConnection(
           connection,
           anchorWallet as Wallet,
@@ -321,6 +322,7 @@ const Staking: NextPage = () => {
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey && mainStakeAccount) {
+      setPythBalance(await getPythTokenBalance(connection, publicKey))
       const { withdrawable, locked, unvested } =
         mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
       setLockingPythBalance(locked.locking)
@@ -337,7 +339,6 @@ const Staking: NextPage = () => {
   const refreshStakeAccount = async () => {
     if (stakeConnection && publicKey) {
       setIsBalanceLoading(true)
-      setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       if (stakeAccounts.length === 0) {
         setIsBalanceLoading(false)
