@@ -3,7 +3,7 @@ import assert from "assert";
 
 export const PYTH_DECIMALS = 6;
 const INTEGER_REGEXP = new RegExp(/^\d+$/);
-const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
+const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{0,${PYTH_DECIMALS}}$`);
 const TRAILING_ZEROS = new RegExp(/\.?0+$/);
 
 export class PythBalance {

@@ -21,6 +21,10 @@ describe("pyth balance tests", async () => {
     assert.equal(amount.toString(), "0");
     assert(amount.eq(new PythBalance(new BN(0))));
     assert(amount.toBN().eq(new BN(0)));
+
+    amount = PythBalance.fromString(".");
+    assert.equal(amount.toString(), "0");
+    assert(amount.eq(new PythBalance(new BN(0))));
   });
 
   it("Tests on 0.1", async () => {
@@ -69,6 +73,12 @@ describe("pyth balance tests", async () => {
     assert.equal(amount.toNumber(), 100);
     assert(amount.eq(new PythBalance(new BN(100_000_000))));
     assert(amount.toBN().eq(new BN(100_000_000)));
+
+    amount = PythBalance.fromString("100.");
+    assert.equal(amount.toString(), "100");
+    assert.equal(amount.toNumber(), 100);
+    assert(amount.eq(new PythBalance(new BN(100_000_000))));
+    assert(amount.toBN().eq(new BN(100_000_000)));
   });
 
   it("Tests on 60969.430243", async () => {
@@ -87,7 +97,7 @@ describe("pyth balance tests", async () => {
   });
 
   it("Raises an error", async () => {
-    for (let s of ["", "a", "a.2", "0xpyth", "1.", "1.0000001"]) {
+    for (let s of ["", "a", "a.2", "0xpyth", "1.0000001"]) {
       try {
         PythBalance.fromString(s);
         assert(false, "Operation should fail");
