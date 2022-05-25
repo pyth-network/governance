@@ -142,15 +142,11 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        match PositionData::reserve_new_index(
+        let i = PositionData::reserve_new_index(
             stake_account_positions,
             &mut ctx.accounts.stake_account_metadata.next_index,
-        ) {
-            Err(x) => return Err(x),
-            Ok(i) => {
-                stake_account_positions.write_position(i, &new_position)?;
-            }
-        }
+        )?;
+        stake_account_positions.write_position(i, &new_position)?;
 
         let unvested_balance = ctx
             .accounts
@@ -221,40 +217,36 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
 
-                    match PositionData::reserve_new_index(
+                    let j = PositionData::reserve_new_index(
                         stake_account_positions,
                         &mut ctx.accounts.stake_account_metadata.next_index,
-                    ) {
-                        Err(x) => return Err(x),
-                        Ok(j) => {
-                            stake_account_positions.write_position(
-                                j,
-                                &Position {
-                                    amount,
-                                    target_with_parameters: current_position.target_with_parameters,
-                                    activation_epoch: current_position.activation_epoch,
-                                    unlocking_start: Some(current_epoch + 1),
-                                },
-                            )?;
+                    )?;
+                    stake_account_positions.write_position(
+                        j,
+                        &Position {
+                            amount,
+                            target_with_parameters: current_position.target_with_parameters,
+                            activation_epoch: current_position.activation_epoch,
+                            unlocking_start: Some(current_epoch + 1),
+                        },
+                    )?;
 
 
-                            assert_ne!(i, j);
-                            assert_eq!(
-                                original_amount,
+                    assert_ne!(i, j);
+                    assert_eq!(
+                        original_amount,
+                        stake_account_positions
+                            .read_position(i)?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            .amount
+                            .checked_add(
                                 stake_account_positions
-                                    .read_position(i)?
+                                    .read_position(j)?
                                     .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
-                                    .checked_add(
-                                        stake_account_positions
-                                            .read_position(j)?
-                                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-                                            .amount
-                                    )
-                                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
-                            );
-                        }
-                    }
+                            )
+                            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                    );
                 }
 
                 target_account.add_unlocking(amount, current_epoch)?;
