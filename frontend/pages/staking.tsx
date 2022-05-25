@@ -111,6 +111,8 @@ const Staking: NextPage = () => {
         } else if (stakeAccounts.length > 1) {
           setIsMultipleStakeAccountsModalOpen(true)
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
+        } else {
+          setIsBalanceLoading(false);
         }
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
