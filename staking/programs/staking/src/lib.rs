@@ -185,7 +185,9 @@ pub mod staking {
 
         config.check_frozen()?;
 
-        let mut current_position: Position = stake_account_positions.read_position(i)?;
+        let mut current_position: Position = stake_account_positions
+            .read_position(i)?
+            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
 
         if current_position.target_with_parameters != target_with_parameters {
             return Err(error!(ErrorCode::WrongTarget));
@@ -210,7 +212,10 @@ pub mod staking {
 
                     assert_eq!(
                         original_amount,
-                        stake_account_positions.read_position(i)?.amount
+                        stake_account_positions
+                            .read_position(i)?
+                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                            .amount
                     );
                 } else {
                     current_position.amount = remaining_amount;
@@ -238,8 +243,14 @@ pub mod staking {
                                 original_amount,
                                 stake_account_positions
                                     .read_position(i)?
+                                    .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
                                     .amount
-                                    .checked_add(stake_account_positions.read_position(j)?.amount)
+                                    .checked_add(
+                                        stake_account_positions
+                                            .read_position(j)?
+                                            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
+                                            .amount
+                                    )
                                     .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                             );
                         }

@@ -31,7 +31,7 @@ pub fn validate(
     let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if let Ok(position) = stake_account_positions.read_position(i) {
+        if let Some(position) = stake_account_positions.read_position(i)? {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED
                 | PositionState::PREUNLOCKING
@@ -175,6 +175,7 @@ pub mod tests {
         for (current_epoch, desired_state) in tests {
             assert_eq!(
                 pd.read_position(0)
+                    .unwrap()
                     .unwrap()
                     .get_current_position(current_epoch, 1)
                     .unwrap(),
