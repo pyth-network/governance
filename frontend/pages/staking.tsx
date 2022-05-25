@@ -136,7 +136,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     if (amount && balance) {
       if (
-          PythBalance.fromString(amount).gte(balance)
+          PythBalance.fromString(amount).gt(balance)
       ) {
         setIsSufficientBalance(false)
       } else {
