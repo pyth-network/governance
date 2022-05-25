@@ -5,6 +5,7 @@ use crate::state::positions::{
     PositionData,
     PositionState,
     MAX_POSITIONS,
+    POSITIONS_ACCOUNT_SIZE,
 };
 use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
@@ -38,7 +39,9 @@ pub struct LockedBalanceSummary {
 impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
-        convert_error(WasmPositionData::from_buffer_impl(buffer))
+        convert_error(WasmPositionData::from_buffer_impl(
+            &buffer[..POSITIONS_ACCOUNT_SIZE],
+        ))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
         let mut ptr = buffer;
@@ -280,7 +283,7 @@ impl Constants {
     }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
-        PositionData::discriminator().len() + std::mem::size_of::<PositionData>()
+        POSITIONS_ACCOUNT_SIZE
     }
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {
@@ -295,4 +298,23 @@ impl Constants {
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::wasm::{
+        Constants,
+        WasmPositionData,
+    };
+    #[test]
+    fn test_parse() {
+        let nonzero = [
+            85, 195, 241, 79, 124, 192, 79, 11, 12, 56, 84, 246, 59, 128, 47, 97, 32, 200, 166,
+            179, 159, 149, 63, 119, 25, 97, 240, 252, 150, 219, 119, 86, 158, 5, 140, 74, 244, 63,
+            227, 43, 1, 128, 240, 250, 2, 0, 0, 0, 0, 86, 1, 7,
+        ];
+        let mut account = [0u8; 20048];
+        account[..nonzero.len()].clone_from_slice(&nonzero);
+        WasmPositionData::from_buffer(&account).unwrap();
+    }
 }
