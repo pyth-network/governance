@@ -786,12 +786,18 @@ const Staking: NextPage = () => {
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
                     </p>
-                    {unvestedPythBalance.toString() !== '0' ? (
+                    { (unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance  && isEligibleForPreliminaryUnstaking? (
                       <p className="font-poppins text-sm text-scampi">
                         Your unvested tokens are locked in the contract to
                         participate in governance. On vest, they will become
                         locked tokens, which require a 2 epoch cooldown to
                         withdraw.
+                      </p>
+                    ) : null}
+                    { (unvestedPythBalance.toString() !== '0') && isVestingAccountWithoutGovernance ? (
+                      <p className="font-poppins text-sm text-scampi">
+                        Your unvested tokens are not participating in governance. 
+                        On vest, they will become unlocked tokens.
                       </p>
                     ) : null}
                     {isEligibleForPreliminaryUnstaking ? (
@@ -800,9 +806,21 @@ const Staking: NextPage = () => {
                         you may unlock them now. This action will: <br />
                         (1) unlock all of your currently locked tokens,
                         immediately reducing your governance power, and <br />
-                        (2) cause your unvested tokens to become unlocked tokens
-                        on vest.
+                        (2) cause your {nextVestingAmount.toString()} tokens scheduled to vest
+                         on {nextVestingDate?.toLocaleString()} to become withdrawable on vest.
                       </p>
+                    ) : null}
+
+                    {(unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance &&!isEligibleForPreliminaryUnstaking ? (
+                      <div>
+                        <p className="font-poppins text-sm text-scampi">
+                           Your {nextVestingAmount.toString()} tokens scheduled to vest
+                           on {nextVestingDate?.toLocaleString()} will be withdrawable on vest.
+                        </p>
+                        <p className="font-poppins text-sm text-scampi">
+                        The rest of your unvested tokens are participating in governance.
+                        </p>
+                      </div>
                     ) : null}
                   </div>
                   {isEligibleForPreliminaryUnstaking ? (
