@@ -58,9 +58,8 @@ impl PositionData {
         Some(position).try_write(&mut self.positions[i])
     }
 
-    pub fn read_position(&self, i: usize) -> Result<Position> {
-        Option::<Position>::try_read(&self.positions[i])?
-            .ok_or_else(|| error!(ErrorCode::PositionNotInUse))
+    pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
+        Option::<Position>::try_read(&self.positions[i])
     }
 }
 

@@ -16,7 +16,7 @@ pub fn compute_voter_weight(
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..MAX_POSITIONS {
-        if let Ok(position) = stake_account_positions.read_position(i) {
+        if let Some(position) = stake_account_positions.read_position(i)? {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
