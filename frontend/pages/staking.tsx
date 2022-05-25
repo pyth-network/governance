@@ -286,6 +286,7 @@ const Staking: NextPage = () => {
     if (stakeConnection && mainStakeAccount) {
       await stakeConnection.optIntoGovernance(mainStakeAccount)
       setIsVestingAccountWithoutGovernance(false)
+      await refreshStakeAccount()
     }
     handleCloseVestingAccountWithoutGovernanceModal()
   }
@@ -406,6 +407,7 @@ const Staking: NextPage = () => {
           ).toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
         setIsEligibleForPreliminaryUnstaking(false)
+        await refreshStakeAccount()
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
