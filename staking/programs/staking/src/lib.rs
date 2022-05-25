@@ -388,10 +388,11 @@ pub mod staking {
 
         match action {
             VoterWeightAction::CastVote => {
-                if ctx.remaining_accounts.is_empty() {
-                    return Err(error!(ErrorCode::NoRemainingAccount));
-                }
-                let proposal_account = &ctx.remaining_accounts[0];
+                let proposal_account = ctx
+                    .remaining_accounts
+                    .get(0)
+                    .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
+
                 let proposal_data: ProposalV2 =
                     try_from_slice_unchecked(&proposal_account.data.borrow())?;
                 let proposal_start = proposal_data
