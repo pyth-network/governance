@@ -62,4 +62,20 @@ export class PythBalance {
   eq(other: PythBalance): boolean {
     return this.toBN().eq(other.toBN());
   }
+
+  gte(other: PythBalance): boolean {
+    return this.toBN().gte(other.toBN());
+  }
+
+  lt(other: PythBalance): boolean {
+    return this.toBN().lt(other.toBN());
+  }
+
+  gt(other: PythBalance): boolean {
+    return this.toBN().gt(other.toBN());
+  }
+
+  lte(other: PythBalance): boolean {
+    return this.toBN().lte(other.toBN());
+  }
 }
