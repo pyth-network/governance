@@ -21,8 +21,8 @@ pub const POSITIONS_ACCOUNT_SIZE: usize = 20040;
 #[account(zero_copy)]
 #[repr(C)]
 pub struct PositionData {
-    pub owner:     Pubkey,
-    pub positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+    pub owner: Pubkey,
+    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
 impl Default for PositionData {

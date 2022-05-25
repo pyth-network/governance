@@ -299,22 +299,3 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
 }
-
-#[cfg(test)]
-pub mod tests {
-    use crate::wasm::{
-        Constants,
-        WasmPositionData,
-    };
-    #[test]
-    fn test_parse() {
-        let nonzero = [
-            85, 195, 241, 79, 124, 192, 79, 11, 12, 56, 84, 246, 59, 128, 47, 97, 32, 200, 166,
-            179, 159, 149, 63, 119, 25, 97, 240, 252, 150, 219, 119, 86, 158, 5, 140, 74, 244, 63,
-            227, 43, 1, 128, 240, 250, 2, 0, 0, 0, 0, 86, 1, 7,
-        ];
-        let mut account = [0u8; 20048];
-        account[..nonzero.len()].clone_from_slice(&nonzero);
-        WasmPositionData::from_buffer(&account).unwrap();
-    }
-}
