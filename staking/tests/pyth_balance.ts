@@ -96,6 +96,17 @@ describe("pyth balance tests", async () => {
     assert(amount.toBN().eq(new BN(60_969_430_243)));
   });
 
+  it("Tests comparison", async () => {
+    let small = PythBalance.fromString("101");
+    let big = PythBalance.fromString("102");
+
+    assert(small.eq(small));
+    assert(small.lt(big));
+    assert(small.lte(big));
+    assert(big.gt(small));
+    assert(big.gte(small));
+  });
+
   it("Raises an error", async () => {
     for (let s of ["", "a", "a.2", "0xpyth", "1.0000001"]) {
       try {
