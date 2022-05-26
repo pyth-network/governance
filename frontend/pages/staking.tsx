@@ -60,6 +60,7 @@ const Staking: NextPage = () => {
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
   const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
+  const [isSufficientBalance, setIsSufficientBalance] = useState<boolean>(true)
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>([])
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
@@ -94,6 +95,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     const initialize = async () => {
       try {
+        setIsBalanceLoading(true)
         const stakeConnection = await StakeConnection.createStakeConnection(
           connection,
           anchorWallet as Wallet,
@@ -109,6 +111,8 @@ const Staking: NextPage = () => {
         } else if (stakeAccounts.length > 1) {
           setIsMultipleStakeAccountsModalOpen(true)
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
+        } else {
+          setIsBalanceLoading(false);
         }
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -130,23 +134,37 @@ const Staking: NextPage = () => {
   }, [stakeConnection, mainStakeAccount])
 
   useEffect(() => {
+    if (amount && balance) {
+      if (
+          PythBalance.fromString(amount).gt(balance)
+      ) {
+        setIsSufficientBalance(false)
+      } else {
+        setIsSufficientBalance(true)
+      }
+    } else {
+      setIsSufficientBalance(true)
+    }
+  }, [amount])
+
+  useEffect(() => {
     const getVestingInfo = async () => {
       if (stakeConnection && mainStakeAccount) {
         const currentTime = await stakeConnection.getTime()
         const nextVestingEvent = mainStakeAccount.getNextVesting(currentTime)
-        setNextVestingAmount(
-          new PythBalance(new BN(nextVestingEvent.amount.toString()))
-        )
-        setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
-        setIsEligibleForPreliminaryUnstaking(
-          mainStakeAccount.hasGovernanceExcessPosition(currentTime)
-        )
+        if (nextVestingEvent) {
+          setNextVestingAmount(
+            new PythBalance(new BN(nextVestingEvent.amount.toString()))
+          )
+          setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
+          setIsEligibleForPreliminaryUnstaking(
+            mainStakeAccount.hasGovernanceExcessPosition(currentTime)
+          )
+        }
       }
     }
     getVestingInfo()
   }, [unvestedPythBalance])
-
-  useEffect(() => {}, [stakeConnection, mainStakeAccount])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
@@ -221,7 +239,7 @@ const Staking: NextPage = () => {
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
-      await refreshBalance()
+      await refreshStakeAccount()
     } else {
       toast.error('Amount must be greater than 0.')
     }
@@ -250,7 +268,7 @@ const Staking: NextPage = () => {
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
         }
-        await refreshBalance()
+        await refreshStakeAccount()
       } else {
         toast.error('Stake account is undefined.')
       }
@@ -268,6 +286,7 @@ const Staking: NextPage = () => {
     if (stakeConnection && mainStakeAccount) {
       await stakeConnection.optIntoGovernance(mainStakeAccount)
       setIsVestingAccountWithoutGovernance(false)
+      await refreshStakeAccount()
     }
     handleCloseVestingAccountWithoutGovernanceModal()
   }
@@ -294,7 +313,7 @@ const Staking: NextPage = () => {
         } catch (e) {
           toast.error(capitalizeFirstLetter(e.message))
         }
-        await refreshBalance()
+        await refreshStakeAccount()
       } else {
         toast.error('Stake account is undefined.')
       }
@@ -305,28 +324,37 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
+
+    if (stakeConnection && publicKey){
+      setPythBalance(await getPythTokenBalance(connection, publicKey))
+    }
+    if (stakeConnection && publicKey && mainStakeAccount) {
+      const { withdrawable, locked, unvested } =
+        mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
+      setLockingPythBalance(locked.locking)
+      setLockedPythBalance(locked.locked)
+      setUnlockingPythBalance(
+        new PythBalance(locked.unlocking.toBN().add(locked.preunlocking.toBN()))
+      )
+      setUnvestedPythBalance(unvested)
+      setUnlockedPythBalance(withdrawable)
+      setIsBalanceLoading(false)
+    }
+  }
+
+  const refreshStakeAccount = async () => {
     if (stakeConnection && publicKey) {
       setIsBalanceLoading(true)
-      setPythBalance(await getPythTokenBalance(connection, publicKey))
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       if (stakeAccounts.length === 0) {
         setIsBalanceLoading(false)
       }
+      else if (stakeAccounts.length === 1){
+        setMainStakeAccount(stakeAccounts[0])
+      }
       for (const acc of stakeAccounts) {
         if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
-          const { withdrawable, locked, unvested } = acc.getBalanceSummary(
-            await stakeConnection.getTime()
-          )
-          setLockingPythBalance(locked.locking)
-          setLockedPythBalance(locked.locked)
-          setUnlockingPythBalance(
-            new PythBalance(
-              locked.unlocking.toBN().add(locked.preunlocking.toBN())
-            )
-          )
-          setUnvestedPythBalance(unvested)
-          setUnlockedPythBalance(withdrawable)
-          setIsBalanceLoading(false)
+          setMainStakeAccount(acc)
         }
       }
     }
@@ -385,6 +413,7 @@ const Staking: NextPage = () => {
           ).toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
         setIsEligibleForPreliminaryUnstaking(false)
+        await refreshStakeAccount()
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
@@ -757,12 +786,18 @@ const Staking: NextPage = () => {
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
                     </p>
-                    {unvestedPythBalance.toString() !== '0' ? (
+                    { (unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance  && isEligibleForPreliminaryUnstaking? (
                       <p className="font-poppins text-sm text-scampi">
                         Your unvested tokens are locked in the contract to
                         participate in governance. On vest, they will become
                         locked tokens, which require a 2 epoch cooldown to
                         withdraw.
+                      </p>
+                    ) : null}
+                    { (unvestedPythBalance.toString() !== '0') && isVestingAccountWithoutGovernance ? (
+                      <p className="font-poppins text-sm text-scampi">
+                        Your unvested tokens are not participating in governance. 
+                        On vest, they will become unlocked tokens.
                       </p>
                     ) : null}
                     {isEligibleForPreliminaryUnstaking ? (
@@ -771,9 +806,21 @@ const Staking: NextPage = () => {
                         you may unlock them now. This action will: <br />
                         (1) unlock all of your currently locked tokens,
                         immediately reducing your governance power, and <br />
-                        (2) cause your unvested tokens to become unlocked tokens
-                        on vest.
+                        (2) cause your {nextVestingAmount.toString()} tokens scheduled to vest
+                         on {nextVestingDate?.toLocaleString()} to become withdrawable on vest.
                       </p>
+                    ) : null}
+
+                    {(unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance &&!isEligibleForPreliminaryUnstaking ? (
+                      <div>
+                        <p className="font-poppins text-sm text-scampi">
+                           Your {nextVestingAmount.toString()} tokens scheduled to vest
+                           on {nextVestingDate?.toLocaleString()} will be withdrawable on vest.
+                        </p>
+                        <p className="font-poppins text-sm text-scampi">
+                        The rest of your unvested tokens are participating in governance.
+                        </p>
+                      </div>
                     ) : null}
                   </div>
                   {isEligibleForPreliminaryUnstaking ? (
@@ -1063,38 +1110,51 @@ const Staking: NextPage = () => {
                               />
                             ) : currentTab === TabEnum.Lock ? (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleDeposit}
-                                disabled={isVestingAccountWithoutGovernance}
+                                disabled={
+                                  isVestingAccountWithoutGovernance ||
+                                  !isSufficientBalance
+                                }
                               >
                                 {isVestingAccountWithoutGovernance ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Lock
                                   </Tooltip>
-                                ) : (
+                                ) : isSufficientBalance ? (
                                   'Lock'
+                                ) : (
+                                  'Insufficient Balance'
                                 )}
                               </button>
                             ) : currentTab === TabEnum.Unlock ? (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleUnlock}
-                                disabled={isVestingAccountWithoutGovernance}
+                                disabled={
+                                  isVestingAccountWithoutGovernance ||
+                                  !isSufficientBalance
+                                }
                               >
                                 {isVestingAccountWithoutGovernance ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Unlock
                                   </Tooltip>
-                                ) : (
+                                ) : isSufficientBalance ? (
                                   'Unlock'
+                                ) : (
+                                  'Insufficient Balance'
                                 )}
                               </button>
                             ) : (
                               <button
-                                className="primary-btn py-3 px-14 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
                                 onClick={handleWithdraw}
+                                disabled={!isSufficientBalance}
                               >
-                                Withdraw
+                                {isSufficientBalance
+                                  ? 'Withdraw'
+                                  : 'Insufficient Balance'}
                               </button>
                             )}
                           </div>
