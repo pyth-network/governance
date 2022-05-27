@@ -50,6 +50,7 @@ describe("voting", async () => {
 
   let owner: PublicKey;
   let voterWeightRecordAccount: PublicKey;
+  let maxVoterWeightRecordAccount: PublicKey;
   let tokenOwnerRecord: PublicKey;
   let provider: anchor.AnchorProvider;
 
@@ -105,6 +106,13 @@ describe("voting", async () => {
     )[0];
 
     tokenOwnerRecord = await stakeConnection.getTokenOwnerRecordAddress(owner);
+  });
+
+  it("creates max voter weight record", async () => {
+    await stakeConnection.program.methods
+      .updateMaxVoterWeight()
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
   });
 
   it("tries to create a proposal without updating", async () => {
@@ -216,8 +224,8 @@ describe("voting", async () => {
 
     const proposal = await getProposal(provider.connection, proposalAddress);
     assert.equal(
-      proposal.account.getYesVoteCount().toNumber(),
-      PythBalance.fromString("200").toBN().toNumber()
+      proposal.account.getYesVoteCount().toString(),
+      PythBalance.fromString("10000000000").toBN().toString()
     );
   });
 
