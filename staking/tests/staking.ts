@@ -268,6 +268,19 @@ describe("staking", async () => {
     );
   });
 
+  it("close position with 0 principal", async () => {
+    await expectFail(
+      program.methods
+        .closePosition(0, PythBalance.fromString("0").toBN(), votingProduct)
+        .accounts({
+          targetAccount: votingProductMetadataAccount,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
+      "New position needs to have positive balance",
+      errMap
+    );
+  });
+
   it("creates a non-voting position", async () => {
     const nonVotingStakeTarget = {
       staking: {

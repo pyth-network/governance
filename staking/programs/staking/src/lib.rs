@@ -173,6 +173,10 @@ pub mod staking {
         amount: u64,
         target_with_parameters: TargetWithParameters,
     ) -> Result<()> {
+        if amount == 0 {
+            return Err(error!(ErrorCode::ClosePositionWithZero));
+        }
+
         let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let target_account = &mut ctx.accounts.target_account;
