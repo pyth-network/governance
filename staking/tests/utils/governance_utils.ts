@@ -66,15 +66,9 @@ export async function withDefaultCreateProposal(
 
   if (updateFirst) {
     const stakeAccount = await stakeConnection.getMainAccount(owner);
-    tx.instructions.push(
-      await stakeConnection.program.methods
-        .updateVoterWeight({ createProposal: {} })
-        .accounts({
-          stakeAccountPositions: stakeAccount.address,
-        })
-        .remainingAccounts([])
-        .instruction()
-    );
+    stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount, {
+      createProposal: {},
+    });
   }
   const proposalNumber = (
     await getProposalsByGovernance(
