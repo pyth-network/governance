@@ -276,7 +276,7 @@ describe("staking", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "New position needs to have positive balance",
+      "Closing a position of 0 is not allowed",
       errMap
     );
   });
