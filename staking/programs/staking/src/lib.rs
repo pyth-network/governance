@@ -6,10 +6,12 @@
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 use anchor_spl::token::transfer;
 use context::*;
-use spl_governance::state::proposal::ProposalV2;
+use spl_governance::state::proposal::{
+    get_proposal_data,
+    ProposalV2,
+};
 use state::global_config::GlobalConfig;
 use state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use state::positions::{
@@ -22,6 +24,7 @@ use state::positions::{
 use state::vesting::VestingSchedule;
 use state::voter_weight_record::VoterWeightAction;
 use std::convert::TryInto;
+use std::str::FromStr;
 use utils::clock::{
     get_current_epoch,
     time_to_epoch,
@@ -38,9 +41,13 @@ pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+#[cfg(not(feature = "test"))]
+pub const GOVERNANCE_PROGRAM: &str = "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw";
+#[cfg(not(feature = "test"))]
+pub const ADMIN: &str = "upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr";
+
 #[program]
 pub mod staking {
-
 
     /// Creates a global config for the program
     use super::*;
@@ -53,6 +60,14 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
+
+        #[cfg(not(feature = "test"))]
+        {
+            if ctx.accounts.payer.key() != Pubkey::from_str(ADMIN).unwrap() {
+                return Err(error!(ErrorCode::Unauthorized));
+            }
+        }
+
         #[cfg(feature = "mock-clock")]
         {
             config_account.mock_clock_time = global_config.mock_clock_time;
@@ -235,7 +250,6 @@ pub mod staking {
                         },
                     )?;
 
-
                     assert_ne!(i, j);
                     assert_eq!(
                         original_amount,
@@ -384,13 +398,25 @@ pub mod staking {
 
         match action {
             VoterWeightAction::CastVote => {
-                let proposal_account = ctx
+                let proposal_account: &AccountInfo = ctx
                     .remaining_accounts
                     .get(0)
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
-                let proposal_data: ProposalV2 =
-                    try_from_slice_unchecked(&proposal_account.data.borrow())?;
+                let proposal_data: ProposalV2;
+
+                #[cfg(not(feature = "test"))]
+                {
+                    proposal_data = get_proposal_data(
+                        &Pubkey::from_str(GOVERNANCE_PROGRAM).unwrap(),
+                        proposal_account,
+                    )?;
+                }
+                #[cfg(feature = "test")]
+                {
+                    proposal_data = get_proposal_data(proposal_account.owner, proposal_account)?;
+                }
+
                 let proposal_start = proposal_data
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;

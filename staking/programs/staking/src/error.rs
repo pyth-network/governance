@@ -3,56 +3,58 @@ use anchor_lang::prelude::*;
 #[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ErrorCode {
-    #[msg("Too much exposure to product")]
+    #[msg("Too much exposure to product")] //6000
     TooMuchExposureToProduct,
-    #[msg("Too much exposure to governance")]
+    #[msg("Too much exposure to governance")] //6001
     TooMuchExposureToGovernance,
-    #[msg("Tokens not yet vested")]
+    #[msg("Tokens not yet vested")] //6002
     TokensNotYetVested,
-    #[msg("Risk limit exceeded")]
+    #[msg("Risk limit exceeded")] //6003
     RiskLimitExceeded,
-    #[msg("Number of position limit reached")]
+    #[msg("Number of position limit reached")] //6004
     TooManyPositions,
-    #[msg("Position not in use")]
+    #[msg("Position not in use")] //6005
     PositionNotInUse,
-    #[msg("New position needs to have positive balance")]
+    #[msg("New position needs to have positive balance")] //6006
     CreatePositionWithZero,
-    #[msg("Closing a position of 0 is not allowed")]
+    #[msg("Closing a position of 0 is not allowed")] //6007
     ClosePositionWithZero,
-    #[msg("Invalid product/publisher pair")]
+    #[msg("Invalid product/publisher pair")] //6008
     InvalidPosition,
-    #[msg("Amount to unlock bigger than position")]
+    #[msg("Amount to unlock bigger than position")] //6009
     AmountBiggerThanPosition,
-    #[msg("Position already unlocking")]
+    #[msg("Position already unlocking")] //6010
     AlreadyUnlocking,
-    #[msg("Epoch duration is 0")]
+    #[msg("Epoch duration is 0")] //6011
     ZeroEpochDuration,
-    #[msg("Owner needs to own destination account")]
+    #[msg("Owner needs to own destination account")] //6012
     WithdrawToUnauthorizedAccount,
-    #[msg("Insufficient balance to cover the withdrawal")]
+    #[msg("Insufficient balance to cover the withdrawal")] //6013
     InsufficientWithdrawableBalance,
-    #[msg("Target in position doesn't match target in instruction data")]
+    #[msg("Target in position doesn't match target in instruction data")] //6014
     WrongTarget,
-    #[msg("An arithmetic operation unexpectedly overflowed")]
+    #[msg("An arithmetic operation unexpectedly overflowed")] //6015
     GenericOverflow,
-    #[msg("Locked balance must be positive")]
+    #[msg("Locked balance must be positive")] //6016
     NegativeBalance,
-    #[msg("Protocol is frozen")]
+    #[msg("Protocol is frozen")] //6017
     Frozen,
-    #[msg("Not allowed when not debugging")]
+    #[msg("Not allowed when not debugging")] //6018
     DebuggingOnly,
-    #[msg("Voting epoch is either too old or hasn't started")]
+    #[msg("Voting epoch is either too old or hasn't started")] //6019
     InvalidVotingEpoch,
-    #[msg("Voting hasn't started")]
+    #[msg("Voting hasn't started")] //6020
     ProposalNotActive,
-    #[msg("Extra governance account required")]
+    #[msg("Extra governance account required")] //6021
     NoRemainingAccount,
-    #[msg("Precondition to upgrade account violated")]
+    #[msg("Unauthorized caller")] //6022
+    Unauthorized,
+    #[msg("Precondition to upgrade account violated")] //6023
     AccountUpgradeFailed,
-    #[msg("Not implemented")]
+    #[msg("Not implemented")] //6024
     NotImplemented,
-    #[msg("Error deserializing position")]
+    #[msg("Error deserializing position")] //6025
     PositionSerDe,
-    #[msg("Other")]
+    #[msg("Other")] //6026
     Other,
 }
