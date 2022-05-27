@@ -21,6 +21,7 @@ import {
   InstructionExecutionFlags,
   VoteThresholdPercentage,
   VoteTypeKind,
+  VoterWeightAction,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
 import * as wasm from "../../wasm";
@@ -131,6 +132,8 @@ async function assertVoterWeightEqualsAt(
     onChain.weightActionTarget.toBase58(),
     proposalAddress.toBase58()
   );
+  assert.equal(onChain.governingTokenOwner.toBase58(), owner.toBase58());
+  assert.equal(onChain.weightAction, VoterWeightAction.CastVote);
 }
 
 class MockProposalCreator {
