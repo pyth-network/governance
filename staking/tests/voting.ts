@@ -1,13 +1,7 @@
 import * as anchor from "@project-serum/anchor";
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  SimulatedTransactionResponse,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
-import * as wasm from "../wasm/node/staking";
 import path from "path";
 import { expectFail } from "./utils/utils";
 import {
@@ -18,21 +12,20 @@ import {
   makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
+import * as wasm from "../wasm/node/staking";
 import { StakeConnection, PythBalance } from "../app";
 import {
   getProposal,
-  getProposalsByGovernance,
-  PROGRAM_VERSION_V2,
-  Vote,
-  VoteChoice,
-  VoteKind,
-  VoteType,
-  withCastVote,
-  withCreateProposal,
-  withSignOffProposal,
+  ProposalState,
+  getRealmConfigAddress,
+  tryGetRealmConfig,
 } from "@solana/spl-governance";
-import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
-import { IdlError, parseIdlErrors } from "@project-serum/anchor";
+import {
+  withDefaultCreateProposal,
+  syncronizeClock,
+  withDefaultCastVote,
+  expectFailGovernance,
+} from "./utils/governance_utils";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -52,12 +45,7 @@ describe("voting", async () => {
   let realm: PublicKey;
   let governance: PublicKey;
 
-  let stakeAccountAddress: PublicKey;
-
   let owner: PublicKey;
-  let voterWeightRecordAccount: PublicKey;
-  let maxVoterWeightRecordAccount: PublicKey;
-  let tokenOwnerRecord: PublicKey;
   let provider: anchor.AnchorProvider;
 
   after(async () => {
@@ -98,20 +86,31 @@ describe("voting", async () => {
       stakeAccount,
       PythBalance.fromString("1")
     );
+  });
 
-    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
+  it("check plugins are activated", async () => {
+    const realmConfig = await tryGetRealmConfig(
+      stakeConnection.provider.connection,
+      governanceProgram,
+      realm
+    );
+    assert(
+      realmConfig.account.communityVoterWeightAddin.toBase58(),
+      stakeConnection.program.programId.toBase58()
+    );
+    assert(
+      realmConfig.account.maxCommunityVoterWeightAddin.toBase58(),
+      stakeConnection.program.programId.toBase58()
+    );
+  });
 
-    voterWeightRecordAccount = (
-      await PublicKey.findProgramAddress(
-        [
-          anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-          stakeAccountAddress.toBuffer(),
-        ],
-        stakeConnection.program.programId
-      )
-    )[0];
+  it("creates max voter weight record", async () => {
+    await stakeConnection.program.methods
+      .updateMaxVoterWeight()
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
 
-    maxVoterWeightRecordAccount = (
+    const maxVoterWeightRecordAccount = (
       await PublicKey.findProgramAddress(
         [
           anchor.utils.bytes.utf8.encode(
@@ -122,135 +121,33 @@ describe("voting", async () => {
       )
     )[0];
 
-    tokenOwnerRecord = await stakeConnection.getTokenOwnerRecordAddress(owner);
-  });
-
-  async function withDefaultCreateProposal(
-    tx: anchor.web3.Transaction,
-    updateFirst: boolean,
-    signoff: boolean
-  ): Promise<PublicKey> {
-    if (updateFirst) {
-      const stakeAccount = await stakeConnection.getMainAccount(owner);
-      tx.instructions.push(
-        await stakeConnection.program.methods
-          .updateVoterWeight({ createProposal: {} })
-          .accounts({
-            stakeAccountPositions: stakeAccount.address,
-          })
-          .remainingAccounts([])
-          .instruction()
+    const maxVoterWeightAccountData =
+      await stakeConnection.program.account.maxVoterWeightRecord.fetch(
+        maxVoterWeightRecordAccount
       );
-    }
-    const proposalNumber = (
-      await getProposalsByGovernance(
-        provider.connection,
-        governanceProgram,
-        governance
-      )
-    ).length;
-    const proposal = await withCreateProposal(
-      tx.instructions,
-      governanceProgram,
-      PROGRAM_VERSION_V2,
-      realm,
-      governance,
-      tokenOwnerRecord,
-      "Test proposal " + proposalNumber,
-      "www.example.com",
-      pythMintAccount.publicKey,
-      owner,
-      proposalNumber,
-      VoteType.SINGLE_CHOICE,
-      ["Yes", "No"],
-      false,
-      owner,
-      voterWeightRecordAccount
+    assert.equal(maxVoterWeightAccountData.maxVoterWeightExpiry, null);
+    assert.equal(
+      maxVoterWeightAccountData.maxVoterWeight.toString(),
+      PythBalance.fromString("10000000000").toBN().toString()
     );
-    if (signoff) {
-      withSignOffProposal(
-        tx.instructions,
-        governanceProgram,
-        PROGRAM_VERSION_V2,
-        realm,
-        governance,
-        proposal,
-        owner,
-        tokenOwnerRecord,
-        tokenOwnerRecord
-      );
-    }
-
-    return proposal;
-  }
-
-  async function withDefaultCastVote(
-    tx: Transaction,
-    proposalAddress: PublicKey,
-    wrongArgument = false
-  ): Promise<PublicKey> {
-    const stakeAccount = await stakeConnection.getMainAccount(owner);
-    tx.instructions.push(
-      await stakeConnection.program.methods
-        .updateVoterWeight(
-          wrongArgument ? { createProposal: {} } : { castVote: {} }
-        )
-        .accounts({
-          stakeAccountPositions: stakeAccount.address,
-        })
-        .remainingAccounts([
-          { pubkey: proposalAddress, isWritable: false, isSigner: false },
-        ])
-        .instruction()
+    assert.equal(maxVoterWeightAccountData.realm.toBase58(), realm.toBase58());
+    assert.equal(
+      maxVoterWeightAccountData.governingTokenMint.toBase58(),
+      stakeConnection.config.pythTokenMint.toBase58()
     );
-
-    return withCastVote(
-      tx.instructions,
-      governanceProgram,
-      PROGRAM_VERSION_V2,
-      realm,
-      governance,
-      proposalAddress,
-      tokenOwnerRecord,
-      tokenOwnerRecord,
-      owner,
-      pythMintAccount.publicKey,
-      new Vote({
-        voteType: VoteKind.Approve,
-        approveChoices: [
-          new VoteChoice({ rank: 0, weightPercentage: 100 }),
-          new VoteChoice({ rank: 0, weightPercentage: 0 }),
-        ],
-        deny: false,
-      }),
-      provider.wallet.publicKey,
-      voterWeightRecordAccount,
-      maxVoterWeightRecordAccount
-    );
-  }
-
-  async function syncronizeClock(stakeConnection: StakeConnection) {
-    const time = await stakeConnection.getTime();
-    const mock_clock_time = (
-      await stakeConnection.program.account.globalConfig.fetch(
-        stakeConnection.configAddress
-      )
-    ).mockClockTime;
-    await stakeConnection.program.methods
-      .advanceClock(time.sub(mock_clock_time))
-      .accounts({})
-      .rpc({ skipPreflight: DEBUG });
-  }
-  it("creates max voter weight record", async () => {
-    await stakeConnection.program.methods
-      .updateMaxVoterWeight()
-      .accounts({})
-      .rpc({ skipPreflight: DEBUG });
   });
 
   it("tries to create a proposal without updating", async () => {
     const tx = new Transaction();
-    await withDefaultCreateProposal(tx, false, false);
+    await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      false,
+      false
+    );
     await expectFailGovernance(
       provider.simulate(tx),
       "Owner doesn't have enough governing tokens to create Proposal"
@@ -260,7 +157,15 @@ describe("voting", async () => {
   it("updates voter weight", async () => {
     // Haven't locked anything, so no voter weight
     const tx = new Transaction();
-    await withDefaultCreateProposal(tx, true, false);
+    await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      true,
+      false
+    );
     await expectFailGovernance(
       provider.simulate(tx),
       "Owner doesn't have enough governing tokens to create Proposal"
@@ -274,7 +179,15 @@ describe("voting", async () => {
     );
     // Time hasn't passed yet, so still no weight
     const tx = new Transaction();
-    await withDefaultCreateProposal(tx, true, false);
+    await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      true,
+      false
+    );
     await expectFailGovernance(
       provider.simulate(tx),
       "Owner doesn't have enough governing tokens to create Proposal"
@@ -292,7 +205,15 @@ describe("voting", async () => {
     // Slot has probably already increased, but make extra sure by waiting one second
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tx = new Transaction();
-    await withDefaultCreateProposal(tx, false, false);
+    await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      false,
+      false
+    );
     await expectFailGovernance(
       provider.simulate(tx),
       "VoterWeightRecord expired"
@@ -301,8 +222,24 @@ describe("voting", async () => {
 
   it("create proposal and vote on it", async () => {
     let tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, true, true);
-    await withDefaultCastVote(tx, proposalAddress);
+    const proposalAddress = await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      true,
+      true
+    );
+    await withDefaultCastVote(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      proposalAddress,
+      stakeConnection,
+      false
+    );
 
     await syncronizeClock(stakeConnection);
     await provider.sendAndConfirm(tx);
@@ -312,12 +249,29 @@ describe("voting", async () => {
       proposal.account.getYesVoteCount().toString(),
       PythBalance.fromString("10000000000").toBN().toString()
     );
+    assert.equal(proposal.account.state, ProposalState.Succeeded);
   });
 
   it("another proposal, this time we update voter weight for the wrong action", async () => {
     let tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, true, true);
-    await withDefaultCastVote(tx, proposalAddress, true);
+    const proposalAddress = await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      true,
+      true
+    );
+    await withDefaultCastVote(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      proposalAddress,
+      stakeConnection,
+      true
+    );
     await expectFailGovernance(
       provider.simulate(tx),
       "VoterWeightRecord invalid action"
@@ -326,7 +280,15 @@ describe("voting", async () => {
 
   it("another proposal, wait a long time, voting should fail", async () => {
     let tx = new Transaction();
-    const proposalAddress = await withDefaultCreateProposal(tx, true, true);
+    const proposalAddress = await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      true,
+      true
+    );
     await provider.sendAndConfirm(tx);
 
     await new Promise((resolve) =>
@@ -346,7 +308,7 @@ describe("voting", async () => {
           { pubkey: proposalAddress, isWritable: false, isSigner: false },
         ]),
       "Voting epoch is either too old or hasn't started",
-      parseIdlErrors(stakeConnection.program.idl)
+      anchor.parseIdlErrors(stakeConnection.program.idl)
     );
 
     await expectFail(
@@ -357,30 +319,7 @@ describe("voting", async () => {
         })
         .remainingAccounts([]),
       "Extra governance account required",
-      parseIdlErrors(stakeConnection.program.idl)
+      anchor.parseIdlErrors(stakeConnection.program.idl)
     );
   });
 });
-
-async function expectFailGovernance(
-  tx: Promise<SuccessfulTxSimulationResponse>,
-  expectedError: string
-) {
-  try {
-    const response = await tx;
-    throw new Error("Function that was expected to fail succeeded");
-  } catch (error) {
-    // Anchor probable should export this type but doesn't
-    if (error.hasOwnProperty("simulationResponse")) {
-      const logs = (error.simulationResponse as SimulatedTransactionResponse)
-        .logs;
-      const errors = logs.filter((line) => line.includes("GOVERNANCE-ERROR"));
-      if (!errors.some((line) => line.includes(expectedError))) {
-        assert.equal(errors.join("\n"), expectedError);
-      }
-    } else {
-      console.dir(error);
-      throw error;
-    }
-  }
-}
