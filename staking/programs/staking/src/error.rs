@@ -41,20 +41,22 @@ pub enum ErrorCode {
     Frozen,
     #[msg("Not allowed when not debugging")] //6018
     DebuggingOnly,
-    #[msg("Voting epoch is either too old or hasn't started")] //6019
+    #[msg("Proposal too long")] //6019
+    ProposalTooLong,
+    #[msg("Voting epoch is either too old or hasn't started")] //6020
     InvalidVotingEpoch,
-    #[msg("Voting hasn't started")] //6020
+    #[msg("Voting hasn't started")] //6021
     ProposalNotActive,
-    #[msg("Extra governance account required")] //6021
+    #[msg("Extra governance account required")] //6022
     NoRemainingAccount,
-    #[msg("Unauthorized caller")] //6022
+    #[msg("Unauthorized caller")] //6023
     Unauthorized,
-    #[msg("Precondition to upgrade account violated")] //6023
+    #[msg("Precondition to upgrade account violated")] //6024
     AccountUpgradeFailed,
-    #[msg("Not implemented")] //6024
+    #[msg("Not implemented")] //6025
     NotImplemented,
-    #[msg("Error deserializing position")] //6025
+    #[msg("Error deserializing position")] //6026
     PositionSerDe,
-    #[msg("Other")] //6026
+    #[msg("Other")] //6027
     Other,
 }

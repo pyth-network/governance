@@ -9,6 +9,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::pubkey;
 use anchor_spl::token::transfer;
 use context::*;
+use spl_governance::state::governance::get_governance_data_for_realm;
 use spl_governance::state::proposal::{
     get_proposal_data,
     ProposalV2,
@@ -42,6 +43,7 @@ pub mod wasm;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
+
 
 #[program]
 pub mod staking {
@@ -399,17 +401,40 @@ pub mod staking {
                 let proposal_start = proposal_data
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
-                epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
 
+                if let Some(max_voting_time) = proposal_data.max_voting_time {
+                    if config.epoch_duration > max_voting_time.into() {
+                        return Err(error!(ErrorCode::ProposalTooLong));
+                    }
+                }
+
+                epoch_of_snapshot = time_to_epoch(config, proposal_start)?;
                 voter_record.weight_action_target = Some(*proposal_account.key);
             }
+            VoterWeightAction::CreateProposal => {
+                let governance_account: &AccountInfo = ctx
+                    .remaining_accounts
+                    .get(0)
+                    .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
+
+                let governance_data = get_governance_data_for_realm(
+                    &GOVERNANCE_PROGRAM,
+                    governance_account,
+                    &config.pyth_governance_realm,
+                )?;
+
+                if config.epoch_duration > governance_data.config.max_voting_time.into() {
+                    return Err(error!(ErrorCode::ProposalTooLong));
+                }
+
+                epoch_of_snapshot = current_epoch;
+                voter_record.weight_action_target = Some(*governance_account.key);
+            }
             _ => {
-                // The other actions are creating a proposal, comment on a proposal and create
+                // The other actions are comment on a proposal and create
                 // governance. It's OK to use current weights for these things.
                 // It is also ok to leave weight_action_target as None because we don't
                 // need to make any extra checks.
-                // For creating a proposal weight_action_target is supposed to be the governance
-                // but we don't have specific logic for different governances
                 // For creating a governance weight_action_target is supposed to be the realm
                 // but we have a single realm.
                 epoch_of_snapshot = current_epoch;
