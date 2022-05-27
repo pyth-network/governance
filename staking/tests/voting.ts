@@ -88,7 +88,7 @@ describe("voting", async () => {
     );
   });
 
-  it("check plugins are activates", async () => {
+  it("check plugins are activated", async () => {
     const realmConfig = await tryGetRealmConfig(
       stakeConnection.provider.connection,
       governanceProgram,
