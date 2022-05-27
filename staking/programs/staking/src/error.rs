@@ -17,6 +17,8 @@ pub enum ErrorCode {
     PositionNotInUse,
     #[msg("New position needs to have positive balance")]
     CreatePositionWithZero,
+    #[msg("Closing a position of 0 is not allowed")]
+    ClosePositionWithZero,
     #[msg("Invalid product/publisher pair")]
     InvalidPosition,
     #[msg("Amount to unlock bigger than position")]

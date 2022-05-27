@@ -278,7 +278,7 @@ describe("config", async () => {
 
     await expectFail(
       program.methods
-        .closePosition(0, new BN(0), votingProduct)
+        .closePosition(0, new BN(1), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           targetAccount: votingProductMetadataAccount,
