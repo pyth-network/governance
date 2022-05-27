@@ -6,6 +6,7 @@
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::pubkey;
 use anchor_spl::token::transfer;
 use context::*;
 use spl_governance::state::proposal::{
@@ -42,9 +43,9 @@ pub mod wasm;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[cfg(not(feature = "test"))]
-pub const GOVERNANCE_PROGRAM: &str = "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw";
+pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
 #[cfg(not(feature = "test"))]
-pub const ADMIN: &str = "upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr";
+pub const ADMIN: Pubkey = pubkey!("upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr");
 
 #[program]
 pub mod staking {
@@ -63,7 +64,7 @@ pub mod staking {
 
         #[cfg(not(feature = "test"))]
         {
-            if ctx.accounts.payer.key() != Pubkey::from_str(ADMIN).unwrap() {
+            if ctx.accounts.payer.key() != ADMIN {
                 return Err(error!(ErrorCode::Unauthorized));
             }
         }
@@ -407,10 +408,7 @@ pub mod staking {
 
                 #[cfg(not(feature = "test"))]
                 {
-                    proposal_data = get_proposal_data(
-                        &Pubkey::from_str(GOVERNANCE_PROGRAM).unwrap(),
-                        proposal_account,
-                    )?;
+                    proposal_data = get_proposal_data(&GOVERNANCE_PROGRAM, proposal_account)?;
                 }
                 #[cfg(feature = "test")]
                 {
