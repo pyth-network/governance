@@ -1381,10 +1381,10 @@ prettier@^2.6.2:
   resolved "https://registry.npmjs.org/prettier/-/prettier-2.6.2.tgz"
   integrity sha512-PkUpF+qoXTqhOeWL9fu7As8LXsIUZ1WYaJiY/a7McAQzxjk82OF0tibkFXVCDImZtWxbvojFjerkiLb0/q8mew==
 
-pyth-staking-wasm@0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/pyth-staking-wasm/-/pyth-staking-wasm-0.3.1.tgz#fa8cd913f51d3504e391eea9aea38c5a9866e930"
-  integrity sha512-iWTmfN9rNmphbR51ZTLUv5RUeUgYGNB00HtoYI29Jg61nPE7pwHYW8llL0mQhgkxrzqR1gXMBAMaGH/A1ldhTQ==
+pyth-staking-wasm@0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/pyth-staking-wasm/-/pyth-staking-wasm-0.3.2.tgz#56c67e63797bb9d7cd4a546bdc80d47174ee6940"
+  integrity sha512-hfUVBJDLZK+HWAH9m1DnPyWUc9d/Nce5Okc5h1OulsoDQ9taAJBgsQr8UACnNXupoTYBlykfwUFTJ6cnxd0FEw==
 
 randombytes@^2.1.0:
   version "2.1.0"
@@ -1399,11 +1399,6 @@ readdirp@~3.6.0:
   integrity sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==
   dependencies:
     picomatch "^2.2.1"
-
-readline-promise@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/readline-promise/-/readline-promise-1.0.5.tgz#26ccac73b9124d5c07f7e8398fe5d7fb1e6b198b"
-  integrity sha512-rlqCVq6aaHxJCOJ0CzDHUi9Kj9JPBpnGFkdl6JefVjy0O/dGuBP+CovaHfaftUwElUlIeUs0E/a3Z5y45vRTVA==
 
 rechoir@^0.6.2:
   version "0.6.2"
