@@ -9,5 +9,5 @@ then
 fi
 if [ ! -f target/deploy/chat.so ]
 then
-	solana program dump -u mainnet-beta gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET ./target/deploy/chat.so
+	solana program dump -u devnet gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET ./target/deploy/chat.so
 fi
