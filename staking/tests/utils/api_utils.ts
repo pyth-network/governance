@@ -1,11 +1,6 @@
 import { StakeConnection } from "../../app/StakeConnection";
 import {
-  BpfLoader,
-  BPF_LOADER_PROGRAM_ID,
-  Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
-  SystemProgram,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
@@ -21,7 +16,6 @@ import {
   VoteType,
   InstructionExecutionFlags,
   VoteThresholdPercentage,
-  VoteTypeKind,
   SYSTEM_PROGRAM_ID,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
