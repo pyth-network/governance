@@ -68,9 +68,14 @@ export async function withDefaultCreateProposal(
 
   if (updateFirst) {
     const stakeAccount = await stakeConnection.getMainAccount(owner);
-    stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount, {
-      createProposal: {},
-    });
+    await stakeConnection.withUpdateVoterWeight(
+      tx.instructions,
+      stakeAccount,
+      {
+        createProposal: {},
+      },
+      governance
+    );
   }
   const proposalNumber = (
     await getProposalsByGovernance(
@@ -131,18 +136,12 @@ export async function withDefaultCastVote(
   } = await computeGovernanceAccounts(stakeConnection);
 
   const stakeAccount = await stakeConnection.getMainAccount(owner);
-  tx.instructions.push(
-    await stakeConnection.program.methods
-      .updateVoterWeight(
-        wrongArgument ? { createProposal: {} } : { castVote: {} }
-      )
-      .accounts({
-        stakeAccountPositions: stakeAccount.address,
-      })
-      .remainingAccounts([
-        { pubkey: proposalAddress, isWritable: false, isSigner: false },
-      ])
-      .instruction()
+
+  await stakeConnection.withUpdateVoterWeight(
+    tx.instructions,
+    stakeAccount,
+    wrongArgument ? { createGovernance: {} } : { castVote: {} },
+    proposalAddress
   );
 
   return withCastVote(
@@ -199,7 +198,7 @@ export async function expectFailGovernance(
   expectedError: string
 ) {
   try {
-    const response = await tx;
+    await tx;
     throw new Error("Function that was expected to fail succeeded");
   } catch (error) {
     // Anchor probable should export this type but doesn't
