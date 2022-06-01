@@ -3,6 +3,7 @@ import {
   PublicKey,
   Transaction,
   SimulatedTransactionResponse,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import * as wasm from "../../wasm/node/staking";
 import { StakeConnection } from "../../app";
@@ -19,6 +20,7 @@ import {
 } from "@solana/spl-governance";
 import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
 import assert from "assert";
+import {BinaryWriter} from "borsh";
 
 async function computeGovernanceAccounts(stakeConnection: StakeConnection) {
   const maxVoterWeightRecordAccount = (
@@ -165,17 +167,28 @@ export async function withDefaultCastVote(
   );
 }
 
-export async function syncronizeClock(stakeConnection: StakeConnection) {
+export async function syncronizeClock(realm: PublicKey, stakeConnection: StakeConnection) {
   const time = await stakeConnection.getTime();
-  const mock_clock_time = (
-    await stakeConnection.program.account.globalConfig.fetch(
-      stakeConnection.configAddress
-    )
-  ).mockClockTime;
-  await stakeConnection.program.methods
-    .advanceClock(time.sub(mock_clock_time))
-    .accounts({})
-    .rpc();
+
+  const ixData = new BinaryWriter();
+  ixData.writeU8(26); // Instruction ID
+  ixData.writeU64(time);
+  const tx = new Transaction();
+  tx.add(
+    new TransactionInstruction({
+      programId: stakeConnection.governanceAddress,
+      keys: [
+        { pubkey: realm, isWritable: true, isSigner: false },
+        {
+          pubkey: stakeConnection.provider.wallet.publicKey,
+          isWritable: true,
+          isSigner: true,
+        },
+      ],
+      data: ixData.buf.subarray(0, ixData.length),
+    })
+  );
+  await stakeConnection.provider.sendAndConfirm(tx);
 }
 
 export async function expectFailGovernance(

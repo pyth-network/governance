@@ -7,6 +7,7 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import assert from "assert";
 import BN from "bn.js";
@@ -20,6 +21,8 @@ import {
   VoteType,
   InstructionExecutionFlags,
   VoteThresholdPercentage,
+  VoteTypeKind,
+  SYSTEM_PROGRAM_ID,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
 import * as wasm from "../../wasm";
@@ -182,7 +185,7 @@ class MockProposalCreator {
       maxVotingTime: null,
       draftAt: BN_ZERO,
       signingOffAt: null,
-      votingAt: time,
+      votingAt: time, // The one field we care about
       votingAtSlot: null,
       votingCompletedAt: null,
       executingAt: null,
@@ -199,36 +202,35 @@ class MockProposalCreator {
     // it can serialize and deserialize governance objects properly. I'm not sure if this is SPL-gov using undefined behavior
     // or not, but it seems to work.
     const serializedProp = serialize(schema, proposal);
-    const sharedMemData = new BinaryWriter();
-    sharedMemData.writeU64(new BN(0)); // Offset
-    sharedMemData.writeFixedArray(serializedProp);
+    const ixData = new BinaryWriter();
+    const seed = time.toNumber() + 1000000;
+    ixData.writeU8(27); // The instruction index for HackCreateRawProposal
+    ixData.writeU32(seed);
+    ixData.writeFixedArray(serializedProp);
 
-    // BpfLoader.load requires the fee payer to be a Keypair, so we need to transfer some Sol to a new fee-payer
-    const feePayer = Keypair.generate();
-    const tx1 = new Transaction();
-    tx1.add(
-      SystemProgram.transfer({
-        fromPubkey: stakeConnection.provider.wallet.publicKey,
-        toPubkey: feePayer.publicKey,
-        lamports: LAMPORTS_PER_SOL,
+    const [acct, bump] = await PublicKey.findProgramAddress(
+      [ixData.buf.subarray(1, 5)], // seed little endian bytes
+      stakeConnection.governanceAddress
+    );
+    const tx = new Transaction();
+    tx.add(
+      new TransactionInstruction({
+        programId: stakeConnection.governanceAddress,
+        keys: [
+          { pubkey: acct, isWritable: true, isSigner: false },
+          {
+            pubkey: stakeConnection.provider.wallet.publicKey,
+            isWritable: true,
+            isSigner: true,
+          },
+          { pubkey: SYSTEM_PROGRAM_ID, isSigner: false, isWritable: false },
+        ],
+        data: ixData.buf.subarray(0, ixData.length),
       })
     );
-    await stakeConnection.provider.sendAndConfirm(tx1);
+    await stakeConnection.provider.sendAndConfirm(tx);
 
-    const proposalAddress = Keypair.generate();
-    try {
-      await BpfLoader.load(
-        stakeConnection.provider.connection,
-        feePayer,
-        proposalAddress,
-        serializedProp,
-        BPF_LOADER_PROGRAM_ID
-      );
-    } catch (error) {
-      // This fails because it's not an ELF, but at that point it has already populated the account.
-      // Gross, but I think this is the easiest way
-    }
-    return proposalAddress.publicKey;
+    return acct;
   }
 }
 
