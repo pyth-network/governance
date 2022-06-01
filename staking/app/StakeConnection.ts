@@ -609,20 +609,28 @@ export class StakeConnection {
   }
 
   public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
+    assert(
+      stakeAccount.getVestingAccountState(await this.getTime()) ==
+        VestingAccountState.VestedTokensFullyLocked
+    );
+
     const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
       await this.getTime()
     );
-    assert(amountBN.gt(new BN(0)));
 
     const amount = new PythBalance(amountBN);
     await this.unlockTokensUnchecked(stakeAccount, amount);
   }
 
   public async unlockAllUnvested(stakeAccount: StakeAccount) {
+    assert(
+      stakeAccount.getVestingAccountState(await this.getTime()) ==
+        VestingAccountState.VestedTokensFullyLocked
+    );
+
     const amountBN = stakeAccount.getNetExcessGovernance(
       addUnlockingPeriod(this, await this.getTime())
     );
-    assert(amountBN.gt(new BN(0)));
 
     const amount = new PythBalance(amountBN);
     await this.unlockTokensUnchecked(stakeAccount, amount);
