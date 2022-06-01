@@ -25,6 +25,7 @@ pub struct PositionData {
     positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
+#[cfg(test)]
 impl Default for PositionData {
     // Only used for testing, so unwrap is acceptable
     fn default() -> Self {

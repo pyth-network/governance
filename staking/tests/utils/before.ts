@@ -175,7 +175,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     config.programs.localnet.chat
   } ${
     config.path.chat_path
-  } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -um`;
+  } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -ud`;
 
   const { controller, connection } = await startValidatorRaw(
     portNumber,

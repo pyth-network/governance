@@ -66,10 +66,6 @@ describe("voting", async () => {
       defaultConfig
     ));
 
-    // Delete the property, which will make the API think it's not using mock clock anymore
-    delete stakeConnection.config.mockClockTime;
-    await syncronizeClock(stakeConnection);
-
     const globalConfig = stakeConnection.config;
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -78,6 +74,8 @@ describe("voting", async () => {
     owner = provider.wallet.publicKey;
     realm = globalConfig.pythGovernanceRealm;
     governance = globalConfig.governanceAuthority;
+
+    await syncronizeClock(realm, stakeConnection);
 
     // Create stake account
     await stakeConnection.depositTokens(undefined, PythBalance.fromString("1"));
@@ -193,10 +191,11 @@ describe("voting", async () => {
       "Owner doesn't have enough governing tokens to create Proposal"
     );
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, EPOCH_DURATION.toNumber() * 1000)
-    );
-    await syncronizeClock(stakeConnection);
+    await stakeConnection.program.methods
+      .advanceClock(EPOCH_DURATION)
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
+    await syncronizeClock(realm, stakeConnection);
 
     // Now it should succeed
     await provider.sendAndConfirm(tx);
@@ -241,7 +240,7 @@ describe("voting", async () => {
       false
     );
 
-    await syncronizeClock(stakeConnection);
+    await syncronizeClock(realm, stakeConnection);
     await provider.sendAndConfirm(tx);
 
     const proposal = await getProposal(provider.connection, proposalAddress);
@@ -291,10 +290,11 @@ describe("voting", async () => {
     );
     await provider.sendAndConfirm(tx);
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, EPOCH_DURATION.toNumber() * 3000)
-    );
-    await syncronizeClock(stakeConnection);
+    await stakeConnection.program.methods
+      .advanceClock(EPOCH_DURATION.muln(3))
+      .accounts({})
+      .rpc({ skipPreflight: DEBUG });
+    await syncronizeClock(realm, stakeConnection);
 
     const stakeAccount = await stakeConnection.getMainAccount(owner);
 
