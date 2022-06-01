@@ -498,14 +498,12 @@ export class StakeConnection {
    * TODO : Function for opting out of governance
    */
   public async optIntoGovernance(stakeAccount: StakeAccount) {
-    assert(
-      stakeAccount.isVestingAccountWithoutGovernance(await this.getTime())
-    );
+    assert(stakeAccount.canOptIn(await this.getTime()));
 
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
-    const unvestedBalance = stakeAccount.getBalanceSummary(
-      await this.getTime()
-    ).unvested;
+    const amount = stakeAccount
+      .getNetExcessGovernance(addUnlockingPeriod(this, await this.getTime()))
+      .neg();
 
     const transaction: Transaction = new Transaction();
 
@@ -522,7 +520,7 @@ export class StakeConnection {
 
     transaction.instructions.push(
       await this.program.methods
-        .createPosition(this.votingProduct, unvestedBalance.toBN())
+        .createPosition(this.votingProduct, amount)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
           targetAccount: this.votingProductMetadataAccount,
@@ -608,7 +606,7 @@ export class StakeConnection {
   }
 
   public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
-    const amountBN = stakeAccount.getGovernanceExcessPosition(
+    const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
       await this.getTime()
     );
     assert(amountBN.gt(new BN(0)));
@@ -616,6 +614,17 @@ export class StakeConnection {
     const amount = new PythBalance(amountBN);
     await this.unlockTokensUnchecked(stakeAccount, amount);
   }
+
+  public async unlockAllUnvested(stakeAccount: StakeAccount) {
+    const amountBN = stakeAccount.getNetExcessGovernance(
+      addUnlockingPeriod(this, await this.getTime())
+    );
+    assert(amountBN.gt(new BN(0)));
+
+    const amount = new PythBalance(amountBN);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
+  }
+
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
     amount: PythBalance
@@ -908,26 +917,53 @@ export class StakeAccount {
     );
   }
 
+  public getUnlockingBalance(unixTime: BN): PythBalance {
+    let currentEpoch = unixTime.div(this.config.epochDuration);
+    let unlockingDuration = this.config.unlockingDuration;
+    let currentEpochBI = BigInt(currentEpoch.toString());
+
+    const lockedSummaryBI =
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
+        currentEpochBI,
+        unlockingDuration
+      );
+
+    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
+
+    return new PythBalance(unlockingBN.add(preunlockingBN));
+  }
+
   public hasUnvestedTokens(unixTime: BN): boolean {
     return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
   }
 
-  public isVestingAccountWithoutGovernance(unixTime: BN) {
+  public isGovernanceOptOut(unixTime: BN) {
+    return this.getNetExcessGovernance(addUnlockingPeriod(this, unixTime)).lt(
+      new BN(0)
+    );
+  }
+
+  public isGovernanceOptIn(unixTime: BN) {
     return (
-      this.hasUnvestedTokens(unixTime) &&
-      this.getGovernanceExposure(unixTime).toBN().eq(new BN(0))
+      this.hasUnvestedTokens(unixTime) && !this.isGovernanceOptOut(unixTime)
     );
   }
 
-  private addUnlockingPeriod(unixTime: BN) {
-    return unixTime.add(
-      this.config.epochDuration.mul(
-        new BN(this.config.unlockingDuration).add(new BN(1))
-      )
+  public canOptIn(unixTime: BN) {
+    return (
+      this.isGovernanceOptOut(unixTime) &&
+      this.getUnlockingBalance(unixTime).eq(PythBalance.fromString("0"))
     );
   }
 
-  public getGovernanceExcessPosition(unixTime: BN): BN {
+  public getNetExcessGovernance(unixTime: BN): BN {
+    return this.getGovernanceExposure(unixTime)
+      .toBN()
+      .sub(this.getBalanceSummary(unixTime).unvested.toBN());
+  }
+
+  public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
     if (!nextVestingEvent) {
       return new BN(0);
@@ -935,18 +971,19 @@ export class StakeAccount {
     const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
     const timeOfEval = BN.max(
       nextVestingEventTimeBn,
-      this.addUnlockingPeriod(unixTime)
+      addUnlockingPeriod(this, unixTime)
     );
-
-    return BN.max(
-      this.getGovernanceExposure(timeOfEval)
-        .toBN()
-        .sub(this.getBalanceSummary(timeOfEval).unvested.toBN()),
-      new BN(0)
-    );
+    return this.getNetExcessGovernance(timeOfEval);
   }
+}
 
-  public hasGovernanceExcessPosition(unixTime: BN) {
-    return this.getGovernanceExcessPosition(unixTime).gt(new BN(0));
-  }
+function addUnlockingPeriod(
+  caller: StakeConnection | StakeAccount,
+  unixTime: BN
+) {
+  return unixTime.add(
+    caller.config.epochDuration.mul(
+      new BN(caller.config.unlockingDuration).add(new BN(1))
+    )
+  );
 }

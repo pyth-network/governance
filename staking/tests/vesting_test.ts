@@ -103,9 +103,7 @@ describe("vesting", async () => {
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(
-      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
-    );
+    assert(!stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
     assert(
       stakeAccount
@@ -118,12 +116,10 @@ describe("vesting", async () => {
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(
-      stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
-    );
+    assert(stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
     assert(
       stakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("1.388888").toBN())
     );
 
@@ -275,7 +271,7 @@ describe("vesting", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("3.777777").toBN())
     );
     await samConnection.unlockBeforeVestingEvent(samStakeAccount);
@@ -284,7 +280,7 @@ describe("vesting", async () => {
 
     assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("0").toBN())
     );
     await assertBalanceMatches(
@@ -320,7 +316,7 @@ describe("vesting", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("1.388889").toBN())
     );
 
@@ -329,7 +325,7 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("0").toBN())
     );
 
@@ -409,13 +405,11 @@ describe("vesting", async () => {
         .getGovernanceExposure(await samConnection.getTime())
         .eq(PythBalance.fromString("0"))
     );
-    assert(
-      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
-    );
+    assert(!stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
     assert(
       stakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
-        .eq(PythBalance.fromString("0").toBN())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
+        .lt(PythBalance.fromString("0").toBN())
     );
 
     await assertBalanceMatches(
