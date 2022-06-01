@@ -261,9 +261,6 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    console.log(
-      samStakeAccount.getVestingAccountState(await samConnection.getTime())
-    );
     assert(
       VestingAccountState.VestedTokensFullyLocked ==
         samStakeAccount.getVestingAccountState(await samConnection.getTime())

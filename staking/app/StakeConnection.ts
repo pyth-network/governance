@@ -652,6 +652,16 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccountKeypair.publicKey;
     } else {
       stakeAccountAddress = stakeAccount.address;
+      const vestingAccountState = stakeAccount.getVestingAccountState(
+        await this.getTime()
+      );
+      assert(
+        !(vestingAccountState == VestingAccountState.VestedTokensInCooldown) &&
+          !(
+            vestingAccountState ==
+            VestingAccountState.VestedTokensPartiallyLocked
+          )
+      );
     }
 
     if (!(await this.hasGovernanceRecord(owner))) {
@@ -972,13 +982,13 @@ export class StakeAccount {
     }
   }
 
-  private getNetExcessGovernance(unixTime: BN): BN {
+  public getNetExcessGovernance(unixTime: BN): BN {
     return this.getGovernanceExposure(unixTime)
       .toBN()
       .sub(this.getBalanceSummary(unixTime).unvested.toBN());
   }
 
-  private getNetExcessGovernanceAtVesting(unixTime: BN): BN {
+  public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
     if (!nextVestingEvent) {
       return new BN(0);
