@@ -18,7 +18,6 @@ use anchor_lang::prelude::{
 use anchor_lang::{
     AccountDeserialize,
     AnchorDeserialize,
-    Discriminator,
 };
 use wasm_bindgen::prelude::*;
 
@@ -82,7 +81,6 @@ impl WasmPositionData {
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
             .is_voting())
     }
-
 
     /// Adds up the balance of positions grouped by position state: locking, locked, and unlocking.
     /// This way of computing balances only makes sense in the pre-data staking world, but it's

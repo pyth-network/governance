@@ -6,10 +6,13 @@
 
 use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
+use anchor_lang::solana_program::pubkey;
 use anchor_spl::token::transfer;
 use context::*;
-use spl_governance::state::proposal::ProposalV2;
+use spl_governance::state::proposal::{
+    get_proposal_data,
+    ProposalV2,
+};
 use state::global_config::GlobalConfig;
 use state::max_voter_weight_record::MAX_VOTER_WEIGHT;
 use state::positions::{
@@ -38,9 +41,10 @@ pub mod wasm;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
+
 #[program]
 pub mod staking {
-
 
     /// Creates a global config for the program
     use super::*;
@@ -53,6 +57,7 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
+
         #[cfg(feature = "mock-clock")]
         {
             config_account.mock_clock_time = global_config.mock_clock_time;
@@ -235,7 +240,6 @@ pub mod staking {
                         },
                     )?;
 
-
                     assert_ne!(i, j);
                     assert_eq!(
                         original_amount,
@@ -384,13 +388,14 @@ pub mod staking {
 
         match action {
             VoterWeightAction::CastVote => {
-                let proposal_account = ctx
+                let proposal_account: &AccountInfo = ctx
                     .remaining_accounts
                     .get(0)
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let proposal_data: ProposalV2 =
-                    try_from_slice_unchecked(&proposal_account.data.borrow())?;
+                    get_proposal_data(&GOVERNANCE_PROGRAM, proposal_account)?;
+
                 let proposal_start = proposal_data
                     .voting_at
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;

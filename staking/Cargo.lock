@@ -1233,6 +1233,7 @@ dependencies = [
  "bincode",
  "borsh",
  "js-sys",
+ "solana-program",
  "spl-governance",
  "wasm-bindgen",
 ]
