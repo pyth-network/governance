@@ -935,7 +935,7 @@ export class StakeAccount {
     );
   }
 
-  public getUnlockingBalance(unixTime: BN): PythBalance {
+  private getUnlockingBalance(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
@@ -972,13 +972,13 @@ export class StakeAccount {
     }
   }
 
-  public getNetExcessGovernance(unixTime: BN): BN {
+  private getNetExcessGovernance(unixTime: BN): BN {
     return this.getGovernanceExposure(unixTime)
       .toBN()
       .sub(this.getBalanceSummary(unixTime).unvested.toBN());
   }
 
-  public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
+  private getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
     if (!nextVestingEvent) {
       return new BN(0);
