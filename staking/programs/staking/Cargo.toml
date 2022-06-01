@@ -16,7 +16,6 @@ cpi = ["no-entrypoint"]
 mock-clock = []
 wasm = ["no-entrypoint", "js-sys", "bincode"]
 default = []
-test = []
 
 [dependencies]
 borsh = {version = "0.9.3", features = ["const-generics"]}
