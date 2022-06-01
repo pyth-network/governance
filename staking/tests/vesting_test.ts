@@ -9,7 +9,7 @@ import {
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { StakeConnection, PythBalance } from "../app";
+import { StakeConnection, PythBalance, VestingAccountState } from "../app";
 import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
@@ -103,8 +103,10 @@ describe("vesting", async () => {
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(!stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensPartiallyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
@@ -115,8 +117,11 @@ describe("vesting", async () => {
     await samConnection.optIntoGovernance(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+
     assert(
       stakeAccount
         .getNetExcessGovernanceAtVesting(await samConnection.getTime())
@@ -151,7 +156,10 @@ describe("vesting", async () => {
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
@@ -176,7 +184,10 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
@@ -200,7 +211,10 @@ describe("vesting", async () => {
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
@@ -215,7 +229,10 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
@@ -244,7 +261,13 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    console.log(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    assert(
+      VestingAccountState.VestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
@@ -398,14 +421,17 @@ describe("vesting", async () => {
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensPartiallyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       stakeAccount
         .getGovernanceExposure(await samConnection.getTime())
         .eq(PythBalance.fromString("0"))
     );
-    assert(!stakeAccount.isGovernanceOptIn(await samConnection.getTime()));
+
     assert(
       stakeAccount
         .getNetExcessGovernanceAtVesting(await samConnection.getTime())
@@ -459,7 +485,10 @@ describe("vesting", async () => {
 
     stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensPartiallyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       stakeAccount
@@ -483,7 +512,10 @@ describe("vesting", async () => {
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.VestedTokensPartiallyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       stakeAccount

@@ -498,7 +498,10 @@ export class StakeConnection {
    * TODO : Function for opting out of governance
    */
   public async optIntoGovernance(stakeAccount: StakeAccount) {
-    assert(stakeAccount.canOptIn(await this.getTime()));
+    assert(
+      stakeAccount.getVestingAccountState(await this.getTime()) ==
+        VestingAccountState.VestedTokensPartiallyLocked
+    );
 
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const amount = stakeAccount
@@ -726,6 +729,13 @@ export interface BalanceSummary {
   unvested: PythBalance;
 }
 
+export enum VestingAccountState {
+  FullyVested,
+  VestedTokensFullyLocked,
+  VestedTokensPartiallyLocked,
+  VestedTokensInCooldown,
+}
+
 export class StakeAccount {
   address: PublicKey;
   stakeAccountPositionsWasm: any;
@@ -934,27 +944,24 @@ export class StakeAccount {
     return new PythBalance(unlockingBN.add(preunlockingBN));
   }
 
-  public hasUnvestedTokens(unixTime: BN): boolean {
-    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
-  }
-
-  public isGovernanceOptOut(unixTime: BN) {
-    return this.getNetExcessGovernance(addUnlockingPeriod(this, unixTime)).lt(
-      new BN(0)
-    );
-  }
-
-  public isGovernanceOptIn(unixTime: BN) {
-    return (
-      this.hasUnvestedTokens(unixTime) && !this.isGovernanceOptOut(unixTime)
-    );
-  }
-
-  public canOptIn(unixTime: BN) {
-    return (
-      this.isGovernanceOptOut(unixTime) &&
+  public getVestingAccountState(unixTime: BN): VestingAccountState {
+    if (
+      this.getBalanceSummary(unixTime).unvested.eq(PythBalance.fromString("0"))
+    ) {
+      return VestingAccountState.FullyVested;
+    } else if (
+      this.getNetExcessGovernance(addUnlockingPeriod(this, unixTime)).gte(
+        new BN(0)
+      )
+    ) {
+      return VestingAccountState.VestedTokensFullyLocked;
+    } else if (
       this.getUnlockingBalance(unixTime).eq(PythBalance.fromString("0"))
-    );
+    ) {
+      return VestingAccountState.VestedTokensPartiallyLocked;
+    } else {
+      return VestingAccountState.VestedTokensInCooldown;
+    }
   }
 
   public getNetExcessGovernance(unixTime: BN): BN {
