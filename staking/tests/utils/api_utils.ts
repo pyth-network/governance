@@ -197,7 +197,9 @@ class MockProposalCreator {
     // or not, but it seems to work.
     const serializedProp = serialize(schema, proposal);
     const ixData = new BinaryWriter();
-    const seed = time.toNumber() + 1000000;
+    // Add epoch duration to avoid negative seed
+    const seed =
+      time.toNumber() + stakeConnection.config.epochDuration.toNumber();
     ixData.writeU8(27); // The instruction index for HackCreateRawProposal
     ixData.writeU32(seed);
     ixData.writeFixedArray(serializedProp);
