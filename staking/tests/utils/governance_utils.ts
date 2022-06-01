@@ -20,7 +20,7 @@ import {
 } from "@solana/spl-governance";
 import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
 import assert from "assert";
-import {BinaryWriter} from "borsh";
+import { BinaryWriter } from "borsh";
 
 async function computeGovernanceAccounts(stakeConnection: StakeConnection) {
   const maxVoterWeightRecordAccount = (
@@ -167,7 +167,10 @@ export async function withDefaultCastVote(
   );
 }
 
-export async function syncronizeClock(realm: PublicKey, stakeConnection: StakeConnection) {
+export async function syncronizeClock(
+  realm: PublicKey,
+  stakeConnection: StakeConnection
+) {
   const time = await stakeConnection.getTime();
 
   const ixData = new BinaryWriter();
