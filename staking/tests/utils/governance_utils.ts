@@ -68,7 +68,7 @@ export async function withDefaultCreateProposal(
 
   if (updateFirst) {
     const stakeAccount = await stakeConnection.getMainAccount(owner);
-    stakeConnection.withUpdateVoterWeight(
+    await stakeConnection.withUpdateVoterWeight(
       tx.instructions,
       stakeAccount,
       {
@@ -136,18 +136,12 @@ export async function withDefaultCastVote(
   } = await computeGovernanceAccounts(stakeConnection);
 
   const stakeAccount = await stakeConnection.getMainAccount(owner);
-  tx.instructions.push(
-    await stakeConnection.program.methods
-      .updateVoterWeight(
-        wrongArgument ? { createGovernance: {} } : { castVote: {} }
-      )
-      .accounts({
-        stakeAccountPositions: stakeAccount.address,
-      })
-      .remainingAccounts([
-        { pubkey: proposalAddress, isWritable: false, isSigner: false },
-      ])
-      .instruction()
+
+  await stakeConnection.withUpdateVoterWeight(
+    tx.instructions,
+    stakeAccount,
+    wrongArgument ? { createGovernance: {} } : { castVote: {} },
+    proposalAddress
   );
 
   return withCastVote(
