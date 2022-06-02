@@ -744,7 +744,14 @@ export interface BalanceSummary {
     unlocking: PythBalance;
     preunlocking: PythBalance;
   };
-  unvested: PythBalance;
+  unvested: {
+    total: PythBalance;
+    locking: PythBalance;
+    locked: PythBalance;
+    unlocking: PythBalance;
+    preunlocking: PythBalance;
+    unlocked: PythBalance;
+  };
 }
 
 export enum VestingAccountState {
@@ -839,18 +846,35 @@ export class StakeAccount {
       .add(unvestedBN)
       .sub(this.tokenBalance);
 
+    let lockedUnvestedBN: BN,
+      lockingUnvestedBN: BN,
+      preUnlockingUnvestedBN: BN,
+      unlockingUnvestedBN: BN;
+
     // First adjust locked. Most of the time, the unvested tokens are in this state.
-    [excess, lockedBN] = this.adjustLockedAmount(excess, lockedBN);
+    [excess, lockedBN, lockedUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockedBN
+    );
 
     // The unvested tokens can also be in a locking state at the very beginning.
     // The reason why we adjust this balance second is the following
     // If a user has 100 unvested in a locked position and decides to stake 1 free token
     // we want that token to appear as locking
-    [excess, lockingBN] = this.adjustLockedAmount(excess, lockingBN);
+    [excess, lockingBN, lockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockingBN
+    );
 
     // Needed to represent vesting accounts unlocking before the vesting event
-    [excess, preunlockingBN] = this.adjustLockedAmount(excess, preunlockingBN);
-    [excess, unlockingBN] = this.adjustLockedAmount(excess, unlockingBN);
+    [excess, preunlockingBN, preUnlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      preunlockingBN
+    );
+    [excess, unlockingBN, unlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      unlockingBN
+    );
 
     //Enforce the invariant
     assert(
@@ -871,19 +895,32 @@ export class StakeAccount {
         unlocking: new PythBalance(unlockingBN),
         preunlocking: new PythBalance(preunlockingBN),
       },
-      unvested: new PythBalance(unvestedBN),
+      unvested: {
+        total: new PythBalance(unvestedBN),
+        locked: new PythBalance(lockedUnvestedBN),
+        locking: new PythBalance(lockingUnvestedBN),
+        unlocking: new PythBalance(unlockingUnvestedBN),
+        preunlocking: new PythBalance(preUnlockingUnvestedBN),
+        unlocked: new PythBalance(
+          unvestedBN
+            .sub(lockedUnvestedBN)
+            .sub(lockingUnvestedBN)
+            .sub(unlockingUnvestedBN)
+            .sub(preUnlockingUnvestedBN)
+        ),
+      },
     };
   }
 
   private adjustLockedAmount(excess: BN, locked: BN) {
     if (excess.gt(new BN(0))) {
       if (excess.gte(locked)) {
-        return [excess.sub(locked), new BN(0)];
+        return [excess.sub(locked), new BN(0), locked];
       } else {
-        return [new BN(0), locked.sub(excess)];
+        return [new BN(0), locked.sub(excess), excess];
       }
     } else {
-      return [excess, locked];
+      return [new BN(0), locked, new BN(0)];
     }
   }
 
@@ -964,7 +1001,9 @@ export class StakeAccount {
 
   public getVestingAccountState(unixTime: BN): VestingAccountState {
     if (
-      this.getBalanceSummary(unixTime).unvested.eq(PythBalance.fromString("0"))
+      this.getBalanceSummary(unixTime).unvested.total.eq(
+        PythBalance.fromString("0")
+      )
     ) {
       return VestingAccountState.FullyVested;
     } else if (
@@ -985,7 +1024,7 @@ export class StakeAccount {
   public getNetExcessGovernance(unixTime: BN): BN {
     return this.getGovernanceExposure(unixTime)
       .toBN()
-      .sub(this.getBalanceSummary(unixTime).unvested.toBN());
+      .sub(this.getBalanceSummary(unixTime).unvested.total.toBN());
   }
 
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {

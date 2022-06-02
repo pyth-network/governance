@@ -137,7 +137,12 @@ describe("vesting", async () => {
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          total: PythBalance.fromString("100"),
+          locking: PythBalance.fromString("100"),
+        },
+      },
       await samConnection.getTime()
     );
   });
@@ -150,7 +155,12 @@ describe("vesting", async () => {
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          total: PythBalance.fromString("100"),
+          locked: PythBalance.fromString("100"),
+        },
+      },
       await samConnection.getTime()
     );
 
@@ -176,7 +186,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("100"),
+        unvested: {
+          total: PythBalance.fromString("100"),
+          locked: PythBalance.fromString("100"),
+        },
         locked: { locking: PythBalance.fromString("1") },
       },
       await samConnection.getTime()
@@ -203,7 +216,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: { locked: PythBalance.fromString("2.388888") },
       },
       await samConnection.getTime()
@@ -244,7 +260,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: {
           locked: PythBalance.fromString("2.388888"),
           locking: PythBalance.fromString("1"),
@@ -276,7 +295,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: {
           preunlocking: PythBalance.fromString("1"),
           locked: PythBalance.fromString("1.388888"),
@@ -307,7 +329,12 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          locked: PythBalance.fromString("96.222223"),
+          locking: PythBalance.fromString("1"),
+          preunlocking: PythBalance.fromString("1.388889"),
+        },
         locked: {
           preunlocking: PythBalance.fromString("3.388888"),
         },
@@ -321,7 +348,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          total: PythBalance.fromString("97.222223"),
+          locked: PythBalance.fromString("97.222223"),
+        },
         withdrawable: PythBalance.fromString("4.777777"),
       },
       await samConnection.getTime()
@@ -353,7 +383,11 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          total: PythBalance.fromString("97.222223"),
+          locked: PythBalance.fromString("95.833334"),
+          preunlocking: PythBalance.fromString("1.388889"),
+        },
         withdrawable: PythBalance.fromString("4.777777"),
       },
       await samConnection.getTime()
@@ -365,7 +399,10 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("95.833334"),
+        unvested: {
+          total: PythBalance.fromString("95.833334"),
+          locked: PythBalance.fromString("95.833334"),
+        },
         withdrawable: PythBalance.fromString("4.777777"),
         locked: {
           unlocking: PythBalance.fromString("1.388889"),
@@ -438,7 +475,12 @@ describe("vesting", async () => {
     await assertBalanceMatches(
       aliceConnection,
       alice.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          total: PythBalance.fromString("100"),
+          unlocked: PythBalance.fromString("100"),
+        },
+      },
       await aliceConnection.getTime()
     );
   });
@@ -450,7 +492,10 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          unlocked: PythBalance.fromString("98.611112"),
+        },
         withdrawable: PythBalance.fromString("1.388888"),
       },
       await aliceConnection.getTime()
@@ -474,7 +519,10 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          total: PythBalance.fromString("98.611112"),
+          unlocked: PythBalance.fromString("98.611112"),
+        },
         withdrawable: PythBalance.fromString("0.388888"),
       },
       await aliceConnection.getTime()
@@ -501,7 +549,10 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          total: PythBalance.fromString("97.222223"),
+          unlocked: PythBalance.fromString("97.222223"),
+        },
         withdrawable: PythBalance.fromString("1.777777"),
       },
       await aliceConnection.getTime()

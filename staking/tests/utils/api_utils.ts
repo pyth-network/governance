@@ -24,7 +24,14 @@ import * as wasm from "../../wasm";
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */
 export type OptionalBalanceSummary = {
-  unvested?: PythBalance | null;
+  unvested?: {
+    total?: PythBalance | null;
+    locked?: PythBalance | null;
+    locking?: PythBalance | null;
+    preunlocking?: PythBalance | null;
+    unlocking?: PythBalance | null;
+    unlocked?: PythBalance | null;
+  } | null;
   withdrawable?: PythBalance | null;
   locked?: {
     locking?: PythBalance | null;
@@ -67,14 +74,39 @@ export async function assertBalanceMatches(
     "Unlocking"
   );
   assert.equal(
-    actual.unvested.toString(),
-    expected.unvested?.toString() || "0",
-    "Unvested"
-  );
-  assert.equal(
     actual.withdrawable.toString(),
     expected.withdrawable?.toString() || "0",
     "Withdrawable"
+  );
+  assert.equal(
+    actual.unvested.total.toString(),
+    expected.unvested?.total?.toString() || "0",
+    "UnvestedTotal"
+  );
+  assert.equal(
+    actual.unvested.locking.toString(),
+    expected.unvested?.locking?.toString() || "0",
+    "UnvestedLocking"
+  );
+  assert.equal(
+    actual.unvested.locked.toString(),
+    expected.unvested?.locked?.toString() || "0",
+    "UnvestedLocked"
+  );
+  assert.equal(
+    actual.unvested.unlocking.toString(),
+    expected.unvested?.unlocking?.toString() || "0",
+    "UnvestedUnlocking"
+  );
+  assert.equal(
+    actual.unvested.preunlocking.toString(),
+    expected.unvested?.preunlocking?.toString() || "0",
+    "UnvestedPreunlocking"
+  );
+  assert.equal(
+    actual.unvested.unlocked.toString(),
+    expected.unvested?.unlocked?.toString() || "0",
+    "UnvestedUnlocked"
   );
 }
 
