@@ -636,7 +636,8 @@ export class StakeConnection {
       vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
       vestingAccountState !=
         VestingAccountState.UnvestedTokensPartiallyLocked &&
-      vestingAccountState != VestingAccountState.UnvestedTokensInCooldown
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
     ) {
       throw Error("Expected different account state");
     }
@@ -672,15 +673,12 @@ export class StakeConnection {
       const vestingAccountState = stakeAccount.getVestingAccountState(
         await this.getTime()
       );
-      assert(
-        !(
-          vestingAccountState == VestingAccountState.UnvestedTokensInCooldown
-        ) &&
-          !(
-            vestingAccountState ==
-            VestingAccountState.UnvestedTokensPartiallyLocked
-          )
-      );
+      if (
+        vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+        vestingAccountState != VestingAccountState.FullyVested
+      ) {
+        throw Error("Expected different account state");
+      }
     }
 
     if (!(await this.hasGovernanceRecord(owner))) {
@@ -776,9 +774,10 @@ export interface BalanceSummary {
 export enum VestingAccountState {
   FullyVested,
   UnvestedTokensFullyLocked,
+  UnvestedTokensFullyLockedExceptCooldown,
   UnvestedTokensPartiallyLocked,
+  UnvestedTokensFullyUnlockedExceptCooldown,
   UnvestedTokensFullyUnlocked,
-  UnvestedTokensInCooldown,
 }
 
 export class StakeAccount {
@@ -985,26 +984,37 @@ export class StakeAccount {
     const vestingSummary = this.getBalanceSummary(unixTime).unvested;
     if (vestingSummary.total.eq(PythBalance.fromString("0"))) {
       return VestingAccountState.FullyVested;
-    } else if (
+    }
+    if (
       vestingSummary.preunlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocked.eq(PythBalance.fromString("0"))
+      vestingSummary.unlocking.eq(PythBalance.fromString("0"))
     ) {
-      return VestingAccountState.UnvestedTokensFullyLocked;
-    } else if (
-      vestingSummary.preunlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocked.eq(vestingSummary.total)
-    ) {
-      return VestingAccountState.UnvestedTokensFullyUnlocked;
-    } else if (
-      vestingSummary.preunlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocking.eq(PythBalance.fromString("0")) &&
-      !vestingSummary.unlocked.eq(vestingSummary.total)
-    ) {
-      return VestingAccountState.UnvestedTokensPartiallyLocked;
+      if (
+        vestingSummary.locked.eq(PythBalance.fromString("0")) &&
+        vestingSummary.locking.eq(PythBalance.fromString("0"))
+      ) {
+        return VestingAccountState.UnvestedTokensFullyUnlocked;
+      } else if (vestingSummary.unlocked.eq(PythBalance.fromString("0"))) {
+        return VestingAccountState.UnvestedTokensFullyLocked;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
     } else {
-      return VestingAccountState.UnvestedTokensInCooldown;
+      if (
+        vestingSummary.locked.eq(PythBalance.fromString("0")) &&
+        vestingSummary.locking.eq(PythBalance.fromString("0"))
+      ) {
+        return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
+      } else if (vestingSummary.unlocked.eq(PythBalance.fromString("0"))) {
+        return VestingAccountState.UnvestedTokensFullyLockedExceptCooldown;
+      } else if (
+        vestingSummary.locked.eq(PythBalance.fromString("0")) &&
+        vestingSummary.locking.eq(PythBalance.fromString("0"))
+      ) {
+        return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
     }
   }
 

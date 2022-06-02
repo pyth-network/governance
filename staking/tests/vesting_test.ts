@@ -457,7 +457,7 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
       samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
-        VestingAccountState.UnvestedTokensInCooldown
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
     );
     await expectFailApi(
       samConnection.optIntoGovernance(samStakeAccount),
@@ -469,7 +469,7 @@ describe("vesting", async () => {
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
       samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
-        VestingAccountState.UnvestedTokensInCooldown
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
     );
   });
 
