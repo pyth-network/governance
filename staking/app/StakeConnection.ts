@@ -621,19 +621,23 @@ export class StakeConnection {
     await this.unlockTokensUnchecked(stakeAccount, amount);
   }
 
-  // public async unlockAllUnvested(stakeAccount: StakeAccount) {
-  //   assert(
-  //     stakeAccount.getVestingAccountState(await this.getTime()) ==
-  //       VestingAccountState.UnvestedTokensFullyLocked
-  //   );
+  public async unlockAllUnvested(stakeAccount: StakeAccount) {
+    assert(
+      stakeAccount.getVestingAccountState(await this.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLocked
+    );
 
-  //   const amountBN = stakeAccount.getNetExcessGovernance(
-  //     addUnlockingPeriod(this, await this.getTime())
-  //   );
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
 
-  //   const amount = new PythBalance(amountBN);
-  //   await this.unlockTokensUnchecked(stakeAccount, amount);
-  // }
+    const amountBN = balanceSummary.locked.locked
+      .toBN()
+      .add(balanceSummary.locked.locking.toBN())
+      .add(balanceSummary.unvested.locked.toBN())
+      .add(balanceSummary.unvested.locking.toBN());
+
+    const amount = new PythBalance(amountBN);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
+  }
 
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
