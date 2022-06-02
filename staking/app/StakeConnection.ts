@@ -498,11 +498,16 @@ export class StakeConnection {
    * TODO : Function for opting out of governance
    */
   public async optIntoGovernance(stakeAccount: StakeAccount) {
-    assert(
-      stakeAccount.getVestingAccountState(await this.getTime()) ==
-        VestingAccountState.UnvestedTokensPartiallyLocked
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
     );
-
+    if (
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyUnlocked
+    ) {
+      throw Error("Expected different account state");
+    }
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
     const amountBN = balanceSummary.unvested.unlocked.toBN();
@@ -608,10 +613,12 @@ export class StakeConnection {
   }
 
   public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
-    assert(
-      stakeAccount.getVestingAccountState(await this.getTime()) ==
-        VestingAccountState.UnvestedTokensFullyLocked
-    );
+    if (
+      stakeAccount.getVestingAccountState(await this.getTime()) !=
+      VestingAccountState.UnvestedTokensFullyLocked
+    ) {
+      throw Error("Expected different account state");
+    }
 
     const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
       await this.getTime()
@@ -622,10 +629,17 @@ export class StakeConnection {
   }
 
   public async unlockAllUnvested(stakeAccount: StakeAccount) {
-    assert(
-      stakeAccount.getVestingAccountState(await this.getTime()) ==
-        VestingAccountState.UnvestedTokensFullyLocked
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
     );
+    if (
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState != VestingAccountState.UnvestedTokensInCooldown
+    ) {
+      throw Error("Expected different account state");
+    }
 
     const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
 
@@ -763,6 +777,7 @@ export enum VestingAccountState {
   FullyVested,
   UnvestedTokensFullyLocked,
   UnvestedTokensPartiallyLocked,
+  UnvestedTokensFullyUnlocked,
   UnvestedTokensInCooldown,
 }
 
@@ -978,7 +993,14 @@ export class StakeAccount {
       return VestingAccountState.UnvestedTokensFullyLocked;
     } else if (
       vestingSummary.preunlocking.eq(PythBalance.fromString("0")) &&
-      vestingSummary.unlocking.eq(PythBalance.fromString("0"))
+      vestingSummary.unlocking.eq(PythBalance.fromString("0")) &&
+      vestingSummary.unlocked.eq(vestingSummary.total)
+    ) {
+      return VestingAccountState.UnvestedTokensFullyUnlocked;
+    } else if (
+      vestingSummary.preunlocking.eq(PythBalance.fromString("0")) &&
+      vestingSummary.unlocking.eq(PythBalance.fromString("0")) &&
+      !vestingSummary.unlocked.eq(vestingSummary.total)
     ) {
       return VestingAccountState.UnvestedTokensPartiallyLocked;
     } else {
