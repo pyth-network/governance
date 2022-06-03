@@ -637,7 +637,7 @@ export class StakeConnection {
       vestingAccountState !=
         VestingAccountState.UnvestedTokensPartiallyLocked &&
       vestingAccountState !=
-        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+        VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
     ) {
       throw Error("Expected different account state");
     }
@@ -1007,11 +1007,6 @@ export class StakeAccount {
         return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
       } else if (vestingSummary.unlocked.eq(PythBalance.fromString("0"))) {
         return VestingAccountState.UnvestedTokensFullyLockedExceptCooldown;
-      } else if (
-        vestingSummary.locked.eq(PythBalance.fromString("0")) &&
-        vestingSummary.locking.eq(PythBalance.fromString("0"))
-      ) {
-        return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
       } else {
         return VestingAccountState.UnvestedTokensPartiallyLocked;
       }
