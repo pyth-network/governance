@@ -124,6 +124,7 @@ describe("vesting", async () => {
     );
 
     // Sam opts into governance
+    // UnvestedTokensFullyUnlocked -> UnvestedTokensFullyLocked
     await samConnection.optIntoGovernance(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -288,6 +289,7 @@ describe("vesting", async () => {
   it("unlock before vesting event", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
+    // UnvestedTokensFullyLocked -> UnvestedTokensFullyLockedExceptCooldown
     await samConnection.unlockBeforeVestingEvent(samStakeAccount);
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -493,6 +495,7 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
+    // UnvestedTokensFullyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
     await samConnection.unlockAllUnvested(samStakeAccount);
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -525,6 +528,7 @@ describe("vesting", async () => {
 
   it("check tons of transition", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    // UnvestedTokensFullyUnlockedExceptCooldown -> UnvestedTokensFullyUnlocked
     await samConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(2)))
       .rpc();
@@ -613,6 +617,7 @@ describe("vesting", async () => {
         VestingAccountState.UnvestedTokensPartiallyLocked
     );
 
+    // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyLocked
     await samConnection.optIntoGovernance(samStakeAccount);
 
     await assertBalanceMatches(
@@ -657,6 +662,7 @@ describe("vesting", async () => {
         VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
     );
 
+    // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensPartiallyLocked
     await samConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(2)))
       .rpc();
@@ -681,6 +687,7 @@ describe("vesting", async () => {
         VestingAccountState.UnvestedTokensPartiallyLocked
     );
 
+    // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
     await samConnection.unlockAllUnvested(samStakeAccount);
 
     await assertBalanceMatches(
@@ -738,6 +745,7 @@ describe("vesting", async () => {
         VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
     );
 
+    // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensFullyUnlockedExceptCooldown
     await samConnection.unlockAllUnvested(samStakeAccount);
 
     await assertBalanceMatches(
