@@ -107,6 +107,13 @@ describe("pyth balance tests", async () => {
     assert(big.gte(small));
   });
 
+  it("Tests sum", async () => {
+    let small = PythBalance.fromString("101");
+    let big = PythBalance.fromString("102");
+
+    assert(small.add(big).eq(PythBalance.fromString("203")));
+  });
+
   it("Raises an error", async () => {
     for (let s of ["", "a", "a.2", "0xpyth", "1.0000001"]) {
       try {

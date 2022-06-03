@@ -78,4 +78,8 @@ export class PythBalance {
   lte(other: PythBalance): boolean {
     return this.toBN().lte(other.toBN());
   }
+
+  add(other: PythBalance): PythBalance {
+    return new PythBalance(other.toBN().add(this.toBN()));
+  }
 }
