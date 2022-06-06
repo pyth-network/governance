@@ -9,17 +9,23 @@ import { ChangeEvent, Fragment, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 import { STAKING_PROGRAM } from '@components/constants'
-import { PythBalance, StakeAccount, StakeConnection } from 'pyth-staking-api'
+import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+  VestingAccountState,
+} from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
-import { Dialog, Disclosure, Listbox, Tab, Transition } from '@headlessui/react'
-import { CheckIcon, ChevronUpIcon, SelectorIcon } from '@heroicons/react/solid'
+import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
+import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import { classNames } from 'utils/classNames'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import BN from 'bn.js'
 import Tooltip from '@components/Tooltip'
 import { useRouter } from 'next/router'
+import CloseIcon from '@components/icons/CloseIcon'
 
 enum TabEnum {
   Lock,
@@ -74,9 +80,18 @@ const Staking: NextPage = () => {
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>(
     new PythBalance(new BN(0))
   )
-  const [unvestedPythBalance, setUnvestedPythBalance] = useState<PythBalance>(
-    new PythBalance(new BN(0))
-  )
+  const [unvestedTotalPythBalance, setUnvestedTotalPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
+  const [unvestedLockingPythBalance, setUnvestedLockingPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
+  const [unvestedLockedPythBalance, setUnvestedLockedPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
+  const [unvestedPreUnlockingPythBalance, setUnvestedPreUnlockingPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
+  const [unvestedUnlockingPythBalance, setUnvestedUnlockingPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
+  const [unvestedUnlockedPythBalance, setUnvestedUnlockedPythBalance] =
+    useState<PythBalance>(new PythBalance(new BN(0)))
   const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
   const [unlockingPythBalance, setUnlockingPythBalance] =
     useState<PythBalance>()
@@ -86,9 +101,26 @@ const Staking: NextPage = () => {
     new PythBalance(new BN(0))
   )
   const [nextVestingDate, setNextVestingDate] = useState<Date>()
+  const [isFullyVestedState, setIsFullyVestedState] = useState<boolean>(false)
   const [
-    isEligibleForPreliminaryUnstaking,
-    setIsEligibleForPreliminaryUnstaking,
+    isUnvestedTokensFullyLockedState,
+    setIsUnvestedTokensFullyLockedState,
+  ] = useState<boolean>(false)
+  const [
+    isUnvestedTokensFullyLockedExceptCooldownState,
+    setIsUnvestedTokensFullyLockedExceptCooldownState,
+  ] = useState<boolean>(false)
+  const [
+    isUnvestedTokensPartiallyLockedState,
+    setIsUnvestedTokensPartiallyLockedState,
+  ] = useState<boolean>(false)
+  const [
+    isUnvestedTokensFullyUnlockedState,
+    setIsUnvestedTokensFullyUnlockedState,
+  ] = useState<boolean>(false)
+  const [
+    isUnvestedTokensFullyUnlockedExceptCooldownState,
+    setIsUnvestedTokensFullyUnlockedExceptCooldownState,
   ] = useState<boolean>(false)
 
   // create stake connection and get stake accounts when wallet is connected
@@ -112,7 +144,7 @@ const Staking: NextPage = () => {
           setIsMultipleStakeAccountsModalOpen(true)
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
         } else {
-          setIsBalanceLoading(false);
+          setIsBalanceLoading(false)
         }
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -129,15 +161,13 @@ const Staking: NextPage = () => {
 
   // check if vesting account without governance exists and refresh balances after getting stake accounts
   useEffect(() => {
-    checkVestingAccountWithoutGovernance()
+    refreshVestingAccountState()
     refreshBalance()
   }, [stakeConnection, mainStakeAccount])
 
   useEffect(() => {
     if (amount && balance) {
-      if (
-          PythBalance.fromString(amount).gt(balance)
-      ) {
+      if (PythBalance.fromString(amount).gt(balance)) {
         setIsSufficientBalance(false)
       } else {
         setIsSufficientBalance(true)
@@ -157,14 +187,11 @@ const Staking: NextPage = () => {
             new PythBalance(new BN(nextVestingEvent.amount.toString()))
           )
           setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
-          setIsEligibleForPreliminaryUnstaking(
-            mainStakeAccount.hasGovernanceExcessPosition(currentTime)
-          )
         }
       }
     }
     getVestingInfo()
-  }, [unvestedPythBalance])
+  }, [unvestedTotalPythBalance])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
@@ -196,22 +223,47 @@ const Staking: NextPage = () => {
     setLockingPythBalance(new PythBalance(new BN(0)))
     setLockedPythBalance(new PythBalance(new BN(0)))
     setUnlockingPythBalance(new PythBalance(new BN(0)))
-    setUnvestedPythBalance(new PythBalance(new BN(0)))
+    setUnvestedTotalPythBalance(new PythBalance(new BN(0)))
+    setUnvestedLockingPythBalance(new PythBalance(new BN(0)))
+    setUnvestedLockedPythBalance(new PythBalance(new BN(0)))
+    setUnvestedPreUnlockingPythBalance(new PythBalance(new BN(0)))
+    setUnvestedUnlockingPythBalance(new PythBalance(new BN(0)))
+    setUnvestedUnlockedPythBalance(new PythBalance(new BN(0)))
     setUnlockedPythBalance(new PythBalance(new BN(0)))
     setNextVestingAmount(new PythBalance(new BN(0)))
   }
 
-  const checkVestingAccountWithoutGovernance = async () => {
-    if (
-      stakeConnection &&
-      mainStakeAccount &&
-      mainStakeAccount.isVestingAccountWithoutGovernance(
-        await stakeConnection.getTime()
-      )
-    ) {
-      setIsVestingAccountWithoutGovernance(true)
-      setIsVestingAccountWithoutGovernanceModalOpen(true)
+  const refreshVestingAccountState = async () => {
+    if (stakeConnection && mainStakeAccount) {
+      const currentTime = await stakeConnection.getTime()
+      const vestingAccountState =
+        mainStakeAccount.getVestingAccountState(currentTime)
+      resetVestingAccountState()
+      vestingAccountState === VestingAccountState.UnvestedTokensFullyLocked
+        ? setIsUnvestedTokensFullyLockedState(true)
+        : vestingAccountState ===
+          VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
+        ? setIsUnvestedTokensFullyLockedExceptCooldownState(true)
+        : vestingAccountState ===
+          VestingAccountState.UnvestedTokensPartiallyLocked
+        ? setIsUnvestedTokensPartiallyLockedState(true)
+        : vestingAccountState ===
+          VestingAccountState.UnvestedTokensFullyUnlocked
+        ? setIsUnvestedTokensFullyUnlockedState(true)
+        : vestingAccountState ===
+          VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+        ? setIsUnvestedTokensFullyUnlockedExceptCooldownState(true)
+        : setIsFullyVestedState(true)
     }
+  }
+
+  const resetVestingAccountState = () => {
+    setIsUnvestedTokensFullyLockedState(false)
+    setIsUnvestedTokensFullyLockedExceptCooldownState(false)
+    setIsUnvestedTokensPartiallyLockedState(false)
+    setIsUnvestedTokensFullyUnlockedState(false)
+    setIsUnvestedTokensFullyUnlockedExceptCooldownState(false)
+    setIsFullyVestedState(false)
   }
 
   // set amount when input changes
@@ -324,8 +376,7 @@ const Staking: NextPage = () => {
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
-
-    if (stakeConnection && publicKey){
+    if (stakeConnection && publicKey) {
       setPythBalance(await getPythTokenBalance(connection, publicKey))
     }
     if (stakeConnection && publicKey && mainStakeAccount) {
@@ -336,7 +387,12 @@ const Staking: NextPage = () => {
       setUnlockingPythBalance(
         new PythBalance(locked.unlocking.toBN().add(locked.preunlocking.toBN()))
       )
-      setUnvestedPythBalance(unvested)
+      setUnvestedTotalPythBalance(unvested.total)
+      setUnvestedLockingPythBalance(unvested.locking)
+      setUnvestedLockedPythBalance(unvested.locked)
+      setUnvestedPreUnlockingPythBalance(unvested.preunlocking)
+      setUnvestedUnlockingPythBalance(unvested.unlocking)
+      setUnvestedUnlockedPythBalance(unvested.unlocked)
       setUnlockedPythBalance(withdrawable)
       setIsBalanceLoading(false)
     }
@@ -348,8 +404,7 @@ const Staking: NextPage = () => {
       const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
       if (stakeAccounts.length === 0) {
         setIsBalanceLoading(false)
-      }
-      else if (stakeAccounts.length === 1){
+      } else if (stakeAccounts.length === 1) {
         setMainStakeAccount(stakeAccounts[0])
       }
       for (const acc of stakeAccounts) {
@@ -403,6 +458,19 @@ const Staking: NextPage = () => {
     setIsUnvestedModalOpen(false)
   }
 
+  const handleUnvestedModalLockAllButton = async () => {
+    if (stakeConnection && mainStakeAccount) {
+      try {
+        await stakeConnection.optIntoGovernance(mainStakeAccount)
+        toast.success('Successfully opted into governance!')
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
+    }
+    closeUnvestedModal()
+    await refreshStakeAccount()
+  }
+
   const handlePreliminaryUnstakeVestingAccount = async () => {
     if (stakeConnection && mainStakeAccount) {
       try {
@@ -412,12 +480,26 @@ const Staking: NextPage = () => {
             nextVestingAmount.toBN().add(lockedPythBalance.toBN())
           ).toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
-        setIsEligibleForPreliminaryUnstaking(false)
-        await refreshStakeAccount()
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
       }
       closeUnvestedModal()
+      await refreshStakeAccount()
+    }
+  }
+
+  const handleUnlockAllVestingAccount = async () => {
+    if (stakeConnection && mainStakeAccount) {
+      try {
+        await stakeConnection.unlockAllUnvested(mainStakeAccount)
+        toast.success(
+          `All unvested tokens have been unlocked. Please relock them to participate in governance.`
+        )
+      } catch (e) {
+        toast.error(capitalizeFirstLetter(e.message))
+      }
+      closeUnvestedModal()
+      await refreshStakeAccount()
     }
   }
 
@@ -531,7 +613,7 @@ const Staking: NextPage = () => {
                   <div className="mt-4">
                     <button
                       type="button"
-                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                      className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
                       onClick={handleMultipleStakeAccountsConnectButton}
                     >
                       Connect
@@ -619,7 +701,11 @@ const Staking: NextPage = () => {
       </Transition>
 
       <Transition appear show={isLockedModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsLockedModalOpen(false)}
+        >
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -643,12 +729,19 @@ const Staking: NextPage = () => {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-md font-inter font-bold leading-6 text-white"
-                  >
-                    Locked tokens
-                  </Dialog.Title>
+                  <div className="flex">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-md my-auto font-inter font-bold leading-6 text-white"
+                    >
+                      Locked tokens
+                    </Dialog.Title>
+                    <div className="my-auto ml-auto">
+                      <button onClick={closeLockedModal}>
+                        <CloseIcon />
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
                       Locked tokens enables you to participate in Pyth Network
@@ -667,13 +760,6 @@ const Staking: NextPage = () => {
                       </p>
                     ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    onClick={closeLockedModal}
-                  >
-                    Got it
-                  </button>
                 </Dialog.Panel>
               </Transition.Child>
             </div>
@@ -682,7 +768,11 @@ const Staking: NextPage = () => {
       </Transition>
 
       <Transition appear show={isUnlockedModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsUnlockedModalOpen(false)}
+        >
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -706,12 +796,19 @@ const Staking: NextPage = () => {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-md font-inter font-bold leading-6 text-white"
-                  >
-                    Unlocked tokens
-                  </Dialog.Title>
+                  <div className="flex">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-md my-auto font-inter font-bold leading-6 text-white"
+                    >
+                      Unlocked tokens
+                    </Dialog.Title>
+                    <div className="my-auto ml-auto">
+                      <button onClick={closeUnlockedModal}>
+                        <CloseIcon />
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
                       Unlocking tokens enables you to withdraw them from the
@@ -732,13 +829,6 @@ const Staking: NextPage = () => {
                       </p>
                     ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                    onClick={closeUnlockedModal}
-                  >
-                    Got it
-                  </button>
                 </Dialog.Panel>
               </Transition.Child>
             </div>
@@ -747,7 +837,11 @@ const Staking: NextPage = () => {
       </Transition>
 
       <Transition appear show={isUnvestedModalOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-10" onClose={() => {}}>
+        <Dialog
+          as="div"
+          className="relative z-10"
+          onClose={() => setIsUnvestedModalOpen(false)}
+        >
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -770,23 +864,59 @@ const Staking: NextPage = () => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-md font-inter font-bold leading-6 text-white"
-                  >
-                    Unvested tokens
-                  </Dialog.Title>
+                <Dialog.Panel className="w-full max-w-lg transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
+                  <div className="flex">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-md my-auto font-inter font-bold leading-6 text-white"
+                    >
+                      Unvested tokens
+                    </Dialog.Title>
+                    <div className="my-auto ml-auto">
+                      <button onClick={closeUnvestedModal}>
+                        <CloseIcon />
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
-                      You currently have {unvestedPythBalance?.toString()}{' '}
-                      unvested tokens.{' '}
-                      {unvestedPythBalance.toString() !== '0'
+                      You currently have {unvestedTotalPythBalance?.toString()}{' '}
+                      unvested tokens.
+                      <br />
+                      {isUnvestedTokensPartiallyLockedState ? (
+                        <>
+                          {unvestedLockedPythBalance
+                            .add(unvestedLockingPythBalance)
+                            .toString()}{' '}
+                          unvested tokens are locked in governance. <br />
+                          {unvestedUnlockedPythBalance.toString()} unvested
+                          tokens are unlocked. <br />
+                          {unvestedPreUnlockingPythBalance
+                            .add(unvestedUnlockingPythBalance)
+                            .toString()}{' '}
+                          unvested tokens are in cooldown.
+                          <br />
+                        </>
+                      ) : null}
+                      {isUnvestedTokensFullyLockedExceptCooldownState ? (
+                        <>
+                          {unvestedLockedPythBalance
+                            .add(unvestedLockingPythBalance)
+                            .toString()}{' '}
+                          tokens are locked in governance. <br />
+                          {unvestedPreUnlockingPythBalance
+                            .add(unvestedUnlockingPythBalance)
+                            .toString()}{' '}
+                          tokens are in cooldown.
+                          <br />
+                        </>
+                      ) : null}
+                      {unvestedTotalPythBalance.toString() !== '0'
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
                     </p>
-                    { (unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance  && isEligibleForPreliminaryUnstaking? (
+                    {isUnvestedTokensFullyLockedState ? (
                       <p className="font-poppins text-sm text-scampi">
                         Your unvested tokens are locked in the contract to
                         participate in governance. On vest, they will become
@@ -794,61 +924,138 @@ const Staking: NextPage = () => {
                         withdraw.
                       </p>
                     ) : null}
-                    { (unvestedPythBalance.toString() !== '0') && isVestingAccountWithoutGovernance ? (
+                    {/* {unvestedTotalPythBalance.toString() !== '0' &&
+                    !isVestingAccountWithoutGovernance ? (
                       <p className="font-poppins text-sm text-scampi">
-                        Your unvested tokens are not participating in governance. 
-                        On vest, they will become unlocked tokens.
+                        Your unvested tokens are locked in the contract to
+                        participate in governance. On vest, they will become
+                        locked tokens, which require a 2 epoch cooldown to
+                        withdraw.
                       </p>
-                    ) : null}
-                    {isEligibleForPreliminaryUnstaking ? (
-                      <p className="font-poppins text-sm text-scampi">
-                        If you would like to withdraw them immediately on vest,
-                        you may unlock them now. This action will: <br />
-                        (1) unlock all of your currently locked tokens,
-                        immediately reducing your governance power, and <br />
-                        (2) cause your {nextVestingAmount.toString()} tokens scheduled to vest
-                         on {nextVestingDate?.toLocaleString()} to become withdrawable on vest.
-                      </p>
-                    ) : null}
-
-                    {(unvestedPythBalance.toString() !== '0') && !isVestingAccountWithoutGovernance &&!isEligibleForPreliminaryUnstaking ? (
-                      <div>
+                    ) : null} */}
+                    {unvestedTotalPythBalance.toString() !== '0' &&
+                    isVestingAccountWithoutGovernance ? (
+                      <div className="mt-3 mb-10 space-y-4">
                         <p className="font-poppins text-sm text-scampi">
-                           Your {nextVestingAmount.toString()} tokens scheduled to vest
-                           on {nextVestingDate?.toLocaleString()} will be withdrawable on vest.
+                          Your unvested tokens are not participating in
+                          governance. On vest, they will become unlocked tokens.
                         </p>
                         <p className="font-poppins text-sm text-scampi">
-                        The rest of your unvested tokens are participating in governance.
+                          Participating in governance requires you to lock your
+                          unvested tokens. This means that when your tokens
+                          vest, you will have to manually unlock them through by
+                          interacting with the UI and wait for a one epoch
+                          cooldown before being able to withdraw them.
+                        </p>
+                      </div>
+                    ) : null}
+                    {isUnvestedTokensFullyLockedState ? (
+                      <>
+                        <p className="font-poppins text-sm text-scampi">
+                          If you would like to withdraw them immediately on
+                          vest, you may choose to preliminary unlock them now.
+                          This action will cause your{' '}
+                          {nextVestingAmount.toString()} tokens scheduled to
+                          vest on {nextVestingDate?.toLocaleString()} to become
+                          withdrawable on vest.
+                        </p>
+                        <p className="font-poppins text-sm text-scampi">
+                          You may also choose to unlock all of your unvested
+                          tokens, immediately reducing your governance power.
+                        </p>
+                      </>
+                    ) : null}
+
+                    {isUnvestedTokensFullyUnlockedState ? (
+                      <div>
+                        <p className="font-poppins text-sm text-scampi">
+                          Your unvested tokens are not locked in governance.
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {isUnvestedTokensPartiallyLockedState ? (
+                      <div>
+                        <p className="font-poppins text-sm text-scampi">
+                          Your {nextVestingAmount.toString()} tokens scheduled
+                          to vest on {nextVestingDate?.toLocaleString()} will be
+                          withdrawable on vest.
+                        </p>
+                        <p className="font-poppins text-sm text-scampi">
+                          The rest of your unvested tokens are participating in
+                          governance.
                         </p>
                       </div>
                     ) : null}
                   </div>
-                  {isEligibleForPreliminaryUnstaking ? (
-                    <div className="space-x-10 text-center">
+                  {isUnvestedTokensFullyLockedState ? (
+                    <div className="flex flex-col space-y-4 text-center md:block md:space-x-10">
                       <button
                         type="button"
-                        className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
                         onClick={handlePreliminaryUnstakeVestingAccount}
                       >
-                        Unlock
+                        Preliminary unlock
                       </button>
                       <button
                         type="button"
-                        className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                        onClick={closeUnvestedModal}
+                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
+                        onClick={handleUnlockAllVestingAccount}
                       >
-                        No, thank you
+                        Unlock all
                       </button>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      onClick={closeUnvestedModal}
-                    >
-                      Got it
-                    </button>
-                  )}
+                  ) : !isFullyVestedState &&
+                    !isUnvestedTokensFullyLockedState ? (
+                    <div className="flex flex-col space-y-4 text-center sm:block sm:space-x-10">
+                      <button
+                        type="button"
+                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
+                        onClick={handleUnvestedModalLockAllButton}
+                        disabled={
+                          isUnvestedTokensFullyLockedExceptCooldownState ||
+                          isUnvestedTokensFullyUnlockedExceptCooldownState
+                        }
+                      >
+                        {isUnvestedTokensFullyLockedExceptCooldownState ||
+                        isUnvestedTokensFullyUnlockedExceptCooldownState ? (
+                          <Tooltip
+                            content="Your tokens are in the process of being unlocked."
+                            className="m-4"
+                          >
+                            Lock all
+                          </Tooltip>
+                        ) : (
+                          'Lock all'
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
+                        onClick={handleUnlockAllVestingAccount}
+                        disabled={
+                          isUnvestedTokensFullyUnlockedState ||
+                          isUnvestedTokensFullyUnlockedExceptCooldownState
+                        }
+                      >
+                        {isUnvestedTokensFullyUnlockedState ||
+                        isUnvestedTokensFullyUnlockedExceptCooldownState ? (
+                          <Tooltip
+                            content={
+                              isUnvestedTokensFullyUnlockedState
+                                ? "You don't have any unvested tokens to unlock."
+                                : 'Your tokens are in the process of being unlocked.'
+                            }
+                            className="m-4"
+                          >
+                            Unlock all
+                          </Tooltip>
+                        ) : (
+                          'Unlock all'
+                        )}
+                      </button>
+                    </div>
+                  ) : null}
                 </Dialog.Panel>
               </Transition.Child>
             </div>
@@ -983,7 +1190,7 @@ const Staking: NextPage = () => {
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-ebonyClay sm:m-0" />
                     ) : (
                       <div className="mx-auto flex text-sm sm:m-0">
-                        {unvestedPythBalance?.toString()}
+                        {unvestedTotalPythBalance?.toString()}
                       </div>
                     )}
                   </div>
@@ -1073,7 +1280,7 @@ const Staking: NextPage = () => {
                                     : currentTab === TabEnum.Unlock
                                     ? 'Locked Tokens'
                                     : 'Withdrawable'}
-                                  : {balance?.toString()}
+                                  : {connected ? balance?.toString() : '-'}
                                 </p>
                               )}
                               <div className="hidden space-x-2 sm:flex">
@@ -1110,7 +1317,7 @@ const Staking: NextPage = () => {
                               />
                             ) : currentTab === TabEnum.Lock ? (
                               <button
-                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
                                 onClick={handleDeposit}
                                 disabled={
                                   isVestingAccountWithoutGovernance ||
@@ -1129,7 +1336,7 @@ const Staking: NextPage = () => {
                               </button>
                             ) : currentTab === TabEnum.Unlock ? (
                               <button
-                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
                                 onClick={handleUnlock}
                                 disabled={
                                   isVestingAccountWithoutGovernance ||
@@ -1148,7 +1355,7 @@ const Staking: NextPage = () => {
                               </button>
                             ) : (
                               <button
-                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blackRussian disabled:bg-bunting"
+                                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
                                 onClick={handleWithdraw}
                                 disabled={!isSufficientBalance}
                               >

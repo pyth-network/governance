@@ -23,6 +23,7 @@ module.exports = {
       darkerPurpleBackground: '#100E21',
       jaguar: '#19172A',
       blueGem: '#4E2F92',
+      blueGemHover: '#49338D',
       valhalla: '#2E2E49',
       mediumSlateBlue: '#8246FA',
       darkSlateBlue: '#42428E',
