@@ -68,33 +68,33 @@ const Staking: NextPage = () => {
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
   const [balance, setBalance] = useState<PythBalance>()
   const [pythBalance, setPythBalance] = useState<PythBalance>(
-    new PythBalance(new BN(0))
+    PythBalance.zero()
   )
   const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>(
-    new PythBalance(new BN(0))
+    PythBalance.zero()
   )
   const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>(
-    new PythBalance(new BN(0))
+    PythBalance.zero()
   )
   const [unvestedTotalPythBalance, setUnvestedTotalPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [unvestedLockingPythBalance, setUnvestedLockingPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [unvestedLockedPythBalance, setUnvestedLockedPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [unvestedPreUnlockingPythBalance, setUnvestedPreUnlockingPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [unvestedUnlockingPythBalance, setUnvestedUnlockingPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [unvestedUnlockedPythBalance, setUnvestedUnlockedPythBalance] =
-    useState<PythBalance>(new PythBalance(new BN(0)))
+    useState<PythBalance>(PythBalance.zero())
   const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
   const [unlockingPythBalance, setUnlockingPythBalance] =
     useState<PythBalance>()
   const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
   const [nextVestingAmount, setNextVestingAmount] = useState<PythBalance>(
-    new PythBalance(new BN(0))
+    PythBalance.zero()
   )
   const [nextVestingDate, setNextVestingDate] = useState<Date>()
   const [currentVestingAccountState, setCurrentVestingAccountState] =
@@ -196,18 +196,18 @@ const Staking: NextPage = () => {
   ])
 
   const resetBalance = () => {
-    setPythBalance(new PythBalance(new BN(0)))
-    setLockingPythBalance(new PythBalance(new BN(0)))
-    setLockedPythBalance(new PythBalance(new BN(0)))
-    setUnlockingPythBalance(new PythBalance(new BN(0)))
-    setUnvestedTotalPythBalance(new PythBalance(new BN(0)))
-    setUnvestedLockingPythBalance(new PythBalance(new BN(0)))
-    setUnvestedLockedPythBalance(new PythBalance(new BN(0)))
-    setUnvestedPreUnlockingPythBalance(new PythBalance(new BN(0)))
-    setUnvestedUnlockingPythBalance(new PythBalance(new BN(0)))
-    setUnvestedUnlockedPythBalance(new PythBalance(new BN(0)))
-    setUnlockedPythBalance(new PythBalance(new BN(0)))
-    setNextVestingAmount(new PythBalance(new BN(0)))
+    setPythBalance(PythBalance.zero())
+    setLockingPythBalance(PythBalance.zero())
+    setLockedPythBalance(PythBalance.zero())
+    setUnlockingPythBalance(PythBalance.zero())
+    setUnvestedTotalPythBalance(PythBalance.zero())
+    setUnvestedLockingPythBalance(PythBalance.zero())
+    setUnvestedLockedPythBalance(PythBalance.zero())
+    setUnvestedPreUnlockingPythBalance(PythBalance.zero())
+    setUnvestedUnlockingPythBalance(PythBalance.zero())
+    setUnvestedUnlockedPythBalance(PythBalance.zero())
+    setUnlockedPythBalance(PythBalance.zero())
+    setNextVestingAmount(PythBalance.zero())
   }
 
   const refreshVestingAccountState = async () => {
@@ -235,7 +235,7 @@ const Staking: NextPage = () => {
       return
     }
     const depositAmount = PythBalance.fromString(amount)
-    if (depositAmount.toBN().gt(new BN(0))) {
+    if (depositAmount.gt(PythBalance.zero())) {
       try {
         await stakeConnection?.depositAndLockTokens(
           mainStakeAccount,
@@ -262,7 +262,7 @@ const Staking: NextPage = () => {
       return
     }
     const unlockAmount = PythBalance.fromString(amount)
-    if (unlockAmount.toBN().gt(new BN(0))) {
+    if (unlockAmount.gt(PythBalance.zero())) {
       if (mainStakeAccount) {
         try {
           await stakeConnection?.unlockTokens(mainStakeAccount, unlockAmount)
@@ -291,7 +291,7 @@ const Staking: NextPage = () => {
       return
     }
     const withdrawAmount = PythBalance.fromString(amount)
-    if (withdrawAmount.toBN().gt(new BN(0))) {
+    if (withdrawAmount.gt(PythBalance.zero())) {
       if (mainStakeAccount) {
         try {
           await stakeConnection?.withdrawTokens(
@@ -322,7 +322,7 @@ const Staking: NextPage = () => {
       setLockingPythBalance(locked.locking)
       setLockedPythBalance(locked.locked)
       setUnlockingPythBalance(
-        new PythBalance(locked.unlocking.toBN().add(locked.preunlocking.toBN()))
+      locked.unlocking.add(locked.preunlocking)
       )
       setUnvestedTotalPythBalance(unvested.total)
       setUnvestedLockingPythBalance(unvested.locking)
@@ -413,9 +413,9 @@ const Staking: NextPage = () => {
       try {
         await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
         toast.success(
-          `${new PythBalance(
-            nextVestingAmount.toBN().add(lockedPythBalance.toBN())
-          ).toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
+          `${
+            nextVestingAmount.add(lockedPythBalance)
+          .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -777,7 +777,7 @@ const Staking: NextPage = () => {
                       tokens.
                     </p>
                     {lockingPythBalance &&
-                    lockingPythBalance.toString() !== '0' ? (
+                    !lockingPythBalance.isZero()? (
                       <p className="font-poppins text-sm text-scampi">
                         {lockingPythBalance.toString()} tokens will be locked
                         from the beginning of the next epoch.
@@ -845,7 +845,7 @@ const Staking: NextPage = () => {
                       unlocked tokens.
                     </p>
                     {unlockingPythBalance &&
-                    unlockingPythBalance.toString() !== '0' ? (
+                    !unlockingPythBalance.isZero() ? (
                       <p className="font-poppins text-sm text-scampi">
                         {unlockingPythBalance.toString()} tokens have to go
                         through a cool-down period for 2 epochs before they can
@@ -906,7 +906,7 @@ const Staking: NextPage = () => {
                     <p className="font-poppins text-sm text-scampi">
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
                       unvested tokens.{' '}
-                      {unvestedTotalPythBalance.toString() !== '0'
+                      {!unvestedTotalPythBalance.isZero()
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
@@ -950,7 +950,7 @@ const Staking: NextPage = () => {
                       <div className="mx-auto flex text-sm sm:m-0">
                         {lockedPythBalance?.toString()}{' '}
                         {lockingPythBalance &&
-                        lockingPythBalance.toString() !== '0' ? (
+                        !lockingPythBalance.isZero() ? (
                           <div>
                             <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
                               <div className="mx-1 text-scampi">
@@ -1002,7 +1002,7 @@ const Staking: NextPage = () => {
                       <div className="mx-auto flex text-sm sm:m-0">
                         {unlockedPythBalance?.toString()}{' '}
                         {unlockingPythBalance &&
-                        unlockingPythBalance.toString() !== '0' ? (
+                        !unlockingPythBalance.isZero() ? (
                           <div>
                             <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
                               <div className="mx-1 text-scampi">
