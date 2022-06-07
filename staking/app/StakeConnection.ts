@@ -492,12 +492,9 @@ export class StakeConnection {
     return Boolean(voterAccountInfo);
   }
   /**
-   * This function is intended for accounts that want to participate in governance.
-   * It creates a token record in spl governance and creates a voting position with all unvested balance
-   * if it exists.
-   * TODO : Function for opting out of governance
+   * Locks all unvested tokens in governance
    */
-  public async optIntoGovernance(stakeAccount: StakeAccount) {
+  public async lockAllUnvested(stakeAccount: StakeAccount) {
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );

@@ -125,7 +125,7 @@ describe("vesting", async () => {
 
     // Sam opts into governance
     // UnvestedTokensFullyUnlocked -> UnvestedTokensFullyLocked
-    await samConnection.optIntoGovernance(stakeAccount);
+    await samConnection.lockAllUnvested(stakeAccount);
 
     stakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
@@ -508,7 +508,7 @@ describe("vesting", async () => {
     );
 
     await expectFailApi(
-      samConnection.optIntoGovernance(samStakeAccount),
+      samConnection.lockAllUnvested(samStakeAccount),
       `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
     );
   });
@@ -538,7 +538,7 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    await samConnection.optIntoGovernance(samStakeAccount);
+    await samConnection.lockAllUnvested(samStakeAccount);
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
     assert(
@@ -601,7 +601,7 @@ describe("vesting", async () => {
     );
 
     // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyLocked
-    await samConnection.optIntoGovernance(samStakeAccount);
+    await samConnection.lockAllUnvested(samStakeAccount);
 
     await assertBalanceMatches(
       samConnection,
@@ -695,14 +695,14 @@ describe("vesting", async () => {
     );
 
     await expectFailApi(
-      samConnection.optIntoGovernance(samStakeAccount),
+      samConnection.lockAllUnvested(samStakeAccount),
       `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
     );
 
     await samConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(2)))
       .rpc();
-    await samConnection.optIntoGovernance(samStakeAccount);
+    await samConnection.lockAllUnvested(samStakeAccount);
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     await samConnection.program.methods
       .advanceClock(EPOCH_DURATION.mul(new BN(1)))
