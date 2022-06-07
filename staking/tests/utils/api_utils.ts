@@ -99,27 +99,28 @@ export async function assertBalanceMatches(
   );
   assert.equal(
     actual.unvested.locking.toString(),
-    expected.unvested?.locking?.toString(),
+    expectedUnvestedLocking.toString(),
     "UnvestedLocking"
   );
   assert.equal(
     actual.unvested.locked.toString(),
-    expected.unvested?.locked?.toString(),
+    expectedUnvestedLocked.toString(),
     "UnvestedLocked"
   );
-  assert.equal(
-    actual.unvested.unlocking.toString(),
-    expected.unvested?.unlocking?.toString(),
-    "UnvestedUnlocking"
-  );
+
   assert.equal(
     actual.unvested.preunlocking.toString(),
-    expected.unvested?.preunlocking?.toString(),
+    expectedUnvestedPreunlocking.toString(),
     "UnvestedPreunlocking"
   );
   assert.equal(
+    actual.unvested.unlocking.toString(),
+    expectedUnvestedUnlocking.toString(),
+    "UnvestedUnlocking"
+  );
+  assert.equal(
     actual.unvested.unlocked.toString(),
-    expected.unvested?.unlocked?.toString(),
+    expectedUnvestedUnlocked.toString(),
     "UnvestedUnlocked"
   );
 }
