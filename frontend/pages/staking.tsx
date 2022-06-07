@@ -50,10 +50,6 @@ const Staking: NextPage = () => {
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
   ] = useState<boolean>(false)
-  const [
-    isVestingAccountWithoutGovernanceModalOpen,
-    setIsVestingAccountWithoutGovernanceModalOpen,
-  ] = useState<boolean>(false)
   const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
   const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
   const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
@@ -101,27 +97,6 @@ const Staking: NextPage = () => {
     new PythBalance(new BN(0))
   )
   const [nextVestingDate, setNextVestingDate] = useState<Date>()
-  const [isFullyVestedState, setIsFullyVestedState] = useState<boolean>(false)
-  const [
-    isUnvestedTokensFullyLockedState,
-    setIsUnvestedTokensFullyLockedState,
-  ] = useState<boolean>(false)
-  const [
-    isUnvestedTokensFullyLockedExceptCooldownState,
-    setIsUnvestedTokensFullyLockedExceptCooldownState,
-  ] = useState<boolean>(false)
-  const [
-    isUnvestedTokensPartiallyLockedState,
-    setIsUnvestedTokensPartiallyLockedState,
-  ] = useState<boolean>(false)
-  const [
-    isUnvestedTokensFullyUnlockedState,
-    setIsUnvestedTokensFullyUnlockedState,
-  ] = useState<boolean>(false)
-  const [
-    isUnvestedTokensFullyUnlockedExceptCooldownState,
-    setIsUnvestedTokensFullyUnlockedExceptCooldownState,
-  ] = useState<boolean>(false)
   const [currentVestingAccountState, setCurrentVestingAccountState] =
     useState<VestingAccountState>()
 
@@ -279,10 +254,6 @@ const Staking: NextPage = () => {
     setIsMultipleStakeAccountsModalOpen(false)
   }
 
-  const handleCloseVestingAccountWithoutGovernanceModal = () => {
-    setIsVestingAccountWithoutGovernanceModalOpen(false)
-  }
-
   // call unlock api when unlock button is clicked
   const handleUnlock = async () => {
     if (!amount) {
@@ -310,19 +281,6 @@ const Staking: NextPage = () => {
   const handleMultipleStakeAccountsConnectButton = () => {
     setMainStakeAccount(multipleStakeAccountsModalOption)
     handleCloseMultipleStakeAccountsModal()
-  }
-
-  const handleVestingAccountWithoutGovernanceOptInButton = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      await stakeConnection.optIntoGovernance(mainStakeAccount)
-      setIsVestingAccountWithoutGovernance(false)
-      await refreshStakeAccount()
-    }
-    handleCloseVestingAccountWithoutGovernanceModal()
-  }
-
-  const handleVestingAccountWithoutGovernanceNoThanksButton = () => {
-    handleCloseVestingAccountWithoutGovernanceModal()
   }
 
   // withdraw unlocked PYTH tokens to wallet
@@ -439,7 +397,7 @@ const Staking: NextPage = () => {
   const handleUnvestedModalLockAllButton = async () => {
     if (stakeConnection && mainStakeAccount) {
       try {
-        await stakeConnection.optIntoGovernance(mainStakeAccount)
+        await stakeConnection.lockAllUnvested(mainStakeAccount)
         toast.success('Successfully opted into governance!')
       } catch (e) {
         toast.error(capitalizeFirstLetter(e.message))
@@ -469,7 +427,7 @@ const Staking: NextPage = () => {
   const handleUnlockAllVestingAccount = async () => {
     if (stakeConnection && mainStakeAccount) {
       try {
-        await stakeConnection.unlockAllUnvested(mainStakeAccount)
+        await stakeConnection.unlockAll(mainStakeAccount)
         toast.success(
           `All unvested tokens have been unlocked. Please relock them to participate in governance.`
         )
@@ -756,80 +714,6 @@ const Staking: NextPage = () => {
                       onClick={handleMultipleStakeAccountsConnectButton}
                     >
                       Connect
-                    </button>
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
-
-      <Transition
-        appear
-        show={isVestingAccountWithoutGovernanceModalOpen}
-        as={Fragment}
-      >
-        <Dialog as="div" className="relative z-10" onClose={() => {}}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-50" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-md font-inter font-bold leading-6 text-white"
-                  >
-                    Enroll in governance
-                  </Dialog.Title>
-                  <div className="mt-3 mb-10 space-y-4">
-                    <p className="font-poppins text-sm text-scampi">
-                      Your vesting account is not enrolled in governance.
-                    </p>
-                    <p className="font-poppins text-sm text-scampi">
-                      Participating in governance requires you to lock your
-                      unvested tokens. This means that when your tokens vest,
-                      you will have to manually unlock them through by
-                      interacting with the UI and wait for a one epoch cooldown
-                      before being able to withdraw them. Opting into governance
-                      is currently irreversible.
-                    </p>
-                  </div>
-
-                  <div className="space-x-10 text-center">
-                    <button
-                      type="button"
-                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      onClick={handleVestingAccountWithoutGovernanceOptInButton}
-                    >
-                      Opt in
-                    </button>
-                    <button
-                      type="button"
-                      className="border-transparent focus-visible:ring-blue-500 inline-flex justify-center rounded-md border bg-cherryPie px-4 py-2 text-sm font-medium text-white hover:bg-pythPurple focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                      onClick={
-                        handleVestingAccountWithoutGovernanceNoThanksButton
-                      }
-                    >
-                      No, thank you
                     </button>
                   </div>
                 </Dialog.Panel>
