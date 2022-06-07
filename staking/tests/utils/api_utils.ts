@@ -25,7 +25,6 @@ import * as wasm from "../../wasm";
  */
 export type OptionalBalanceSummary = {
   unvested?: {
-    total?: PythBalance | null;
     locked?: PythBalance | null;
     locking?: PythBalance | null;
     preunlocking?: PythBalance | null;
@@ -78,34 +77,49 @@ export async function assertBalanceMatches(
     expected.withdrawable?.toString() || "0",
     "Withdrawable"
   );
+  const expectedUnvestedLocking =
+    expected.unvested?.locking ?? PythBalance.zero();
+  const expectedUnvestedLocked =
+    expected.unvested?.locked ?? PythBalance.zero();
+  const expectedUnvestedPreunlocking =
+    expected.unvested?.preunlocking ?? PythBalance.zero();
+  const expectedUnvestedUnlocking =
+    expected.unvested?.unlocking ?? PythBalance.zero();
+  const expectedUnvestedUnlocked =
+    expected.unvested?.unlocked ?? PythBalance.zero();
+  const expectedUnvestedTotal = expectedUnvestedLocking
+    .add(expectedUnvestedLocked)
+    .add(expectedUnvestedPreunlocking)
+    .add(expectedUnvestedUnlocking)
+    .add(expectedUnvestedUnlocked);
   assert.equal(
     actual.unvested.total.toString(),
-    expected.unvested?.total?.toString() || "0",
+    expectedUnvestedTotal.toString(),
     "UnvestedTotal"
   );
   assert.equal(
     actual.unvested.locking.toString(),
-    expected.unvested?.locking?.toString() || "0",
+    expected.unvested?.locking?.toString(),
     "UnvestedLocking"
   );
   assert.equal(
     actual.unvested.locked.toString(),
-    expected.unvested?.locked?.toString() || "0",
+    expected.unvested?.locked?.toString(),
     "UnvestedLocked"
   );
   assert.equal(
     actual.unvested.unlocking.toString(),
-    expected.unvested?.unlocking?.toString() || "0",
+    expected.unvested?.unlocking?.toString(),
     "UnvestedUnlocking"
   );
   assert.equal(
     actual.unvested.preunlocking.toString(),
-    expected.unvested?.preunlocking?.toString() || "0",
+    expected.unvested?.preunlocking?.toString(),
     "UnvestedPreunlocking"
   );
   assert.equal(
     actual.unvested.unlocked.toString(),
-    expected.unvested?.unlocked?.toString() || "0",
+    expected.unvested?.unlocked?.toString(),
     "UnvestedUnlocked"
   );
 }
