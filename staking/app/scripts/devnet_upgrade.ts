@@ -27,6 +27,7 @@ import shell from "shelljs";
 
 import fs from "fs";
 import { PositionAccountJs } from "../PositionAccountJs";
+import { StakeAccount, StakeConnection } from "../StakeConnection";
 
 const DRY_RUN = true;
 const UPGRADE_AUTH_KEYPAIR_PATH =
@@ -253,6 +254,12 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
     DEVNET_STAKING_ADDRESS
   );
   await connection.confirmTransaction(airDropSignature);
+  const stakeConnection = await StakeConnection.createStakeConnection(
+    connection,
+    new anchor.Wallet(feePayer),
+    DEVNET_STAKING_ADDRESS
+  );
+
   console.log("%d accounts found in need of upgrade", allV1.length);
   // Upgrade one of our accounts first to make sure everything is working
   const testAccount = pairs.find(
@@ -261,7 +268,7 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
       "phiL6zrF5aGxB3KMyYaRiMV8vaABqwrbuv1ahoeBcPc"
   );
   if (testAccount) {
-    await upgrade(testAccount, program, feePayer);
+    await upgrade(testAccount, program, feePayer, stakeConnection);
   } else {
     console.log("Specified test account not found");
   }
@@ -270,7 +277,7 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
     if (elt.position.publicKey.equals(testAccount.position.publicKey)) {
       console.log("Skipping %s", elt.position.publicKey.toBase58());
     } else {
-      await upgrade(elt, program, feePayer);
+      await upgrade(elt, program, feePayer, stakeConnection);
     }
   }
 }
@@ -281,7 +288,8 @@ async function upgrade(
     metadata: ToPairAccountInterface;
   },
   program: anchor.Program<Staking>,
-  feePayer: anchor.web3.Keypair
+  feePayer: anchor.web3.Keypair,
+  stakeConnection: StakeConnection
 ) {
   console.log(
     "Upgrading %s owned by %s",
@@ -304,16 +312,19 @@ async function upgrade(
       ])
       .rpc()
   );
-  const newMetadata = await program.account.stakeAccountMetadataV2.fetch(
-    account.metadata.publicKey
-  );
-  const newPosition = await program.provider.connection.getAccountInfo(
+
+  // Load the newly upgraded account
+  const stakeAccount = await stakeConnection.loadStakeAccount(
     account.position.publicKey
   );
-  const nextIndex = newMetadata.nextIndex;
-  const parsedPositions = new PositionAccountJs(newPosition.data, program.idl);
-  if (nextIndex > 0) assert(parsedPositions.positions[nextIndex - 1] != null);
-  assert(parsedPositions.positions[nextIndex] == null);
+  stakeAccount.getBalanceSummary(await stakeConnection.getTime());
+  const nextIndex = stakeAccount.stakeAccountMetadata.nextIndex;
+  if (nextIndex > 0)
+    assert(
+      stakeAccount.stakeAccountPositionsJs.positions[nextIndex - 1] != null
+    );
+  assert(stakeAccount.stakeAccountPositionsJs.positions[nextIndex] == null);
+
   console.log("Success. %d positions", nextIndex);
 }
 
