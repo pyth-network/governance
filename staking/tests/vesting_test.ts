@@ -522,7 +522,7 @@ describe("vesting", async () => {
 
     await expectFailApi(
       samConnection.optIntoGovernance(samStakeAccount),
-      "Expected different account state"
+      `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
     );
   });
 
@@ -712,7 +712,7 @@ describe("vesting", async () => {
 
     await expectFailApi(
       samConnection.optIntoGovernance(samStakeAccount),
-      "Expected different account state"
+      `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
     );
 
     await samConnection.program.methods

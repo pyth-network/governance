@@ -506,7 +506,7 @@ export class StakeConnection {
         VestingAccountState.UnvestedTokensPartiallyLocked &&
       vestingAccountState != VestingAccountState.UnvestedTokensFullyUnlocked
     ) {
-      throw Error("Expected different account state");
+      throw Error(`Unexpected account state ${vestingAccountState}`);
     }
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
@@ -612,12 +612,13 @@ export class StakeConnection {
     );
   }
 
+  // Unlock all vested tokens and the tokens that will vest in the next vesting event
   public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
-    if (
-      stakeAccount.getVestingAccountState(await this.getTime()) !=
-      VestingAccountState.UnvestedTokensFullyLocked
-    ) {
-      throw Error("Expected different account state");
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
+    );
+    if (vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
     }
 
     const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
@@ -628,6 +629,7 @@ export class StakeConnection {
     await this.unlockTokensUnchecked(stakeAccount, amount);
   }
 
+  // Unlock all vested and unvested tokens
   public async unlockAllUnvested(stakeAccount: StakeAccount) {
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
@@ -639,7 +641,7 @@ export class StakeConnection {
       vestingAccountState !=
         VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
     ) {
-      throw Error("Expected different account state");
+      throw Error(`Unexpected account state ${vestingAccountState}`);
     }
 
     const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
@@ -677,7 +679,7 @@ export class StakeConnection {
         vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
         vestingAccountState != VestingAccountState.FullyVested
       ) {
-        throw Error("Expected different account state");
+        throw Error(`Unexpected account state ${vestingAccountState}`);
       }
     }
 
