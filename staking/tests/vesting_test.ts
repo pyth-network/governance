@@ -9,11 +9,17 @@ import {
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { StakeConnection, PythBalance } from "../app";
+import {
+  StakeConnection,
+  PythBalance,
+  VestingAccountState,
+  StakeAccount,
+} from "../app";
 import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
 import { expectFailApi } from "./utils/utils";
+import { expectFailGovernance } from "./utils/governance_utils";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
@@ -102,41 +108,45 @@ describe("vesting", async () => {
     );
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
-
     assert(
-      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
+      VestingAccountState.UnvestedTokensFullyUnlocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
     );
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(
-      stakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("0"))
-    );
-
-    // Sam opts into governance
-    await samConnection.optIntoGovernance(stakeAccount);
-
-    stakeAccount = await samConnection.getMainAccount(sam.publicKey);
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-    assert(
-      stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
-    );
-    assert(
-      stakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
-        .eq(PythBalance.fromString("1.388888").toBN())
-    );
-
-    assert(
-      stakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("100"))
-    );
-
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          unlocked: PythBalance.fromString("100"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    // Sam opts into governance
+    // UnvestedTokensFullyUnlocked -> UnvestedTokensFullyLocked
+    await samConnection.lockAllUnvested(stakeAccount);
+
+    stakeAccount = await samConnection.getMainAccount(sam.publicKey);
+
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    const firstUnlock = Math.floor((100 * 10 ** 6) / 72) * 10 ** -6;
+    assert(
+      stakeAccount
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
+        .eq(PythBalance.fromNumber(firstUnlock).toBN())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locking: PythBalance.fromString("100"),
+        },
+      },
       await samConnection.getTime()
     );
   });
@@ -149,18 +159,19 @@ describe("vesting", async () => {
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          locked: PythBalance.fromString("100"),
+        },
+      },
       await samConnection.getTime()
     );
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
     assert(
-      samStakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("100"))
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
     );
 
     await samConnection.depositAndLockTokens(
@@ -168,48 +179,43 @@ describe("vesting", async () => {
       PythBalance.fromString("1")
     );
 
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("100"),
+        unvested: {
+          locked: PythBalance.fromString("100"),
+        },
         locked: { locking: PythBalance.fromString("1") },
       },
       await samConnection.getTime()
-    );
-
-    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
-
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
-    assert(
-      samStakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("101"))
     );
   });
 
   it("one month later", async () => {
     await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
 
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: { locked: PythBalance.fromString("2.388888") },
       },
       await samConnection.getTime()
-    );
-
-    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
-
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
-    assert(
-      samStakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("101"))
     );
 
     await samConnection.depositAndLockTokens(
@@ -219,19 +225,18 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
     assert(
-      samStakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("102"))
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
     );
 
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: {
           locked: PythBalance.fromString("2.388888"),
           locking: PythBalance.fromString("1"),
@@ -248,19 +253,18 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
 
-    assert(samStakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
     assert(
-      samStakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("102"))
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
     );
 
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          locked: PythBalance.fromString("98.611112"),
+        },
         locked: {
           preunlocking: PythBalance.fromString("1"),
           locked: PythBalance.fromString("1.388888"),
@@ -269,29 +273,40 @@ describe("vesting", async () => {
       },
       await samConnection.getTime()
     );
+
+    assert(
+      samStakeAccount
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
+        .eq(PythBalance.fromString("3.777777").toBN())
+    );
   });
 
   it("unlock before vesting event", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
-    assert(
-      samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
-        .eq(PythBalance.fromString("3.777777").toBN())
-    );
+
+    // UnvestedTokensFullyLocked -> UnvestedTokensFullyLockedExceptCooldown
     await samConnection.unlockBeforeVestingEvent(samStakeAccount);
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("0").toBN())
     );
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          locked: PythBalance.fromString("96.222223"),
+          locking: PythBalance.fromString("1"),
+          preunlocking: PythBalance.fromString("1.388889"),
+        },
         locked: {
           preunlocking: PythBalance.fromString("3.388888"),
         },
@@ -299,13 +314,51 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    await samConnection.program.methods.advanceClock(ONE_MONTH).rpc();
+    await samConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .rpc();
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensPartiallyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+
+    assert(
+      samStakeAccount
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
+        .eq(PythBalance.fromString("0").toBN())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("97.222223"),
+          unlocked: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("3.388888"),
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.program.methods
+      .advanceClock(ONE_MONTH.sub(EPOCH_DURATION.mul(new BN(2))))
+      .rpc();
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     await assertBalanceMatches(
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          locked: PythBalance.fromString("97.222223"),
+        },
         withdrawable: PythBalance.fromString("4.777777"),
       },
       await samConnection.getTime()
@@ -319,8 +372,12 @@ describe("vesting", async () => {
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("1.388889").toBN())
     );
 
@@ -328,8 +385,12 @@ describe("vesting", async () => {
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
+      VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    assert(
       samStakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("0").toBN())
     );
 
@@ -337,10 +398,185 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          locked: PythBalance.fromString("95.833334"),
+          preunlocking: PythBalance.fromString("1.388889"),
+        },
         withdrawable: PythBalance.fromString("4.777777"),
       },
       await samConnection.getTime()
+    );
+
+    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        samStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("4.777777"),
+        locked: {
+          unlocking: PythBalance.fromString("1.388889"),
+        },
+      },
+      await samConnection.getTime()
+    );
+  });
+
+  it("unlock all", async () => {
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+
+    await samConnection.depositAndLockTokens(
+      samStakeAccount,
+      PythBalance.fromString("1")
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLocked
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("4.777777"),
+        locked: {
+          unlocking: PythBalance.fromString("1.388889"),
+          locking: PythBalance.fromString("1"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLocked
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("6.166666"),
+        locked: {
+          locked: PythBalance.fromString("1"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    // UnvestedTokensFullyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
+    await samConnection.unlockAll(samStakeAccount);
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          preunlocking: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("6.166666"),
+        locked: {
+          preunlocking: PythBalance.fromString("1"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    await expectFailApi(
+      samConnection.lockAllUnvested(samStakeAccount),
+      `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
+    );
+  });
+
+  it("check tons of transition", async () => {
+    let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    // UnvestedTokensFullyUnlockedExceptCooldown -> UnvestedTokensFullyUnlocked
+    await samConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .rpc();
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyUnlocked
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          unlocked: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.lockAllUnvested(samStakeAccount);
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLocked
+    );
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locking: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    await samConnection.unlockBeforeVestingEvent(samStakeAccount);
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locking: PythBalance.fromString("94.444445"),
+          unlocked: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensPartiallyLocked
     );
 
     await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
@@ -349,13 +585,168 @@ describe("vesting", async () => {
       samConnection,
       sam.publicKey,
       {
-        unvested: PythBalance.fromString("95.833334"),
-        withdrawable: PythBalance.fromString("4.777777"),
-        locked: {
-          unlocking: PythBalance.fromString("1.388889"),
+        unvested: {
+          locked: PythBalance.fromString("94.444445"),
+          unlocked: PythBalance.fromString("1.388889"),
         },
+        withdrawable: PythBalance.fromString("7.166666"),
       },
       await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensPartiallyLocked
+    );
+
+    // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyLocked
+    await samConnection.lockAllUnvested(samStakeAccount);
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("94.444445"),
+          locking: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLocked
+    );
+
+    await samConnection.unlockBeforeVestingEvent(samStakeAccount);
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("93.055556"),
+          preunlocking: PythBalance.fromString("1.388889"),
+          locking: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
+    );
+
+    // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensPartiallyLocked
+    await samConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .rpc();
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("94.444445"),
+          unlocked: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensPartiallyLocked
+    );
+
+    await expectFailApi(
+      samConnection.unlockBeforeVestingEvent(samStakeAccount),
+      `Unexpected account state ${VestingAccountState.UnvestedTokensPartiallyLocked}`
+    );
+
+    // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
+    await samConnection.unlockAll(samStakeAccount);
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          preunlocking: PythBalance.fromString("94.444445"),
+          unlocked: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+    );
+
+    await expectFailApi(
+      samConnection.lockAllUnvested(samStakeAccount),
+      `Unexpected account state ${VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown}`
+    );
+
+    await samConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .rpc();
+    await samConnection.lockAllUnvested(samStakeAccount);
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    await samConnection.program.methods
+      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .rpc();
+    await samConnection.unlockBeforeVestingEvent(samStakeAccount);
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locked: PythBalance.fromString("94.444445"),
+          preunlocking: PythBalance.fromString("1.388889"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
+    );
+
+    // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensFullyUnlockedExceptCooldown
+    await samConnection.unlockAll(samStakeAccount);
+
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          preunlocking: PythBalance.fromString("95.833334"),
+        },
+        withdrawable: PythBalance.fromString("7.166666"),
+      },
+      await samConnection.getTime()
+    );
+
+    samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    assert(
+      samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
     );
   });
 
@@ -402,26 +793,25 @@ describe("vesting", async () => {
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
+    assert(
+      VestingAccountState.UnvestedTokensFullyUnlocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
 
     assert(
       stakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("0"))
-    );
-    assert(
-      !stakeAccount.hasGovernanceExcessPosition(await samConnection.getTime())
-    );
-    assert(
-      stakeAccount
-        .getGovernanceExcessPosition(await samConnection.getTime())
+        .getNetExcessGovernanceAtVesting(await samConnection.getTime())
         .eq(PythBalance.fromString("0").toBN())
     );
 
     await assertBalanceMatches(
       aliceConnection,
       alice.publicKey,
-      { unvested: PythBalance.fromString("100") },
+      {
+        unvested: {
+          unlocked: PythBalance.fromString("100"),
+        },
+      },
       await aliceConnection.getTime()
     );
   });
@@ -433,7 +823,9 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          unlocked: PythBalance.fromString("98.611112"),
+        },
         withdrawable: PythBalance.fromString("1.388888"),
       },
       await aliceConnection.getTime()
@@ -457,7 +849,9 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("98.611112"),
+        unvested: {
+          unlocked: PythBalance.fromString("98.611112"),
+        },
         withdrawable: PythBalance.fromString("0.388888"),
       },
       await aliceConnection.getTime()
@@ -465,12 +859,9 @@ describe("vesting", async () => {
 
     stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
     assert(
-      stakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("0"))
+      VestingAccountState.UnvestedTokensFullyUnlocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
     );
   });
 
@@ -481,7 +872,9 @@ describe("vesting", async () => {
       aliceConnection,
       alice.publicKey,
       {
-        unvested: PythBalance.fromString("97.222223"),
+        unvested: {
+          unlocked: PythBalance.fromString("97.222223"),
+        },
         withdrawable: PythBalance.fromString("1.777777"),
       },
       await aliceConnection.getTime()
@@ -489,12 +882,9 @@ describe("vesting", async () => {
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
-    assert(stakeAccount.hasUnvestedTokens(await samConnection.getTime()));
-
     assert(
-      stakeAccount
-        .getGovernanceExposure(await samConnection.getTime())
-        .eq(PythBalance.fromString("0"))
+      VestingAccountState.UnvestedTokensFullyUnlocked ==
+        stakeAccount.getVestingAccountState(await samConnection.getTime())
     );
   });
 

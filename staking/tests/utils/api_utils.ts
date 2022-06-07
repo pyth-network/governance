@@ -24,7 +24,13 @@ import * as wasm from "../../wasm";
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */
 export type OptionalBalanceSummary = {
-  unvested?: PythBalance | null;
+  unvested?: {
+    locked?: PythBalance | null;
+    locking?: PythBalance | null;
+    preunlocking?: PythBalance | null;
+    unlocking?: PythBalance | null;
+    unlocked?: PythBalance | null;
+  } | null;
   withdrawable?: PythBalance | null;
   locked?: {
     locking?: PythBalance | null;
@@ -67,14 +73,55 @@ export async function assertBalanceMatches(
     "Unlocking"
   );
   assert.equal(
-    actual.unvested.toString(),
-    expected.unvested?.toString() || "0",
-    "Unvested"
-  );
-  assert.equal(
     actual.withdrawable.toString(),
     expected.withdrawable?.toString() || "0",
     "Withdrawable"
+  );
+  const expectedUnvestedLocking =
+    expected.unvested?.locking ?? PythBalance.zero();
+  const expectedUnvestedLocked =
+    expected.unvested?.locked ?? PythBalance.zero();
+  const expectedUnvestedPreunlocking =
+    expected.unvested?.preunlocking ?? PythBalance.zero();
+  const expectedUnvestedUnlocking =
+    expected.unvested?.unlocking ?? PythBalance.zero();
+  const expectedUnvestedUnlocked =
+    expected.unvested?.unlocked ?? PythBalance.zero();
+  const expectedUnvestedTotal = expectedUnvestedLocking
+    .add(expectedUnvestedLocked)
+    .add(expectedUnvestedPreunlocking)
+    .add(expectedUnvestedUnlocking)
+    .add(expectedUnvestedUnlocked);
+  assert.equal(
+    actual.unvested.total.toString(),
+    expectedUnvestedTotal.toString(),
+    "UnvestedTotal"
+  );
+  assert.equal(
+    actual.unvested.locking.toString(),
+    expectedUnvestedLocking.toString(),
+    "UnvestedLocking"
+  );
+  assert.equal(
+    actual.unvested.locked.toString(),
+    expectedUnvestedLocked.toString(),
+    "UnvestedLocked"
+  );
+
+  assert.equal(
+    actual.unvested.preunlocking.toString(),
+    expectedUnvestedPreunlocking.toString(),
+    "UnvestedPreunlocking"
+  );
+  assert.equal(
+    actual.unvested.unlocking.toString(),
+    expectedUnvestedUnlocking.toString(),
+    "UnvestedUnlocking"
+  );
+  assert.equal(
+    actual.unvested.unlocked.toString(),
+    expectedUnvestedUnlocked.toString(),
+    "UnvestedUnlocked"
   );
 }
 

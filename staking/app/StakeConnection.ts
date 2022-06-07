@@ -492,20 +492,22 @@ export class StakeConnection {
     return Boolean(voterAccountInfo);
   }
   /**
-   * This function is intended for accounts that want to participate in governance.
-   * It creates a token record in spl governance and creates a voting position with all unvested balance
-   * if it exists.
-   * TODO : Function for opting out of governance
+   * Locks all unvested tokens in governance
    */
-  public async optIntoGovernance(stakeAccount: StakeAccount) {
-    assert(
-      stakeAccount.isVestingAccountWithoutGovernance(await this.getTime())
-    );
-
-    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
-    const unvestedBalance = stakeAccount.getBalanceSummary(
+  public async lockAllUnvested(stakeAccount: StakeAccount) {
+    const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
-    ).unvested;
+    );
+    if (
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyUnlocked
+    ) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+    const amountBN = balanceSummary.unvested.unlocked.toBN();
 
     const transaction: Transaction = new Transaction();
 
@@ -522,7 +524,7 @@ export class StakeConnection {
 
     transaction.instructions.push(
       await this.program.methods
-        .createPosition(this.votingProduct, unvestedBalance.toBN())
+        .createPosition(this.votingProduct, amountBN)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
           targetAccount: this.votingProductMetadataAccount,
@@ -607,15 +609,50 @@ export class StakeConnection {
     );
   }
 
+  // Unlock all vested tokens and the tokens that will vest in the next vesting event
   public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
-    const amountBN = stakeAccount.getGovernanceExcessPosition(
+    const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );
-    assert(amountBN.gt(new BN(0)));
+    if (vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+
+    const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
+      await this.getTime()
+    );
 
     const amount = new PythBalance(amountBN);
     await this.unlockTokensUnchecked(stakeAccount, amount);
   }
+
+  // Unlock all vested and unvested tokens
+  public async unlockAll(stakeAccount: StakeAccount) {
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
+    );
+    if (
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
+    ) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+
+    const amountBN = balanceSummary.locked.locked
+      .toBN()
+      .add(balanceSummary.locked.locking.toBN())
+      .add(balanceSummary.unvested.locked.toBN())
+      .add(balanceSummary.unvested.locking.toBN());
+
+    const amount = new PythBalance(amountBN);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
+  }
+
   public async depositAndLockTokens(
     stakeAccount: StakeAccount | undefined,
     amount: PythBalance
@@ -632,6 +669,15 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccountKeypair.publicKey;
     } else {
       stakeAccountAddress = stakeAccount.address;
+      const vestingAccountState = stakeAccount.getVestingAccountState(
+        await this.getTime()
+      );
+      if (
+        vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+        vestingAccountState != VestingAccountState.FullyVested
+      ) {
+        throw Error(`Unexpected account state ${vestingAccountState}`);
+      }
     }
 
     if (!(await this.hasGovernanceRecord(owner))) {
@@ -714,7 +760,23 @@ export interface BalanceSummary {
     unlocking: PythBalance;
     preunlocking: PythBalance;
   };
-  unvested: PythBalance;
+  unvested: {
+    total: PythBalance;
+    locking: PythBalance;
+    locked: PythBalance;
+    unlocking: PythBalance;
+    preunlocking: PythBalance;
+    unlocked: PythBalance;
+  };
+}
+
+export enum VestingAccountState {
+  FullyVested,
+  UnvestedTokensFullyLocked,
+  UnvestedTokensFullyLockedExceptCooldown,
+  UnvestedTokensPartiallyLocked,
+  UnvestedTokensFullyUnlockedExceptCooldown,
+  UnvestedTokensFullyUnlocked,
 }
 
 export class StakeAccount {
@@ -802,18 +864,35 @@ export class StakeAccount {
       .add(unvestedBN)
       .sub(this.tokenBalance);
 
+    let lockedUnvestedBN: BN,
+      lockingUnvestedBN: BN,
+      preUnlockingUnvestedBN: BN,
+      unlockingUnvestedBN: BN;
+
     // First adjust locked. Most of the time, the unvested tokens are in this state.
-    [excess, lockedBN] = this.adjustLockedAmount(excess, lockedBN);
+    [excess, lockedBN, lockedUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockedBN
+    );
 
     // The unvested tokens can also be in a locking state at the very beginning.
     // The reason why we adjust this balance second is the following
     // If a user has 100 unvested in a locked position and decides to stake 1 free token
     // we want that token to appear as locking
-    [excess, lockingBN] = this.adjustLockedAmount(excess, lockingBN);
+    [excess, lockingBN, lockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockingBN
+    );
 
     // Needed to represent vesting accounts unlocking before the vesting event
-    [excess, preunlockingBN] = this.adjustLockedAmount(excess, preunlockingBN);
-    [excess, unlockingBN] = this.adjustLockedAmount(excess, unlockingBN);
+    [excess, preunlockingBN, preUnlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      preunlockingBN
+    );
+    [excess, unlockingBN, unlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      unlockingBN
+    );
 
     //Enforce the invariant
     assert(
@@ -827,26 +906,42 @@ export class StakeAccount {
     );
 
     return {
+      // withdrawable tokens
       withdrawable: new PythBalance(withdrawableBN),
+      // vested tokens not currently withdrawable
       locked: {
         locking: new PythBalance(lockingBN),
         locked: new PythBalance(lockedBN),
         unlocking: new PythBalance(unlockingBN),
         preunlocking: new PythBalance(preunlockingBN),
       },
-      unvested: new PythBalance(unvestedBN),
+      // unvested tokens
+      unvested: {
+        total: new PythBalance(unvestedBN),
+        locked: new PythBalance(lockedUnvestedBN),
+        locking: new PythBalance(lockingUnvestedBN),
+        unlocking: new PythBalance(unlockingUnvestedBN),
+        preunlocking: new PythBalance(preUnlockingUnvestedBN),
+        unlocked: new PythBalance(
+          unvestedBN
+            .sub(lockedUnvestedBN)
+            .sub(lockingUnvestedBN)
+            .sub(unlockingUnvestedBN)
+            .sub(preUnlockingUnvestedBN)
+        ),
+      },
     };
   }
 
   private adjustLockedAmount(excess: BN, locked: BN) {
     if (excess.gt(new BN(0))) {
       if (excess.gte(locked)) {
-        return [excess.sub(locked), new BN(0)];
+        return [excess.sub(locked), new BN(0), locked];
       } else {
-        return [new BN(0), locked.sub(excess)];
+        return [new BN(0), locked.sub(excess), excess];
       }
     } else {
-      return [excess, locked];
+      return [new BN(0), locked, new BN(0)];
     }
   }
 
@@ -887,36 +982,31 @@ export class StakeAccount {
     return buffer.slice(0, length);
   }
 
-  public getGovernanceExposure(unixTime: BN): PythBalance {
-    let currentEpoch = unixTime.div(this.config.epochDuration);
-    let unlockingDuration = this.config.unlockingDuration;
-    let currentEpochBI = BigInt(currentEpoch.toString());
-
-    const lockedSummaryBI =
-      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
-        currentEpochBI,
-        unlockingDuration
-      );
-
-    let lockingBN = new BN(lockedSummaryBI.locking.toString());
-    let lockedBN = new BN(lockedSummaryBI.locked.toString());
-    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
-    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
-
-    return new PythBalance(
-      lockingBN.add(lockedBN).add(unlockingBN).add(preunlockingBN)
-    );
-  }
-
-  public hasUnvestedTokens(unixTime: BN): boolean {
-    return this.getBalanceSummary(unixTime).unvested.toBN().gt(new BN(0));
-  }
-
-  public isVestingAccountWithoutGovernance(unixTime: BN) {
-    return (
-      this.hasUnvestedTokens(unixTime) &&
-      this.getGovernanceExposure(unixTime).toBN().eq(new BN(0))
-    );
+  public getVestingAccountState(unixTime: BN): VestingAccountState {
+    const vestingSummary = this.getBalanceSummary(unixTime).unvested;
+    if (vestingSummary.total.isZero()) {
+      return VestingAccountState.FullyVested;
+    }
+    if (
+      vestingSummary.preunlocking.isZero() &&
+      vestingSummary.unlocking.isZero()
+    ) {
+      if (vestingSummary.locked.isZero() && vestingSummary.locking.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyUnlocked;
+      } else if (vestingSummary.unlocked.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyLocked;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
+    } else {
+      if (vestingSummary.locked.isZero() && vestingSummary.locking.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
+      } else if (vestingSummary.unlocked.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyLockedExceptCooldown;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
+    }
   }
 
   private addUnlockingPeriod(unixTime: BN) {
@@ -927,7 +1017,7 @@ export class StakeAccount {
     );
   }
 
-  public getGovernanceExcessPosition(unixTime: BN): BN {
+  public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
     if (!nextVestingEvent) {
       return new BN(0);
@@ -938,15 +1028,7 @@ export class StakeAccount {
       this.addUnlockingPeriod(unixTime)
     );
 
-    return BN.max(
-      this.getGovernanceExposure(timeOfEval)
-        .toBN()
-        .sub(this.getBalanceSummary(timeOfEval).unvested.toBN()),
-      new BN(0)
-    );
-  }
-
-  public hasGovernanceExcessPosition(unixTime: BN) {
-    return this.getGovernanceExcessPosition(unixTime).gt(new BN(0));
+    const balanceSummary = this.getBalanceSummary(timeOfEval).locked;
+    return balanceSummary.locking.toBN().add(balanceSummary.locked.toBN());
   }
 }
