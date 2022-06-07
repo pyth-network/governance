@@ -17,7 +17,7 @@ const Header = () => {
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
           </Link>
         </div>
-        <div className="hidden space-x-20 md:flex">
+        <div className="hidden space-x-10 md:flex">
           <Link href="/staking">
             <a
               className={
