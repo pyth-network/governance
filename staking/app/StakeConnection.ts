@@ -909,13 +909,16 @@ export class StakeAccount {
     );
 
     return {
+      // withdrawable tokens
       withdrawable: new PythBalance(withdrawableBN),
+      // vested tokens not currently withdrawable
       locked: {
         locking: new PythBalance(lockingBN),
         locked: new PythBalance(lockedBN),
         unlocking: new PythBalance(unlockingBN),
         preunlocking: new PythBalance(preunlockingBN),
       },
+      // unvested tokens
       unvested: {
         total: new PythBalance(unvestedBN),
         locked: new PythBalance(lockedUnvestedBN),
