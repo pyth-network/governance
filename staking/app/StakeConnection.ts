@@ -1015,6 +1015,14 @@ export class StakeAccount {
     }
   }
 
+  private addUnlockingPeriod(unixTime: BN) {
+    return unixTime.add(
+      this.config.epochDuration.mul(
+        new BN(this.config.unlockingDuration).add(new BN(1))
+      )
+    );
+  }
+
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
     if (!nextVestingEvent) {
@@ -1023,21 +1031,10 @@ export class StakeAccount {
     const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
     const timeOfEval = BN.max(
       nextVestingEventTimeBn,
-      addUnlockingPeriod(this, unixTime)
+      this.addUnlockingPeriod(unixTime)
     );
 
     const balanceSummary = this.getBalanceSummary(timeOfEval).locked;
     return balanceSummary.locking.toBN().add(balanceSummary.locked.toBN());
   }
-}
-
-function addUnlockingPeriod(
-  caller: StakeConnection | StakeAccount,
-  unixTime: BN
-) {
-  return unixTime.add(
-    caller.config.epochDuration.mul(
-      new BN(caller.config.unlockingDuration).add(new BN(1))
-    )
-  );
 }
