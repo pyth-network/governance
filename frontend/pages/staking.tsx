@@ -54,8 +54,8 @@ const Staking: NextPage = () => {
   const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
   const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
   const [
-    isVestingAccountWithoutGovernance,
-    setIsVestingAccountWithoutGovernance,
+    isLockButtonDisabled,
+    setIsLockButtonDisabled,
   ] = useState<boolean>(false)
   const [
     multipleStakeAccountsModalOption,
@@ -216,6 +216,7 @@ const Staking: NextPage = () => {
       const vestingAccountState =
         mainStakeAccount.getVestingAccountState(currentTime)
       setCurrentVestingAccountState(vestingAccountState)
+      setIsLockButtonDisabled(vestingAccountState != VestingAccountState.FullyVested &&  vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked)
     }
   }
 
@@ -1181,11 +1182,11 @@ const Staking: NextPage = () => {
                                 className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
                                 onClick={handleDeposit}
                                 disabled={
-                                  isVestingAccountWithoutGovernance ||
+                                  isLockButtonDisabled ||
                                   !isSufficientBalance
                                 }
                               >
-                                {isVestingAccountWithoutGovernance ? (
+                                {isLockButtonDisabled ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Lock
                                   </Tooltip>
@@ -1200,11 +1201,11 @@ const Staking: NextPage = () => {
                                 className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
                                 onClick={handleUnlock}
                                 disabled={
-                                  isVestingAccountWithoutGovernance ||
+                                  isLockButtonDisabled ||
                                   !isSufficientBalance
                                 }
                               >
-                                {isVestingAccountWithoutGovernance ? (
+                                {isLockButtonDisabled ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
                                     Unlock
                                   </Tooltip>
