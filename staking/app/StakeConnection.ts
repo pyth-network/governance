@@ -630,7 +630,7 @@ export class StakeConnection {
   }
 
   // Unlock all vested and unvested tokens
-  public async unlockAllUnvested(stakeAccount: StakeAccount) {
+  public async unlockAll(stakeAccount: StakeAccount) {
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );

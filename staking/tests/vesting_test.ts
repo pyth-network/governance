@@ -496,7 +496,7 @@ describe("vesting", async () => {
     );
 
     // UnvestedTokensFullyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
-    await samConnection.unlockAllUnvested(samStakeAccount);
+    await samConnection.unlockAll(samStakeAccount);
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -688,7 +688,7 @@ describe("vesting", async () => {
     );
 
     // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
-    await samConnection.unlockAllUnvested(samStakeAccount);
+    await samConnection.unlockAll(samStakeAccount);
 
     await assertBalanceMatches(
       samConnection,
@@ -746,7 +746,7 @@ describe("vesting", async () => {
     );
 
     // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensFullyUnlockedExceptCooldown
-    await samConnection.unlockAllUnvested(samStakeAccount);
+    await samConnection.unlockAll(samStakeAccount);
 
     await assertBalanceMatches(
       samConnection,
