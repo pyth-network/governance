@@ -134,10 +134,11 @@ describe("vesting", async () => {
       VestingAccountState.UnvestedTokensFullyLocked ==
         stakeAccount.getVestingAccountState(await samConnection.getTime())
     );
+    const firstUnlock = Math.floor((100 * 10 ** 6) / 72) * 10 ** -6;
     assert(
       stakeAccount
         .getNetExcessGovernanceAtVesting(await samConnection.getTime())
-        .eq(PythBalance.fromString("1.388888").toBN())
+        .eq(PythBalance.fromNumber(firstUnlock).toBN())
     );
     await assertBalanceMatches(
       samConnection,
