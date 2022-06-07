@@ -179,7 +179,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        return matches!(self.target_with_parameters, TargetWithParameters::VOTING);
+        matches!(self.target_with_parameters, TargetWithParameters::VOTING)
     }
 }
 
