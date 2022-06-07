@@ -18,6 +18,9 @@ export class PythBalance {
     return this.integerAmount.toNumber() * 10 ** -PYTH_DECIMALS;
   }
 
+  static Zero(): PythBalance {
+    return PythBalance.fromString("0");
+  }
   //THIS METHOD MAY LOSE PRECISION IF AMOUNT IS NOT AN INTEGER
   static fromNumber(amount: number): PythBalance {
     return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS));
@@ -81,5 +84,9 @@ export class PythBalance {
 
   add(other: PythBalance): PythBalance {
     return new PythBalance(other.toBN().add(this.toBN()));
+  }
+
+  isZero(): boolean {
+    return this.eq(PythBalance.Zero());
   }
 }

@@ -19,6 +19,7 @@ import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
 import { expectFailApi } from "./utils/utils";
+import { expectFailGovernance } from "./utils/governance_utils";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
@@ -685,6 +686,11 @@ describe("vesting", async () => {
     assert(
       samStakeAccount.getVestingAccountState(await samConnection.getTime()) ==
         VestingAccountState.UnvestedTokensPartiallyLocked
+    );
+
+    await expectFailApi(
+      samConnection.unlockBeforeVestingEvent(samStakeAccount),
+      `Unexpected account state ${VestingAccountState.UnvestedTokensPartiallyLocked}`
     );
 
     // UnvestedTokensPartiallyLocked -> UnvestedTokensFullyUnlockedExceptCooldown
