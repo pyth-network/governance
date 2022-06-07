@@ -122,6 +122,8 @@ const Staking: NextPage = () => {
     isUnvestedTokensFullyUnlockedExceptCooldownState,
     setIsUnvestedTokensFullyUnlockedExceptCooldownState,
   ] = useState<boolean>(false)
+  const [currentVestingAccountState, setCurrentVestingAccountState] =
+    useState<VestingAccountState>()
 
   // create stake connection and get stake accounts when wallet is connected
   useEffect(() => {
@@ -238,32 +240,8 @@ const Staking: NextPage = () => {
       const currentTime = await stakeConnection.getTime()
       const vestingAccountState =
         mainStakeAccount.getVestingAccountState(currentTime)
-      resetVestingAccountState()
-      vestingAccountState === VestingAccountState.UnvestedTokensFullyLocked
-        ? setIsUnvestedTokensFullyLockedState(true)
-        : vestingAccountState ===
-          VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
-        ? setIsUnvestedTokensFullyLockedExceptCooldownState(true)
-        : vestingAccountState ===
-          VestingAccountState.UnvestedTokensPartiallyLocked
-        ? setIsUnvestedTokensPartiallyLockedState(true)
-        : vestingAccountState ===
-          VestingAccountState.UnvestedTokensFullyUnlocked
-        ? setIsUnvestedTokensFullyUnlockedState(true)
-        : vestingAccountState ===
-          VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
-        ? setIsUnvestedTokensFullyUnlockedExceptCooldownState(true)
-        : setIsFullyVestedState(true)
+      setCurrentVestingAccountState(vestingAccountState)
     }
-  }
-
-  const resetVestingAccountState = () => {
-    setIsUnvestedTokensFullyLockedState(false)
-    setIsUnvestedTokensFullyLockedExceptCooldownState(false)
-    setIsUnvestedTokensPartiallyLockedState(false)
-    setIsUnvestedTokensFullyUnlockedState(false)
-    setIsUnvestedTokensFullyUnlockedExceptCooldownState(false)
-    setIsFullyVestedState(false)
   }
 
   // set amount when input changes
@@ -500,6 +478,167 @@ const Staking: NextPage = () => {
       }
       closeUnvestedModal()
       await refreshStakeAccount()
+    }
+  }
+
+  const unvestedModalText = () => {
+    switch (currentVestingAccountState) {
+      case VestingAccountState.UnvestedTokensPartiallyLocked:
+        return (
+          <>
+            {unvestedLockedPythBalance
+              .add(unvestedLockingPythBalance)
+              .toString()}{' '}
+            unvested tokens are locked in governance. <br />
+            {unvestedUnlockedPythBalance.toString()} unvested tokens are
+            unlocked. <br />
+            {unvestedPreUnlockingPythBalance
+              .add(unvestedUnlockingPythBalance)
+              .toString()}{' '}
+            unvested tokens are in cooldown period.
+            <br />
+            <br />
+            Your {nextVestingAmount.toString()} tokens scheduled to vest on{' '}
+            {nextVestingDate?.toLocaleString()} will be withdrawable on vest.
+            <br />
+            <br />
+            The rest of your unvested tokens are participating in governance.
+          </>
+        )
+      case VestingAccountState.UnvestedTokensFullyLockedExceptCooldown:
+        return (
+          <>
+            {unvestedLockedPythBalance
+              .add(unvestedLockingPythBalance)
+              .toString()}{' '}
+            tokens are locked in governance. <br />
+            {unvestedPreUnlockingPythBalance
+              .add(unvestedUnlockingPythBalance)
+              .toString()}{' '}
+            tokens are in cooldown period.
+          </>
+        )
+      case VestingAccountState.UnvestedTokensFullyLocked:
+        return (
+          <>
+            Your unvested tokens are locked in the contract to participate in
+            governance. On vest, they will become locked tokens, which require a
+            2 epoch cooldown to withdraw.
+            <br />
+            <br />
+            If you would like to withdraw them immediately on vest, you may
+            choose to preliminary unlock them now. This action will cause your{' '}
+            {nextVestingAmount.toString()} tokens scheduled to vest on{' '}
+            {nextVestingDate?.toLocaleString()} to become withdrawable on vest.
+            <br />
+            <br />
+            You may also choose to unlock all of your unvested tokens,
+            immediately reducing your governance power.
+          </>
+        )
+      case VestingAccountState.UnvestedTokensFullyUnlocked:
+        return (
+          <>
+            Your unvested tokens are not participating in governance. On vest,
+            they will become unlocked tokens.
+            <br />
+            <br />
+            Participating in governance requires you to lock your unvested
+            tokens. This means that when your tokens vest, you will have to
+            manually unlock them through by interacting with the UI and wait for
+            a one epoch cooldown before being able to withdraw them.
+          </>
+        )
+      case VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown:
+        return (
+          <>All of your unvested tokens are currently in cooldown period.</>
+        )
+    }
+  }
+
+  const unvestedModalButton = () => {
+    switch (currentVestingAccountState) {
+      case VestingAccountState.UnvestedTokensFullyLocked:
+        return (
+          <>
+            <button
+              type="button"
+              className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
+              onClick={handlePreliminaryUnstakeVestingAccount}
+            >
+              Preliminary unlock
+            </button>
+            <button
+              type="button"
+              className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
+              onClick={handleUnlockAllVestingAccount}
+            >
+              Unlock all
+            </button>
+          </>
+        )
+      case VestingAccountState.FullyVested:
+        return null
+      default:
+        return (
+          <>
+            <button
+              type="button"
+              className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
+              onClick={handleUnvestedModalLockAllButton}
+              disabled={
+                currentVestingAccountState ==
+                  VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
+                currentVestingAccountState ==
+                  VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+              }
+            >
+              {currentVestingAccountState ==
+                VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
+              currentVestingAccountState ==
+                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ? (
+                <Tooltip
+                  content="Your tokens are in the process of being unlocked."
+                  className="m-4"
+                >
+                  Lock all
+                </Tooltip>
+              ) : (
+                'Lock all'
+              )}
+            </button>
+            <button
+              type="button"
+              className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
+              onClick={handleUnlockAllVestingAccount}
+              disabled={
+                currentVestingAccountState ==
+                  VestingAccountState.UnvestedTokensFullyUnlocked ||
+                currentVestingAccountState ==
+                  VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+              }
+            >
+              {currentVestingAccountState ==
+                VestingAccountState.UnvestedTokensFullyUnlocked ||
+              currentVestingAccountState ==
+                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ? (
+                <Tooltip
+                  content={
+                    currentVestingAccountState ==
+                    VestingAccountState.UnvestedTokensFullyUnlocked
+                      ? "You don't have any unvested tokens to unlock."
+                      : 'Your tokens are in the process of being unlocked.'
+                  }
+                  className="m-4"
+                >
+                  Unlock all
+                </Tooltip>
+              ) : (
+                'Unlock all'
+              )}
+            </button>
+          </>
+        )
     }
   }
 
@@ -881,181 +1020,19 @@ const Staking: NextPage = () => {
                   <div className="mt-3 mb-10 space-y-4">
                     <p className="font-poppins text-sm text-scampi">
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
-                      unvested tokens.
-                      <br />
-                      {isUnvestedTokensPartiallyLockedState ? (
-                        <>
-                          {unvestedLockedPythBalance
-                            .add(unvestedLockingPythBalance)
-                            .toString()}{' '}
-                          unvested tokens are locked in governance. <br />
-                          {unvestedUnlockedPythBalance.toString()} unvested
-                          tokens are unlocked. <br />
-                          {unvestedPreUnlockingPythBalance
-                            .add(unvestedUnlockingPythBalance)
-                            .toString()}{' '}
-                          unvested tokens are in cooldown.
-                          <br />
-                        </>
-                      ) : null}
-                      {isUnvestedTokensFullyLockedExceptCooldownState ? (
-                        <>
-                          {unvestedLockedPythBalance
-                            .add(unvestedLockingPythBalance)
-                            .toString()}{' '}
-                          tokens are locked in governance. <br />
-                          {unvestedPreUnlockingPythBalance
-                            .add(unvestedUnlockingPythBalance)
-                            .toString()}{' '}
-                          tokens are in cooldown.
-                          <br />
-                        </>
-                      ) : null}
+                      unvested tokens.{' '}
                       {unvestedTotalPythBalance.toString() !== '0'
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
+                      <br />
+                      <br />
+                      {unvestedModalText()}
                     </p>
-                    {isUnvestedTokensFullyLockedState ? (
-                      <p className="font-poppins text-sm text-scampi">
-                        Your unvested tokens are locked in the contract to
-                        participate in governance. On vest, they will become
-                        locked tokens, which require a 2 epoch cooldown to
-                        withdraw.
-                      </p>
-                    ) : null}
-                    {/* {unvestedTotalPythBalance.toString() !== '0' &&
-                    !isVestingAccountWithoutGovernance ? (
-                      <p className="font-poppins text-sm text-scampi">
-                        Your unvested tokens are locked in the contract to
-                        participate in governance. On vest, they will become
-                        locked tokens, which require a 2 epoch cooldown to
-                        withdraw.
-                      </p>
-                    ) : null} */}
-                    {unvestedTotalPythBalance.toString() !== '0' &&
-                    isVestingAccountWithoutGovernance ? (
-                      <div className="mt-3 mb-10 space-y-4">
-                        <p className="font-poppins text-sm text-scampi">
-                          Your unvested tokens are not participating in
-                          governance. On vest, they will become unlocked tokens.
-                        </p>
-                        <p className="font-poppins text-sm text-scampi">
-                          Participating in governance requires you to lock your
-                          unvested tokens. This means that when your tokens
-                          vest, you will have to manually unlock them through by
-                          interacting with the UI and wait for a one epoch
-                          cooldown before being able to withdraw them.
-                        </p>
-                      </div>
-                    ) : null}
-                    {isUnvestedTokensFullyLockedState ? (
-                      <>
-                        <p className="font-poppins text-sm text-scampi">
-                          If you would like to withdraw them immediately on
-                          vest, you may choose to preliminary unlock them now.
-                          This action will cause your{' '}
-                          {nextVestingAmount.toString()} tokens scheduled to
-                          vest on {nextVestingDate?.toLocaleString()} to become
-                          withdrawable on vest.
-                        </p>
-                        <p className="font-poppins text-sm text-scampi">
-                          You may also choose to unlock all of your unvested
-                          tokens, immediately reducing your governance power.
-                        </p>
-                      </>
-                    ) : null}
-
-                    {isUnvestedTokensFullyUnlockedState ? (
-                      <div>
-                        <p className="font-poppins text-sm text-scampi">
-                          Your unvested tokens are not locked in governance.
-                        </p>
-                      </div>
-                    ) : null}
-
-                    {isUnvestedTokensPartiallyLockedState ? (
-                      <div>
-                        <p className="font-poppins text-sm text-scampi">
-                          Your {nextVestingAmount.toString()} tokens scheduled
-                          to vest on {nextVestingDate?.toLocaleString()} will be
-                          withdrawable on vest.
-                        </p>
-                        <p className="font-poppins text-sm text-scampi">
-                          The rest of your unvested tokens are participating in
-                          governance.
-                        </p>
-                      </div>
-                    ) : null}
                   </div>
-                  {isUnvestedTokensFullyLockedState ? (
-                    <div className="flex flex-col space-y-4 text-center md:block md:space-x-10">
-                      <button
-                        type="button"
-                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
-                        onClick={handlePreliminaryUnstakeVestingAccount}
-                      >
-                        Preliminary unlock
-                      </button>
-                      <button
-                        type="button"
-                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
-                        onClick={handleUnlockAllVestingAccount}
-                      >
-                        Unlock all
-                      </button>
-                    </div>
-                  ) : !isFullyVestedState &&
-                    !isUnvestedTokensFullyLockedState ? (
-                    <div className="flex flex-col space-y-4 text-center sm:block sm:space-x-10">
-                      <button
-                        type="button"
-                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
-                        onClick={handleUnvestedModalLockAllButton}
-                        disabled={
-                          isUnvestedTokensFullyLockedExceptCooldownState ||
-                          isUnvestedTokensFullyUnlockedExceptCooldownState
-                        }
-                      >
-                        {isUnvestedTokensFullyLockedExceptCooldownState ||
-                        isUnvestedTokensFullyUnlockedExceptCooldownState ? (
-                          <Tooltip
-                            content="Your tokens are in the process of being unlocked."
-                            className="m-4"
-                          >
-                            Lock all
-                          </Tooltip>
-                        ) : (
-                          'Lock all'
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        className="primary-btn py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover disabled:bg-valhalla"
-                        onClick={handleUnlockAllVestingAccount}
-                        disabled={
-                          isUnvestedTokensFullyUnlockedState ||
-                          isUnvestedTokensFullyUnlockedExceptCooldownState
-                        }
-                      >
-                        {isUnvestedTokensFullyUnlockedState ||
-                        isUnvestedTokensFullyUnlockedExceptCooldownState ? (
-                          <Tooltip
-                            content={
-                              isUnvestedTokensFullyUnlockedState
-                                ? "You don't have any unvested tokens to unlock."
-                                : 'Your tokens are in the process of being unlocked.'
-                            }
-                            className="m-4"
-                          >
-                            Unlock all
-                          </Tooltip>
-                        ) : (
-                          'Unlock all'
-                        )}
-                      </button>
-                    </div>
-                  ) : null}
+                  <div className="flex flex-col space-y-4 text-center md:block md:space-x-10">
+                    {unvestedModalButton()}
+                  </div>
                 </Dialog.Panel>
               </Transition.Child>
             </div>
