@@ -2,7 +2,7 @@ import { Counter, Gauge, register } from "prom-client";
 import { Program, Wallet } from "@project-serum/anchor";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import  BN  from "bn.js";
-import { DEVNET_ENDPOINT, DEVNET_STAKING_ADDRESS } from "pyth-staking-api";
+import { DEVNET_ENDPOINT, DEVNET_STAKING_ADDRESS, PythBalance } from "pyth-staking-api";
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
 
 const DEVNET = false;
@@ -23,14 +23,14 @@ async function main() {
 		help: 'The number of accounts that exist',
 	});
 	const numPositionsGauge = new Gauge({
-		name: 'num_positions',
+		name: 'staking_num_positions',
 		help: 'The number of positions of an account in Pyth tokens',
 		labelNames: ['address'],
 	});
-    const unvestedBalanceGauge = new Gauge({
-		name: 'unvested_balance',
+    const balanceTypeGauge = new Gauge({
+		name: 'staking_balance_by_type',
 		help: 'The unvested token balance of an account',
-		labelNames: ['address'],
+		labelNames: ['address', 'type', 'subtype'],
 	});
     const accountFetchErrCtr = new Counter({
 		name: 'staking_account_error_fetching',
@@ -72,7 +72,16 @@ async function main() {
                     numPositionsGauge.set(label, stakeAccount.stakeAccountPositionsJs.positions.filter(p => p != null).length);
                     tokensGauge.set(label, stakeAccount.tokenBalance.toNumber());
                     const balanceSummary = stakeAccount.getBalanceSummary(await stakeConnection.getTime());
-                    unvestedBalanceGauge.set(label, balanceSummary.unvested.total.toNumber());
+                    for (var type in balanceSummary) {
+                        if (balanceSummary[type] instanceof PythBalance) {
+                            balanceTypeGauge.set({address: address.toBase58(), type: type, subtype: type}, balanceSummary[type].toNumber());
+                        } else {
+                            for (var subtype in balanceSummary[type]) {
+                                balanceTypeGauge.set({address: address.toBase58(), type: type, subtype: subtype}, balanceSummary[type][subtype].toNumber());
+                            }
+                        }
+                    }
+                   
                 }
                 catch(e){
                     // TODO: Distinguish between error types
