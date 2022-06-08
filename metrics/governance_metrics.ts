@@ -63,6 +63,8 @@ async function main() {
 
     }
 
+    await register.metrics();
+
 }
 
 main();
