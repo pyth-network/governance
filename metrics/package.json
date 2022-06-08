@@ -5,6 +5,12 @@
   "license": "MIT",
   "dependencies": {
     "prom-client": "^14.0.1",
-    "pyth-staking-api": "^1.2.14"
+    "pyth-staking-api": "file:../staking/pyth-staking-api-v1.2.14.tgz",
+    "@solana/web3.js": "^1.43.6"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --w"
+    ]
   }
 }
