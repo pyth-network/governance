@@ -10,37 +10,39 @@ import {
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
 
 async function main() {
-  const globalFetchErrCtr = new Counter({
+  const globalFetchingError = new Counter({
     name: "staking_global_fetching_error",
     help: "Whether we failed fetching the list of accounts",
   });
 
-  const tokensGauge = new Gauge({
+  const accountValueTokens = new Gauge({
     name: "staking_account_value_tokens",
     help: "The value of an account in Pyth tokens",
     labelNames: ["address"],
   });
-  const stakeAccountsGauge = new Gauge({
+
+  // we probably don't need this as we can count all the labels for a gage
+  const accountsCount = new Gauge({
     name: "staking_accounts_count",
     help: "The number of accounts that exist",
   });
-  const numPositionsGauge = new Gauge({
+  const numPositions = new Gauge({
     name: "staking_num_positions",
-    help: "The number of positions of an account in Pyth tokens",
+    help: "The number of positions of an account",
     labelNames: ["address"],
   });
-  const balanceTypeGauge = new Gauge({
+  const balanceByType = new Gauge({
     name: "staking_balance_by_type",
     help: "The unvested token balance of an account",
     labelNames: ["address", "type", "subtype"],
   });
-  const accountFetchErrCtr = new Counter({
+  const accountErrorFetching = new Counter({
     name: "staking_account_error_fetching",
     help: "Whether the code failed fetching an account",
     labelNames: ["address"],
   });
 
-  const accountParseErrCtr = new Counter({
+  const accountErrorParsing = new Counter({
     name: "staking_account_error_parsing",
     help: "Whether the code failed parsing an account",
     labelNames: ["address"],
@@ -62,32 +64,35 @@ async function main() {
       // fetch accounts
       const allPositionAccountAddresses =
         await stakeConnection.getAllStakeAccountAddresses();
-      stakeAccountsGauge.set({}, allPositionAccountAddresses.length);
+      accountsCount.set({}, allPositionAccountAddresses.length);
       for (const address of allPositionAccountAddresses) {
         console.log(address.toBase58());
         const label = { address: address.toBase58() };
         try {
           //fetch account
           const stakeAccount = await stakeConnection.loadStakeAccount(address);
-          numPositionsGauge.set(
+          numPositions.set(
             label,
             stakeAccount.stakeAccountPositionsJs.positions.filter(
               (p) => p != null
             ).length
           );
-          tokensGauge.set(label, stakeAccount.tokenBalance.toNumber());
+          accountValueTokens.set(
+            label,
+            new PythBalance(stakeAccount.tokenBalance).toNumber()
+          );
           const balanceSummary = stakeAccount.getBalanceSummary(
             await stakeConnection.getTime()
           );
           for (let type in balanceSummary) {
             if (balanceSummary[type] instanceof PythBalance) {
-              balanceTypeGauge.set(
+              balanceByType.set(
                 { address: address.toBase58(), type: type, subtype: type },
                 (balanceSummary[type] as PythBalance).toNumber()
               );
             } else {
               for (let subtype in balanceSummary[type]) {
-                balanceTypeGauge.set(
+                balanceByType.set(
                   { address: address.toBase58(), type: type, subtype: subtype },
                   balanceSummary[type][subtype].toNumber()
                 );
@@ -98,15 +103,15 @@ async function main() {
           // TODO: Distinguish between error types
           if (true) {
             //rpc error
-            accountFetchErrCtr.inc(label, 1);
+            accountErrorFetching.inc(label, 1);
           } else {
             //parsing error
-            accountParseErrCtr.inc(label, 1);
+            accountErrorParsing.inc(label, 1);
           }
         }
       }
     } catch {
-      globalFetchErrCtr.inc(1);
+      globalFetchingError.inc(1);
     }
     console.log(await register.metrics());
   }
