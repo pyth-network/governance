@@ -1,108 +1,120 @@
 import { Counter, Gauge, register } from "prom-client";
 import { Program, Wallet } from "@project-serum/anchor";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import  BN  from "bn.js";
-import { DEVNET_ENDPOINT, DEVNET_STAKING_ADDRESS, PythBalance } from "pyth-staking-api";
+import BN from "bn.js";
+import {
+  DEVNET_ENDPOINT,
+  DEVNET_STAKING_ADDRESS,
+  PythBalance,
+} from "pyth-staking-api";
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
 
 const DEVNET = false;
 
 async function main() {
-    const globalFetchErrCtr = new Counter({
-        name: 'staking_global_fetching_error',
-		help: 'Whether we failed fetching the list of accounts',
-    });
+  const globalFetchErrCtr = new Counter({
+    name: "staking_global_fetching_error",
+    help: "Whether we failed fetching the list of accounts",
+  });
 
-	const tokensGauge = new Gauge({
-		name: 'staking_account_value_tokens',
-		help: 'The value of an account in Pyth tokens',
-		labelNames: ['address'],
-	});
-    const stakeAccountsGauge = new Gauge({
-		name: 'staking_accounts_count',
-		help: 'The number of accounts that exist',
-	});
-	const numPositionsGauge = new Gauge({
-		name: 'staking_num_positions',
-		help: 'The number of positions of an account in Pyth tokens',
-		labelNames: ['address'],
-	});
-    const balanceTypeGauge = new Gauge({
-		name: 'staking_balance_by_type',
-		help: 'The unvested token balance of an account',
-		labelNames: ['address', 'type', 'subtype'],
-	});
-    const accountFetchErrCtr = new Counter({
-		name: 'staking_account_error_fetching',
-		help: 'Whether the code failed fetching an account',
-		labelNames: ['address'],
-	});
+  const tokensGauge = new Gauge({
+    name: "staking_account_value_tokens",
+    help: "The value of an account in Pyth tokens",
+    labelNames: ["address"],
+  });
+  const stakeAccountsGauge = new Gauge({
+    name: "staking_accounts_count",
+    help: "The number of accounts that exist",
+  });
+  const numPositionsGauge = new Gauge({
+    name: "staking_num_positions",
+    help: "The number of positions of an account in Pyth tokens",
+    labelNames: ["address"],
+  });
+  const balanceTypeGauge = new Gauge({
+    name: "staking_balance_by_type",
+    help: "The unvested token balance of an account",
+    labelNames: ["address", "type", "subtype"],
+  });
+  const accountFetchErrCtr = new Counter({
+    name: "staking_account_error_fetching",
+    help: "Whether the code failed fetching an account",
+    labelNames: ["address"],
+  });
 
-    const accountParseErrCtr = new Counter({
-		name: 'staking_account_error_parsing',
-		help: 'Whether the code failed parsing an account',
-		labelNames: ['address'],
-	});
+  const accountParseErrCtr = new Counter({
+    name: "staking_account_error_parsing",
+    help: "Whether the code failed parsing an account",
+    labelNames: ["address"],
+  });
 
-    let RPC_ENDPOINT: string;
-    let PROG_ID: PublicKey;
-    if (DEVNET) {
-      RPC_ENDPOINT = DEVNET_ENDPOINT;
-      PROG_ID = DEVNET_STAKING_ADDRESS;
-    }
-    const connection = new Connection(RPC_ENDPOINT);
-    const emptyWallet = new Wallet(Keypair.generate());
-    const stakeConnection = await StakeConnection.createStakeConnection(
-      connection,
-      emptyWallet,
-      PROG_ID
-    );
+  let RPC_ENDPOINT: string;
+  let PROG_ID: PublicKey;
+  if (DEVNET) {
+    RPC_ENDPOINT = DEVNET_ENDPOINT;
+    PROG_ID = DEVNET_STAKING_ADDRESS;
+  }
+  const connection = new Connection(RPC_ENDPOINT);
+  const emptyWallet = new Wallet(Keypair.generate());
+  const stakeConnection = await StakeConnection.createStakeConnection(
+    connection,
+    emptyWallet,
+    PROG_ID
+  );
 
-
-    while (true){
+  while (true) {
+    try {
+      // fetch accounts
+      const allPositionAccountAddresses =
+        await stakeConnection.getAllStakeAccountAddresses();
+      stakeAccountsGauge.set({}, allPositionAccountAddresses.length);
+      for (const address of allPositionAccountAddresses) {
+        const label = { address: address.toBase58() };
         try {
-            // fetch accounts
-            const allPositionAccountAddresses = await stakeConnection.getAllStakeAccountAddresses();
-            stakeAccountsGauge.set({}, allPositionAccountAddresses.length);
-            for (const address of allPositionAccountAddresses) {
-                const label = { address: address.toBase58() };
-                try {
-                    //fetch account
-                    const stakeAccount = await stakeConnection.loadStakeAccount(address);
-                    numPositionsGauge.set(label, stakeAccount.stakeAccountPositionsJs.positions.filter(p => p != null).length);
-                    tokensGauge.set(label, stakeAccount.tokenBalance.toNumber());
-                    const balanceSummary = stakeAccount.getBalanceSummary(await stakeConnection.getTime());
-                    for (var type in balanceSummary) {
-                        if (balanceSummary[type] instanceof PythBalance) {
-                            balanceTypeGauge.set({address: address.toBase58(), type: type, subtype: type}, balanceSummary[type].toNumber());
-                        } else {
-                            for (var subtype in balanceSummary[type]) {
-                                balanceTypeGauge.set({address: address.toBase58(), type: type, subtype: subtype}, balanceSummary[type][subtype].toNumber());
-                            }
-                        }
-                    }
-                   
-                }
-                catch(e){
-                    // TODO: Distinguish between error types
-                    if (true) {
-                        //rpc error 
-                        accountFetchErrCtr.inc(label, 1);
-                    }
-                    else {
-                        //parsing error 
-                        accountParseErrCtr.inc(label, 1);
-                    }
-                }
+          //fetch account
+          const stakeAccount = await stakeConnection.loadStakeAccount(address);
+          numPositionsGauge.set(
+            label,
+            stakeAccount.stakeAccountPositionsJs.positions.filter(
+              (p) => p != null
+            ).length
+          );
+          tokensGauge.set(label, stakeAccount.tokenBalance.toNumber());
+          const balanceSummary = stakeAccount.getBalanceSummary(
+            await stakeConnection.getTime()
+          );
+          for (var type in balanceSummary) {
+            if (balanceSummary[type] instanceof PythBalance) {
+              balanceTypeGauge.set(
+                { address: address.toBase58(), type: type, subtype: type },
+                balanceSummary[type].toNumber()
+              );
+            } else {
+              for (var subtype in balanceSummary[type]) {
+                balanceTypeGauge.set(
+                  { address: address.toBase58(), type: type, subtype: subtype },
+                  balanceSummary[type][subtype].toNumber()
+                );
+              }
             }
+          }
+        } catch (e) {
+          // TODO: Distinguish between error types
+          if (true) {
+            //rpc error
+            accountFetchErrCtr.inc(label, 1);
+          } else {
+            //parsing error
+            accountParseErrCtr.inc(label, 1);
+          }
         }
-        catch {
-            globalFetchErrCtr.inc(1);
-        }
+      }
+    } catch {
+      globalFetchErrCtr.inc(1);
     }
+  }
 
-    await register.metrics();
-
+  await register.metrics();
 }
 
 main();
