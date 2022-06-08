@@ -9,8 +9,6 @@ import {
 } from "pyth-staking-api";
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
 
-const DEVNET = false;
-
 async function main() {
   const globalFetchErrCtr = new Counter({
     name: "staking_global_fetching_error",
@@ -48,12 +46,9 @@ async function main() {
     labelNames: ["address"],
   });
 
-  let RPC_ENDPOINT: string;
-  let PROG_ID: PublicKey;
-  if (DEVNET) {
-    RPC_ENDPOINT = DEVNET_ENDPOINT;
-    PROG_ID = DEVNET_STAKING_ADDRESS;
-  }
+  const RPC_ENDPOINT = DEVNET_ENDPOINT;
+  const PROG_ID = DEVNET_STAKING_ADDRESS;
+
   const connection = new Connection(RPC_ENDPOINT);
   const emptyWallet = new Wallet(Keypair.generate());
   const stakeConnection = await StakeConnection.createStakeConnection(
@@ -69,6 +64,7 @@ async function main() {
         await stakeConnection.getAllStakeAccountAddresses();
       stakeAccountsGauge.set({}, allPositionAccountAddresses.length);
       for (const address of allPositionAccountAddresses) {
+        console.log(address.toBase58());
         const label = { address: address.toBase58() };
         try {
           //fetch account
@@ -83,14 +79,14 @@ async function main() {
           const balanceSummary = stakeAccount.getBalanceSummary(
             await stakeConnection.getTime()
           );
-          for (var type in balanceSummary) {
+          for (let type in balanceSummary) {
             if (balanceSummary[type] instanceof PythBalance) {
               balanceTypeGauge.set(
                 { address: address.toBase58(), type: type, subtype: type },
-                balanceSummary[type].toNumber()
+                (balanceSummary[type] as PythBalance).toNumber()
               );
             } else {
-              for (var subtype in balanceSummary[type]) {
+              for (let subtype in balanceSummary[type]) {
                 balanceTypeGauge.set(
                   { address: address.toBase58(), type: type, subtype: subtype },
                   balanceSummary[type][subtype].toNumber()
@@ -112,9 +108,8 @@ async function main() {
     } catch {
       globalFetchErrCtr.inc(1);
     }
+    console.log(await register.metrics());
   }
-
-  await register.metrics();
 }
 
 main();

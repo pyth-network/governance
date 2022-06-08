@@ -114,7 +114,7 @@
     buffer-layout "^1.2.0"
     dotenv "10.0.0"
 
-"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.22.0", "@solana/web3.js@^1.36.0":
+"@solana/web3.js@^1.21.0", "@solana/web3.js@^1.22.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.43.6":
   version "1.43.6"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.43.6.tgz#f18eb7f6fc86562aeaa527a25560a25405318dd2"
   integrity sha512-F1Q7EOnLi5X+Ap5bAEi5PTwwXPZR+GTfIyOuWpWJfgm3GoawdP/x5lxJolDzzV5S99bNEU/rSTdxcW9EFzIiEw==
@@ -585,10 +585,10 @@ prom-client@^14.0.1:
   dependencies:
     tdigest "^0.1.1"
 
-pyth-staking-api@^1.2.14:
-  version "1.2.14"
-  resolved "https://registry.yarnpkg.com/pyth-staking-api/-/pyth-staking-api-1.2.14.tgz#e6fbe914cf7f5f0becd2475a8fe7f620c9ac2860"
-  integrity sha512-4Sn9stGvzFuvgdAmyV/oNDp9yL2RVRmtjEVWctD+Xt9m9g/gfQUrw5uMUoMNzzVk7jH+ftcKo9r3TEo/1WwD/g==
+pyth-staking-api@1.2.15:
+  version "1.2.15"
+  resolved "https://registry.yarnpkg.com/pyth-staking-api/-/pyth-staking-api-1.2.15.tgz#70cc01c5b7990d8aae00f0c18b47216469ac1aff"
+  integrity sha512-q3mOIagXDutSJvQb4EUn9yZHYs8FuNRNXGxEpdQYMANxEzFli3mij4IPPL+H57FF1B9G7nt6IFVQSE4iT6F3Kg==
   dependencies:
     "@project-serum/anchor" "0.24.2"
     "@solana/spl-governance" "^0.0.34"
