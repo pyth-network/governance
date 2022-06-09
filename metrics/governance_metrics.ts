@@ -95,6 +95,7 @@ export class Metrics {
       unlockingDuration: stakeConnection.config.unlockingDuration,
       epochDuration: stakeConnection.config.epochDuration,
       freeze: stakeConnection.config.freeze,
+      mockClockTime: stakeConnection.config.mockClockTime,
     };
 
     const expectedConfig = {
@@ -105,6 +106,7 @@ export class Metrics {
       unlockingDuration: 1,
       epochDuration: new BN(3600),
       freeze: false,
+      mockClockTime: new BN(0),
     };
 
     if (JSON.stringify(actualConfig) != JSON.stringify(expectedConfig)) {
