@@ -10,10 +10,6 @@ async function main() {
     console.log(await register.metrics());
   }
 }
-// setInterval(async () => {
-//     console.log("FIRST");
-
-// }, 10000);
 const server = express();
 server.get("/metrics", async (req, res) => {
   try {
