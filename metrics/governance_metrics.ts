@@ -43,6 +43,7 @@ export class Metrics {
     help: "The number of positions of an account",
     labelNames: ["address"],
   });
+
   accountIllegal = new Gauge({
     name: "staking_account_legal",
     help: "Whether an account is in an illegal state",
