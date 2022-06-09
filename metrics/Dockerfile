@@ -18,4 +18,4 @@ ENV APP_NAME=$APP_NAME
 
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["yarn", "ts-node", "/app/$APP_NAME.ts"]
+CMD ["yarn", "ts-node", "/app/server.ts"]
