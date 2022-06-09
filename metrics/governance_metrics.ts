@@ -6,11 +6,13 @@ import {
   DEVNET_ENDPOINT,
   DEVNET_STAKING_ADDRESS,
   DEVNET_PYTH_MINT,
+  DEVNET_GOVERNANCE_ADDRESS,
   LOCALNET_REALM_ID,
   PythBalance,
 } from "pyth-staking-api";
 import * as wasm from "pyth-staking-wasm";
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
+import { tryGetRealmConfig } from "@solana/spl-governance";
 
 export class Metrics {
   globalFetchingError = new Counter({
@@ -24,9 +26,10 @@ export class Metrics {
     labelNames: ["address"],
   });
 
-  unexpectedStakingConfig = new Gauge({
-    name: "staking_unpexpected_staking_config",
+  unexpectedConfig = new Gauge({
+    name: "staking_unpexpected_config",
     help: "The number of times that the onchain config account hasn't matched what we expect",
+    labelNames: ["program"],
   });
 
   globalLockedInGovernance = new Gauge({
@@ -84,7 +87,32 @@ export class Metrics {
       new PythBalance(stakeAccount.tokenBalance).toNumber()
     );
   }
-  private updateUnexpectedStakingConfig(stakeConnection: StakeConnection) {
+  private async updateUnexpectedStakingConfig(
+    stakeConnection: StakeConnection
+  ) {
+    const actualRealmConfig = (
+      await tryGetRealmConfig(
+        stakeConnection.provider.connection,
+        DEVNET_GOVERNANCE_ADDRESS,
+        LOCALNET_REALM_ID
+      )
+    ).account;
+
+    const expectedRealmConfig = {
+      accountType: 11,
+      realm: LOCALNET_REALM_ID,
+      communityVoterWeightAddin: DEVNET_STAKING_ADDRESS,
+      maxCommunityVoterWeightAddin: DEVNET_STAKING_ADDRESS,
+    };
+
+    if (
+      JSON.stringify(actualRealmConfig) != JSON.stringify(expectedRealmConfig)
+    ) {
+      this.unexpectedConfig.set({ program: "governance" }, 1);
+    } else {
+      this.unexpectedConfig.set({ program: "governance" }, 0);
+    }
+
     const actualConfig = {
       pythGovernanceRealm: stakeConnection.config.pythGovernanceRealm,
       pythTokenMint: stakeConnection.config.pythTokenMint,
@@ -106,7 +134,9 @@ export class Metrics {
     };
 
     if (JSON.stringify(actualConfig) != JSON.stringify(expectedConfig)) {
-      this.unexpectedStakingConfig.inc();
+      this.unexpectedConfig.set({ program: "staking" }, 1);
+    } else {
+      this.unexpectedConfig.set({ program: "staking" }, 0);
     }
   }
 
@@ -263,6 +293,7 @@ export class Metrics {
 
     try {
       const connection = new Connection(RPC_ENDPOINT);
+
       const emptyWallet = new Wallet(Keypair.generate());
       const stakeConnection = await StakeConnection.createStakeConnection(
         connection,
@@ -272,7 +303,7 @@ export class Metrics {
       const time = await stakeConnection.getTime();
       const slot = await stakeConnection.provider.connection.getSlot();
 
-      this.updateUnexpectedStakingConfig(stakeConnection);
+      await this.updateUnexpectedStakingConfig(stakeConnection);
       await this.updateGlobalLockedInGovernance(stakeConnection, time);
 
       // fetch accounts
