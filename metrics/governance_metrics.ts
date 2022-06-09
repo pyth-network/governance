@@ -29,14 +29,10 @@ export class Metrics {
     help: "The number of times that the onchain config account hasn't matched what we expect",
   });
 
-  globalLockedInGovernanceNow = new Gauge({
-    name: "staking_global_locked_in_governance_now",
+  globalLockedInGovernance = new Gauge({
+    name: "staking_global_locked_in_governance",
     help: "The on-chain aggregate number of locked tokens in governance this epoch",
-  });
-
-  globalLockedInGovernanceNext = new Gauge({
-    name: "staking_global_locked_in_governance_next",
-    help: "The on-chain aggregate number of locked tokens in governance next epoch",
+    labelNames: ["epoch"],
   });
 
   numPositions = new Gauge({
@@ -130,10 +126,12 @@ export class Metrics {
       BigInt(currentEpoch.add(stakeConnection.config.epochDuration).toString())
     );
 
-    this.globalLockedInGovernanceNow.set(
+    this.globalLockedInGovernance.set(
+      { epoch: "now" },
       new PythBalance(new BN(lockedNow.toString())).toNumber()
     );
-    this.globalLockedInGovernanceNext.set(
+    this.globalLockedInGovernance.set(
+      { epoch: "next" },
       new PythBalance(new BN(lockedNext.toString())).toNumber()
     );
   }
