@@ -6,7 +6,7 @@ ARG APP_NAME=governance_metrics
 FROM node:$NODE_VERSION as base
 
 WORKDIR /app
-COPY ./package.json ./tsconfig.json ./*.ts ./entrypoint.sh /app
+COPY ./package.json ./tsconfig.json ./*.ts ./entrypoint.sh /app/
 
 RUN chmod +x entrypoint.sh
 
