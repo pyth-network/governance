@@ -8,7 +8,7 @@
     "@solana/web3.js": "^1.43.6",
     "express": "^4.18.1",
     "prom-client": "^14.0.1",
-    "pyth-staking-api": "1.2.15",
+    "pyth-staking-api": "1.2.16",
     "pyth-staking-wasm": "^0.3.2"
   },
   "lint-staged": {
