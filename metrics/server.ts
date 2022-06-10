@@ -8,6 +8,9 @@ async function main() {
   while (true) {
     await metrics.updateAllMetrics();
     console.log(await register.metrics());
+    await new Promise((resolve) =>
+      setTimeout(resolve, parseInt(process.env.INTERVAL || "0"))
+    );
   }
 }
 const server = express();
