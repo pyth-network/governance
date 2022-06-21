@@ -129,6 +129,20 @@ export class StakeConnection {
     );
   }
 
+  public async getAllStakeAccountAddresses(): Promise<PublicKey[]> {
+    // Use the raw web3.js connection so that anchor doesn't try to borsh deserialize the zero-copy serialized account
+    const allAccts = await this.provider.connection.getProgramAccounts(
+      this.program.programId,
+      {
+        encoding: "base64",
+        filters: [
+          { memcmp: this.program.coder.accounts.memcmp("PositionData") },
+        ],
+      }
+    );
+    return allAccts.map((acct) => acct.pubkey);
+  }
+
   /** Gets a users stake accounts */
   public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
     const res = await this.program.provider.connection.getProgramAccounts(
