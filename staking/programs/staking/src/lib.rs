@@ -44,7 +44,6 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
 
-
 #[program]
 pub mod staking {
 
@@ -493,6 +492,9 @@ pub mod staking {
         {
             let config = &mut ctx.accounts.config;
             config.mock_clock_time = config.mock_clock_time.checked_add(seconds).unwrap();
+            // This assert can't possibly fail, but this gets the string "MOCK_CLOCK_ENABLED"
+            // into the binary. Before we deploy, we check for this string and abort the deployment.
+            assert!(config.mock_clock_time.to_string() != "MOCK_CLOCK_ENABLED");
             Ok(())
         }
         #[cfg(not(feature = "mock-clock"))]
