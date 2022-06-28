@@ -196,6 +196,12 @@ async function upgradeProgram(
 ) {
   // The web3.js functions for interacting with the upgradeable loader are extremely primitive
   console.log("Upgrading program at %s", connection.rpcEndpoint);
+  const grepResults = shell.exec(`grep -q MOCK_CLOCK_ENABLED ${soPath}`);
+  const GREP_SUCCESS = 0;
+  if (grepResults.code == GREP_SUCCESS) {
+    console.error("Grep found MOCK_CLOCK_ENABLED in the binary. Aborting.");
+    throw new Error("Refusing to deploy binary with mock clock enabled");
+  }
   shell.exec(
     `solana program deploy ${soPath} --program-id ${DEVNET_STAKING_ADDRESS.toBase58()} -u ${
       connection.rpcEndpoint
