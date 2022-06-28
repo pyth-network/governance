@@ -68,8 +68,8 @@ describe("clock_api", async () => {
     const grepResults = shell.exec(
       `grep -q MOCK_CLOCK_ENABLED ${config.path.binary_path}`
     );
-    const GREP_LINES_FOUND = 0;
-    assert.equal(grepResults.code, GREP_LINES_FOUND);
+    const GREP_SUCCESS = 0;
+    assert.equal(grepResults.code, GREP_SUCCESS);
   });
 
   after(async () => {
