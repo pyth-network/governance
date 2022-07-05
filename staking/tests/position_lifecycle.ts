@@ -262,14 +262,6 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
-
-    await program.methods
       .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
         targetAccount: votingProductMetadataAccount,
@@ -323,6 +315,15 @@ describe("position_lifecycle", async () => {
 
     await program.methods
       .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
+      .accounts({
+        targetAccount: votingProductMetadataAccount,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .rpc();
+
+    // Positions have swapped so this should work
+    await program.methods
+      .closePosition(0, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
         targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,

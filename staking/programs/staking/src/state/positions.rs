@@ -51,7 +51,7 @@ impl PositionData {
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut self.positions[i])
+        None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
