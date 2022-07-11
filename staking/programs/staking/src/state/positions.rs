@@ -49,18 +49,24 @@ impl PositionData {
 
     // Makes position at index i none, and swaps positions to preserve the invariant
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
+        if (*next_index as usize) <= i {
+            return Err(error!(ErrorCode::PositionOutOfBounds));
+        }
         *next_index -= 1;
         self.positions[i] = self.positions[*next_index as usize];
         None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
     }
 
-    // Makes position at index i none, and swaps positions to preserve the invariant
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
         Some(position).try_write(&mut self.positions[i])
     }
 
     pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
-        Option::<Position>::try_read(&self.positions[i])
+        Option::<Position>::try_read(
+            self.positions
+                .get(i)
+                .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
+        )
     }
 }
 
@@ -92,6 +98,7 @@ where
 /// of the state related to a position The voting position is a position where the
 /// target_with_parameters is VOTING
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
+#[cfg_attr(test, derive(Hash, PartialEq, Eq))]
 pub struct Position {
     pub amount:                 u64,
     pub activation_epoch:       u64,
@@ -117,7 +124,8 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+#[cfg_attr(test, derive(Hash, Eq))]
 pub enum TargetWithParameters {
     VOTING,
     STAKING {
@@ -126,7 +134,8 @@ pub enum TargetWithParameters {
     },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
+#[cfg_attr(test, derive(Hash, Eq))]
 pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
@@ -207,13 +216,22 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
+        Publisher,
         TargetWithParameters,
         TryBorsh,
         MAX_POSITIONS,
         POSITIONS_ACCOUNT_SIZE,
         POSITION_BUFFER_SIZE,
     };
+    use anchor_lang::prelude::*;
     use anchor_lang::solana_program::borsh::get_packed_len;
+    use quickcheck::{
+        Arbitrary,
+        Gen,
+    };
+    use quickcheck_macros::quickcheck;
+    use rand::Rng;
+    use std::collections::HashSet;
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {
@@ -293,5 +311,89 @@ pub mod tests {
         // Checks that it's fine to initialize a position buffer with zeros
         let buffer = [0u8; POSITION_BUFFER_SIZE];
         assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
+    }
+
+    #[derive(Clone, Debug)]
+    enum DataOperation {
+        Add(Position),
+        Delete,
+    }
+
+    impl Arbitrary for Position {
+        fn arbitrary(g: &mut Gen) -> Self {
+            return Position {
+                activation_epoch:       u64::arbitrary(g),
+                unlocking_start:        Option::<u64>::arbitrary(g),
+                target_with_parameters: TargetWithParameters::VOTING,
+                amount:                 u64::arbitrary(g),
+            };
+        }
+    }
+
+    impl Arbitrary for TargetWithParameters {
+        fn arbitrary(g: &mut Gen) -> Self {
+            if bool::arbitrary(g) {
+                TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                }
+            } else {
+                TargetWithParameters::VOTING
+            }
+        }
+    }
+
+    impl Arbitrary for DataOperation {
+        fn arbitrary(g: &mut Gen) -> Self {
+            if bool::arbitrary(g) {
+                return DataOperation::Add(Position::arbitrary(g));
+            } else {
+                return DataOperation::Delete;
+            }
+        }
+    }
+
+    impl PositionData {
+        fn to_set(self, next_index: u8) -> HashSet<Position> {
+            let mut res: HashSet<Position> = HashSet::new();
+            for i in 0..next_index {
+                if let Some(position) = self.read_position(i as usize).unwrap() {
+                    res.insert(position);
+                }
+            }
+            return res;
+        }
+    }
+
+
+    #[quickcheck]
+    fn prop(input: Vec<DataOperation>) -> bool {
+        let mut position_data = PositionData::default();
+        let mut next_index = 0;
+        let mut set: HashSet<Position> = HashSet::new();
+        let mut rng = rand::thread_rng();
+        for op in input {
+            match op {
+                DataOperation::Add(position) => {
+                    set.insert(position);
+                    let i = position_data.reserve_new_index(&mut next_index).unwrap();
+                    position_data.write_position(i, &position).unwrap();
+                }
+                DataOperation::Delete => {
+                    if next_index != 0 {
+                        let i: usize = rng.gen_range(0..(next_index as usize));
+
+                        if let Ok(option_position) = position_data.read_position(i) {
+                            let current_position = option_position.unwrap();
+                            position_data.make_none(i, &mut next_index).unwrap();
+                            set.remove(&current_position);
+                        }
+                    }
+                }
+            }
+        }
+        return set == position_data.to_set(next_index);
     }
 }
