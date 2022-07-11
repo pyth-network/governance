@@ -317,6 +317,7 @@ pub mod tests {
     #[derive(Clone, Debug)]
     enum DataOperation {
         Add(Position),
+        Modify(Position),
         Delete,
     }
 
@@ -347,10 +348,18 @@ pub mod tests {
     }
     impl Arbitrary for DataOperation {
         fn arbitrary(g: &mut Gen) -> Self {
-            if bool::arbitrary(g) {
-                return DataOperation::Add(Position::arbitrary(g));
-            } else {
-                return DataOperation::Delete;
+            let sample = u8::arbitrary(g);
+            match sample % 3 {
+                0 => {
+                    return DataOperation::Add(Position::arbitrary(g));
+                }
+                1 => {
+                    return DataOperation::Modify(Position::arbitrary(g));
+                }
+                2 => {
+                    return DataOperation::Delete;
+                }
+                _ => panic!(),
             }
         }
     }
@@ -381,15 +390,21 @@ pub mod tests {
                     let i = position_data.reserve_new_index(&mut next_index).unwrap();
                     position_data.write_position(i, &position).unwrap();
                 }
+                DataOperation::Modify(position) => {
+                    if next_index != 0 {
+                        let i: usize = rng.gen_range(0..(next_index as usize));
+                        let current_position = position_data.read_position(i).unwrap().unwrap();
+                        position_data.write_position(i, &position).unwrap();
+                        set.remove(&current_position);
+                        set.insert(position);
+                    }
+                }
                 DataOperation::Delete => {
                     if next_index != 0 {
                         let i: usize = rng.gen_range(0..(next_index as usize));
-
-                        if let Ok(option_position) = position_data.read_position(i) {
-                            let current_position = option_position.unwrap();
-                            position_data.make_none(i, &mut next_index).unwrap();
-                            set.remove(&current_position);
-                        }
+                        let current_position = position_data.read_position(i).unwrap().unwrap();
+                        position_data.make_none(i, &mut next_index).unwrap();
+                        set.remove(&current_position);
                     }
                 }
             }
