@@ -124,8 +124,8 @@ pub enum Target {
     STAKING { product: Pubkey },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
-#[cfg_attr(test, derive(Hash, Eq))]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
+#[cfg_attr(test, derive(Hash))]
 pub enum TargetWithParameters {
     VOTING,
     STAKING {
@@ -134,8 +134,8 @@ pub enum TargetWithParameters {
     },
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq)]
-#[cfg_attr(test, derive(Hash, Eq))]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
+#[cfg_attr(test, derive(Hash))]
 pub enum Publisher {
     DEFAULT,
     SOME { address: Pubkey },
