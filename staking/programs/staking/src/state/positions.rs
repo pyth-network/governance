@@ -313,12 +313,14 @@ pub mod tests {
         assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
     }
 
+    // A vector of DataOperation will be tested on both our struct and on a HashSet
     #[derive(Clone, Debug)]
     enum DataOperation {
         Add(Position),
         Delete,
     }
 
+    // Boiler plate to generate random instances
     impl Arbitrary for Position {
         fn arbitrary(g: &mut Gen) -> Self {
             return Position {
@@ -329,7 +331,6 @@ pub mod tests {
             };
         }
     }
-
     impl Arbitrary for TargetWithParameters {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
@@ -344,7 +345,6 @@ pub mod tests {
             }
         }
     }
-
     impl Arbitrary for DataOperation {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
