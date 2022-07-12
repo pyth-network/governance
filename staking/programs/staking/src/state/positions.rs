@@ -370,7 +370,16 @@ pub mod tests {
             for i in 0..next_index {
                 if let Some(position) = self.read_position(i as usize).unwrap() {
                     res.insert(position);
+                } else {
+                    panic!()
                 }
+            }
+
+            for i in next_index..(MAX_POSITIONS as u8) {
+                assert_eq!(
+                    Option::<Position>::None,
+                    self.read_position(i as usize).unwrap()
+                )
             }
             return res;
         }
@@ -397,6 +406,8 @@ pub mod tests {
                         position_data.write_position(i, &position).unwrap();
                         set.remove(&current_position);
                         set.insert(position);
+                    } else {
+                        assert!(set.len() == 0);
                     }
                 }
                 DataOperation::Delete => {
@@ -405,9 +416,15 @@ pub mod tests {
                         let current_position = position_data.read_position(i).unwrap().unwrap();
                         position_data.make_none(i, &mut next_index).unwrap();
                         set.remove(&current_position);
+                    } else {
+                        assert!(set.len() == 0);
                     }
                 }
             }
+
+            if set != position_data.to_set(next_index) {
+                return false;
+            };
         }
         return set == position_data.to_set(next_index);
     }
