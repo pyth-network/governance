@@ -57,7 +57,7 @@ describe("voting", async () => {
     governanceProgram = new PublicKey(config.programs.localnet.governance);
 
     let defaultConfig = makeDefaultConfig(pythMintAccount.publicKey);
-    defaultConfig.epochDuration = new BN(5);
+    defaultConfig.epochDuration = new BN(60);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,

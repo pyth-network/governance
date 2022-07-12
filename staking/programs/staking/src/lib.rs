@@ -402,7 +402,7 @@ pub mod staking {
                     .ok_or_else(|| error!(ErrorCode::ProposalNotActive))?;
 
                 if let Some(max_voting_time) = proposal_data.max_voting_time {
-                    if config.epoch_duration > max_voting_time.into() {
+                    if config.epoch_duration < max_voting_time.into() {
                         return Err(error!(ErrorCode::ProposalTooLong));
                     }
                 }
@@ -422,7 +422,7 @@ pub mod staking {
                     &config.pyth_governance_realm,
                 )?;
 
-                if config.epoch_duration > governance_data.config.max_voting_time.into() {
+                if config.epoch_duration < governance_data.config.max_voting_time.into() {
                     return Err(error!(ErrorCode::ProposalTooLong));
                 }
 
