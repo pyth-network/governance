@@ -240,7 +240,7 @@ pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
     pub payer:            Signer<'info>,
-    #[account(init_if_needed, payer = payer, space = max_voter_weight_record::MAX_VOTER_WEIGHT_RECORD_SIZE ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
+    #[account(init, payer = payer, space = max_voter_weight_record::MAX_VOTER_WEIGHT_RECORD_SIZE ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
     pub max_voter_record: Account<'info, max_voter_weight_record::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:           Account<'info, global_config::GlobalConfig>,
