@@ -57,6 +57,8 @@ pub enum ErrorCode {
     NotImplemented,
     #[msg("Error deserializing position")] //6026
     PositionSerDe,
-    #[msg("Other")] //6027
+    #[msg("Position out of bounds")] //6027
+    PositionOutOfBounds,
+    #[msg("Other")] //6028
     Other,
 }
