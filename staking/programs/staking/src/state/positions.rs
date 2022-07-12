@@ -389,15 +389,20 @@ pub mod tests {
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
         let mut position_data = PositionData::default();
-        let mut next_index = 0;
+        let mut next_index: u8 = 0;
         let mut set: HashSet<Position> = HashSet::new();
         let mut rng = rand::thread_rng();
         for op in input {
             match op {
                 DataOperation::Add(position) => {
-                    set.insert(position);
-                    let i = position_data.reserve_new_index(&mut next_index).unwrap();
-                    position_data.write_position(i, &position).unwrap();
+                    if next_index < MAX_POSITIONS as u8 {
+                        set.insert(position);
+                        let i = position_data.reserve_new_index(&mut next_index).unwrap();
+                        position_data.write_position(i, &position).unwrap();
+                    } else {
+                        assert!(set.len() == MAX_POSITIONS);
+                        assert!(position_data.reserve_new_index(&mut next_index).is_err())
+                    }
                 }
                 DataOperation::Modify(position) => {
                     if next_index != 0 {
