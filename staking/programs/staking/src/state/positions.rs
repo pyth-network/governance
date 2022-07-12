@@ -369,7 +369,11 @@ pub mod tests {
             let mut res: HashSet<Position> = HashSet::new();
             for i in 0..next_index {
                 if let Some(position) = self.read_position(i as usize).unwrap() {
-                    res.insert(position);
+                    if res.contains(&position) {
+                        panic!()
+                    } else {
+                        res.insert(position);
+                    }
                 } else {
                     panic!()
                 }
