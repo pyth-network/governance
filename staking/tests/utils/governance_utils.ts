@@ -22,7 +22,9 @@ import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/u
 import assert from "assert";
 import { BinaryWriter } from "borsh";
 
-async function computeGovernanceAccounts(stakeConnection: StakeConnection) {
+export async function computeGovernanceAccounts(
+  stakeConnection: StakeConnection
+) {
   const maxVoterWeightRecordAccount = (
     await PublicKey.findProgramAddress(
       [anchor.utils.bytes.utf8.encode(wasm.Constants.MAX_VOTER_RECORD_SEED())],

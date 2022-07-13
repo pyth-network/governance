@@ -11,13 +11,13 @@ import {
   getPortNumber,
   makeDefaultConfig,
   CustomAbortController,
+  withCreateDefaultGovernance,
 } from "./utils/before";
 import * as wasm from "../wasm/node/staking";
 import { StakeConnection, PythBalance } from "../app";
 import {
   getProposal,
   ProposalState,
-  getRealmConfigAddress,
   tryGetRealmConfig,
 } from "@solana/spl-governance";
 import {
@@ -25,6 +25,7 @@ import {
   syncronizeClock,
   withDefaultCastVote,
   expectFailGovernance,
+  computeGovernanceAccounts,
 } from "./utils/governance_utils";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -319,6 +320,44 @@ describe("voting", async () => {
         })
         .remainingAccounts([]),
       "Extra governance account required",
+      anchor.parseIdlErrors(stakeConnection.program.idl)
+    );
+  });
+
+  it("create governance with long proposals, fail to create a proposal", async () => {
+    let tx = new Transaction();
+
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+    await stakeConnection.withUpdateVoterWeight(tx.instructions, stakeAccount, {
+      createGovernance: {},
+    });
+
+    const { voterWeightRecordAccount, tokenOwnerRecord } =
+      await computeGovernanceAccounts(stakeConnection);
+
+    // 600 > 60, so no one should be able to create proposals
+    const longGovernance = await withCreateDefaultGovernance(
+      tx,
+      600,
+      governanceProgram,
+      realm,
+      tokenOwnerRecord,
+      owner,
+      owner,
+      voterWeightRecordAccount
+    );
+
+    await expectFail(
+      stakeConnection.program.methods
+        .updateVoterWeight({ createProposal: {} })
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+        })
+        .remainingAccounts([
+          { pubkey: longGovernance, isWritable: false, isSigner: false },
+        ])
+        .preInstructions(tx.instructions),
+      "Proposal too long",
       anchor.parseIdlErrors(stakeConnection.program.idl)
     );
   });
