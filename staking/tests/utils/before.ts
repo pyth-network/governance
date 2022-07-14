@@ -262,7 +262,7 @@ interface GovernanceIds {
   Creates a governance realm using the SPL-governance deployment in config.
   Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
 */
-export async function createGovernance(
+export async function createDefaultRealm(
   provider: AnchorProvider,
   config: AnchorConfig,
   maxVotingTime: number, // in seconds
@@ -271,7 +271,6 @@ export async function createGovernance(
   const realmAuthority = Keypair.generate();
   const tx = new Transaction();
   const govProgramId = new PublicKey(config.programs.localnet.governance);
-  const MIN_TOKENS_CREATE_PROPOSAL = PythBalance.fromNumber(200).toBN();
 
   const realm = await withCreateRealm(
     tx.instructions,
@@ -283,29 +282,22 @@ export async function createGovernance(
     provider.wallet.publicKey,
     undefined, // no council mint
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
-    MintMaxVoteWeightSource.SUPPLY_FRACTION_BASE, // Full token supply required to create a gov, i.e. only realmAuth can do it
+    new BN(200), // 200 required so we can create governances during tests
     new PublicKey(config.programs.localnet.staking),
     new PublicKey(config.programs.localnet.staking)
   );
-  const governanceConfig = new GovernanceConfig({
-    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
-    minCommunityTokensToCreateProposal: MIN_TOKENS_CREATE_PROPOSAL,
-    minInstructionHoldUpTime: 1,
-    maxVotingTime: maxVotingTime,
-    minCouncilTokensToCreateProposal: new BN(1),
-  });
-  const governance = await withCreateGovernance(
-    tx.instructions,
+
+  const governance = await withCreateDefaultGovernance(
+    tx,
+    maxVotingTime,
     govProgramId,
-    PROGRAM_VERSION_V2,
     realm,
-    undefined,
-    governanceConfig,
     new PublicKey(0),
     provider.wallet.publicKey,
     realmAuthority.publicKey,
     null
   );
+
   const mintGov = await withCreateNativeTreasury(
     tx.instructions,
     govProgramId,
@@ -367,6 +359,38 @@ export async function initGovernanceProduct(
     .rpc();
 }
 
+export async function withCreateDefaultGovernance(
+  tx: Transaction,
+  maxVotingTime: number,
+  govProgramId: PublicKey,
+  realm: PublicKey,
+  tokenOwnerRecord: PublicKey,
+  payer: PublicKey,
+  authority: PublicKey,
+  voterWeightRecord: PublicKey
+) {
+  const governanceConfig = new GovernanceConfig({
+    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    minCommunityTokensToCreateProposal: PythBalance.fromNumber(200).toBN(),
+    minInstructionHoldUpTime: 1,
+    maxVotingTime: maxVotingTime,
+    minCouncilTokensToCreateProposal: new BN(1),
+  });
+  const governance = await withCreateGovernance(
+    tx.instructions,
+    govProgramId,
+    PROGRAM_VERSION_V2,
+    realm,
+    tokenOwnerRecord,
+    governanceConfig,
+    tokenOwnerRecord,
+    payer,
+    authority,
+    voterWeightRecord
+  );
+
+  return governance;
+}
 /**
  * Standard setup for test, this function :
  * - Launches at validator at `portNumber`
@@ -409,7 +433,7 @@ export async function standardSetup(
   );
 
   if (globalConfig.pythGovernanceRealm == null) {
-    const { realm, governance } = await createGovernance(
+    const { realm, governance } = await createDefaultRealm(
       provider,
       config,
       Math.max(globalConfig.epochDuration.toNumber(), 60), // at least one minute
