@@ -40,6 +40,8 @@ async function main() {
       governanceSigner: AUTHORITY_KEYPAIR.publicKey,
     })
     .rpc();
+
+  await program.methods.updateMaxVoterWeight().rpc();
 }
 
 main();
