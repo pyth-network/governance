@@ -62,7 +62,6 @@ export class StakeConnection {
   votingProductMetadataAccount: PublicKey;
   votingProduct = { voting: {} };
   governanceAddress: PublicKey;
-  maxVoterWeightRecordAccount: PublicKey;
 
   private constructor(
     program: Program<Staking>,
@@ -1044,7 +1043,7 @@ export class StakeAccount {
       return new BN(0);
     }
     const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
-    const timeOfEval = BN.ƒ(
+    const timeOfEval = BN.max(
       nextVestingEventTimeBn,
       this.addUnlockingPeriod(unixTime)
     );
