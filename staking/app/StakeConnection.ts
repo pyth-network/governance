@@ -62,6 +62,7 @@ export class StakeConnection {
   votingProductMetadataAccount: PublicKey;
   votingProduct = { voting: {} };
   governanceAddress: PublicKey;
+  maxVoterWeightRecordAccount: PublicKey;
 
   private constructor(
     program: Program<Staking>,
@@ -403,6 +404,7 @@ export class StakeConnection {
     remainingAccount?: PublicKey
   ): Promise<{
     voterWeightAccount: PublicKey;
+    maxVoterWeightRecord: PublicKey;
   }> {
     const updateVoterWeightIx = this.program.methods
       .updateVoterWeight(action)
@@ -414,9 +416,14 @@ export class StakeConnection {
           ? [{ pubkey: remainingAccount, isWritable: false, isSigner: false }]
           : []
       );
+
     instructions.push(await updateVoterWeightIx.instruction());
+
     return {
       voterWeightAccount: (await updateVoterWeightIx.pubkeys()).voterRecord,
+      maxVoterWeightRecord: (
+        await this.program.methods.updateMaxVoterWeight().pubkeys()
+      ).maxVoterRecord,
     };
   }
 
@@ -1037,7 +1044,7 @@ export class StakeAccount {
       return new BN(0);
     }
     const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
-    const timeOfEval = BN.max(
+    const timeOfEval = BN.ƒ(
       nextVestingEventTimeBn,
       this.addUnlockingPeriod(unixTime)
     );
