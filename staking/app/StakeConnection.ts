@@ -403,6 +403,7 @@ export class StakeConnection {
     remainingAccount?: PublicKey
   ): Promise<{
     voterWeightAccount: PublicKey;
+    maxVoterWeightRecord: PublicKey;
   }> {
     const updateVoterWeightIx = this.program.methods
       .updateVoterWeight(action)
@@ -414,9 +415,14 @@ export class StakeConnection {
           ? [{ pubkey: remainingAccount, isWritable: false, isSigner: false }]
           : []
       );
+
     instructions.push(await updateVoterWeightIx.instruction());
+
     return {
       voterWeightAccount: (await updateVoterWeightIx.pubkeys()).voterRecord,
+      maxVoterWeightRecord: (
+        await this.program.methods.updateMaxVoterWeight().pubkeys()
+      ).maxVoterRecord,
     };
   }
 
