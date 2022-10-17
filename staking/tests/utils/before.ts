@@ -279,11 +279,10 @@ export async function createDefaultRealm(
   const tx = new Transaction();
   const govProgramId = new PublicKey(config.programs.localnet.governance);
 
-  console.log("CREATE REALM");
   const realm = await withCreateRealm(
     tx.instructions,
     govProgramId,
-    PROGRAM_VERSION_V3,
+    PROGRAM_VERSION_V2,
     "Pyth Governance",
     realmAuthority.publicKey,
     pythMint,
@@ -294,7 +293,7 @@ export async function createDefaultRealm(
     {
       voterWeightAddin: new PublicKey(config.programs.localnet.staking),
       maxVoterWeightAddin: new PublicKey(config.programs.localnet.staking),
-      tokenType: GoverningTokenType.Dormant,
+      tokenType: GoverningTokenType.Liquid,
     },
     undefined
   );
@@ -313,14 +312,13 @@ export async function createDefaultRealm(
   const mintGov = await withCreateNativeTreasury(
     tx.instructions,
     govProgramId,
-    PROGRAM_VERSION_V3,
+    PROGRAM_VERSION_V2,
     governance,
     provider.wallet.publicKey
   );
 
   await provider.sendAndConfirm(tx, [realmAuthority], { skipPreflight: true });
 
-  console.log("DONE");
   // Give governance 100 SOL to play with
   await provider.connection.requestAirdrop(mintGov, LAMPORTS_PER_SOL * 100);
 
@@ -408,11 +406,10 @@ export async function withCreateDefaultGovernance(
     councilVoteTipping: VoteTipping.Strict,
   });
 
-  console.log("CREATE GOV");
   const governance = await withCreateGovernance(
     tx.instructions,
     govProgramId,
-    PROGRAM_VERSION_V3,
+    PROGRAM_VERSION_V2,
     realm,
     tokenOwnerRecord,
     governanceConfig,
