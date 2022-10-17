@@ -46,6 +46,7 @@ describe("fills a stake account with positions", async () => {
   let votingProduct;
 
   after(async () => {
+    while (true) {}
     controller.abort();
   });
   before(async () => {

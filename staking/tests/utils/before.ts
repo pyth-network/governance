@@ -28,10 +28,15 @@ import {
 import { MintLayout } from "@solana/spl-token";
 import {
   GovernanceConfig,
+  GoverningTokenType,
   MintMaxVoteWeightSource,
   MintMaxVoteWeightSourceType,
   PROGRAM_VERSION_V2,
-  VoteThresholdPercentage,
+  PROGRAM_VERSION_V3,
+  VoteThreshold,
+  VoteThresholdType,
+  VoteTipping,
+  VoteType,
   withCreateGovernance,
   withCreateNativeTreasury,
   withCreateRealm,
@@ -44,6 +49,7 @@ import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 import { createMint, getTargetAccount as getTargetAccount } from "./utils";
+import { Pubkey } from "pyth-staking-wasm";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -126,12 +132,13 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
         // Test complete, this is expected.
         return;
       }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+
       if (error) {
         console.error(`exec error: ${error}`);
         return;
       }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
     }
   );
   const controller = new CustomAbortController(internalController);
@@ -272,10 +279,11 @@ export async function createDefaultRealm(
   const tx = new Transaction();
   const govProgramId = new PublicKey(config.programs.localnet.governance);
 
+  console.log("CREATE REALM");
   const realm = await withCreateRealm(
     tx.instructions,
     govProgramId,
-    PROGRAM_VERSION_V2,
+    PROGRAM_VERSION_V3,
     "Pyth Governance",
     realmAuthority.publicKey,
     pythMint,
@@ -283,8 +291,12 @@ export async function createDefaultRealm(
     undefined, // no council mint
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     new BN(200), // 200 required so we can create governances during tests
-    new PublicKey(config.programs.localnet.staking),
-    new PublicKey(config.programs.localnet.staking)
+    {
+      voterWeightAddin: new PublicKey(config.programs.localnet.staking),
+      maxVoterWeightAddin: new PublicKey(config.programs.localnet.staking),
+      tokenType: GoverningTokenType.Dormant,
+    },
+    undefined
   );
 
   const governance = await withCreateDefaultGovernance(
@@ -301,12 +313,14 @@ export async function createDefaultRealm(
   const mintGov = await withCreateNativeTreasury(
     tx.instructions,
     govProgramId,
+    PROGRAM_VERSION_V3,
     governance,
     provider.wallet.publicKey
   );
 
   await provider.sendAndConfirm(tx, [realmAuthority], { skipPreflight: true });
 
+  console.log("DONE");
   // Give governance 100 SOL to play with
   await provider.connection.requestAirdrop(mintGov, LAMPORTS_PER_SOL * 100);
 
@@ -370,16 +384,35 @@ export async function withCreateDefaultGovernance(
   voterWeightRecord: PublicKey
 ) {
   const governanceConfig = new GovernanceConfig({
-    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    communityVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 20,
+    }),
     minCommunityTokensToCreateProposal: PythBalance.fromNumber(200).toBN(),
     minInstructionHoldUpTime: 1,
     maxVotingTime: maxVotingTime,
+    communityVoteTipping: VoteTipping.Strict,
     minCouncilTokensToCreateProposal: new BN(1),
+    councilVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    councilVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    communityVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    councilVoteTipping: VoteTipping.Strict,
   });
+
+  console.log("CREATE GOV");
   const governance = await withCreateGovernance(
     tx.instructions,
     govProgramId,
-    PROGRAM_VERSION_V2,
+    PROGRAM_VERSION_V3,
     realm,
     tokenOwnerRecord,
     governanceConfig,
