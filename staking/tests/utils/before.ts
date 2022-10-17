@@ -46,7 +46,6 @@ import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 import { createMint, getTargetAccount as getTargetAccount } from "./utils";
-import { Pubkey } from "pyth-staking-wasm";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -129,13 +128,14 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
         // Test complete, this is expected.
         return;
       }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
 
       if (error) {
         console.error(`exec error: ${error}`);
         return;
       }
+
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
     }
   );
   const controller = new CustomAbortController(internalController);
