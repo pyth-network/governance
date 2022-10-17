@@ -31,6 +31,7 @@ import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
 import {
   getTokenOwnerRecordAddress,
+  PROGRAM_VERSION_V2,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
 import {
@@ -535,6 +536,7 @@ export class StakeConnection {
       await withCreateTokenOwnerRecord(
         transaction.instructions,
         this.governanceAddress,
+        PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
         owner,
         this.config.pythTokenMint,
@@ -604,6 +606,7 @@ export class StakeConnection {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
+        PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
         owner,
         this.config.pythTokenMint,
@@ -704,6 +707,7 @@ export class StakeConnection {
       await withCreateTokenOwnerRecord(
         ixs,
         this.governanceAddress,
+        PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
         owner,
         this.config.pythTokenMint,

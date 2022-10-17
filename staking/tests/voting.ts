@@ -94,11 +94,11 @@ describe("voting", async () => {
       realm
     );
     assert(
-      realmConfig.account.communityVoterWeightAddin.toBase58(),
+      realmConfig.account.communityTokenConfig.voterWeightAddin.toBase58(),
       stakeConnection.program.programId.toBase58()
     );
     assert(
-      realmConfig.account.maxCommunityVoterWeightAddin.toBase58(),
+      realmConfig.account.communityTokenConfig.maxVoterWeightAddin.toBase58(),
       stakeConnection.program.programId.toBase58()
     );
   });

@@ -36,10 +36,10 @@
     "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
-    "wasm-pack": "^0.10.3"
+    "wasm-pack": "^0.10.2"
   },
   "scripts": {
-    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn dump_governance && yarn run ts-mocha -t 1000000 --parallel --jobs 2 tests/max_pos.ts",
+    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn dump_governance && yarn run ts-mocha -t 1000000 --parallel --jobs 2 tests/*.ts",
     "setup": "yarn generate_keypair && anchor build && yarn dump_governance && yarn ts-node ./app/scripts/setup_local.ts",
     "build_wasm": "./wasm/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",

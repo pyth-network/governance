@@ -46,7 +46,6 @@ describe("fills a stake account with positions", async () => {
   let votingProduct;
 
   after(async () => {
-    while (true) {}
     controller.abort();
   });
   before(async () => {
@@ -80,6 +79,7 @@ describe("fills a stake account with positions", async () => {
       undefined,
       PythBalance.fromString("102")
     );
+
     stakeAccountAddress = (
       await stakeConnection.getMainAccount(provider.wallet.publicKey)
     ).address;
@@ -93,6 +93,7 @@ describe("fills a stake account with positions", async () => {
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
+
     let testTransaction = new Transaction();
     testTransaction.add(createPosIx);
     testTransaction.add(createPosIx);
@@ -125,6 +126,7 @@ describe("fills a stake account with positions", async () => {
       budgetRemaining -= ixCost;
       ixCost += deltaCost;
     }
+
     await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });

@@ -15,8 +15,9 @@ import {
   BN_ZERO,
   VoteType,
   InstructionExecutionFlags,
-  VoteThresholdPercentage,
   SYSTEM_PROGRAM_ID,
+  VoteThresholdType,
+  VoteThreshold,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
 import * as wasm from "../../wasm";
@@ -233,7 +234,11 @@ class MockProposalCreator {
       closedAt: null,
       executionFlags: InstructionExecutionFlags.None,
       maxVoteWeight: null,
-      voteThresholdPercentage: new VoteThresholdPercentage({ value: 50 }),
+      voteThreshold: new VoteThreshold({
+        type: VoteThresholdType.YesVotePercentage,
+        value: 50,
+      }),
+      reserved1: 0,
     });
     (proposal as any).reserved = new Array(64); // Gross...
     const schema = getGovernanceSchemaForAccount(
