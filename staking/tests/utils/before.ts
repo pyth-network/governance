@@ -128,12 +128,10 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
         // Test complete, this is expected.
         return;
       }
-
       if (error) {
         console.error(`exec error: ${error}`);
         return;
       }
-
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
     }
