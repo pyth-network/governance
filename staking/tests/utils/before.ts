@@ -384,7 +384,6 @@ export async function withCreateDefaultGovernance(
     minCommunityTokensToCreateProposal: PythBalance.fromNumber(200).toBN(),
     minInstructionHoldUpTime: 1,
     maxVotingTime: maxVotingTime,
-    communityVoteTipping: VoteTipping.Strict,
     minCouncilTokensToCreateProposal: new BN(1),
     councilVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.YesVotePercentage,
