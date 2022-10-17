@@ -400,7 +400,6 @@ export async function withCreateDefaultGovernance(
     }),
     councilVoteTipping: VoteTipping.Strict,
   });
-
   const governance = await withCreateGovernance(
     tx.instructions,
     govProgramId,
