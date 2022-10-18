@@ -7,16 +7,17 @@ import {
   VoteThresholdType,
 } from "@solana/spl-governance";
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
+import { BN } from "bn.js";
+import { Constants } from "pyth-staking-wasm";
 import {
+  EPOCH_DURATION,
   AUTHORITY_KEYPAIR,
   GOVERNANCE_PROGRAM,
   RPC_NODE,
   REALM,
-} from "./devnet";
-import { BN } from "bn.js";
-import { Constants } from "pyth-staking-wasm";
-import { EPOCH_DURATION } from "./mainnet_beta";
+} from "./mainnet_beta";
 
+// mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
 async function main() {
   const tx = new Transaction();
 
@@ -26,7 +27,7 @@ async function main() {
       value: 50,
     }), // 50% of the locked supply
     minCommunityTokensToCreateProposal: new BN(
-      Constants.MAX_VOTER_WEIGHT.toString()
+      Constants.MAX_VOTER_WEIGHT().toString()
     ).div(new BN(100)), // 1% of the locked supply
     minInstructionHoldUpTime: 0, // 0 seconds
     maxVotingTime: EPOCH_DURATION, // Is equal to 1 Pyth epoch
