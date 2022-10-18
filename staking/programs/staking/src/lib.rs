@@ -41,9 +41,9 @@ mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
+pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV");
 
-pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
 
 #[program]
 pub mod staking {
