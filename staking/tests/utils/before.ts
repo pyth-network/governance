@@ -28,10 +28,12 @@ import {
 import { MintLayout } from "@solana/spl-token";
 import {
   GovernanceConfig,
+  GoverningTokenType,
   MintMaxVoteWeightSource,
-  MintMaxVoteWeightSourceType,
   PROGRAM_VERSION_V2,
-  VoteThresholdPercentage,
+  VoteThreshold,
+  VoteThresholdType,
+  VoteTipping,
   withCreateGovernance,
   withCreateNativeTreasury,
   withCreateRealm,
@@ -283,8 +285,12 @@ export async function createDefaultRealm(
     undefined, // no council mint
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     new BN(200), // 200 required so we can create governances during tests
-    new PublicKey(config.programs.localnet.staking),
-    new PublicKey(config.programs.localnet.staking)
+    {
+      voterWeightAddin: new PublicKey(config.programs.localnet.staking),
+      maxVoterWeightAddin: new PublicKey(config.programs.localnet.staking),
+      tokenType: GoverningTokenType.Liquid,
+    },
+    undefined
   );
 
   const governance = await withCreateDefaultGovernance(
@@ -301,6 +307,7 @@ export async function createDefaultRealm(
   const mintGov = await withCreateNativeTreasury(
     tx.instructions,
     govProgramId,
+    PROGRAM_VERSION_V2,
     governance,
     provider.wallet.publicKey
   );
@@ -370,11 +377,27 @@ export async function withCreateDefaultGovernance(
   voterWeightRecord: PublicKey
 ) {
   const governanceConfig = new GovernanceConfig({
-    voteThresholdPercentage: new VoteThresholdPercentage({ value: 20 }),
+    communityVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 20,
+    }),
     minCommunityTokensToCreateProposal: PythBalance.fromNumber(200).toBN(),
     minInstructionHoldUpTime: 1,
     maxVotingTime: maxVotingTime,
     minCouncilTokensToCreateProposal: new BN(1),
+    councilVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    councilVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    communityVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }),
+    councilVoteTipping: VoteTipping.Strict,
   });
   const governance = await withCreateGovernance(
     tx.instructions,

@@ -161,6 +161,7 @@ export async function withDefaultCastVote(
       voteType: VoteKind.Approve,
       approveChoices: [new VoteChoice({ rank: 0, weightPercentage: 100 })],
       deny: false,
+      veto: false,
     }),
     stakeConnection.provider.wallet.publicKey,
     voterWeightRecordAccount,
