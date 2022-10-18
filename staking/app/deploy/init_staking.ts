@@ -11,6 +11,8 @@ import {
 } from "./mainnet_beta";
 import { BN } from "bn.js";
 
+// mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
+
 async function main() {
   const client = new Connection(RPC_NODE);
   const provider = new AnchorProvider(

@@ -3,8 +3,6 @@ import BN from "bn.js";
 import fs from "fs";
 import { homedir } from "os";
 
-// mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
-
 export const AUTHORITY_PATH = "/.config/solana/deployer.json";
 export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
   new Uint8Array(
