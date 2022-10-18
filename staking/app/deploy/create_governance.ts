@@ -2,11 +2,11 @@ import {
   PROGRAM_VERSION_V2,
   withCreateGovernance,
   GovernanceConfig,
-  VoteThresholdPercentage,
   VoteTipping,
+  VoteThreshold,
+  VoteThresholdType,
 } from "@solana/spl-governance";
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
-import { PythBalance } from "..";
 import {
   AUTHORITY_KEYPAIR,
   GOVERNANCE_PROGRAM,
@@ -14,30 +14,48 @@ import {
   REALM,
 } from "./devnet";
 import { BN } from "bn.js";
+import { Constants } from "pyth-staking-wasm";
+import { EPOCH_DURATION } from "./mainnet_beta";
 
 async function main() {
   const tx = new Transaction();
 
-  const governanceConfig = new GovernanceConfig({
-    voteThresholdPercentage: new VoteThresholdPercentage({ value: 50 }),
-    minCommunityTokensToCreateProposal:
-      PythBalance.fromString("100000000").toBN(),
-    minInstructionHoldUpTime: 0,
-    maxVotingTime: 3600,
-    voteTipping: VoteTipping.Disabled,
-    minCouncilTokensToCreateProposal: new BN(1),
+  let governanceConfig = new GovernanceConfig({
+    communityVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 50,
+    }), // 50% of the locked supply
+    minCommunityTokensToCreateProposal: new BN(
+      Constants.MAX_VOTER_WEIGHT.toString()
+    ).div(new BN(100)), // 1% of the locked supply
+    minInstructionHoldUpTime: 0, // 0 seconds
+    maxVotingTime: EPOCH_DURATION, // Is equal to 1 Pyth epoch
+    councilVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }), // Maps into `proposal_cool_off_time`, needs to be 0 in PROGRAM_VERSION_V2
+    councilVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }), // Maps into `proposal_cool_off_time`, needs to be 0 in PROGRAM_VERSION_V2
+    minCouncilTokensToCreateProposal: new BN(1), // Should never be used because we don't have a council mint
+    communityVetoVoteThreshold: new VoteThreshold({
+      type: VoteThresholdType.YesVotePercentage,
+      value: 0,
+    }), // Not used in PROGRAM_VERSION_V2
+    councilVoteTipping: VoteTipping.Strict, // Not used in PROGRAM_VERSION_V2
   });
 
   await withCreateGovernance(
     tx.instructions,
-    GOVERNANCE_PROGRAM,
-    PROGRAM_VERSION_V2,
-    REALM,
-    undefined,
+    GOVERNANCE_PROGRAM, // Address of our instance of the governance program
+    PROGRAM_VERSION_V2, // Version of the onchain program
+    REALM, // Address of the Pyth realms
+    undefined, // This is a generic governance so no initial governed account
     governanceConfig,
-    new PublicKey(0),
-    AUTHORITY_KEYPAIR.publicKey,
-    AUTHORITY_KEYPAIR.publicKey
+    new PublicKey(0), // The realm authority is creating it, so this doesn't need to be defined
+    AUTHORITY_KEYPAIR.publicKey, // Payer address
+    AUTHORITY_KEYPAIR.publicKey // Realm authority
   );
 
   const client = new Connection(RPC_NODE);

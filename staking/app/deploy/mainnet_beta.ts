@@ -1,4 +1,5 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
+import BN from "bn.js";
 import fs from "fs";
 import { homedir } from "os";
 
@@ -19,6 +20,8 @@ export const GOVERNANCE_PROGRAM = new PublicKey(
   "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 );
 export const REALM = new PublicKey(
-  "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
+  "A1f6LNEymJSSJsEVCL1FSgtS1jA9dNTC4ni8SkmbwQjG"
 );
 export const RPC_NODE = "https://api.mainnet-beta.solana.com";
+
+export const EPOCH_DURATION = 3600 * 24 * 7;
