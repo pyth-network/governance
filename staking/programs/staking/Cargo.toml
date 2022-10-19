@@ -1,12 +1,12 @@
 [package]
-name = "staking"
+name = "pyth-staking-program"
 version = "1.0.0"
 description = "Created with Anchor"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "pyth_staking"
+name = "staking"
 
 [features]
 no-entrypoint = []
