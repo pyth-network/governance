@@ -1,5 +1,4 @@
 import { Wallet, AnchorProvider, Program } from "@project-serum/anchor";
-import { StakeConnection } from "..";
 import { Connection } from "@solana/web3.js";
 import { getTargetAccount } from "../../tests/utils/utils";
 import {
@@ -8,8 +7,12 @@ import {
   STAKING_PROGRAM,
   RPC_NODE,
   REALM,
-} from "./devnet";
+  EPOCH_DURATION,
+} from "./mainnet_beta";
 import { BN } from "bn.js";
+
+// Actual transaction hash :
+// mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
 
 async function main() {
   const client = new Connection(RPC_NODE);
@@ -26,7 +29,7 @@ async function main() {
     pythGovernanceRealm: REALM,
     pythTokenMint: PYTH_TOKEN,
     unlockingDuration: 1,
-    epochDuration: new BN(3600),
+    epochDuration: new BN(EPOCH_DURATION),
     freeze: false,
   };
   await program.methods.initConfig(globalConfig).rpc();
