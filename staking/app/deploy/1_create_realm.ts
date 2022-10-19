@@ -16,6 +16,7 @@ import {
 } from "./mainnet_beta";
 
 import { Constants } from "pyth-staking-wasm";
+// Actual transaction hashs :
 // mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
 
 async function main() {

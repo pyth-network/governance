@@ -17,6 +17,7 @@ import {
   REALM,
 } from "./mainnet_beta";
 
+// Actual transaction hashs :
 // mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
 async function main() {
   const tx = new Transaction();
