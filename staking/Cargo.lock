@@ -884,6 +884,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pyth_staking_program"
+version = "1.0.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "bincode",
+ "borsh",
+ "js-sys",
+ "quickcheck",
+ "quickcheck_macros",
+ "rand 0.8.5",
+ "solana-program",
+ "spl-governance",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "quickcheck"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1286,23 +1303,6 @@ dependencies = [
  "num_enum",
  "solana-program",
  "thiserror",
-]
-
-[[package]]
-name = "staking"
-version = "1.0.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "bincode",
- "borsh",
- "js-sys",
- "quickcheck",
- "quickcheck_macros",
- "rand 0.8.5",
- "solana-program",
- "spl-governance",
- "wasm-bindgen",
 ]
 
 [[package]]
