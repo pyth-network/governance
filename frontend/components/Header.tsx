@@ -28,10 +28,10 @@ const Header = () => {
             </a>
           </Link>
           <Link
-            href={`https://realms.today/dao/PYTH?cluster=${
-              process.env.ENDPOINT?.startsWith('http://localhost:')
-                ? 'localnet'
-                : 'devnet'
+            href={`https://realms.today/dao/PYTH${
+              process.env.ENDPOINT !== "mainnet"
+                ? '?cluster=' + process.env.ENDPOINT
+                : ''
             }`}
           >
             <a className="nav-link">
@@ -120,11 +120,11 @@ const Header = () => {
                 </a>
               </Link>
               <Link
-                href={`https://realms.today/dao/PYTH?cluster=${
-                  process.env.ENDPOINT?.startsWith('http://localhost:')
-                    ? 'localnet'
-                    : 'devnet'
-                }`}
+            href={`https://realms.today/dao/PYTH${
+              process.env.ENDPOINT !== "mainnet"
+                ? '?cluster=' + process.env.ENDPOINT
+                : ''
+            }`}
               >
                 <a
                   className={classNames('font-arboria text-4xl', 'text-white')}
