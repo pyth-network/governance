@@ -11,7 +11,7 @@ import {
 } from "./mainnet_beta";
 import { BN } from "bn.js";
 
-// Actual transaction hashs :
+// Actual transaction hash :
 // mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
 
 async function main() {
