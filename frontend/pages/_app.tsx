@@ -33,7 +33,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
   const endpoint =
-    process.env.ENDPOINT && process.env.ENDPOINT === 'devnet'
+    process.env.ENDPOINT && process.env.ENDPOINT === 'mainnet' ? clusterApiUrl(WalletAdapterNetwork.Mainnet) : process.env.ENDPOINT === 'devnet'
       ? clusterApiUrl(WalletAdapterNetwork.Devnet)
       : process.env.ENDPOINT
 
