@@ -2,7 +2,6 @@ import { PublicKey } from "@solana/web3.js";
 
 export const MAINNET_ENDPOINT = "https://api.mainnet-beta.solana.com";
 export const DEVNET_ENDPOINT = "https://api.devnet.solana.com";
-export const LOCALNET_ENDPOINT = "http://localhost:8899";
 
 export const MAINNET_GOVERNANCE_ADDRESS = new PublicKey(
   "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
@@ -11,7 +10,7 @@ export const DEVNET_GOVERNANCE_ADDRESS = new PublicKey(
   "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
 );
 export const LOCALNET_GOVERNANCE_ADDRESS = new PublicKey(
-  "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
+  "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 );
 
 export const MAINNET_STAKING_ADDRESS = new PublicKey(
