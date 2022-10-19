@@ -37,6 +37,7 @@ import {
 import {
   DEVNET_ENDPOINT,
   DEVNET_GOVERNANCE_ADDRESS,
+  LOCALNET_ENDPOINT,
   LOCALNET_GOVERNANCE_ADDRESS,
   MAINNET_ENDPOINT,
   MAINNET_GOVERNANCE_ADDRESS,
@@ -79,11 +80,11 @@ export class StakeConnection {
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress =
-      program.provider.connection.rpcEndpoint === MAINNET_ENDPOINT
-        ? MAINNET_GOVERNANCE_ADDRESS
+      program.provider.connection.rpcEndpoint === LOCALNET_ENDPOINT
+        ? LOCALNET_GOVERNANCE_ADDRESS
         : program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
         ? DEVNET_GOVERNANCE_ADDRESS
-        : LOCALNET_GOVERNANCE_ADDRESS;
+        : MAINNET_GOVERNANCE_ADDRESS;
   }
 
   // creates a program connection and loads the staking config
