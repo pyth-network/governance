@@ -38,6 +38,8 @@ import {
   DEVNET_ENDPOINT,
   DEVNET_GOVERNANCE_ADDRESS,
   LOCALNET_GOVERNANCE_ADDRESS,
+  MAINNET_ENDPOINT,
+  MAINNET_GOVERNANCE_ADDRESS,
 } from "./constants";
 import assert from "assert";
 import { PositionAccountJs, Position } from "./PositionAccountJs";
@@ -77,7 +79,9 @@ export class StakeConnection {
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress =
-      program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
+      program.provider.connection.rpcEndpoint === MAINNET_ENDPOINT
+        ? MAINNET_GOVERNANCE_ADDRESS
+        : program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
         ? DEVNET_GOVERNANCE_ADDRESS
         : LOCALNET_GOVERNANCE_ADDRESS;
   }
