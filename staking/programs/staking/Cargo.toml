@@ -1,5 +1,5 @@
 [package]
-name = "staking"
+name = "Pyth staking program"
 version = "1.0.0"
 description = "Created with Anchor"
 edition = "2018"
