@@ -14,11 +14,8 @@ process.env.ENDPOINT === 'mainnet'
 ? MAINNET_STAKING_ADDRESS : process.env.ENDPOINT === 'devnet' ? DEVNET_STAKING_ADDRESS 
 : LOCALNET_STAKING_ADDRESS
 
-console.log(STAKING_PROGRAM.toBase58())
-
 export const PYTH_MINT_ACCOUNT_PUBKEY =
   process.env.ENDPOINT === 'mainnet'
     ? MAINNET_PYTH_MINT : process.env.ENDPOINT === 'devnet' ? DEVNET_PYTH_MINT 
     : LOCALNET_PYTH_MINT
 
-    console.log(PYTH_MINT_ACCOUNT_PUBKEY.toBase58())
