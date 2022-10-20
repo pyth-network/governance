@@ -1,7 +1,6 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
 import fs from "fs";
 import { homedir } from "os";
-import { wasm } from "../StakeConnection";
 export const AUTHORITY_PATH = "/.config/solana/deployer.json";
 export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
   new Uint8Array(
