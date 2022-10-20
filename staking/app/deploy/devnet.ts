@@ -17,3 +17,5 @@ export const REALM = new PublicKey(
   "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
 );
 export const RPC_NODE = "https://api.devnet.solana.com";
+
+export const EPOCH_DURATION = 3600;

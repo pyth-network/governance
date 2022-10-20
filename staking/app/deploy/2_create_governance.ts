@@ -9,16 +9,13 @@ import {
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { Constants } from "pyth-staking-wasm";
-import {
-  EPOCH_DURATION,
-  AUTHORITY_KEYPAIR,
-  RPC_NODE,
-  REALM,
-} from "./mainnet_beta";
+import { EPOCH_DURATION, AUTHORITY_KEYPAIR, RPC_NODE } from "./mainnet_beta";
 
-import { GOVERNANCE_ADDRESS } from "../constants";
+import { GOVERNANCE_ADDRESS, REALM_ID } from "../constants";
 // Actual transaction hash :
 // mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
+// devnet : 3gKKKPGAfV15yV1Ce6Tn9vmwbeRnMHcyrvDxDpPhHAEr6L8VAe4N3rkNizhLGa7cM19xQaJykt6rxjx651fFRqXM
+
 async function main() {
   const tx = new Transaction();
 
@@ -52,7 +49,7 @@ async function main() {
     tx.instructions,
     GOVERNANCE_ADDRESS(), // Address of our instance of the governance program
     PROGRAM_VERSION_V2, // Version of the onchain program
-    REALM, // Address of the Pyth realms
+    REALM_ID, // Address of the Pyth realms
     undefined, // This is a generic governance so no initial governed account
     governanceConfig,
     new PublicKey(0), // The realm authority is creating it, so this doesn't need to be defined

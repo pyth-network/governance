@@ -12,9 +12,6 @@ export const PYTH_TOKEN = new PublicKey(
   "3ho8ZM4JVqJzD56FADKdW7NTG5Tv6GiBPFUvyRXMy35Q"
 );
 
-export const REALM = new PublicKey(
-  "A1f6LNEymJSSJsEVCL1FSgtS1jA9dNTC4ni8SkmbwQjG"
-);
 export const RPC_NODE = "https://api.mainnet-beta.solana.com";
 
 export const EPOCH_DURATION = 3600 * 24 * 7;

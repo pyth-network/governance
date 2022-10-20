@@ -13,6 +13,7 @@ import { STAKING_ADDRESS, GOVERNANCE_ADDRESS } from "../constants";
 import { Constants } from "pyth-staking-wasm";
 // Actual transaction hash :
 // mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
+// devnet : NjowaS5ApGYkGr19ge2ikQnggJJ4x8DyMcQu3pyzPPyJJ7orL3CY8FJToAMcupP8uCKh288fpBBEH6yPbqQDjiA
 
 async function main() {
   const tx = new Transaction();
