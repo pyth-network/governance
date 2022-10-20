@@ -68,7 +68,7 @@ export class Metrics {
     const actualRealmConfig = (
       await tryGetRealmConfig(
         stakeConnection.provider.connection,
-        GOVERNANCE_ADDRESS,
+        GOVERNANCE_ADDRESS(),
         DEVNET_REALM_ID
       )
     ).account;
