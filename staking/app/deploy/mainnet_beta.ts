@@ -1,5 +1,4 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
-import BN from "bn.js";
 import fs from "fs";
 import { homedir } from "os";
 

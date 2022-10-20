@@ -1,19 +1,14 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
 import fs from "fs";
+import { homedir } from "os";
 
-export const AUTHORITY_PATH =
-  "~/.config/solana/upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr.json";
+export const AUTHORITY_PATH = "/.config/solana/deployer.json";
 export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
   new Uint8Array(
-    JSON.parse(
-      fs
-        .readFileSync(
-          "/Users/gbescos/.config/solana/upg8KLALUN7ByDHiBu4wEbMDTC6UnSVFSYfTyGfXuzr.json"
-        )
-        .toString()
-    )
+    JSON.parse(fs.readFileSync(homedir() + AUTHORITY_PATH).toString())
   )
 );
+
 export const PYTH_TOKEN = new PublicKey(
   "7Bd6bEH4wHTMmov8D2WTXgxzLJcxJYczqE5NaDtZdhF6"
 );
