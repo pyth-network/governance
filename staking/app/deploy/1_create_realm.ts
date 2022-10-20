@@ -7,24 +7,20 @@ import {
 import { Transaction, Connection } from "@solana/web3.js";
 import { BN } from "bn.js";
 
-import {
-  AUTHORITY_KEYPAIR,
-  PYTH_TOKEN,
-  GOVERNANCE_PROGRAM,
-  RPC_NODE,
-} from "./mainnet_beta";
+import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./mainnet_beta";
 
-import { STAKING_ADDRESS } from "../constants";
+import { STAKING_ADDRESS, GOVERNANCE_ADDRESS } from "../constants";
 import { Constants } from "pyth-staking-wasm";
 // Actual transaction hash :
 // mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
+// devnet : NjowaS5ApGYkGr19ge2ikQnggJJ4x8DyMcQu3pyzPPyJJ7orL3CY8FJToAMcupP8uCKh288fpBBEH6yPbqQDjiA
 
 async function main() {
   const tx = new Transaction();
 
   await withCreateRealm(
     tx.instructions,
-    GOVERNANCE_PROGRAM, // Address of the governance program
+    GOVERNANCE_ADDRESS(), // Address of the governance program
     PROGRAM_VERSION_V2, // Version of the on-chain governance program
     "Pyth Governance", // `name` of the realm
     AUTHORITY_KEYPAIR.publicKey, // Address of the realm authority

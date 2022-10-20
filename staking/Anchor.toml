@@ -3,7 +3,7 @@ seeds = true
 
 [programs.localnet]
 staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-governance = "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 
 [registry]

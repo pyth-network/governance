@@ -9,7 +9,10 @@ use crate::state::positions::{
 };
 use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
-use crate::VestingSchedule;
+use crate::{
+    VestingSchedule,
+    GOVERNANCE_PROGRAM,
+};
 use anchor_lang::prelude::{
     error,
     Clock,
@@ -294,6 +297,9 @@ impl Constants {
     }
     pub fn POSITION_BUFFER_SIZE() -> usize {
         crate::state::positions::POSITION_BUFFER_SIZE
+    }
+    pub fn GOVERNANCE_PROGRAM() -> js_sys::JsString {
+        GOVERNANCE_PROGRAM.to_string().into()
     }
 }
 

@@ -6,9 +6,9 @@ import {
   DEVNET_ENDPOINT,
   DEVNET_STAKING_ADDRESS,
   DEVNET_PYTH_MINT,
-  DEVNET_GOVERNANCE_ADDRESS,
+  GOVERNANCE_ADDRESS,
   PythBalance,
-  DEVNET_REALM_ID,
+  REALM_ID,
 } from "pyth-staking-api";
 import * as wasm from "pyth-staking-wasm";
 import { StakeAccount, StakeConnection } from "pyth-staking-api";
@@ -68,14 +68,14 @@ export class Metrics {
     const actualRealmConfig = (
       await tryGetRealmConfig(
         stakeConnection.provider.connection,
-        DEVNET_GOVERNANCE_ADDRESS,
-        DEVNET_REALM_ID
+        GOVERNANCE_ADDRESS(),
+        REALM_ID
       )
     ).account;
 
     const expectedRealmConfig = {
       accountType: 11,
-      realm: DEVNET_REALM_ID,
+      realm: REALM_ID,
       communityVoterWeightAddin: DEVNET_STAKING_ADDRESS,
       maxCommunityVoterWeightAddin: DEVNET_STAKING_ADDRESS,
     };
@@ -98,7 +98,7 @@ export class Metrics {
     const expectedConfig = {
       // bump
       // governanceAuthority
-      pythGovernanceRealm: DEVNET_REALM_ID,
+      pythGovernanceRealm: REALM_ID,
       pythTokenMint: DEVNET_PYTH_MINT,
       unlockingDuration: 1,
       epochDuration: new BN(3600),

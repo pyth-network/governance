@@ -42,10 +42,6 @@ mod utils;
 pub mod wasm;
 
 declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
-
-#[cfg(not(mainnet))]
-pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw");
-#[cfg(mainnet)]
 pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV");
 
 

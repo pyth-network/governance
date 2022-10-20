@@ -5,11 +5,10 @@ import {
   AUTHORITY_KEYPAIR,
   PYTH_TOKEN,
   RPC_NODE,
-  REALM,
   EPOCH_DURATION,
 } from "./mainnet_beta";
 import { BN } from "bn.js";
-import { STAKING_ADDRESS } from "../constants";
+import { STAKING_ADDRESS, REALM_ID } from "../constants";
 
 // Actual transaction hash :
 // mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
@@ -26,7 +25,7 @@ async function main() {
 
   const globalConfig = {
     governanceAuthority: AUTHORITY_KEYPAIR.publicKey,
-    pythGovernanceRealm: REALM,
+    pythGovernanceRealm: REALM_ID,
     pythTokenMint: PYTH_TOKEN,
     unlockingDuration: 1,
     epochDuration: new BN(EPOCH_DURATION),
