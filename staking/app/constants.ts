@@ -12,13 +12,9 @@ export const STAKING_ADDRESS = new PublicKey(
   "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
 );
 
-export const MAINNET_REALM_ID = new PublicKey(
+export const REALM_ID = new PublicKey(
   "A1f6LNEymJSSJsEVCL1FSgtS1jA9dNTC4ni8SkmbwQjG"
 );
-export const LOCALNET_REALM_ID = new PublicKey(
-  "44xGQELUXXD1TiLEMc73RBnCxeW8XKw27LyJNpt2G8bF"
-);
-export const DEVNET_REALM_ID = LOCALNET_REALM_ID;
 
 export const MAINNET_PYTH_MINT = new PublicKey(
   "3ho8ZM4JVqJzD56FADKdW7NTG5Tv6GiBPFUvyRXMy35Q"
