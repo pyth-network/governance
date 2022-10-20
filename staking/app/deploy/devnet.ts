@@ -12,9 +12,6 @@ export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
 export const PYTH_TOKEN = new PublicKey(
   "7Bd6bEH4wHTMmov8D2WTXgxzLJcxJYczqE5NaDtZdhF6"
 );
-export const STAKING_PROGRAM = new PublicKey(
-  "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-);
 export const GOVERNANCE_PROGRAM = new PublicKey(
   "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
 );
