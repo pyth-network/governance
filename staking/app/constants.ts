@@ -1,17 +1,12 @@
 import { PublicKey } from "@solana/web3.js";
+import { wasm } from "./StakeConnection";
 
 export const MAINNET_ENDPOINT = "https://api.mainnet-beta.solana.com";
 export const DEVNET_ENDPOINT = "https://api.devnet.solana.com";
 
-export const MAINNET_GOVERNANCE_ADDRESS = new PublicKey(
-  "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
-);
-export const DEVNET_GOVERNANCE_ADDRESS = new PublicKey(
-  "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
-);
-export const LOCALNET_GOVERNANCE_ADDRESS = new PublicKey(
-  "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
-);
+export function GOVERNANCE_ADDRESS() {
+  return new PublicKey(wasm.Constants.GOVERNANCE_PROGRAM());
+}
 
 export const STAKING_ADDRESS = new PublicKey(
   "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"

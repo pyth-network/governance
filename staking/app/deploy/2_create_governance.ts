@@ -12,11 +12,11 @@ import { Constants } from "pyth-staking-wasm";
 import {
   EPOCH_DURATION,
   AUTHORITY_KEYPAIR,
-  GOVERNANCE_PROGRAM,
   RPC_NODE,
   REALM,
 } from "./mainnet_beta";
 
+import { GOVERNANCE_ADDRESS } from "../constants";
 // Actual transaction hash :
 // mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
 async function main() {
@@ -50,7 +50,7 @@ async function main() {
 
   await withCreateGovernance(
     tx.instructions,
-    GOVERNANCE_PROGRAM, // Address of our instance of the governance program
+    GOVERNANCE_ADDRESS(), // Address of our instance of the governance program
     PROGRAM_VERSION_V2, // Version of the onchain program
     REALM, // Address of the Pyth realms
     undefined, // This is a generic governance so no initial governed account

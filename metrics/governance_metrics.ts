@@ -6,7 +6,7 @@ import {
   DEVNET_ENDPOINT,
   DEVNET_STAKING_ADDRESS,
   DEVNET_PYTH_MINT,
-  DEVNET_GOVERNANCE_ADDRESS,
+  GOVERNANCE_ADDRESS,
   PythBalance,
   DEVNET_REALM_ID,
 } from "pyth-staking-api";
@@ -68,7 +68,7 @@ export class Metrics {
     const actualRealmConfig = (
       await tryGetRealmConfig(
         stakeConnection.provider.connection,
-        DEVNET_GOVERNANCE_ADDRESS,
+        GOVERNANCE_ADDRESS,
         DEVNET_REALM_ID
       )
     ).account;

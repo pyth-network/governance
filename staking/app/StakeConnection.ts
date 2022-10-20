@@ -34,13 +34,7 @@ import {
   PROGRAM_VERSION_V2,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
-import {
-  DEVNET_ENDPOINT,
-  DEVNET_GOVERNANCE_ADDRESS,
-  LOCALNET_GOVERNANCE_ADDRESS,
-  MAINNET_ENDPOINT,
-  MAINNET_GOVERNANCE_ADDRESS,
-} from "./constants";
+import { GOVERNANCE_ADDRESS } from "./constants";
 import assert from "assert";
 import { PositionAccountJs, Position } from "./PositionAccountJs";
 let wasm = wasm2;
@@ -78,12 +72,7 @@ export class StakeConnection {
     this.config = config;
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
-    this.governanceAddress =
-      program.provider.connection.rpcEndpoint === MAINNET_ENDPOINT
-        ? MAINNET_GOVERNANCE_ADDRESS
-        : program.provider.connection.rpcEndpoint === DEVNET_ENDPOINT
-        ? DEVNET_GOVERNANCE_ADDRESS
-        : LOCALNET_GOVERNANCE_ADDRESS;
+    this.governanceAddress = GOVERNANCE_ADDRESS();
   }
 
   // creates a program connection and loads the staking config
