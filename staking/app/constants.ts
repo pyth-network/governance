@@ -13,14 +13,7 @@ export const LOCALNET_GOVERNANCE_ADDRESS = new PublicKey(
   "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw"
 );
 
-export const MAINNET_STAKING_ADDRESS = new PublicKey(
-  "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-);
-export const LOCALNET_STAKING_ADDRESS = new PublicKey(
-  "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-);
-
-export const DEVNET_STAKING_ADDRESS = new PublicKey(
+export const STAKING_ADDRESS = new PublicKey(
   "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
 );
 

@@ -41,9 +41,6 @@ mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-#[cfg(not(mainnet))]
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
-#[cfg(mainnet)]
 declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
 
 #[cfg(not(mainnet))]

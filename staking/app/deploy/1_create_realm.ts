@@ -10,11 +10,11 @@ import { BN } from "bn.js";
 import {
   AUTHORITY_KEYPAIR,
   PYTH_TOKEN,
-  STAKING_PROGRAM,
   GOVERNANCE_PROGRAM,
   RPC_NODE,
 } from "./mainnet_beta";
 
+import { STAKING_ADDRESS } from "../constants";
 import { Constants } from "pyth-staking-wasm";
 // Actual transaction hash :
 // mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
@@ -36,8 +36,8 @@ async function main() {
       Constants.MAX_VOTER_WEIGHT().toString() // Create governance requires realm authority
     ),
     {
-      voterWeightAddin: STAKING_PROGRAM, // Voter weight plugin
-      maxVoterWeightAddin: STAKING_PROGRAM, // Max voter weight plugin
+      voterWeightAddin: STAKING_ADDRESS, // Voter weight plugin
+      maxVoterWeightAddin: STAKING_ADDRESS, // Max voter weight plugin
       tokenType: GoverningTokenType.Liquid, // Liquid token
     },
     undefined // No council mint

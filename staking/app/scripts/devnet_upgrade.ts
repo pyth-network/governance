@@ -11,7 +11,7 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
-import { DEVNET_ENDPOINT, DEVNET_STAKING_ADDRESS } from "../constants";
+import { DEVNET_ENDPOINT, STAKING_ADDRESS } from "../constants";
 import {
   ANCHOR_CONFIG_PATH,
   CustomAbortController,
@@ -160,7 +160,7 @@ async function main() {
   );
   const bpfAccounts = await getBPFUpgradeableUtilAccounts(
     devnet,
-    DEVNET_STAKING_ADDRESS
+    STAKING_ADDRESS
   );
 
   assert(upgradeAuth.publicKey.equals(bpfAccounts.upgradeAuthority));
@@ -170,7 +170,7 @@ async function main() {
   if (DRY_RUN) {
     ({ controller, connection } = await launchClonedValidator(
       devnet,
-      DEVNET_STAKING_ADDRESS
+      STAKING_ADDRESS
     ));
     console.log("Localnet is running");
   } else {
@@ -203,19 +203,19 @@ async function upgradeProgram(
     throw new Error("Refusing to deploy binary with mock clock enabled");
   }
   shell.exec(
-    `solana program deploy ${soPath} --program-id ${DEVNET_STAKING_ADDRESS.toBase58()} -u ${
+    `solana program deploy ${soPath} --program-id ${STAKING_ADDRESS.toBase58()} -u ${
       connection.rpcEndpoint
     } --upgrade-authority ${UPGRADE_AUTH_KEYPAIR_PATH}`
   );
   console.log("Upgraded program");
-  const idlAddressKey = await idlAddress(DEVNET_STAKING_ADDRESS);
+  const idlAddressKey = await idlAddress(STAKING_ADDRESS);
   const idlFinished = new Promise((resolve) => {
     connection.onAccountChange(idlAddressKey, resolve, "finalized");
   });
   let idlResult = shell.exec(
     `anchor idl upgrade --provider.cluster ${
       connection.rpcEndpoint
-    } --provider.wallet ${UPGRADE_AUTH_KEYPAIR_PATH} --filepath ${idlPath}  ${DEVNET_STAKING_ADDRESS.toBase58()}`
+    } --provider.wallet ${UPGRADE_AUTH_KEYPAIR_PATH} --filepath ${idlPath}  ${STAKING_ADDRESS.toBase58()}`
   );
   console.log("Waiting for IDL: %s", idlResult);
   await idlFinished;
@@ -233,17 +233,17 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
     new anchor.Wallet(feePayer),
     {}
   );
-  let idl = await Program.fetchIdl(DEVNET_STAKING_ADDRESS, provider)!;
+  let idl = await Program.fetchIdl(STAKING_ADDRESS, provider)!;
 
   const program = new Program(
     idl,
-    DEVNET_STAKING_ADDRESS,
+    STAKING_ADDRESS,
     provider
   ) as unknown as Program<Staking>;
   console.log("Downloading accounts");
   // Position Data can't be loaded via Anchor
   const allPositionAccounts: ToPairAccountInterface[] = (
-    await connection.getProgramAccounts(DEVNET_STAKING_ADDRESS, {
+    await connection.getProgramAccounts(STAKING_ADDRESS, {
       filters: [{ memcmp: program.coder.accounts.memcmp("positionData") }],
     })
   ).map((e) => {
@@ -254,16 +254,12 @@ async function upgradeAccounts(connection: anchor.web3.Connection) {
   });
   const allV1 = await program.account.stakeAccountMetadata.all();
   console.log("Accounts downloaded");
-  const pairs = await pairAccounts(
-    allPositionAccounts,
-    allV1,
-    DEVNET_STAKING_ADDRESS
-  );
+  const pairs = await pairAccounts(allPositionAccounts, allV1, STAKING_ADDRESS);
   await connection.confirmTransaction(airDropSignature);
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     new anchor.Wallet(feePayer),
-    DEVNET_STAKING_ADDRESS
+    STAKING_ADDRESS
   );
 
   console.log("%d accounts found in need of upgrade", allV1.length);

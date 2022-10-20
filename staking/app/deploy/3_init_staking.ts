@@ -4,12 +4,12 @@ import { getTargetAccount } from "../../tests/utils/utils";
 import {
   AUTHORITY_KEYPAIR,
   PYTH_TOKEN,
-  STAKING_PROGRAM,
   RPC_NODE,
   REALM,
   EPOCH_DURATION,
 } from "./mainnet_beta";
 import { BN } from "bn.js";
+import { STAKING_ADDRESS } from "../constants";
 
 // Actual transaction hash :
 // mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam
@@ -21,8 +21,8 @@ async function main() {
     new Wallet(AUTHORITY_KEYPAIR),
     {}
   );
-  const idl = (await Program.fetchIdl(STAKING_PROGRAM, provider))!;
-  const program = new Program(idl, STAKING_PROGRAM, provider);
+  const idl = (await Program.fetchIdl(STAKING_ADDRESS, provider))!;
+  const program = new Program(idl, STAKING_ADDRESS, provider);
 
   const globalConfig = {
     governanceAuthority: AUTHORITY_KEYPAIR.publicKey,
@@ -35,7 +35,7 @@ async function main() {
   await program.methods.initConfig(globalConfig).rpc();
 
   const votingTarget = { voting: {} };
-  const targetAccount = await getTargetAccount(votingTarget, STAKING_PROGRAM);
+  const targetAccount = await getTargetAccount(votingTarget, STAKING_ADDRESS);
   await program.methods
     .createTarget(votingTarget)
     .accounts({
