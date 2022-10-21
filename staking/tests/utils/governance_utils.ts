@@ -5,7 +5,7 @@ import {
   SimulatedTransactionResponse,
   TransactionInstruction,
 } from "@solana/web3.js";
-import * as wasm from "../../wasm/node/pyth_staking_program";
+import * as wasm from "../../wasm/node/staking";
 import { StakeConnection } from "../../app";
 import {
   getProposalsByGovernance,

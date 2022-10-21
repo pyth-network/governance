@@ -8,7 +8,7 @@ import {
 import * as anchor from "@project-serum/anchor";
 import { AnchorError, ProgramError } from "@project-serum/anchor";
 import assert from "assert";
-import * as wasm from "../../wasm/node/pyth_staking_program";
+import * as wasm from "../../wasm/node/staking";
 import { Staking } from "../../target/types/staking";
 
 type StakeTarget = anchor.IdlTypes<Staking>["Target"];

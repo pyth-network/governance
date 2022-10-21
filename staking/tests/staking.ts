@@ -15,7 +15,7 @@ import {
 import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
-import * as wasm from "../wasm/node/pyth_staking_program";
+import * as wasm from "../wasm/node/staking";
 import path from "path";
 import {
   readAnchorConfig,
