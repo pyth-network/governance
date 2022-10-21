@@ -159,7 +159,9 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
  * ```controller.abort()```
  */
 export async function startValidator(portNumber: number, config: AnchorConfig) {
-  const programAddress = new PublicKey(config.programs.localnet.staking);
+  const programAddress = new PublicKey(
+    config.programs.localnet.pyth_staking_program
+  );
   const idlPath = config.path.idl_path;
   const binaryPath = config.path.binary_path;
 
@@ -286,8 +288,12 @@ export async function createDefaultRealm(
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     new BN(200), // 200 required so we can create governances during tests
     {
-      voterWeightAddin: new PublicKey(config.programs.localnet.staking),
-      maxVoterWeightAddin: new PublicKey(config.programs.localnet.staking),
+      voterWeightAddin: new PublicKey(
+        config.programs.localnet.pyth_staking_program
+      ),
+      maxVoterWeightAddin: new PublicKey(
+        config.programs.localnet.pyth_staking_program
+      ),
       tokenType: GoverningTokenType.Liquid,
     },
     undefined
@@ -488,7 +494,7 @@ export async function standardSetup(
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
     provider.wallet as Wallet,
-    new PublicKey(config.programs.localnet.staking)
+    new PublicKey(config.programs.localnet.pyth_staking_program)
   );
 
   return { controller, stakeConnection };

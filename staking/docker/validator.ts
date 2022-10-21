@@ -9,7 +9,7 @@ async function main() {
 
   const ledgerDir = config.validator.ledger_dir;
   const walletPubkeyPath = config.provider.wallet;
-  const programAddress = new PublicKey(config.programs.localnet.staking);
+  const programAddress = new PublicKey(config.programs.localnet.pyth_staking_program);
 
   shell.exec(
     `solana-keygen new -o ${walletPubkeyPath} --no-bip39-passphrase --force`

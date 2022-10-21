@@ -1,16 +1,29 @@
+anchor_version = "0.24.1"
+
 [features]
 seeds = true
 
+[workspace]
+members = ["programs/staking"]
+
 [programs.localnet]
-staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+pyth_staking_program = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
 governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
+
+[programs.devnet]
+pyth_staking_program = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+
+[programs.mainnet]
+pyth_staking_program = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "localnet"
+cluster = "mainnet"
 wallet = "./tests/keypairs/default_wallet.json"
 
 [scripts]
