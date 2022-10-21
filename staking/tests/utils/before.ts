@@ -18,7 +18,7 @@ import {
   utils,
   AnchorProvider,
 } from "@project-serum/anchor";
-import * as wasm from "../../wasm/node/staking";
+import * as wasm from "../../wasm/node/pyth_staking_program";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -61,7 +61,7 @@ export interface AnchorConfig {
   };
   programs: {
     localnet: {
-      staking: string;
+      pyth_staking_program: string;
       governance: string;
       chat: string;
     };

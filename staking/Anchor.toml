@@ -34,6 +34,6 @@ ledger_dir = "./.anchor/test-ledger"
 
 [path]
 idl_path = "./target/idl/staking.json"
-binary_path = "./target/deploy/staking.so"
+binary_path = "./target/deploy/pyth_staking_program.so"
 governance_path = "./target/deploy/governance.so"
 chat_path = "./target/deploy/chat.so"

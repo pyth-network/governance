@@ -23,7 +23,7 @@ async function main() {
   shell.exec(`mkdir -p ${ledgerDir}`);
 
   exec(
-    `solana-test-validator --ledger ${ledgerDir} --mint ${walletPubkey} --reset --bpf-program  ${programAddress} ./target/deploy/staking.so`
+    `solana-test-validator --ledger ${ledgerDir} --mint ${walletPubkey} --reset --bpf-program  ${programAddress} ./target/deploy/pyth_staking_program.so`
   );
 
   //wait until validator is responsive
