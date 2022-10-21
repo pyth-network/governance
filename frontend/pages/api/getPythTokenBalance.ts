@@ -1,4 +1,3 @@
-import { PYTH_MINT_ACCOUNT_PUBKEY } from '@components/constants'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { PythBalance } from 'pyth-staking-api'
 import { BN } from 'bn.js'
