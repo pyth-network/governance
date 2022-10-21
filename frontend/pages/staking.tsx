@@ -8,12 +8,12 @@ import type { NextPage } from 'next'
 import { ChangeEvent, Fragment, useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { STAKING_PROGRAM } from '@components/constants'
 import {
   PythBalance,
   StakeAccount,
   StakeConnection,
   VestingAccountState,
+  STAKING_ADDRESS
 } from 'pyth-staking-api'
 import { getPythTokenBalance } from './api/getPythTokenBalance'
 import toast from 'react-hot-toast'
@@ -108,7 +108,7 @@ const Staking: NextPage = () => {
         const stakeConnection = await StakeConnection.createStakeConnection(
           connection,
           anchorWallet as Wallet,
-          STAKING_PROGRAM
+          STAKING_ADDRESS
         )
         setStakeConnection(stakeConnection)
         const stakeAccounts = await stakeConnection.getStakeAccounts(
@@ -314,7 +314,7 @@ const Staking: NextPage = () => {
   // refresh balances each time balances change
   const refreshBalance = async () => {
     if (stakeConnection && publicKey) {
-      setPythBalance(await getPythTokenBalance(connection, publicKey))
+      setPythBalance(await getPythTokenBalance(connection, publicKey, stakeConnection.config.pythTokenMint))
     }
     if (stakeConnection && publicKey && mainStakeAccount) {
       const { withdrawable, locked, unvested } =

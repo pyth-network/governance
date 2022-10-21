@@ -5,12 +5,13 @@ import { BN } from 'bn.js'
 
 export const getPythTokenBalance = async (
   connection: Connection,
-  publicKey: PublicKey
+  publicKey: PublicKey,
+  pythTokenMint: PublicKey
 ) => {
   let balance = new BN(0);
     try {
     const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
-      mint: PYTH_MINT_ACCOUNT_PUBKEY,
+      mint: pythTokenMint,
     })
     for (const account of tokenAccounts.value) {
       const test = await connection.getTokenAccountBalance(account.pubkey)
