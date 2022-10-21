@@ -27,7 +27,7 @@ export async function getTargetAccount(
 
         stakeTarget.hasOwnProperty("voting")
           ? Buffer.from("")
-          : (stakeTarget as any).pyth_staking_program.product.toBuffer(),
+          : (stakeTarget as any).staking.product.toBuffer(),
       ],
       programId
     )
