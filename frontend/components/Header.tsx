@@ -29,8 +29,8 @@ const Header = () => {
           </Link>
           <Link
             href={`https://realms.today/dao/PYTH${
-              process.env.ENDPOINT !== "mainnet"
-                ? '?cluster=' + process.env.ENDPOINT
+              process.env.CLUSTER !== "mainnet"
+                ? '?cluster=' + process.env.CLUSTER
                 : ''
             }`}
           >
@@ -121,8 +121,8 @@ const Header = () => {
               </Link>
               <Link
             href={`https://realms.today/dao/PYTH${
-              process.env.ENDPOINT !== "mainnet"
-                ? '?cluster=' + process.env.ENDPOINT
+              process.env.CLUSTER !== "mainnet"
+                ? '?cluster=' + process.env.CLUSTER
                 : ''
             }`}
               >

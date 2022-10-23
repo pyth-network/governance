@@ -8,7 +8,7 @@ module.exports = {
   },
   env: {
     ENDPOINT: process.env.ENDPOINT,
-    LOCALNET_PYTH_MINT: process.env.LOCALNET_PYTH_MINT,
+    CLUSTER : process.env.CLUSTER
   },
   webpack: (config, { isServer, dev }) => {
     config.experiments = { asyncWebAssembly: true, layers: true, }

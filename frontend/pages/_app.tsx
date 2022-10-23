@@ -33,10 +33,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
   const endpoint =
-    process.env.ENDPOINT && process.env.ENDPOINT === 'mainnet' ? clusterApiUrl(WalletAdapterNetwork.Mainnet) : process.env.ENDPOINT === 'devnet'
-      ? clusterApiUrl(WalletAdapterNetwork.Devnet)
-      : process.env.ENDPOINT
-
+    process.env.ENDPOINT
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
   // of wallets that your users connect to will be loaded
