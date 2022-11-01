@@ -1,7 +1,7 @@
+import { Dialog } from '@headlessui/react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { Dialog } from '@headlessui/react'
 import { useState } from 'react'
 import { classNames } from 'utils/classNames'
 
@@ -27,9 +27,18 @@ const Header = () => {
               Staking
             </a>
           </Link>
+          <Link href="/airdrop">
+            <a
+              className={
+                router.pathname == '/airdrop' ? 'nav-link-active' : 'nav-link'
+              }
+            >
+              Airdrop
+            </a>
+          </Link>
           <Link
             href={`https://realms.today/dao/PYTH${
-              process.env.CLUSTER !== "mainnet"
+              process.env.CLUSTER !== 'mainnet'
                 ? '?cluster=' + process.env.CLUSTER
                 : ''
             }`}
@@ -120,11 +129,11 @@ const Header = () => {
                 </a>
               </Link>
               <Link
-            href={`https://realms.today/dao/PYTH${
-              process.env.CLUSTER !== "mainnet"
-                ? '?cluster=' + process.env.CLUSTER
-                : ''
-            }`}
+                href={`https://realms.today/dao/PYTH${
+                  process.env.CLUSTER !== 'mainnet'
+                    ? '?cluster=' + process.env.CLUSTER
+                    : ''
+                }`}
               >
                 <a
                   className={classNames('font-arboria text-4xl', 'text-white')}
