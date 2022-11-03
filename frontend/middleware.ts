@@ -4,8 +4,9 @@ export function middleware() {
   // Store the response so we can modify its headers
   const response = NextResponse.next()
 
-  // set x-frame options to deny
-  response.headers.set('x-frame-options', 'deny')
+  // Block site from being framed with X-Frame-Options and CSP
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('Content-Security-Policy', "frame-ancestors 'none'")
 
   // Return response
   return response
