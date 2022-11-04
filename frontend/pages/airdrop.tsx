@@ -1,3 +1,4 @@
+import RotateIcon from '@components/icons/RotateIcon'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import Synaps from '@synaps-io/react-verify'
@@ -10,14 +11,21 @@ const Airdrop: NextPage = () => {
   const { publicKey, connected } = useWallet()
   const [isVerified, setIsVerified] = useState(false)
   const [sessionId, setSessionId] = useState('')
-  const [airdropRecipients, setAirdropRecipients] = useState<{
-    [key: string]: number
-  }>({})
+  const [eligible, setEligible] = useState(false)
+  const [amount, setAmount] = useState(0)
+  const [kycFrame, setKycFrame] = useState(false)
 
-  const fetchAirdropRecipients = async () => {
+  const setEligibility = async () => {
     const response = await fetch('http://0.0.0.0:8080/airdrop_recipients')
     const data = await response.json()
-    setAirdropRecipients(data)
+    if (
+      publicKey &&
+      publicKey.toBase58() in data &&
+      data[publicKey.toBase58()] > 0
+    ) {
+      setEligible(true)
+      setAmount(data[publicKey.toBase58()])
+    }
   }
 
   const fetchSessionInfo = async () => {
@@ -32,74 +40,108 @@ const Airdrop: NextPage = () => {
     setSessionId(sessionId)
     setIsVerified(status === 'VERIFIED')
   }
-  console.log(isVerified)
 
   useEffect(() => {
     if (connected) {
-      fetchAirdropRecipients()
+      setEligibility()
     }
   }, [connected])
-  console.log(airdropRecipients)
+
+  useEffect(() => {
+    if (connected) {
+      fetchSessionInfo()
+    }
+  }, [eligible])
 
   return (
     <Layout>
       <SEO title={'Airdrop'} />
-      {connected &&
-        publicKey &&
-        publicKey.toBase58() in airdropRecipients &&
-        sessionId && (
+      <div className="mb-10 flex flex-col items-center justify-center font-inter">
+        {connected && !eligible ? (
           <div className="mb-10 flex flex-col items-center px-8">
-            <div className="w-full max-w-xl rounded-xl border-2 border-blueGem bg-jaguar py-6 sm:mt-12">
-              <div className="mx-auto grid w-full text-center sm:text-left">
-                <div className="text-white sm:grid sm:px-6">
-                  <div className="my-auto flex flex-col">
-                    <div className="mx-auto flex text-sm sm:m-0">
-                      Congratulations, you are eligible to claim&nbsp;
-                      <strong>
-                        {airdropRecipients[publicKey.toBase58()]} PYTH
-                      </strong>
-                      &nbsp;tokens!
-                    </div>
-                  </div>
-                </div>
-                <div className="text-white sm:grid sm:grid-cols-2 sm:px-6">
-                  <div className="my-auto flex flex-col">
-                    <div className="mx-auto flex text-sm sm:m-0">
-                      Verified:{' '}
-                      {sessionId ? (isVerified ? 'true' : 'false') : '-'}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="px-20 text-center text-8xl font-bold text-white">
+              Sorry, you’re not eligible to claim this $PYTH airdrop.
+            </div>
+            <div className="py-10 px-40 text-center text-sm text-white">
+              It looks like this wallet is not eligible for the airdrop. Try
+              connecting another wallet.
+            </div>
+            <WalletModalButton
+              className="primary-btn py-3 px-14"
+              text-base
+              font-semibold
+            >
+              <RotateIcon />
+              &nbsp; Connect Different Wallet
+            </WalletModalButton>
+          </div>
+        ) : connected && eligible && isVerified ? (
+          <div className="mb-10 flex flex-col items-center px-8">
+            <div className="px-20 text-center text-6xl font-bold text-white">
+              Congratulations, you have completed KYC and are verified!
+            </div>
+            <div className="py-10 px-40 text-center text-sm text-white">
+              Claim your {amount} $PYTH tokens.
+            </div>
+            <div className="max-w-sm">
+              <button
+                className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
+                onClick={() => {}}
+              >
+                Claim Airdrop
+              </button>
             </div>
           </div>
-        )}
-      <div className="mb-10 flex items-center justify-center font-inter">
-        {connected && sessionId ? (
-          <Synaps
-            sessionId={sessionId}
-            service={'individual'}
-            lang={'en'}
-            onReady={() => console.log('component ready')}
-            onFinish={() => console.log('user finish process')}
-            color={{
-              primary: '212b39',
-              secondary: 'ffffff',
-            }}
-          />
-        ) : connected ? (
-          <button
-            className="primary-btn w-1/6 py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
-            onClick={fetchSessionInfo}
-          >
-            Claim Airdrop
-          </button>
+        ) : connected && eligible && !isVerified ? (
+          kycFrame ? (
+            <Synaps
+              sessionId={sessionId}
+              service={'individual'}
+              lang={'en'}
+              onReady={() => console.log('component ready')}
+              onFinish={() => console.log('user finish process')}
+              color={{
+                primary: '212b39',
+                secondary: 'ffffff',
+              }}
+            />
+          ) : (
+            <div className="mb-10 flex flex-col items-center px-8">
+              <div className="px-20 text-center text-6xl font-bold text-white">
+                Congratulations, you are eligible to claim&nbsp;
+                <strong>{amount} $PYTH</strong>
+                &nbsp;tokens!
+              </div>
+              <div className="py-10 px-40 text-center text-sm text-white">
+                Please complete KYC to receive your tokens.
+              </div>
+              <div className="max-w-sm">
+                <button
+                  className="primary-btn w-full py-3 px-8 text-base font-semibold text-white hover:bg-blueGemHover"
+                  onClick={() => setKycFrame(true)}
+                >
+                  Complete KYC
+                </button>
+              </div>
+            </div>
+          )
         ) : (
-          <WalletModalButton
-            className="primary-btn py-3 px-14"
-            text-base
-            font-semibold
-          />
+          <div className="mb-10 flex flex-col items-center px-8">
+            <div className="px-20 text-center text-8xl font-bold text-white">
+              Claim your $PYTH Airdrop
+            </div>
+            <div className="py-10 px-40 text-center text-sm text-white">
+              The Pyth Token ($PYTH) is the governance and utility token for the
+              Pyth Network, which serves as the backbone to the Solana DeFi
+              ecosystem. To start, holders of $PYTH may vote in the Pyth DAO to
+              participate directly in the future direction of the protocol.
+            </div>
+            <WalletModalButton
+              className="primary-btn py-3 px-14"
+              text-base
+              font-semibold
+            />
+          </div>
         )}
       </div>
     </Layout>
