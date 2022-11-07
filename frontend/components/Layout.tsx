@@ -10,7 +10,7 @@ const Layout: React.FC<{}> = ({ children }) => {
       <main>{children}</main>
       <img
         src="/orb.png"
-        className="pointer-events-none absolute left-0 top-0 -z-[1]"
+        className="pointer-events-none absolute left-0 top-0 -z-[1] max-h-screen object-cover"
       />
       <Footer />
     </div>
