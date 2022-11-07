@@ -10,7 +10,7 @@
 
 @layer utilities {
   .gradient-border {
-    @apply absolute left-0 bottom-0 h-px w-full bg-radial opacity-60;
+    @apply absolute left-8 bottom-0 h-px w-[calc(100%-64px)] bg-radial opacity-60;
   }
 }
 
