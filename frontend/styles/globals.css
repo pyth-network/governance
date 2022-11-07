@@ -6,6 +6,10 @@
   @apply rounded-full bg-pythPurple;
 }
 
+.discord-btn {
+  @apply rounded-lg bg-pythPurple;
+}
+
 .outlined-btn {
   @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white;
 }

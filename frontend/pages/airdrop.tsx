@@ -1,14 +1,17 @@
 import RotateIcon from '@components/icons/RotateIcon'
+import WhiteDiscordIcon from '@components/icons/WhiteDiscordIcon'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import Synaps from '@synaps-io/react-verify'
 import type { NextPage } from 'next'
+import { signIn, signOut, useSession } from 'next-auth/client'
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 
 const Airdrop: NextPage = () => {
   const { publicKey, connected } = useWallet()
+  const [session, loading] = useSession()
   const [isVerified, setIsVerified] = useState(false)
   const [sessionId, setSessionId] = useState('')
   const [eligible, setEligible] = useState(false)
@@ -18,14 +21,28 @@ const Airdrop: NextPage = () => {
   const setEligibility = async () => {
     const response = await fetch('http://0.0.0.0:8080/airdrop_recipients')
     const data = await response.json()
+    let airdropAmount = 0
     if (
       publicKey &&
       publicKey.toBase58() in data &&
       data[publicKey.toBase58()] > 0
     ) {
       setEligible(true)
-      setAmount(data[publicKey.toBase58()])
+      airdropAmount += data[publicKey.toBase58()]
     }
+
+    if (
+      session &&
+      session.user &&
+      session.user.name &&
+      session.user.name in data &&
+      data[session.user.name] > 0
+    ) {
+      setEligible(true)
+      airdropAmount += data[session.user.name]
+    }
+
+    setAmount(airdropAmount)
   }
 
   const fetchSessionInfo = async () => {
@@ -45,7 +62,7 @@ const Airdrop: NextPage = () => {
     if (connected) {
       setEligibility()
     }
-  }, [connected])
+  }, [connected, session])
 
   useEffect(() => {
     if (connected) {
@@ -57,6 +74,28 @@ const Airdrop: NextPage = () => {
     <Layout>
       <SEO title={'Airdrop'} />
       <div className="mb-10 flex flex-col items-center justify-center font-inter">
+        <div className="mb-10 flex flex-col items-center px-8">
+          <div className="px-20 text-center font-bold text-white">
+            {session ? `Connected: ${session?.user?.name}` : null}
+            <div className="max-w-sm">
+              {session ? (
+                <button
+                  className="discord-btn w-full py-3 px-8 text-base text-white hover:bg-blueGemHover"
+                  onClick={() => signOut()}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  className="discord-btn flex w-full py-3 px-8 text-base text-white hover:bg-blueGemHover"
+                  onClick={() => signIn('discord')}
+                >
+                  <WhiteDiscordIcon /> &nbsp;Sign In with Discord
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
         {connected && !eligible ? (
           <div className="mb-10 flex flex-col items-center px-8">
             <div className="px-20 text-center text-8xl font-bold text-white">

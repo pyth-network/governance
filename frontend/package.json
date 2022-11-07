@@ -20,6 +20,7 @@
     "@tippyjs/react": "^4.2.6",
     "dotenv": "^16.0.0",
     "next": "latest",
+    "next-auth": "^3.29.10",
     "prop-types": "^15.8.1",
     "pyth-staking-api": "1.3.2",
     "react": "^17.0.2",

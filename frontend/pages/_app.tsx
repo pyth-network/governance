@@ -1,5 +1,3 @@
-import Head from 'next/head'
-import type { AppProps } from 'next/app'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import {
   ConnectionProvider,
@@ -17,9 +15,10 @@ import {
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
-import { Toaster } from 'react-hot-toast'
+import { Provider } from 'next-auth/client'
+import type { AppProps } from 'next/app'
 import { FC, useMemo } from 'react'
-import Footer from '@components/Footer'
+import { Toaster } from 'react-hot-toast'
 
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
@@ -32,8 +31,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // You can also provide a custom RPC endpoint
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
-  const endpoint =
-    process.env.ENDPOINT
+  const endpoint = process.env.ENDPOINT
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
   // of wallets that your users connect to will be loaded
@@ -57,16 +55,18 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <Component {...pageProps} />
-          <Toaster
-            position="bottom-left"
-            toastOptions={{
-              style: {
-                wordBreak: 'break-word',
-              },
-            }}
-            reverseOrder={false}
-          />
+          <Provider session={pageProps.session}>
+            <Component {...pageProps} />
+            <Toaster
+              position="bottom-left"
+              toastOptions={{
+                style: {
+                  wordBreak: 'break-word',
+                },
+              }}
+              reverseOrder={false}
+            />
+          </Provider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
