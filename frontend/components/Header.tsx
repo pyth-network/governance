@@ -62,8 +62,8 @@ const Header = () => {
       <Dialog open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
         <div className="flex min-h-screen justify-center">
           <Dialog.Overlay className="fixed inset-0 bg-dark" />
-          <div className="height-screen fixed top-0 mx-auto w-full rounded py-6 px-8">
-            <div className="flex items-center justify-between space-x-2">
+          <div className="height-screen fixed  top-0 mx-auto w-full rounded py-6 px-8">
+            <div className="flex items-center justify-between space-x-2 pt-[7px]">
               <Link href="/staking">
                 <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
               </Link>
