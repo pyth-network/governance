@@ -19,7 +19,6 @@ import {
 import { clusterApiUrl } from '@solana/web3.js'
 import { Toaster } from 'react-hot-toast'
 import { FC, useMemo } from 'react'
-import Footer from '@components/Footer'
 
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')

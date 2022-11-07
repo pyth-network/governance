@@ -5,14 +5,12 @@ class CustomDocument extends Document {
     return (
       <Html>
         <Head>
-          <link rel="preconnect" href="https://fonts.gstatic.com" />
           <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=PT+Mono&family=Poppins&display=swap"
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600;700&family=Urbanist:wght@400;600;700&display=swap"
             rel="stylesheet"
           />
-          <link rel="stylesheet" href="https://use.typekit.net/wsv5ulf.css" />
         </Head>
-        <body className="min-h-screen bg-darkerPurpleBackground">
+        <body className="min-h-screen">
           <Main />
           <NextScript />
         </body>
