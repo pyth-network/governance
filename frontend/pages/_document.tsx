@@ -13,7 +13,7 @@ class CustomDocument extends Document {
           <link
             rel="icon"
             type="image/x-icon"
-            href="/public/favicon.ico"
+            href="/favicon-light.ico"
             id="faviconTag"
           />
           <link
