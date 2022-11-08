@@ -1,5 +1,4 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document'
-import Script from 'next/script'
 
 class CustomDocument extends Document {
   render() {
@@ -11,10 +10,14 @@ class CustomDocument extends Document {
             rel="stylesheet"
           />
           <link
+            href="favicon.ico"
             rel="icon"
-            type="image/x-icon"
-            href="/favicon-light.ico"
-            id="faviconTag"
+            media="(prefers-color-scheme: light)"
+          />
+          <link
+            href="favicon-light.ico"
+            rel="icon"
+            media="(prefers-color-scheme: dark)"
           />
           <link
             rel="apple-touch-icon"
@@ -37,16 +40,6 @@ class CustomDocument extends Document {
           <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#242235" />
           <meta name="msapplication-TileColor" content="#242235" />
           <meta name="theme-color" content="#242235"></meta>
-          <Script id="show-banner" strategy="beforeInteractive">
-            {`const faviconTag = document.getElementById("faviconTag");
-            const isDark = window.matchMedia("(prefers-color-scheme: dark)");
-            const changeFavicon = () => {
-              if (isDark.matches) faviconTag.href = "/favicon-light.ico";
-              else faviconTag.href = "/favicon.ico";
-            };
-            changeFavicon();
-            setInterval(changeFavicon, 1000);`}
-          </Script>
         </Head>
         <body className="min-h-screen">
           <Main />

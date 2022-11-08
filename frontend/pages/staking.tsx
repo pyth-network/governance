@@ -1111,7 +1111,7 @@ const Staking: NextPage = () => {
 
                             <div className="flex items-center justify-center ">
                               {!connected ? (
-                                <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
+                                <WalletModalButton className="secondary-btn pt-0.5 text-base sm:text-xs" />
                               ) : currentTab === TabEnum.Lock ? (
                                 <button
                                   className="action-btn text-base "
