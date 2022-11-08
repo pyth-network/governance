@@ -6,6 +6,7 @@ import {
   DataV2,
 } from "@metaplex-foundation/mpl-token-metadata";
 
+/// Update metadata to arweave before running this by using https://github.com/jacobcreech/Token-Creator
 async function main() {
   const PYTH_ONCHAIN_METADATA = {
     name: "Pyth",
