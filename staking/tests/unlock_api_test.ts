@@ -132,10 +132,9 @@ describe("unlock_api", async () => {
       owner,
       {
         locked: {
-          unlocking: PythBalance.fromString("50"),
           locked: PythBalance.fromString("100"),
         },
-        withdrawable: PythBalance.fromString("50"),
+        withdrawable: PythBalance.fromString("100"),
       },
       await stakeConnection.getTime()
     );

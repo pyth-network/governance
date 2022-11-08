@@ -340,7 +340,7 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
     governanceAuthority: null,
     pythGovernanceRealm: null,
     pythTokenMint: pythMint,
-    unlockingDuration: 1,
+    unlockingDuration: 0,
     epochDuration: new BN(3600),
     freeze: false,
     mockClockTime: new BN(10),

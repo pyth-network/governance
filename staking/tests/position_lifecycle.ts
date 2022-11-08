@@ -221,7 +221,7 @@ describe("position_lifecycle", async () => {
   });
 
   it("one epoch pass, still locked", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(0))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -229,7 +229,7 @@ describe("position_lifecycle", async () => {
       {
         locked: {
           locked: PythBalance.fromString("140"),
-          unlocking: PythBalance.fromString("50"),
+          preunlocking: PythBalance.fromString("50"),
         },
         withdrawable: PythBalance.fromString("10"),
       },
