@@ -919,7 +919,7 @@ const Staking: NextPage = () => {
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
                   onClick={openLockedModal}
                 >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
+                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-stretch">
                     <div className="mb-2  md:mr-6 md:mb-0">
                       <LockedIcon />
                     </div>
@@ -946,7 +946,7 @@ const Staking: NextPage = () => {
                   </div>
                 </button>
               ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-stretch md:text-left">
                   <div className="mb-2  md:mr-6 md:mb-0">
                     <LockedIcon />
                   </div>
@@ -961,7 +961,7 @@ const Staking: NextPage = () => {
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
                   onClick={openUnlockedModal}
                 >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
+                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-stretch">
                     <div className="mb-2  md:mr-6 md:mb-0">
                       <UnlockedIcon />
                     </div>
@@ -988,7 +988,7 @@ const Staking: NextPage = () => {
                   </div>
                 </button>
               ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-stretch md:text-left">
                   <div className="mb-2  md:mr-6 md:mb-0">
                     <UnlockedIcon />
                   </div>
@@ -1004,7 +1004,7 @@ const Staking: NextPage = () => {
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
                   onClick={openUnvestedModal}
                 >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
+                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-stretch">
                     <div className="mb-2  md:mr-6 md:mb-0">
                       <UnvestedIcon />
                     </div>
@@ -1021,7 +1021,7 @@ const Staking: NextPage = () => {
                   </div>
                 </button>
               ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-stretch md:text-left">
                   <div className="mb-2  md:mr-6 md:mb-0">
                     <UnvestedIcon />
                   </div>
