@@ -8,6 +8,10 @@ export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
   )
 );
 
+export const MULTISIG_AUTHORITY = new PublicKey(
+  "6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT"
+);
+
 export const PYTH_TOKEN = new PublicKey(
   "3ho8ZM4JVqJzD56FADKdW7NTG5Tv6GiBPFUvyRXMy35Q"
 );
