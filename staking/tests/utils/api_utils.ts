@@ -18,6 +18,7 @@ import {
   SYSTEM_PROGRAM_ID,
   VoteThresholdType,
   VoteThreshold,
+  VoteTypeKind,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
 import * as wasm from "../../wasm";
@@ -178,6 +179,49 @@ async function assertVoterWeightEqualsAt(
   assert.equal(onChain.governingTokenOwner.toBase58(), owner.toBase58());
   assert.equal(onChain.weightAction.toString(), { castVote: {} }.toString());
 }
+/* spl-governance adds a few methods to the prototype of BinaryWriter so that it can serialize
+   and deserialize governance objects properly. I'm not sure if this is SPL-gov using undefined
+   behavior or not, but it seems when we use BinaryWriter we don't get those methods. This is a
+   cleaner way to get them.  Mostly taken from https://github.com/solana-labs/oyster/blob/main/
+   packages/governance-sdk/src/governance/serialisation.ts */
+class GovernanceBinaryWriter extends BinaryWriter {
+  writePubkey(value: PublicKey) {
+    const writer = this as unknown as BinaryWriter;
+    writer.writeFixedArray(value.toBuffer());
+  }
+  writeVoteType(value: VoteType) {
+    const writer = this as unknown as BinaryWriter;
+    writer.maybeResize();
+    writer.buf.writeUInt8(value.type, writer.length);
+    writer.length += 1;
+
+    if (value.type === VoteTypeKind.MultiChoice) {
+      writer.buf.writeUInt16LE(value.choiceCount!, writer.length);
+      writer.length += 2;
+    }
+  }
+  writeU16(value: number) {
+    const writer = this as unknown as BinaryWriter;
+    writer.maybeResize();
+    writer.buf.writeUInt16LE(value, writer.length);
+    writer.length += 2;
+  }
+  writeVoteThreshold(value: VoteThreshold) {
+    const writer = this as unknown as BinaryWriter;
+    writer.maybeResize();
+    writer.buf.writeUInt8(value.type, writer.length);
+    writer.length += 1;
+
+    // Write value for VoteThresholds with u8 value
+    if (
+      value.type === VoteThresholdType.YesVotePercentage ||
+      value.type === VoteThresholdType.QuorumPercentage
+    ) {
+      writer.buf.writeUInt8(value.value!, writer.length);
+      writer.length += 1;
+    }
+  }
+}
 
 class MockProposalCreator {
   // Creating a mock proposal takes a few seconds, and we use a lot of the same times over and over,
@@ -244,10 +288,8 @@ class MockProposalCreator {
     const schema = getGovernanceSchemaForAccount(
       GovernanceAccountType.ProposalV2
     );
-    // serialize creates a new borsh BinaryWriter. spl-governance adds a few methods to the prototype of BinaryWriter so that
-    // it can serialize and deserialize governance objects properly. I'm not sure if this is SPL-gov using undefined behavior
-    // or not, but it seems to work.
-    const serializedProp = serialize(schema, proposal);
+
+    const serializedProp = serialize(schema, proposal, GovernanceBinaryWriter);
     const ixData = new BinaryWriter();
     // Add epoch duration to avoid negative seed
     const seed =
