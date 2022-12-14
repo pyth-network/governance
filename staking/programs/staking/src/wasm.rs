@@ -204,29 +204,32 @@ impl WasmTargetMetadata {
 pub fn get_next_vesting(
     vestingSchedBorsh: &[u8],
     currentTime: i64,
+    tokenListingTime: Option<i64>,
 ) -> Result<Option<VestingEvent>, JsValue> {
-    convert_error(get_next_vesting_impl(vestingSchedBorsh, currentTime))
+    convert_error(get_next_vesting_impl(vestingSchedBorsh, currentTime, tokenListingTime))
 }
 fn get_next_vesting_impl(
     vesting_sched_borsh: &[u8],
     current_time: i64,
+    tokenListingTime: Option<i64>,
 ) -> anchor_lang::Result<Option<VestingEvent>> {
     let mut ptr = vesting_sched_borsh;
     let vs = VestingSchedule::deserialize(&mut ptr)?;
-    vs.get_next_vesting(current_time)
+    vs.get_next_vesting(current_time, tokenListingTime)
 }
 
 #[wasm_bindgen(js_name=getUnvestedBalance)]
-pub fn get_unvested_balance(vestingSchedBorsh: &[u8], currentTime: i64) -> Result<u64, JsValue> {
-    convert_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime))
+pub fn get_unvested_balance(vestingSchedBorsh: &[u8], currentTime: i64, tokenListingTime: Option<i64>,) -> Result<u64, JsValue> {
+    convert_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime, tokenListingTime))
 }
 fn get_unvested_balance_impl(
     vesting_sched_borsh: &[u8],
     current_time: i64,
+    tokenListingTime: Option<i64>,
 ) -> anchor_lang::Result<u64> {
     let mut ptr = vesting_sched_borsh;
     let vs = VestingSchedule::deserialize(&mut ptr)?;
-    vs.get_unvested_balance(current_time)
+    vs.get_unvested_balance(current_time, tokenListingTime)
 }
 
 #[wasm_bindgen(js_name=getUnixTime)]
