@@ -71,6 +71,15 @@ pub struct UpdateFreeze<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(token_list_time : Option<i64>)]
+pub struct UpdateTokenListTime<'info> {
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
 #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info> {
     // Native payer:

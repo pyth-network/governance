@@ -409,7 +409,7 @@ pub mod tests {
         let value = v.get_unvested_balance(1 << 60, None).unwrap();
         assert!(value <= 1_000_000_000);
         assert_eq!(
-            v.get_next_vesting(1 << 60).unwrap(),
+            v.get_next_vesting(1 << 60, None).unwrap(),
             Some(VestingEvent {
                 time:   (1 << 60) + 1,
                 amount: 0,
@@ -429,10 +429,10 @@ pub mod tests {
 
         let tokens_per_period = 1_000 / 72;
 
-        let value = v.get_unvested_balance(1).unwrap();
+        let value = v.get_unvested_balance(1, None).unwrap();
         assert_eq!(value, 1000);
         assert_eq!(
-            v.get_next_vesting(1).unwrap(),
+            v.get_next_vesting(1, None).unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
                 amount: 13,
@@ -440,11 +440,11 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance((one_month - 1).try_into().unwrap())
+            .get_unvested_balance((one_month - 1).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 1000);
         assert_eq!(
-            v.get_next_vesting((one_month - 1).try_into().unwrap())
+            v.get_next_vesting((one_month - 1).try_into().unwrap(), None)
                 .unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
@@ -453,11 +453,11 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance(one_month.try_into().unwrap())
+            .get_unvested_balance(one_month.try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 1000 - tokens_per_period);
         assert_eq!(
-            v.get_next_vesting(one_month.try_into().unwrap()).unwrap(),
+            v.get_next_vesting(one_month.try_into().unwrap(), None).unwrap(),
             Some(VestingEvent {
                 time:   (2 * one_month).try_into().unwrap(),
                 amount: 14,
@@ -465,11 +465,11 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance((one_month * 2 - 1).try_into().unwrap())
+            .get_unvested_balance((one_month * 2 - 1).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 1000 - tokens_per_period);
         assert_eq!(
-            v.get_next_vesting((one_month * 2 - 1).try_into().unwrap())
+            v.get_next_vesting((one_month * 2 - 1).try_into().unwrap(), None)
                 .unwrap(),
             Some(VestingEvent {
                 time:   (2 * one_month).try_into().unwrap(),
@@ -478,11 +478,11 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance((one_month * 2).try_into().unwrap())
+            .get_unvested_balance((one_month * 2).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 973);
         assert_eq!(
-            v.get_next_vesting((one_month * 2).try_into().unwrap())
+            v.get_next_vesting((one_month * 2).try_into().unwrap(), None)
                 .unwrap(),
             Some(VestingEvent {
                 time:   (3 * one_month).try_into().unwrap(),
@@ -491,12 +491,12 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance((one_month * 72 - 1).try_into().unwrap())
+            .get_unvested_balance((one_month * 72 - 1).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 14);
 
         assert_eq!(
-            v.get_next_vesting((one_month * 72 - 1).try_into().unwrap())
+            v.get_next_vesting((one_month * 72 - 1).try_into().unwrap(), None)
                 .unwrap(),
             Some(VestingEvent {
                 time:   (one_month * 72).try_into().unwrap(),
@@ -505,21 +505,21 @@ pub mod tests {
         );
 
         let value = v
-            .get_unvested_balance((one_month * 72).try_into().unwrap())
+            .get_unvested_balance((one_month * 72).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 0);
         assert_eq!(
-            v.get_next_vesting((one_month * 72).try_into().unwrap())
+            v.get_next_vesting((one_month * 72).try_into().unwrap(), None)
                 .unwrap(),
             None
         );
 
         let value = v
-            .get_unvested_balance((one_month * 73).try_into().unwrap())
+            .get_unvested_balance((one_month * 73).try_into().unwrap(), None)
             .unwrap();
         assert_eq!(value, 0);
         assert_eq!(
-            v.get_next_vesting((one_month * 73).try_into().unwrap())
+            v.get_next_vesting((one_month * 73).try_into().unwrap(), None)
                 .unwrap(),
             None
         );
