@@ -86,15 +86,9 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn update_token_list_time(ctx: Context<UpdateFreeze>, token_list_time: i64) -> Result<()> {
+    pub fn update_token_list_time(ctx: Context<UpdateFreeze>, token_list_time: Option<i64>) -> Result<()> {
         let config = &mut ctx.accounts.config;
-
-        if token_list_time == 0 {
-            config.pyth_token_list_time = None;
-        } else {
-            config.pyth_token_list_time = Some(token_list_time);
-        }
-
+        config.pyth_token_list_time = token_list_time;
         Ok(())
     }
 

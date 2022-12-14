@@ -141,6 +141,8 @@ impl VestingSchedule {
         }
     }
 
+    /// Calculate the time when the next token vest occurs for a periodic vesting schedule where
+    /// vesting begins on `start_date`.
     fn next_vesting_helper(
         current_time: i64,
         initial_balance: u64,
