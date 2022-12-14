@@ -1,22 +1,23 @@
-import { PYTH_MINT_ACCOUNT_PUBKEY } from '@components/constants'
 import { Connection, PublicKey } from '@solana/web3.js'
 import { PythBalance } from 'pyth-staking-api'
+import { BN } from 'bn.js'
 
 export const getPythTokenBalance = async (
   connection: Connection,
-  publicKey: PublicKey
+  publicKey: PublicKey,
+  pythTokenMint: PublicKey
 ) => {
-  let balance = 0
-  try {
+  let balance = new BN(0);
+    try {
     const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
-      mint: PYTH_MINT_ACCOUNT_PUBKEY,
+      mint: pythTokenMint,
     })
     for (const account of tokenAccounts.value) {
       const test = await connection.getTokenAccountBalance(account.pubkey)
-      balance += test.value.uiAmount ? test.value.uiAmount : 0
+      balance.iadd(new BN(test.value.amount) ? new BN(test.value.amount) : new BN(0))
     }
   } catch (e) {
     console.error(e)
   }
-  return PythBalance.fromNumber(balance)
+  return new PythBalance(balance)
 }

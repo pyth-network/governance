@@ -1,8 +1,23 @@
+anchor_version = "0.24.1"
+
 [features]
 seeds = true
 
+[workspace]
+members = ["programs/staking"]
+
 [programs.localnet]
-staking = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
+
+[programs.devnet]
+staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+
+[programs.mainnet]
+staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
+governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -20,3 +35,5 @@ ledger_dir = "./.anchor/test-ledger"
 [path]
 idl_path = "./target/idl/staking.json"
 binary_path = "./target/deploy/staking.so"
+governance_path = "./target/deploy/governance.so"
+chat_path = "./target/deploy/chat.so"

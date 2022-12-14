@@ -7,7 +7,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
@@ -16,6 +16,8 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
+  makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -32,13 +34,16 @@ describe("fills a stake account with positions", async () => {
 
   let program: Program<Staking>;
   let errMap: Map<number, string>;
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   let stakeAccountAddress: PublicKey;
   let userAta: PublicKey;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
+
+  let votingProductMetadataAccount;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -49,33 +54,41 @@ describe("fills a stake account with positions", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      provider.wallet.publicKey
     );
 
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
+
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getTargetAccount(
+      votingProduct,
+      program.programId
+    );
 
     await stakeConnection.depositTokens(
       undefined,
       PythBalance.fromString("102")
     );
     stakeAccountAddress = (
-      await stakeConnection.getStakeAccounts(provider.wallet.publicKey)
-    )[0].address;
+      await stakeConnection.getMainAccount(provider.wallet.publicKey)
+    ).address;
   });
 
   it("creates too many positions", async () => {
     let createPosIx = await program.methods
-      .createPosition(null, null, PythBalance.fromString("1").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -85,7 +98,7 @@ describe("fills a stake account with positions", async () => {
     const simulationResults = await provider.simulate(testTransaction);
     let costs = [];
     const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
-    for (const logline of simulationResults.value.logs) {
+    for (const logline of simulationResults.logs) {
       const m = logline.match(regex);
       if (m != null) costs.push(parseInt(m.groups["consumed"]));
     }
@@ -101,7 +114,7 @@ describe("fills a stake account with positions", async () => {
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
-        await provider.send(transaction, [], {
+        await provider.sendAndConfirm(transaction, [], {
           skipPreflight: DEBUG,
         });
         transaction = new Transaction();
@@ -111,15 +124,16 @@ describe("fills a stake account with positions", async () => {
       budgetRemaining -= ixCost;
       ixCost += deltaCost;
     }
-    await provider.send(transaction, [], {
+    await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
 
     // Now create 101, which is supposed to fail
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("1").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("1").toBN())
         .accounts({
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached",

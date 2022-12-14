@@ -9,6 +9,7 @@ import {
   getPortNumber,
   standardSetup,
   ANCHOR_CONFIG_PATH,
+  makeDefaultConfig,
 } from "./utils/before";
 import { assertBalanceMatches } from "./utils/api_utils";
 import { PublicKey, Keypair } from "@solana/web3.js";
@@ -16,7 +17,7 @@ import BN from "bn.js";
 import assert from "assert";
 import { StakeConnection, PythBalance } from "../app";
 import path from "path";
-import { expectFail } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
@@ -40,6 +41,9 @@ describe("position_lifecycle", async () => {
 
   let stakeConnection: StakeConnection;
 
+  let votingProductMetadataAccount;
+  let votingProduct;
+
   after(async () => {
     controller.abort();
   });
@@ -49,10 +53,11 @@ describe("position_lifecycle", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    owner = stakeConnection.provider.wallet.publicKey;
 
     ownerAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -63,6 +68,12 @@ describe("position_lifecycle", async () => {
 
     errMap = parseIdlErrors(program.idl);
     EPOCH_DURATION = stakeConnection.config.epochDuration;
+
+    votingProduct = stakeConnection.votingProduct;
+    votingProductMetadataAccount = await getTargetAccount(
+      votingProduct,
+      program.programId
+    );
   });
 
   it("deposits tokens and locks", async () => {
@@ -71,9 +82,7 @@ describe("position_lifecycle", async () => {
       PythBalance.fromString("200")
     );
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    stakeAccountAddress = res[0].address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     await assertBalanceMatches(
       stakeConnection,
@@ -99,7 +108,7 @@ describe("position_lifecycle", async () => {
   it("try closing a position for more than the position's principal", async () => {
     expectFail(
       await program.methods
-        .closePosition(0, PythBalance.fromString("201").toBN())
+        .closePosition(0, PythBalance.fromString("201").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
         }),
@@ -111,7 +120,7 @@ describe("position_lifecycle", async () => {
   it("close null position", async () => {
     expectFail(
       await program.methods
-        .closePosition(1, PythBalance.fromString("200").toBN())
+        .closePosition(1, PythBalance.fromString("200").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
         }),
@@ -122,8 +131,9 @@ describe("position_lifecycle", async () => {
 
   it("close position instantly", async () => {
     await program.methods
-      .closePosition(0, PythBalance.fromString("200").toBN())
+      .closePosition(0, PythBalance.fromString("200").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -138,8 +148,9 @@ describe("position_lifecycle", async () => {
 
   it("open a new position", async () => {
     await program.methods
-      .createPosition(null, null, PythBalance.fromString("200").toBN())
+      .createPosition(votingProduct, PythBalance.fromString("200").toBN())
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         payer: owner,
         stakeAccountPositions: stakeAccountAddress,
       })
@@ -155,13 +166,12 @@ describe("position_lifecycle", async () => {
 
   it("first close some", async () => {
     await program.methods
-      .closePosition(0, PythBalance.fromString("10").toBN())
+      .closePosition(0, PythBalance.fromString("10").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
-
-    const res = await stakeConnection.getStakeAccounts(owner);
 
     await assertBalanceMatches(
       stakeConnection,
@@ -188,26 +198,30 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("50").toBN())
+      .closePosition(0, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
 
-    // No time has passed, so still locked until the end of the epoch
+    // No time has passed, so preunlocking until the end of the epoch
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("190") },
+        locked: {
+          locked: PythBalance.fromString("140"),
+          preunlocking: PythBalance.fromString("50"),
+        },
         withdrawable: PythBalance.fromString("10"),
       },
       await stakeConnection.getTime()
     );
   });
 
-  it("two epoch pass, still locked", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
+  it("one epoch pass, still locked", async () => {
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -248,24 +262,38 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN())
+      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN())
+      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
+
+    // Make sure than closing a position twice fails
+    await expectFail(
+      await program.methods
+        .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
+        .accounts({
+          targetAccount: votingProductMetadataAccount,
+          stakeAccountPositions: stakeAccountAddress,
+        }),
+      "Position already unlocking",
+      errMap
+    );
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("140") },
+        locked: { preunlocking: PythBalance.fromString("140") },
         withdrawable: PythBalance.fromString("60"),
       },
       await stakeConnection.getTime()
@@ -294,11 +322,62 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN())
+      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { withdrawable: PythBalance.fromString("200") },
+      await stakeConnection.getTime()
+    );
+  });
+
+  it("another iteration", async () => {
+    await program.methods
+      .createPosition(votingProduct, PythBalance.fromString("100").toBN())
+      .accounts({
+        targetAccount: votingProductMetadataAccount,
+        payer: owner,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      {
+        locked: { locking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
+      },
+      await stakeConnection.getTime()
+    );
+
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      {
+        locked: { locked: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
+      },
+      await stakeConnection.getTime()
+    );
+
+    await program.methods
+      .closePosition(0, PythBalance.fromString("100").toBN(), votingProduct)
+      .accounts({
+        targetAccount: votingProductMetadataAccount,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .rpc();
+
+    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,

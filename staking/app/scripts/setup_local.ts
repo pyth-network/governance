@@ -1,24 +1,18 @@
 import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
-import { Staking } from "../../target/types/staking";
 import BN from "bn.js";
-import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   readAnchorConfig,
   standardSetup,
   ANCHOR_CONFIG_PATH,
-  getPortNumber,
   requestPythAirdrop,
+  CustomAbortController,
 } from "../../tests/utils/before";
 import path from "path";
 import { StakeConnection, PythBalance } from "..";
 import fs from "fs";
 import os from "os";
+import { GlobalConfig } from "../StakeConnection";
 
 const FRONTEND_ENV_FILE = "../frontend/.env";
 const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample";
@@ -46,7 +40,8 @@ const setEnvValue = (key, value, path) => {
 const portNumber = 8899;
 async function main() {
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
+  let globalConfig: GlobalConfig;
 
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
@@ -73,12 +68,13 @@ async function main() {
     pythMintAuthority,
     {
       bump: 0,
-      governanceAuthority: new PublicKey(0),
-      pythGovernanceRealm: new PublicKey(0),
+      governanceAuthority: null,
+      pythGovernanceRealm: null,
       pythTokenMint: pythMintAccount.publicKey,
       unlockingDuration: 2,
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
+      freeze: false,
     }
   ));
 
@@ -108,18 +104,38 @@ async function main() {
     stakeConnection.program.programId
   );
 
-  for (let connection of [aliceStakeConnection, bobStakeConnection]) {
-    await connection.depositAndLockTokens(
-      undefined,
-      PythBalance.fromString("500")
-    );
-  }
+  // Alice tokens are fully vested
+  await aliceStakeConnection.depositAndLockTokens(
+    undefined,
+    PythBalance.fromString("500")
+  );
 
+  const vestingSchedule = {
+    periodicVesting: {
+      initialBalance: PythBalance.fromString("100").toBN(),
+      startDate: await stakeConnection.getTime(),
+      periodDuration: new BN(3600),
+      numPeriods: new BN(1000),
+    },
+  };
+
+  // Bob has a vesting schedule
+  await bobStakeConnection.setupVestingAccount(
+    PythBalance.fromString("500"),
+    bob.publicKey,
+    vestingSchedule
+  );
+
+  const envPath = fs.existsSync(FRONTEND_ENV_FILE)
+    ? FRONTEND_ENV_FILE
+    : FRONTEND_SAMPLE_FILE;
   setEnvValue(
     "LOCALNET_PYTH_MINT",
     pythMintAccount.publicKey.toBase58(),
-    fs.existsSync(FRONTEND_ENV_FILE) ? FRONTEND_ENV_FILE : FRONTEND_SAMPLE_FILE
+    envPath
   );
+
+  setEnvValue("ENDPOINT", "http://localhost:8899", envPath);
 
   while (true) {}
 }

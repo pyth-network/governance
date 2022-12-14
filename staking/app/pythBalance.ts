@@ -3,7 +3,7 @@ import assert from "assert";
 
 export const PYTH_DECIMALS = 6;
 const INTEGER_REGEXP = new RegExp(/^\d+$/);
-const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{1,${PYTH_DECIMALS}}$`);
+const DECIMAL_REGEXP = new RegExp(`^\\d*\\.\\d{0,${PYTH_DECIMALS}}$`);
 const TRAILING_ZEROS = new RegExp(/\.?0+$/);
 
 export class PythBalance {
@@ -18,6 +18,9 @@ export class PythBalance {
     return this.integerAmount.toNumber() * 10 ** -PYTH_DECIMALS;
   }
 
+  static zero(): PythBalance {
+    return PythBalance.fromString("0");
+  }
   //THIS METHOD MAY LOSE PRECISION IF AMOUNT IS NOT AN INTEGER
   static fromNumber(amount: number): PythBalance {
     return new PythBalance(new BN(amount * 10 ** PYTH_DECIMALS));
@@ -61,5 +64,29 @@ export class PythBalance {
 
   eq(other: PythBalance): boolean {
     return this.toBN().eq(other.toBN());
+  }
+
+  gte(other: PythBalance): boolean {
+    return this.toBN().gte(other.toBN());
+  }
+
+  lt(other: PythBalance): boolean {
+    return this.toBN().lt(other.toBN());
+  }
+
+  gt(other: PythBalance): boolean {
+    return this.toBN().gt(other.toBN());
+  }
+
+  lte(other: PythBalance): boolean {
+    return this.toBN().lte(other.toBN());
+  }
+
+  add(other: PythBalance): PythBalance {
+    return new PythBalance(other.toBN().add(this.toBN()));
+  }
+
+  isZero(): boolean {
+    return this.eq(PythBalance.zero());
   }
 }

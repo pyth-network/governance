@@ -1,6 +1,6 @@
 {
   "name": "pyth-staking-api",
-  "version": "1.0.8",
+  "version": "1.3.2",
   "description": "SDK for pyth token staking",
   "main": "app/index.js",
   "types": "app/index.d.ts",
@@ -8,19 +8,27 @@
   "files": [
     "app/index.{js,d.ts}",
     "app/StakeConnection.{js,d.ts}",
-    "app/transaction.{js,d.ts}"
+    "app/transaction.{js,d.ts}",
+    "app/pythBalance.{js,d.ts}",
+    "app/constants.{js,d.ts}",
+    "app/PythClient.{js,d.ts}",
+    "app/PositionAccountJs.{js,d.ts}"
   ],
   "dependencies": {
-    "@project-serum/anchor": "0.22.0",
+    "@project-serum/anchor": "0.24.2",
+    "@solana/spl-governance": "0.3.15",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "*",
+    "pyth-staking-wasm": "0.3.3",
+    "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/mocha": "^9.0.0",
+    "@types/node": "^17.0.34",
+    "@types/shelljs": "^0.8.11",
     "chai": "^4.3.4",
     "husky": "^7.0.4",
     "lint-staged": "^12.3.7",
@@ -28,23 +36,27 @@
     "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
-    "wasm-pack": "^0.10.2"
+    "wasm-pack": "^0.10.2",
+    "@metaplex-foundation/js": "^0.17.5",
+    "@metaplex-foundation/mpl-token-metadata": "^2.5.1"
   },
   "scripts": {
-    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn run ts-mocha  --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
-    "setup": "yarn generate_keypair && anchor build && yarn ts-node ./app/scripts/setup.ts",
+    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn dump_governance && yarn run ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "setup": "yarn generate_keypair && anchor build && yarn dump_governance && yarn ts-node ./app/scripts/setup_local.ts",
     "build_wasm": "./wasm/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
     "start": "yarn ts-node ./docker/validator.ts",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
-    "prepare": "cd .. && husky install staking/.husky"
+    "dump_governance": "./clone_programs.sh",
+    "prepare": "cd .. && husky install staking/.husky",
+    "tsc": "tsc -d -p tsconfig.api.json"
   },
   "lint-staged": {
     "{app,tests}/**/*.ts": [
       "prettier --w"
     ],
-    "programs/staking/**/*.rs" : [
+    "programs/staking/**/*.rs": [
       "rustfmt +nightly"
     ]
   }

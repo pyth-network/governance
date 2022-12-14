@@ -6,12 +6,12 @@ import {
   Idl,
   IdlAccounts,
   IdlTypes,
+  AnchorProvider,
 } from "@project-serum/anchor";
 import {
   PublicKey,
   Connection,
   Keypair,
-  SystemProgram,
   TransactionInstruction,
   Signer,
   Transaction,
@@ -29,7 +29,16 @@ import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
+import {
+  getTokenOwnerRecordAddress,
+  PROGRAM_VERSION_V2,
+  withCreateTokenOwnerRecord,
+} from "@solana/spl-governance";
+import { GOVERNANCE_ADDRESS } from "./constants";
+import assert from "assert";
+import { PositionAccountJs, Position } from "./PositionAccountJs";
 let wasm = wasm2;
+export { wasm };
 
 interface ClosingItem {
   amount: BN;
@@ -38,23 +47,32 @@ interface ClosingItem {
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
-type Position = IdlTypes<Staking>["Position"];
-type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
+type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadataV2"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
+type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
 
 export class StakeConnection {
   program: Program<Staking>;
+  provider: AnchorProvider;
   config: GlobalConfig;
-  private configAddress: PublicKey;
+  configAddress: PublicKey;
+  votingProductMetadataAccount: PublicKey;
+  votingProduct = { voting: {} };
+  governanceAddress: PublicKey;
 
   private constructor(
     program: Program<Staking>,
+    provider: AnchorProvider,
     config: GlobalConfig,
-    configAddress: PublicKey
+    configAddress: PublicKey,
+    votingProductMetadataAccount: PublicKey
   ) {
     this.program = program;
+    this.provider = provider;
     this.config = config;
     this.configAddress = configAddress;
+    this.votingProductMetadataAccount = votingProductMetadataAccount;
+    this.governanceAddress = GOVERNANCE_ADDRESS();
   }
 
   // creates a program connection and loads the staking config
@@ -62,13 +80,13 @@ export class StakeConnection {
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
-    address: PublicKey
+    stakingProgramAddress: PublicKey
   ): Promise<StakeConnection> {
-    const provider = new Provider(connection, wallet, {});
-    const idl = (await Program.fetchIdl(address, provider))!;
+    const provider = new AnchorProvider(connection, wallet, {});
+    const idl = (await Program.fetchIdl(stakingProgramAddress, provider))!;
     const program = new Program(
       idl,
-      address,
+      stakingProgramAddress,
       provider
     ) as unknown as Program<Staking>;
     // Sometimes in the browser, the import returns a promise.
@@ -85,10 +103,41 @@ export class StakeConnection {
     )[0];
 
     const config = await program.account.globalConfig.fetch(configAddress);
-    return new StakeConnection(program, config, configAddress);
+
+    const votingProductMetadataAccount = (
+      await PublicKey.findProgramAddress(
+        [
+          utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
+          utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED()),
+        ],
+        program.programId
+      )
+    )[0];
+
+    return new StakeConnection(
+      program,
+      provider,
+      config,
+      configAddress,
+      votingProductMetadataAccount
+    );
   }
 
-  //gets a users stake accounts
+  public async getAllStakeAccountAddresses(): Promise<PublicKey[]> {
+    // Use the raw web3.js connection so that anchor doesn't try to borsh deserialize the zero-copy serialized account
+    const allAccts = await this.provider.connection.getProgramAccounts(
+      this.program.programId,
+      {
+        encoding: "base64",
+        filters: [
+          { memcmp: this.program.coder.accounts.memcmp("PositionData") },
+        ],
+      }
+    );
+    return allAccts.map((acct) => acct.pubkey);
+  }
+
+  /** Gets a users stake accounts */
   public async getStakeAccounts(user: PublicKey): Promise<StakeAccount[]> {
     const res = await this.program.provider.connection.getProgramAccounts(
       this.program.programId,
@@ -114,28 +163,48 @@ export class StakeConnection {
     );
   }
 
-  // creates stake account will happen inside deposit
-  // public async createStakeAccount(user: PublicKey): Promise<StakeAccount> {
-  //   return;
-  // }
+  /** Gets the user's stake account with the most tokens or undefined if it doesn't exist */
+  public async getMainAccount(
+    user: PublicKey
+  ): Promise<StakeAccount | undefined> {
+    const accounts = await this.getStakeAccounts(user);
+    if (accounts.length == 0) {
+      return undefined;
+    } else {
+      return accounts.reduce(
+        (prev: StakeAccount, curr: StakeAccount): StakeAccount => {
+          return prev.tokenBalance.lt(curr.tokenBalance) ? curr : prev;
+        }
+      );
+    }
+  }
+
+  async fetchVotingProductMetadataAccount() {
+    const inbuf = await this.program.provider.connection.getAccountInfo(
+      this.votingProductMetadataAccount
+    );
+
+    const pm = new wasm.WasmTargetMetadata(inbuf!.data);
+
+    return pm;
+  }
 
   async fetchPositionAccount(address: PublicKey) {
     const inbuf = await this.program.provider.connection.getAccountInfo(
       address
     );
-    const pd = new wasm.WasmPositionData(inbuf!.data);
-    const outBuffer = Buffer.alloc(pd.borshLength);
-    pd.asBorsh(outBuffer);
-    const positions = this.program.coder.accounts.decode(
-      "PositionData",
-      outBuffer
+    const stakeAccountPositionsWasm = new wasm.WasmPositionData(inbuf!.data);
+    const stakeAccountPositionsJs = new PositionAccountJs(
+      inbuf!.data,
+      this.program.idl
     );
-    return [pd, positions];
+
+    return { stakeAccountPositionsWasm, stakeAccountPositionsJs };
   }
 
   //stake accounts are loaded by a StakeConnection object
   public async loadStakeAccount(address: PublicKey): Promise<StakeAccount> {
-    const [stakeAccountPositionsWasm, stakeAccountPositionsJs] =
+    const { stakeAccountPositionsWasm, stakeAccountPositionsJs } =
       await this.fetchPositionAccount(address);
 
     const metadataAddress = (
@@ -149,7 +218,7 @@ export class StakeConnection {
     )[0];
 
     const stakeAccountMetadata =
-      (await this.program.account.stakeAccountMetadata.fetch(
+      (await this.program.account.stakeAccountMetadataV2.fetch(
         metadataAddress
       )) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
     const vestingSchedule = StakeAccount.serializeVesting(
@@ -183,7 +252,12 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       new Keypair()
     );
+
+    const votingAccountMetadataWasm =
+      await this.fetchVotingProductMetadataAccount();
     const tokenBalance = (await mint.getAccountInfo(custodyAddress)).amount;
+    const totalSupply = (await mint.getMintInfo()).supply;
+
     return new StakeAccount(
       address,
       stakeAccountPositionsWasm,
@@ -192,6 +266,8 @@ export class StakeConnection {
       tokenBalance,
       authorityAddress,
       vestingSchedule,
+      votingAccountMetadataWasm,
+      totalSupply,
       this.config
     );
   }
@@ -226,11 +302,18 @@ export class StakeConnection {
         .toBN()
         .gt(lockedSummary.locked.toBN().add(lockedSummary.locking.toBN()))
     ) {
-      throw new Error("Amount greater than locked amount");
+      throw new Error("Amount greater than locked amount.");
     }
 
-    const positions = stakeAccount.stakeAccountPositionsJs
-      .positions as Position[];
+    await this.unlockTokensUnchecked(stakeAccount, amount);
+  }
+
+  // Unchecked unlock
+  public async unlockTokensUnchecked(
+    stakeAccount: StakeAccount,
+    amount: PythBalance
+  ) {
+    const positions = stakeAccount.stakeAccountPositionsJs.positions;
 
     const time = await this.getTime();
     const currentEpoch = time.div(this.config.epochDuration);
@@ -243,12 +326,7 @@ export class StakeConnection {
       .filter(
         (
           el // position is voting
-        ) =>
-          stakeAccount.stakeAccountPositionsWasm.isPositionVoting(
-            el.index,
-            BigInt(currentEpoch.toString()),
-            this.config.unlockingDuration
-          )
+        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
       )
       .filter(
         (
@@ -292,8 +370,9 @@ export class StakeConnection {
     const instructions = await Promise.all(
       toClose.map((el) =>
         this.program.methods
-          .closePosition(el.index, el.amount)
+          .closePosition(el.index, el.amount, this.votingProduct)
           .accounts({
+            targetAccount: this.votingProductMetadataAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -311,31 +390,55 @@ export class StakeConnection {
       })
     );
   }
-
-  private async withCreateAccount(
+  public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
-    owner: PublicKey
+    stakeAccount: StakeAccount,
+    action: VoterWeightAction,
+    remainingAccount?: PublicKey
+  ): Promise<{
+    voterWeightAccount: PublicKey;
+    maxVoterWeightRecord: PublicKey;
+  }> {
+    const updateVoterWeightIx = this.program.methods
+      .updateVoterWeight(action)
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+      })
+      .remainingAccounts(
+        remainingAccount
+          ? [{ pubkey: remainingAccount, isWritable: false, isSigner: false }]
+          : []
+      );
+
+    instructions.push(await updateVoterWeightIx.instruction());
+
+    return {
+      voterWeightAccount: (await updateVoterWeightIx.pubkeys()).voterRecord,
+      maxVoterWeightRecord: (
+        await this.program.methods.updateMaxVoterWeight().pubkeys()
+      ).maxVoterRecord,
+    };
+  }
+
+  public async withCreateAccount(
+    instructions: TransactionInstruction[],
+    owner: PublicKey,
+    vesting: VestingSchedule = {
+      fullyVested: {},
+    }
   ): Promise<Keypair> {
     const stakeAccountKeypair = new Keypair();
 
     instructions.push(
-      SystemProgram.createAccount({
-        fromPubkey: owner,
-        newAccountPubkey: stakeAccountKeypair.publicKey,
-        lamports:
-          await this.program.provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-        programId: this.program.programId,
-      })
+      await this.program.account.positionData.createInstruction(
+        stakeAccountKeypair,
+        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+      )
     );
 
     instructions.push(
       await this.program.methods
-        .createStakeAccount(this.program.provider.wallet.publicKey, {
-          fullyVested: {},
-        })
+        .createStakeAccount(owner, vesting)
         .accounts({
           stakeAccountPositions: stakeAccountKeypair.publicKey,
           mint: this.config.pythTokenMint,
@@ -353,14 +456,15 @@ export class StakeConnection {
     amount: BN
   ) {
     return await this.program.methods
-      .closePosition(index, amount)
+      .closePosition(index, amount, this.votingProduct)
       .accounts({
+        targetAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .rpc();
   }
 
-  private async buildTransferInstruction(
+  public async buildTransferInstruction(
     stakeAccountPositionsAddress: PublicKey,
     amount: BN
   ): Promise<TransactionInstruction> {
@@ -368,7 +472,7 @@ export class StakeConnection {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.program.provider.wallet.publicKey
+      this.provider.wallet.publicKey
     );
 
     const toAccount = (
@@ -385,7 +489,7 @@ export class StakeConnection {
       TOKEN_PROGRAM_ID,
       from_account,
       toAccount,
-      this.program.provider.wallet.publicKey,
+      this.provider.wallet.publicKey,
       [],
       new u64(amount.toString())
     );
@@ -393,19 +497,92 @@ export class StakeConnection {
     return ix;
   }
 
+  public async hasGovernanceRecord(user: PublicKey): Promise<boolean> {
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(
+        await this.getTokenOwnerRecordAddress(user)
+      );
+
+    return Boolean(voterAccountInfo);
+  }
+  /**
+   * Locks all unvested tokens in governance
+   */
+  public async lockAllUnvested(stakeAccount: StakeAccount) {
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
+    );
+    if (
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyUnlocked
+    ) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+    const amountBN = balanceSummary.unvested.unlocked.toBN();
+
+    const transaction: Transaction = new Transaction();
+
+    if (!(await this.hasGovernanceRecord(owner))) {
+      await withCreateTokenOwnerRecord(
+        transaction.instructions,
+        this.governanceAddress,
+        PROGRAM_VERSION_V2,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
+    }
+
+    transaction.instructions.push(
+      await this.program.methods
+        .createPosition(this.votingProduct, amountBN)
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          targetAccount: this.votingProductMetadataAccount,
+        })
+        .instruction()
+    );
+
+    await this.provider.sendAndConfirm(transaction);
+  }
+
+  public async setupVestingAccount(
+    amount: PythBalance,
+    owner: PublicKey,
+    vestingSchedule
+  ) {
+    const transaction: Transaction = new Transaction();
+
+    //Forgive me, I didn't find a better way to check the enum variant
+    assert(vestingSchedule.periodicVesting);
+    assert(vestingSchedule.periodicVesting.initialBalance);
+    assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
+
+    const stakeAccountKeypair = await this.withCreateAccount(
+      transaction.instructions,
+      owner,
+      vestingSchedule
+    );
+    transaction.instructions.push(
+      await this.buildTransferInstruction(
+        stakeAccountKeypair.publicKey,
+        amount.toBN()
+      )
+    );
+
+    await this.provider.sendAndConfirm(transaction, [stakeAccountKeypair]);
+  }
+
   public async depositTokens(
     stakeAccount: StakeAccount | undefined,
     amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
-    const owner = this.program.provider.wallet.publicKey;
-
-    const ata = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      this.config.pythTokenMint,
-      owner
-    );
+    const owner = this.provider.wallet.publicKey;
 
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -416,6 +593,18 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccountKeypair.publicKey;
     } else {
       stakeAccountAddress = stakeAccount.address;
+    }
+
+    if (!(await this.hasGovernanceRecord(owner))) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        PROGRAM_VERSION_V2,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
     }
 
     ixs.push(
@@ -424,7 +613,60 @@ export class StakeConnection {
 
     const tx = new Transaction();
     tx.add(...ixs);
-    await this.program.provider.send(tx, signers);
+    await this.provider.sendAndConfirm(tx, signers);
+  }
+
+  public async getTokenOwnerRecordAddress(user: PublicKey) {
+    return getTokenOwnerRecordAddress(
+      this.governanceAddress,
+      this.config.pythGovernanceRealm,
+      this.config.pythTokenMint,
+      user
+    );
+  }
+
+  // Unlock all vested tokens and the tokens that will vest in the next vesting event
+  public async unlockBeforeVestingEvent(stakeAccount: StakeAccount) {
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
+    );
+    if (vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+
+    const amountBN = stakeAccount.getNetExcessGovernanceAtVesting(
+      await this.getTime()
+    );
+
+    const amount = new PythBalance(amountBN);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
+  }
+
+  // Unlock all vested and unvested tokens
+  public async unlockAll(stakeAccount: StakeAccount) {
+    const vestingAccountState = stakeAccount.getVestingAccountState(
+      await this.getTime()
+    );
+    if (
+      vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensPartiallyLocked &&
+      vestingAccountState !=
+        VestingAccountState.UnvestedTokensFullyLockedExceptCooldown
+    ) {
+      throw Error(`Unexpected account state ${vestingAccountState}`);
+    }
+
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+
+    const amountBN = balanceSummary.locked.locked
+      .toBN()
+      .add(balanceSummary.locked.locking.toBN())
+      .add(balanceSummary.unvested.locked.toBN())
+      .add(balanceSummary.unvested.locking.toBN());
+
+    const amount = new PythBalance(amountBN);
+    await this.unlockTokensUnchecked(stakeAccount, amount);
   }
 
   public async depositAndLockTokens(
@@ -432,14 +674,7 @@ export class StakeConnection {
     amount: PythBalance
   ) {
     let stakeAccountAddress: PublicKey;
-    const owner = this.program.provider.wallet.publicKey;
-
-    const ata = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      this.config.pythTokenMint,
-      owner
-    );
+    const owner = this.provider.wallet.publicKey;
 
     const ixs: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -450,6 +685,27 @@ export class StakeConnection {
       stakeAccountAddress = stakeAccountKeypair.publicKey;
     } else {
       stakeAccountAddress = stakeAccount.address;
+      const vestingAccountState = stakeAccount.getVestingAccountState(
+        await this.getTime()
+      );
+      if (
+        vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked &&
+        vestingAccountState != VestingAccountState.FullyVested
+      ) {
+        throw Error(`Unexpected account state ${vestingAccountState}`);
+      }
+    }
+
+    if (!(await this.hasGovernanceRecord(owner))) {
+      await withCreateTokenOwnerRecord(
+        ixs,
+        this.governanceAddress,
+        PROGRAM_VERSION_V2,
+        this.config.pythGovernanceRealm,
+        owner,
+        this.config.pythTokenMint,
+        owner
+      );
     }
 
     ixs.push(
@@ -457,10 +713,11 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .createPosition(null, null, amount.toBN())
+      .createPosition(this.votingProduct, amount.toBN())
       .preInstructions(ixs)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
+        targetAccount: this.votingProductMetadataAccount,
       })
       .signers(signers)
       .rpc({ skipPreflight: true });
@@ -477,18 +734,33 @@ export class StakeConnection {
             .withdrawable.toBN()
         )
     ) {
-      throw new Error("Amount exceeds withdrawable");
+      throw new Error("Amount exceeds withdrawable.");
     }
 
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.program.provider.wallet.publicKey
+      this.provider.wallet.publicKey
     );
+
+    const preIxs: TransactionInstruction[] = [];
+    if ((await this.provider.connection.getAccountInfo(toAccount)) == null) {
+      preIxs.push(
+        Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          this.config.pythTokenMint,
+          toAccount,
+          this.provider.wallet.publicKey,
+          this.provider.wallet.publicKey
+        )
+      );
+    }
 
     await this.program.methods
       .withdrawStake(amount.toBN())
+      .preInstructions(preIxs)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
@@ -503,28 +775,49 @@ export interface BalanceSummary {
     locking: PythBalance;
     locked: PythBalance;
     unlocking: PythBalance;
+    preunlocking: PythBalance;
   };
-  unvested: PythBalance;
+  unvested: {
+    total: PythBalance;
+    locking: PythBalance;
+    locked: PythBalance;
+    unlocking: PythBalance;
+    preunlocking: PythBalance;
+    unlocked: PythBalance;
+  };
+}
+
+export enum VestingAccountState {
+  FullyVested,
+  UnvestedTokensFullyLocked,
+  UnvestedTokensFullyLockedExceptCooldown,
+  UnvestedTokensPartiallyLocked,
+  UnvestedTokensFullyUnlockedExceptCooldown,
+  UnvestedTokensFullyUnlocked,
 }
 
 export class StakeAccount {
   address: PublicKey;
   stakeAccountPositionsWasm: any;
-  stakeAccountPositionsJs: PositionData;
+  stakeAccountPositionsJs: PositionAccountJs;
   stakeAccountMetadata: StakeAccountMetadata;
   tokenBalance: u64;
   authorityAddress: PublicKey;
   vestingSchedule: Buffer; // Borsh serialized
+  votingAccountMetadataWasm: any;
+  totalSupply: BN;
   config: GlobalConfig;
 
   constructor(
     address: PublicKey,
     stakeAccountPositionsWasm: any,
-    stakeAccountPositionsJs: PositionData,
+    stakeAccountPositionsJs: PositionAccountJs,
     stakeAccountMetadata: StakeAccountMetadata,
     tokenBalance: u64,
     authorityAddress: PublicKey,
     vestingSchedule: Buffer, // Borsh serialized
+    votingAccountMetadataWasm: any,
+    totalSupply: BN,
     config: GlobalConfig
   ) {
     this.address = address;
@@ -534,6 +827,8 @@ export class StakeAccount {
     this.tokenBalance = tokenBalance;
     this.authorityAddress = authorityAddress;
     this.vestingSchedule = vestingSchedule;
+    this.votingAccountMetadataWasm = votingAccountMetadataWasm;
+    this.totalSupply = totalSupply;
     this.config = config;
   }
 
@@ -551,6 +846,7 @@ export class StakeAccount {
       this.vestingSchedule,
       BigInt(unixTime.toString())
     );
+
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
@@ -561,6 +857,7 @@ export class StakeAccount {
       currentEpochBI,
       unlockingDuration
     );
+
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI =
@@ -568,31 +865,126 @@ export class StakeAccount {
         currentEpochBI,
         unlockingDuration
       );
+
+    let lockingBN = new BN(lockedSummaryBI.locking.toString());
+    let lockedBN = new BN(lockedSummaryBI.locked.toString());
+    let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
+    let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+
+    // For the user it makes sense that all the categories add up to the number of tokens in their custody account
+    // This sections corrects the locked balances to achieve this invariant
+    let excess = lockingBN
+      .add(lockedBN)
+      .add(preunlockingBN)
+      .add(unlockingBN)
+      .add(withdrawableBN)
+      .add(unvestedBN)
+      .sub(this.tokenBalance);
+
+    let lockedUnvestedBN: BN,
+      lockingUnvestedBN: BN,
+      preUnlockingUnvestedBN: BN,
+      unlockingUnvestedBN: BN;
+
+    // First adjust locked. Most of the time, the unvested tokens are in this state.
+    [excess, lockedBN, lockedUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockedBN
+    );
+
+    // The unvested tokens can also be in a locking state at the very beginning.
+    // The reason why we adjust this balance second is the following
+    // If a user has 100 unvested in a locked position and decides to stake 1 free token
+    // we want that token to appear as locking
+    [excess, lockingBN, lockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      lockingBN
+    );
+
+    // Needed to represent vesting accounts unlocking before the vesting event
+    [excess, preunlockingBN, preUnlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      preunlockingBN
+    );
+    [excess, unlockingBN, unlockingUnvestedBN] = this.adjustLockedAmount(
+      excess,
+      unlockingBN
+    );
+
+    //Enforce the invariant
+    assert(
+      lockingBN
+        .add(lockedBN)
+        .add(preunlockingBN)
+        .add(unlockingBN)
+        .add(withdrawableBN)
+        .add(unvestedBN)
+        .eq(this.tokenBalance)
+    );
+
     return {
+      // withdrawable tokens
       withdrawable: new PythBalance(withdrawableBN),
+      // vested tokens not currently withdrawable
       locked: {
-        locking: new PythBalance(new BN(lockedSummaryBI.locking.toString())),
-        locked: new PythBalance(new BN(lockedSummaryBI.locked.toString())),
-        unlocking: new PythBalance(
-          new BN(lockedSummaryBI.unlocking.toString())
+        locking: new PythBalance(lockingBN),
+        locked: new PythBalance(lockedBN),
+        unlocking: new PythBalance(unlockingBN),
+        preunlocking: new PythBalance(preunlockingBN),
+      },
+      // unvested tokens
+      unvested: {
+        total: new PythBalance(unvestedBN),
+        locked: new PythBalance(lockedUnvestedBN),
+        locking: new PythBalance(lockingUnvestedBN),
+        unlocking: new PythBalance(unlockingUnvestedBN),
+        preunlocking: new PythBalance(preUnlockingUnvestedBN),
+        unlocked: new PythBalance(
+          unvestedBN
+            .sub(lockedUnvestedBN)
+            .sub(lockingUnvestedBN)
+            .sub(unlockingUnvestedBN)
+            .sub(preUnlockingUnvestedBN)
         ),
       },
-      unvested: new PythBalance(unvestedBN),
     };
+  }
+
+  private adjustLockedAmount(excess: BN, locked: BN) {
+    if (excess.gt(new BN(0))) {
+      if (excess.gte(locked)) {
+        return [excess.sub(locked), new BN(0), locked];
+      } else {
+        return [new BN(0), locked.sub(excess), excess];
+      }
+    } else {
+      return [new BN(0), locked, new BN(0)];
+    }
   }
 
   public getVoterWeight(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
+
     const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
       BigInt(currentEpoch.toString()),
-      unlockingDuration
+      unlockingDuration,
+      BigInt(
+        this.votingAccountMetadataWasm.getCurrentAmountLocked(
+          BigInt(currentEpoch.toString())
+        )
+      )
     );
+
     return new PythBalance(new BN(voterWeightBI.toString()));
   }
 
-  // What is the best way to represent current vesting schedule in the UI
-  public getVestingSchedule() {}
+  public getNextVesting(unixTime: BN) {
+    return wasm.getNextVesting(
+      this.vestingSchedule,
+      BigInt(unixTime.toString())
+    );
+  }
 
   static serializeVesting(lock: VestingSchedule, idl: Idl): Buffer {
     const VESTING_SCHED_MAX_BORSH_LEN = 4 * 8 + 1;
@@ -605,5 +997,55 @@ export class StakeAccount {
     );
     const length = vestingSchedLayout.encode(lock, buffer, 0);
     return buffer.slice(0, length);
+  }
+
+  public getVestingAccountState(unixTime: BN): VestingAccountState {
+    const vestingSummary = this.getBalanceSummary(unixTime).unvested;
+    if (vestingSummary.total.isZero()) {
+      return VestingAccountState.FullyVested;
+    }
+    if (
+      vestingSummary.preunlocking.isZero() &&
+      vestingSummary.unlocking.isZero()
+    ) {
+      if (vestingSummary.locked.isZero() && vestingSummary.locking.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyUnlocked;
+      } else if (vestingSummary.unlocked.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyLocked;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
+    } else {
+      if (vestingSummary.locked.isZero() && vestingSummary.locking.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown;
+      } else if (vestingSummary.unlocked.isZero()) {
+        return VestingAccountState.UnvestedTokensFullyLockedExceptCooldown;
+      } else {
+        return VestingAccountState.UnvestedTokensPartiallyLocked;
+      }
+    }
+  }
+
+  private addUnlockingPeriod(unixTime: BN) {
+    return unixTime.add(
+      this.config.epochDuration.mul(
+        new BN(this.config.unlockingDuration).add(new BN(1))
+      )
+    );
+  }
+
+  public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
+    const nextVestingEvent = this.getNextVesting(unixTime);
+    if (!nextVestingEvent) {
+      return new BN(0);
+    }
+    const nextVestingEventTimeBn = new BN(nextVestingEvent.time.toString());
+    const timeOfEval = BN.max(
+      nextVestingEventTimeBn,
+      this.addUnlockingPeriod(unixTime)
+    );
+
+    const balanceSummary = this.getBalanceSummary(timeOfEval).locked;
+    return balanceSummary.locking.toBN().add(balanceSummary.locked.toBN());
   }
 }

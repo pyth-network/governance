@@ -6,14 +6,31 @@ use anchor_spl::token::{
     TokenAccount,
     Transfer,
 };
+use std::iter::Iterator;
 
 pub const AUTHORITY_SEED: &str = "authority";
 pub const CUSTODY_SEED: &str = "custody";
 pub const STAKE_ACCOUNT_METADATA_SEED: &str = "stake_metadata";
 pub const CONFIG_SEED: &str = "config";
 pub const VOTER_RECORD_SEED: &str = "voter_weight";
-pub const PRODUCT_SEED: &str = "product";
+pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
+pub const VOTING_TARGET_SEED: &str = "voting";
+pub const DATA_TARGET_SEED: &str = "staking";
+
+impl positions::Target {
+    pub fn get_seed(&self) -> Vec<u8> {
+        match *self {
+            positions::Target::VOTING => VOTING_TARGET_SEED.as_bytes().to_vec(),
+            positions::Target::STAKING { ref product } => DATA_TARGET_SEED
+                .as_bytes()
+                .iter()
+                .chain(product.as_ref().iter())
+                .cloned()
+                .collect(),
+        }
+    }
+}
 
 #[derive(Accounts)]
 #[instruction(config_data : global_config::GlobalConfig)]
@@ -25,13 +42,32 @@ pub struct InitConfig<'info> {
         init,
         seeds = [CONFIG_SEED.as_bytes()],
         bump,
-        payer = payer
+        payer = payer,
+        space = global_config::GLOBAL_CONFIG_SIZE
     )]
     // Stake program accounts:
     pub config_account: Account<'info, global_config::GlobalConfig>,
     // Primitive accounts:
     pub rent:           Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(new_authority : Pubkey)]
+pub struct UpdateGovernanceAuthority<'info> {
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(freeze : bool)]
+pub struct UpdateFreeze<'info> {
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
@@ -43,8 +79,8 @@ pub struct CreateStakeAccount<'info> {
     // Stake program accounts:
     #[account(zero)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(init, payer = payer, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    #[account(init, payer = payer, space = stake_account::STAKE_ACCOUNT_METADATA_SIZE, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -87,7 +123,7 @@ pub struct WithdrawStake<'info> {
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         mut,
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -118,7 +154,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>>
 }
 
 #[derive(Accounts)]
-#[instruction(product : Option<Pubkey>, publisher : Option<Pubkey>, amount : u64)]
+#[instruction(target_with_parameters:   positions::TargetWithParameters, amount : u64)]
 pub struct CreatePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -126,8 +162,8 @@ pub struct CreatePosition<'info> {
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
@@ -135,10 +171,17 @@ pub struct CreatePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
+    // Target account :
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
+        bump = target_account.bump)]
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
-#[instruction(index : u8, amount : u64)]
+#[instruction(index : u8, amount : u64, target_with_parameters: positions::TargetWithParameters)] // target_with_parameters is in the instruction arguments because it's needed in the anchor PDA
+                                                                                                  // checks
 pub struct ClosePosition<'info> {
     // Native payer:
     #[account( address = stake_account_metadata.owner)]
@@ -146,8 +189,8 @@ pub struct ClosePosition<'info> {
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
@@ -155,9 +198,16 @@ pub struct ClosePosition<'info> {
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
+    // Target account :
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
+        bump = target_account.bump)]
+    pub target_account:          Account<'info, target::TargetMetadata>,
 }
 
 #[derive(Accounts)]
+#[instruction(action : voter_weight_record::VoterWeightAction)]
 pub struct UpdateVoterWeight<'info> {
     // Native payer:
     #[account(address = stake_account_metadata.owner)]
@@ -165,7 +215,7 @@ pub struct UpdateVoterWeight<'info> {
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
-    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadata>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump = stake_account_metadata.custody_bump,
@@ -178,44 +228,43 @@ pub struct UpdateVoterWeight<'info> {
     pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
+    // Governance target account:
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
+        bump = governance_target.bump)]
+    pub governance_target:       Account<'info, target::TargetMetadata>,
 }
-
 #[derive(Accounts)]
 pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
-    pub payer:              Signer<'info>,
-    // Governance product accounts:
-    #[account(
-        seeds = [PRODUCT_SEED.as_bytes(), Pubkey::default().as_ref()], //can we find a better way for this where the seed is empty when option is none
-        bump = governance_account.bump)]
-    pub governance_account: Account<'info, product::ProductMetadata>,
-    #[account(init_if_needed, payer = payer, space = max_voter_weight::MAX_VOTER_WEIGHT_RECORD ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
-    pub max_voter_record:   Account<'info, max_voter_weight::MaxVoterWeightRecord>,
+    pub payer:            Signer<'info>,
+    #[account(init, payer = payer, space = max_voter_weight_record::MAX_VOTER_WEIGHT_RECORD_SIZE ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
+    pub max_voter_record: Account<'info, max_voter_weight_record::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:             Account<'info, global_config::GlobalConfig>,
-    pub system_program:     Program<'info, System>,
+    pub config:           Account<'info, global_config::GlobalConfig>,
+    pub system_program:   Program<'info, System>,
 }
 
+
 #[derive(Accounts)]
-#[instruction(product : Option<Pubkey>)]
-pub struct CreateProduct<'info> {
-    #[account(mut, address = config.governance_authority)]
-    pub payer:           Signer<'info>,
+#[instruction(target : positions::Target)]
+pub struct CreateTarget<'info> {
+    #[account(mut)]
+    pub payer:             Signer<'info>,
+    #[account(address = config.governance_authority)]
+    pub governance_signer: Signer<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:          Account<'info, global_config::GlobalConfig>,
+    pub config:            Account<'info, global_config::GlobalConfig>,
     #[account(
         init,
         payer = payer,
-        seeds = [PRODUCT_SEED.as_bytes(), product.map_or(Pubkey::default(), |v| v).as_ref()], //can we find a better way for this where the seed is empty when option is none
+        seeds =  [TARGET_SEED.as_bytes(), &target.get_seed()[..]],
+        space = target::TARGET_METADATA_SIZE,
         bump)]
-    pub product_account: Account<'info, product::ProductMetadata>,
-    pub system_program:  Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct CleanupPositions<'info> {
-    pub payer: Signer<'info>,
+    pub target_account:    Account<'info, target::TargetMetadata>,
+    pub system_program:    Program<'info, System>,
 }
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed

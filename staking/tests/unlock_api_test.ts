@@ -1,6 +1,8 @@
 import {
   ANCHOR_CONFIG_PATH,
+  CustomAbortController,
   getPortNumber,
+  makeDefaultConfig,
   readAnchorConfig,
   standardSetup,
 } from "./utils/before";
@@ -19,7 +21,7 @@ describe("unlock_api", async () => {
   let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
   let stakeAccountAddress;
 
@@ -31,7 +33,8 @@ describe("unlock_api", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -44,9 +47,7 @@ describe("unlock_api", async () => {
       PythBalance.fromString("100")
     );
 
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
-    stakeAccountAddress = res[0].address;
+    stakeAccountAddress = (await stakeConnection.getMainAccount(owner)).address;
 
     await assertBalanceMatches(
       stakeConnection,
@@ -83,11 +84,10 @@ describe("unlock_api", async () => {
   });
 
   it("deposit more, unlock first unlocks oldest position (FIFO)", async () => {
-    const res = await stakeConnection.getStakeAccounts(owner);
-    assert.equal(res.length, 1);
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
 
     await stakeConnection.depositAndLockTokens(
-      res[0],
+      stakeAccount,
       PythBalance.fromString("100")
     );
 
@@ -106,32 +106,17 @@ describe("unlock_api", async () => {
 
     await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
 
-    // The tokens remain locked until the end of the epoch
-    await assertBalanceMatches(
-      stakeConnection,
-      owner,
-      {
-        locked: {
-          locking: PythBalance.fromString("100"),
-          locked: PythBalance.fromString("50"),
-        },
-        withdrawable: PythBalance.fromString("50"),
-      },
-      await stakeConnection.getTime()
-    );
-    // That means that unlocking again is a no-op for that position
-    // TODO: This seems very strange. Change this.
-    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
+    // The tokens are preunlocking until the end of the epoch
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
         locked: {
-          locking: PythBalance.fromString("50"),
-          locked: PythBalance.fromString("50"),
+          preunlocking: PythBalance.fromString("50"),
+          locking: PythBalance.fromString("100"),
         },
-        withdrawable: PythBalance.fromString("100"),
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
@@ -147,10 +132,10 @@ describe("unlock_api", async () => {
       owner,
       {
         locked: {
-          locked: PythBalance.fromString("50"),
           unlocking: PythBalance.fromString("50"),
+          locked: PythBalance.fromString("100"),
         },
-        withdrawable: PythBalance.fromString("100"),
+        withdrawable: PythBalance.fromString("50"),
       },
       await stakeConnection.getTime()
     );
@@ -163,20 +148,20 @@ describe("unlock_api", async () => {
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("50") },
-        withdrawable: PythBalance.fromString("150"),
+        withdrawable: PythBalance.fromString("100"),
+        locked: { locked: PythBalance.fromString("100") },
       },
       await stakeConnection.getTime()
     );
 
-    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("50"));
+    await loadAndUnlock(stakeConnection, owner, PythBalance.fromString("100"));
 
     await assertBalanceMatches(
       stakeConnection,
       owner,
       {
-        locked: { locked: PythBalance.fromString("50") },
-        withdrawable: PythBalance.fromString("150"),
+        locked: { preunlocking: PythBalance.fromString("100") },
+        withdrawable: PythBalance.fromString("100"),
       },
       await stakeConnection.getTime()
     );

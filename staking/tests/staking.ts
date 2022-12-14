@@ -12,7 +12,7 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import { expectFail } from "./utils/utils";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "../wasm/node/staking";
@@ -22,8 +22,11 @@ import {
   ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
+  makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
+import { PositionAccountJs } from "../app/PositionAccountJs";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -38,7 +41,7 @@ describe("staking", async () => {
   let voterAccount: PublicKey;
   let errMap: Map<number, string>;
 
-  let provider: anchor.Provider;
+  let provider: anchor.AnchorProvider;
 
   const stakeAccountPositionsSecret = new Keypair();
   const pythMintAccount = new Keypair();
@@ -49,8 +52,11 @@ describe("staking", async () => {
   let userAta: PublicKey;
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
 
-  let controller: AbortController;
+  let controller: CustomAbortController;
   let stakeConnection: StakeConnection;
+
+  let votingProductMetadataAccount: PublicKey;
+  let votingProduct;
 
   after(async () => {
     controller.abort();
@@ -60,15 +66,23 @@ describe("staking", async () => {
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
-    provider = stakeConnection.program.provider;
+    provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      provider.wallet.publicKey
+    );
+
+    votingProduct = stakeConnection.votingProduct;
+
+    votingProductMetadataAccount = await getTargetAccount(
+      votingProduct,
+      program.programId
     );
 
     errMap = parseIdlErrors(program.idl);
@@ -116,15 +130,10 @@ describe("staking", async () => {
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
-        SystemProgram.createAccount({
-          fromPubkey: provider.wallet.publicKey,
-          newAccountPubkey: stakeAccountPositionsSecret.publicKey,
-          lamports: await provider.connection.getMinimumBalanceForRentExemption(
-            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-          ),
-          space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
-          programId: program.programId,
-        }),
+        await program.account.positionData.createInstruction(
+          stakeAccountPositionsSecret,
+          wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+        ),
       ])
       .accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -136,7 +145,7 @@ describe("staking", async () => {
       });
 
     const stake_account_metadata_data =
-      await program.account.stakeAccountMetadata.fetch(metadataAccount);
+      await program.account.stakeAccountMetadataV2.fetch(metadataAccount);
 
     assert.equal(
       JSON.stringify(stake_account_metadata_data),
@@ -147,6 +156,7 @@ describe("staking", async () => {
         voterBump,
         owner,
         lock: { fullyVested: {} },
+        nextIndex: 0,
       })
     );
   });
@@ -174,7 +184,7 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
-    const tx = await provider.send(transaction, [], {
+    const tx = await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
   });
@@ -195,21 +205,18 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-
-    const pd = new wasm.WasmPositionData(inbuf.data);
-    const outbuffer = Buffer.alloc(pd.borshLength);
-    pd.asBorsh(outbuffer);
-    const positions = program.coder.accounts.decode("PositionData", outbuffer);
-    for (let index = 0; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
+    for (let index = 0; index < positionAccount.positions.length; index++) {
+      assert.equal(positionAccount.positions[index], null);
     }
   });
 
   it("creates a position that's too big", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("102").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance",
@@ -219,8 +226,9 @@ describe("staking", async () => {
 
   it("creates a position", async () => {
     await program.methods
-      .createPosition(null, null, new BN(1))
+      .createPosition(votingProduct, new BN(1))
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc({
@@ -232,30 +240,27 @@ describe("staking", async () => {
     const inbuf = await program.provider.connection.getAccountInfo(
       stakeAccountPositionsSecret.publicKey
     );
-    let wPositions = new wasm.WasmPositionData(inbuf.data);
-    const outbuffer = Buffer.alloc(wPositions.borshLength);
-    wPositions.asBorsh(outbuffer);
-    const positions = program.coder.accounts.decode("PositionData", outbuffer);
+    const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
     assert.equal(
-      JSON.stringify(positions.positions[0]),
+      JSON.stringify(positionAccount.positions[0]),
       JSON.stringify({
         amount: new BN(1),
         activationEpoch: new BN(1),
         unlockingStart: null,
-        product: null,
-        publisher: null,
+        targetWithParameters: votingProduct,
       })
     );
-    for (let index = 1; index < positions.positions.length; index++) {
-      assert.equal(positions.positions[index], null);
+    for (let index = 1; index < positionAccount.positions.length; index++) {
+      assert.equal(positionAccount.positions[index], null);
     }
   });
 
   it("creates position with 0 principal", async () => {
     await expectFail(
       program.methods
-        .createPosition(null, null, PythBalance.fromString("0").toBN())
+        .createPosition(votingProduct, PythBalance.fromString("0").toBN())
         .accounts({
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance",
@@ -263,18 +268,41 @@ describe("staking", async () => {
     );
   });
 
+  it("close position with 0 principal", async () => {
+    await expectFail(
+      program.methods
+        .closePosition(0, PythBalance.fromString("0").toBN(), votingProduct)
+        .accounts({
+          targetAccount: votingProductMetadataAccount,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
+      "Closing a position of 0 is not allowed",
+      errMap
+    );
+  });
+
   it("creates a non-voting position", async () => {
+    const nonVotingStakeTarget = {
+      staking: {
+        product: zeroPubkey,
+        publisher: { some: { address: zeroPubkey } },
+      },
+    };
+
     await expectFail(
       program.methods
         .createPosition(
-          zeroPubkey,
-          zeroPubkey,
+          nonVotingStakeTarget,
           PythBalance.fromString("10").toBN()
         )
         .accounts({
+          targetAccount: await getTargetAccount(
+            nonVotingStakeTarget,
+            program.programId
+          ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Not implemented",
+      "The program expected this account to be already initialized",
       errMap
     );
   });

@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use crate::state::positions::{
     PositionData,
     PositionState,
+    Target,
     MAX_POSITIONS,
 };
 use crate::ErrorCode::{
@@ -13,6 +14,7 @@ use crate::ErrorCode::{
     TooMuchExposureToGovernance,
     TooMuchExposureToProduct,
 };
+
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -26,20 +28,19 @@ pub fn validate(
     current_epoch: u64,
     unlocking_duration: u8,
 ) -> Result<u64> {
-    let mut current_exposures: BTreeMap<Option<Pubkey>, u64> = BTreeMap::new();
+    let mut current_exposures: BTreeMap<Target, u64> = BTreeMap::new();
 
     for i in 0..MAX_POSITIONS {
-        if stake_account_positions.positions[i].is_some() {
-            match stake_account_positions.positions[i]
-                .unwrap()
-                .get_current_position(current_epoch, unlocking_duration)
-                .unwrap()
-            {
-                PositionState::LOCKED | PositionState::UNLOCKING | PositionState::LOCKING => {
-                    let this_position = stake_account_positions.positions[i].unwrap();
-                    let prod_exposure: &mut u64 =
-                        current_exposures.entry(this_position.product).or_default();
-                    *prod_exposure = prod_exposure.checked_add(this_position.amount).unwrap();
+        if let Some(position) = stake_account_positions.read_position(i)? {
+            match position.get_current_position(current_epoch, unlocking_duration)? {
+                PositionState::LOCKED
+                | PositionState::PREUNLOCKING
+                | PositionState::UNLOCKING
+                | PositionState::LOCKING => {
+                    let prod_exposure: &mut u64 = current_exposures
+                        .entry(position.target_with_parameters.get_target())
+                        .or_default();
+                    *prod_exposure = prod_exposure.checked_add(position.amount).unwrap();
                 }
                 _ => {}
             }
@@ -48,12 +49,12 @@ pub fn validate(
 
     let vested_balance = total_balance
         .checked_sub(unvested_balance)
-        .ok_or(error!(TokensNotYetVested))?;
+        .ok_or_else(|| error!(TokensNotYetVested))?;
     /*
      * The four inequalities we need to hold are:
      *      vested balance >= 0
      *      total balance = vested balance + unvested balance >= voting position
-     *      vested balance >= exposure_i for each product other than voting
+     *      vested balance >= exposure_i for each target other than voting
      *      RISK_THRESH * vested balance >= sum exposure_i (again excluding voting)
      *
      * If you replace vested balance with (vested balance - withdrawable amount) and then solve
@@ -70,18 +71,18 @@ pub fn validate(
      */
 
     let mut governance_exposure: u64 = 0;
-    let mut max_product_exposure: u64 = 0;
+    let mut max_target_exposure: u64 = 0;
     let mut total_exposure: u64 = 0;
-    for (product, exposure) in &current_exposures {
-        match *product {
-            None => {
+    for (target, exposure) in &current_exposures {
+        match target {
+            Target::VOTING => {
                 // This is the special voting position that ignores vesting
                 // If there are multiple voting positions, they've been aggregated at this point
                 governance_exposure = *exposure;
             }
-            Some(_) => {
+            Target::STAKING { .. } => {
                 // A normal position
-                max_product_exposure = cmp::max(max_product_exposure, *exposure);
+                max_target_exposure = cmp::max(max_target_exposure, *exposure);
                 total_exposure = total_exposure
                     .checked_add(*exposure)
                     .ok_or_else(|| error!(TooMuchExposureToProduct))?;
@@ -101,7 +102,7 @@ pub fn validate(
     withdrawable_balance = cmp::min(
         withdrawable_balance,
         vested_balance
-            .checked_sub(max_product_exposure)
+            .checked_sub(max_target_exposure)
             .ok_or_else(|| error!(TooMuchExposureToProduct))?,
     );
     withdrawable_balance = cmp::min(
@@ -115,7 +116,7 @@ pub fn validate(
             .unwrap(),
     );
 
-    return Ok(withdrawable_balance);
+    Ok(withdrawable_balance)
 }
 
 #[cfg(test)]
@@ -126,45 +127,55 @@ pub mod tests {
         Position,
         PositionData,
         PositionState,
-        MAX_POSITIONS,
+        Publisher,
+        TargetWithParameters,
     };
     use crate::utils::risk::validate;
-    use crate::ErrorCode::{
-        RiskLimitExceeded,
-        TokensNotYetVested,
-        TooMuchExposureToGovernance,
-        TooMuchExposureToProduct,
-    };
+
 
     #[test]
     fn test_disjoint() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         // We need at least 7 vested tokens to support these positions
-        pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
-            unlocking_start:  Some(50),
-        });
-        pd.positions[1] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
-            unlocking_start:  Some(50),
-        });
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 7,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
+                unlocking_start:        Some(50),
+            },
+        )
+        .unwrap();
+        pd.write_position(
+            1,
+            &Position {
+                activation_epoch:       1,
+                amount:                 3,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
+                unlocking_start:        Some(50),
+            },
+        )
+        .unwrap();
         let tests = [
             (0, PositionState::LOCKING),
-            (44, PositionState::LOCKED),
+            (44, PositionState::PREUNLOCKING),
             (50, PositionState::UNLOCKING),
         ];
         for (current_epoch, desired_state) in tests {
             assert_eq!(
-                pd.positions[0]
+                pd.read_position(0)
+                    .unwrap()
                     .unwrap()
                     .get_current_position(current_epoch, 1)
                     .unwrap(),
@@ -180,25 +191,33 @@ pub mod tests {
 
     #[test]
     fn test_voting() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         // We need at least 3 vested, 7 total
-        pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            product:          None,
-            publisher:        None,
-            unlocking_start:  None,
-        });
-        pd.positions[4] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
-            unlocking_start:  None,
-        });
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 7,
+                target_with_parameters: TargetWithParameters::VOTING,
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
+        pd.write_position(
+            1,
+            &Position {
+                activation_epoch:       1,
+                amount:                 3,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
         assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0);
@@ -209,26 +228,35 @@ pub mod tests {
     }
     #[test]
     fn test_double_product() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         let product = Pubkey::new_unique();
         // We need at least 10 vested to support these
-        pd.positions[0] = Some(Position {
-            activation_epoch: 1,
-            amount:           7,
-            product:          Some(product),
-            publisher:        None,
-            unlocking_start:  None,
-        });
-        pd.positions[3] = Some(Position {
-            activation_epoch: 1,
-            amount:           3,
-            product:          Some(product),
-            publisher:        None,
-            unlocking_start:  None,
-        });
+        pd.write_position(
+            0,
+            &Position {
+                activation_epoch:       1,
+                amount:                 7,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product,
+                    publisher: Publisher::DEFAULT,
+                },
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
+        pd.write_position(
+            1,
+            &Position {
+                activation_epoch:       1,
+                amount:                 3,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product,
+                    publisher: Publisher::DEFAULT,
+                },
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 2);
@@ -238,29 +266,42 @@ pub mod tests {
     }
     #[test]
     fn test_risk() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         for i in 0..5 {
-            pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           10,
-                product:          Some(Pubkey::new_unique()),
-                publisher:        Some(Pubkey::new_unique()),
-                unlocking_start:  None,
-            });
+            pd.write_position(
+                i,
+                &Position {
+                    activation_epoch:       1,
+                    amount:                 10,
+                    target_with_parameters: TargetWithParameters::STAKING {
+                        product:   Pubkey::new_unique(),
+                        publisher: Publisher::SOME {
+                            address: Pubkey::new_unique(),
+                        },
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
         // Now we have 6 products, so 10 tokens is not enough
-        pd.positions[7] = Some(Position {
-            activation_epoch: 1,
-            amount:           10,
-            product:          Some(Pubkey::new_unique()),
-            publisher:        Some(Pubkey::new_unique()),
-            unlocking_start:  None,
-        });
+        pd.write_position(
+            7,
+            &Position {
+                activation_epoch:       1,
+                amount:                 10,
+                target_with_parameters: TargetWithParameters::STAKING {
+                    product:   Pubkey::new_unique(),
+                    publisher: Publisher::SOME {
+                        address: Pubkey::new_unique(),
+                    },
+                },
+                unlocking_start:        None,
+            },
+        )
+        .unwrap();
         assert!(validate(&pd, 10, 0, current_epoch, 1).is_err());
         // But 12 should be
         assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 0);
@@ -268,18 +309,18 @@ pub mod tests {
     }
     #[test]
     fn test_multiple_voting() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         for i in 0..5 {
-            pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           10,
-                product:          None,
-                publisher:        None,
-                unlocking_start:  None,
-            });
+            pd.write_position(
+                i,
+                &Position {
+                    activation_epoch:       1,
+                    amount:                 10,
+                    target_with_parameters: TargetWithParameters::VOTING,
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
         }
         let current_epoch = 44;
         assert_eq!(validate(&pd, 100, 0, current_epoch, 1).unwrap(), 50);
@@ -291,18 +332,18 @@ pub mod tests {
     #[should_panic]
     #[test]
     fn test_overflow_total() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         for i in 0..5 {
-            pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           u64::MAX / 3,
-                product:          None,
-                publisher:        None,
-                unlocking_start:  None,
-            });
+            pd.write_position(
+                i,
+                &Position {
+                    activation_epoch:       1,
+                    amount:                 u64::MAX / 3,
+                    target_with_parameters: TargetWithParameters::VOTING,
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
         }
         let current_epoch = 44;
         // Overflows in the total exposure computation
@@ -311,19 +352,24 @@ pub mod tests {
     #[should_panic]
     #[test]
     fn test_overflow_aggregation() {
-        let mut pd = PositionData {
-            owner:     Pubkey::new_unique(),
-            positions: [None; MAX_POSITIONS],
-        };
+        let mut pd = PositionData::default();
         let product = Pubkey::new_unique();
         for i in 0..5 {
-            pd.positions[i] = Some(Position {
-                activation_epoch: 1,
-                amount:           u64::MAX / 3,
-                product:          Some(product),
-                publisher:        Some(Pubkey::new_unique()),
-                unlocking_start:  None,
-            });
+            pd.write_position(
+                i,
+                &Position {
+                    activation_epoch:       1,
+                    amount:                 u64::MAX / 3,
+                    target_with_parameters: TargetWithParameters::STAKING {
+                        product,
+                        publisher: Publisher::SOME {
+                            address: Pubkey::new_unique(),
+                        },
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
         }
         let current_epoch = 44;
         // Overflows in the aggregation computation

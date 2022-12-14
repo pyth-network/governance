@@ -1,6 +1,9 @@
 import {
+  AnchorConfig,
   ANCHOR_CONFIG_PATH,
+  CustomAbortController,
   getPortNumber,
+  makeDefaultConfig,
   readAnchorConfig,
   standardSetup,
 } from "./utils/before";
@@ -9,6 +12,7 @@ import { Keypair } from "@solana/web3.js";
 import { StakeConnection } from "../app";
 import assert from "assert";
 import { BN } from "@project-serum/anchor";
+import shell from "shelljs";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -17,17 +21,19 @@ describe("clock_api", async () => {
   const pythMintAuthority = new Keypair();
 
   let stakeConnection: StakeConnection;
-  let controller: AbortController;
+  let controller: CustomAbortController;
 
-  const CLOCK_TOLERANCE_SECONDS = 5;
+  const CLOCK_TOLERANCE_SECONDS = 10;
 
+  let config: AnchorConfig;
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+    config = readAnchorConfig(ANCHOR_CONFIG_PATH);
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
       pythMintAccount,
-      pythMintAuthority
+      pythMintAuthority,
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
   });
 
@@ -56,6 +62,14 @@ describe("clock_api", async () => {
     sysTime = Date.now() / 1000;
     solanaTime = (await stakeConnection.getTime()).toNumber();
     assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);
+  });
+
+  it("checks that because mock clock is enabled, deployment will fail", async () => {
+    const grepResults = shell.exec(
+      `grep -q MOCK_CLOCK_ENABLED ${config.path.binary_path}`
+    );
+    const GREP_SUCCESS = 0;
+    assert.equal(grepResults.code, GREP_SUCCESS);
   });
 
   after(async () => {
