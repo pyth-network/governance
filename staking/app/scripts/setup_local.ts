@@ -75,6 +75,7 @@ async function main() {
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
       freeze: false,
+      pythTokenListTime: null,
     }
   ));
 
