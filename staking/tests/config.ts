@@ -81,8 +81,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(10),
         pythTokenListTime: null,
+        mockClockTime: new BN(10),
       })
       .rpc({
         skipPreflight: DEBUG,
@@ -118,8 +118,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(10),
         pythTokenListTime: null,
+        mockClockTime: new BN(10),
       })
     );
   });
@@ -141,8 +141,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(15),
         pythTokenListTime: null,
+        mockClockTime: new BN(15),
       })
     );
 
@@ -162,8 +162,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(30),
         pythTokenListTime: null,
+        mockClockTime: new BN(30),
       })
     );
   });
@@ -185,8 +185,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(15),
         pythTokenListTime: 5,
+        mockClockTime: new BN(15),
       })
     );
 
@@ -206,8 +206,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: 5,
         mockClockTime: new BN(30),
-        pythTokenListTime: null,
       })
     );
   });
@@ -229,8 +229,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        mockClockTime: new BN(30),
         pythTokenListTime: null,
+        mockClockTime: new BN(30),
       })
     );
 
@@ -276,8 +276,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
-        mockClockTime: new BN(30),
         pythTokenListTime: null,
+        mockClockTime: new BN(30),
       })
     );
 
