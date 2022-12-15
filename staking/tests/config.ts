@@ -186,7 +186,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         pythTokenListTime: new BN(5),
-        mockClockTime: new BN(15),
+        mockClockTime: new BN(30),
       })
     );
 
