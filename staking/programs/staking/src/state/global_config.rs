@@ -16,7 +16,6 @@ pub struct GlobalConfig {
 
     /// Once the pyth token is listed, governance can update the config to set this value.
     /// Once this value is set, vesting schedules that depend on the token list date can start vesting.
-    // FIXME: do options serialize correctly? iirc there was some issue about this
     pub pyth_token_list_time:       Option<i64>,
 
     #[cfg(feature = "mock-clock")]

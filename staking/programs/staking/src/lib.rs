@@ -86,7 +86,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn update_token_list_time(ctx: Context<UpdateFreeze>, token_list_time: Option<i64>) -> Result<()> {
+    pub fn update_token_list_time(ctx: Context<UpdateTokenListTime>, token_list_time: Option<i64>) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.pyth_token_list_time = token_list_time;
         Ok(())
