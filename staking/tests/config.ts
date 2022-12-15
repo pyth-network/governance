@@ -185,7 +185,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        pythTokenListTime: 5,
+        pythTokenListTime: new BN(5),
         mockClockTime: new BN(15),
       })
     );
@@ -206,7 +206,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
-        pythTokenListTime: 5,
+        pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
     );
