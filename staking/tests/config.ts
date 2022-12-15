@@ -355,7 +355,7 @@ describe("config", async () => {
     );
   });
 
-  it("someone else tries to freeze", async () => {
+  it("someone else tries to access admin methods", async () => {
     const sam = new Keypair();
     const samConnection = await StakeConnection.createStakeConnection(
       program.provider.connection,
@@ -378,6 +378,11 @@ describe("config", async () => {
     );
     await expectFail(
       samConnection.program.methods.updateGovernanceAuthority(new PublicKey(0)),
+      "An address constraint was violated",
+      errMap
+    );
+    await expectFail(
+      samConnection.program.methods.updateTokenListTime(new BN(7)),
       "An address constraint was violated",
       errMap
     );
