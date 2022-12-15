@@ -29,7 +29,7 @@ pub enum VestingSchedule {
         initial_balance: u64,
         period_duration: u64,
         num_periods:     u64,
-    }
+    },
 }
 
 #[wasm_bindgen]
@@ -43,58 +43,88 @@ impl VestingSchedule {
     /// For a vesting schedule and the current time (in the same units used in the vesting
     /// schedule), gets the _unvested_ amount. If the unvested balance is fractional, it rounds
     /// the unvested amount up. It tries to be careful about overflow.
-    pub fn get_unvested_balance(&self, current_time: i64, token_list_time: Option<i64>) -> Result<u64> {
+    pub fn get_unvested_balance(
+        &self,
+        current_time: i64,
+        token_list_time: Option<i64>,
+    ) -> Result<u64> {
         match (*self, token_list_time) {
             (VestingSchedule::FullyVested, _) => Ok(0),
-            (VestingSchedule::PeriodicVesting {
-                initial_balance,
-                start_date,
-                period_duration,
-                num_periods,
-            }, _) => Ok(VestingSchedule::periodic_vesting_helper(
+            (
+                VestingSchedule::PeriodicVesting {
+                    initial_balance,
+                    start_date,
+                    period_duration,
+                    num_periods,
+                },
+                _,
+            ) => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
                 initial_balance,
                 start_date,
                 period_duration,
                 num_periods,
             )),
-            (VestingSchedule::PeriodicVestingAfterListing {
-                initial_balance,
-                period_duration,
-                num_periods,
-            }, Some(list_time)) =>
-                Ok(VestingSchedule::periodic_vesting_helper(
+            (
+                VestingSchedule::PeriodicVestingAfterListing {
+                    initial_balance,
+                    period_duration,
+                    num_periods,
+                },
+                Some(list_time),
+            ) => Ok(VestingSchedule::periodic_vesting_helper(
                 current_time,
                 initial_balance,
                 list_time,
                 period_duration,
                 num_periods,
             )),
-            (VestingSchedule::PeriodicVestingAfterListing {initial_balance, ..}, None) => Ok(initial_balance)
+            (
+                VestingSchedule::PeriodicVestingAfterListing {
+                    initial_balance, ..
+                },
+                None,
+            ) => Ok(initial_balance),
         }
     }
 
-    pub fn get_next_vesting(&self, current_time: i64, token_list_time: Option<i64>) -> Result<Option<VestingEvent>> {
+    pub fn get_next_vesting(
+        &self,
+        current_time: i64,
+        token_list_time: Option<i64>,
+    ) -> Result<Option<VestingEvent>> {
         match (*self, token_list_time) {
             (VestingSchedule::FullyVested, _) => Ok(None),
-            (VestingSchedule::PeriodicVesting {
+            (
+                VestingSchedule::PeriodicVesting {
+                    initial_balance,
+                    start_date,
+                    period_duration,
+                    num_periods,
+                },
+                _,
+            ) => VestingSchedule::next_vesting_helper(
+                current_time,
                 initial_balance,
                 start_date,
                 period_duration,
                 num_periods,
-            }, _) => {
-                VestingSchedule::next_vesting_helper(current_time, initial_balance, start_date, period_duration, num_periods)
-            },
-            (VestingSchedule::PeriodicVestingAfterListing {
+            ),
+            (
+                VestingSchedule::PeriodicVestingAfterListing {
+                    initial_balance,
+                    period_duration,
+                    num_periods,
+                },
+                Some(list_time),
+            ) => VestingSchedule::next_vesting_helper(
+                current_time,
                 initial_balance,
+                list_time,
                 period_duration,
                 num_periods,
-            }, Some(list_time)) => {
-                VestingSchedule::next_vesting_helper(current_time, initial_balance, list_time, period_duration, num_periods)
-            },
-            (VestingSchedule::PeriodicVestingAfterListing {
-..
-            }, None) => {
+            ),
+            (VestingSchedule::PeriodicVestingAfterListing { .. }, None) => {
                 // No vesting events until the token listing date is determined.
                 Ok(None)
             }
@@ -153,10 +183,10 @@ impl VestingSchedule {
         let mut periods_passed = 0;
         if current_time >= start_date {
             let time_passed: u64 = current_time
-              .checked_sub(start_date)
-              .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
-              .try_into()
-              .map_err(|_| error!(ErrorCode::GenericOverflow))?;
+                .checked_sub(start_date)
+                .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                .try_into()
+                .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
             periods_passed = time_passed / period_duration;
         }
@@ -166,33 +196,33 @@ impl VestingSchedule {
         }
 
         let start_of_next_period = start_date
-          + TryInto::<i64>::try_into(
-            periods_passed
-              .checked_add(1)
-              .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
-              .checked_mul(period_duration)
-              .ok_or_else(|| error!(ErrorCode::GenericOverflow))?,
-        )
-          .map_err(|_| error!(ErrorCode::GenericOverflow))?;
+            + TryInto::<i64>::try_into(
+                periods_passed
+                    .checked_add(1)
+                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
+                    .checked_mul(period_duration)
+                    .ok_or_else(|| error!(ErrorCode::GenericOverflow))?,
+            )
+            .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
         let current_vested: u64 = (((periods_passed as u128) * (initial_balance as u128))
-          / (num_periods as u128))
-          .try_into()
-          .map_err(|_| error!(ErrorCode::GenericOverflow))?;
+            / (num_periods as u128))
+            .try_into()
+            .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
         let periods_passed_incremented = periods_passed
-          .checked_add(1)
-          .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+            .checked_add(1)
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
 
         let next_period_vested: u64 = (((periods_passed_incremented as u128)
-          * (initial_balance as u128))
-          / (num_periods as u128))
-          .try_into()
-          .map_err(|_| error!(ErrorCode::GenericOverflow))?;
+            * (initial_balance as u128))
+            / (num_periods as u128))
+            .try_into()
+            .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
         let amount: u64 = next_period_vested
-          .checked_sub(current_vested)
-          .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+            .checked_sub(current_vested)
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
 
         Ok(Some(VestingEvent {
             time: start_of_next_period,
@@ -333,7 +363,7 @@ pub mod tests {
                         Some(VestingEvent {
                             time:   t + 3 - _t_in_period,
                             amount: v.get_unvested_balance(t, None).unwrap()
-                              - v.get_unvested_balance(t + 3, None).unwrap(),
+                                - v.get_unvested_balance(t + 3, None).unwrap(),
                         })
                     );
                 } else {
@@ -357,7 +387,13 @@ pub mod tests {
         assert_eq!(v.get_unvested_balance(4, Some(5)).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(5 + 7 * 3, Some(5)).unwrap(), 0);
         assert_eq!(v.get_unvested_balance(5 + 7 * 3, Some(6)).unwrap(), 3);
-        assert_eq!(v.get_next_vesting(4 + 7 * 3, Some(5)).unwrap(), Some(VestingEvent { time: 26, amount: 3 }));
+        assert_eq!(
+            v.get_next_vesting(4 + 7 * 3, Some(5)).unwrap(),
+            Some(VestingEvent {
+                time:   26,
+                amount: 3,
+            })
+        );
         assert_eq!(v.get_next_vesting(4 + 7 * 3, None).unwrap(), None);
         assert_eq!(v.get_unvested_balance(100, None).unwrap(), 20);
 
@@ -369,7 +405,10 @@ pub mod tests {
             let locked_float = f64::max(20.0 * (1.0 - period as f64 / 7.0), 0.0);
             assert_eq!(locked_for_period, locked_float.ceil() as u64);
             for _t_in_period in 0..3 {
-                assert_eq!(v.get_unvested_balance(t, Some(5)).unwrap(), locked_for_period);
+                assert_eq!(
+                    v.get_unvested_balance(t, Some(5)).unwrap(),
+                    locked_for_period
+                );
                 if period < 7 {
                     assert_eq!(
                         v.get_next_vesting(t, Some(5)).unwrap(),
@@ -459,7 +498,8 @@ pub mod tests {
             .unwrap();
         assert_eq!(value, 1000 - tokens_per_period);
         assert_eq!(
-            v.get_next_vesting(one_month.try_into().unwrap(), None).unwrap(),
+            v.get_next_vesting(one_month.try_into().unwrap(), None)
+                .unwrap(),
             Some(VestingEvent {
                 time:   (2 * one_month).try_into().unwrap(),
                 amount: 14,

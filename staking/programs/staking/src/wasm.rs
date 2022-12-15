@@ -206,7 +206,11 @@ pub fn get_next_vesting(
     currentTime: i64,
     tokenListingTime: Option<i64>,
 ) -> Result<Option<VestingEvent>, JsValue> {
-    convert_error(get_next_vesting_impl(vestingSchedBorsh, currentTime, tokenListingTime))
+    convert_error(get_next_vesting_impl(
+        vestingSchedBorsh,
+        currentTime,
+        tokenListingTime,
+    ))
 }
 fn get_next_vesting_impl(
     vesting_sched_borsh: &[u8],
@@ -219,8 +223,16 @@ fn get_next_vesting_impl(
 }
 
 #[wasm_bindgen(js_name=getUnvestedBalance)]
-pub fn get_unvested_balance(vestingSchedBorsh: &[u8], currentTime: i64, tokenListingTime: Option<i64>,) -> Result<u64, JsValue> {
-    convert_error(get_unvested_balance_impl(vestingSchedBorsh, currentTime, tokenListingTime))
+pub fn get_unvested_balance(
+    vestingSchedBorsh: &[u8],
+    currentTime: i64,
+    tokenListingTime: Option<i64>,
+) -> Result<u64, JsValue> {
+    convert_error(get_unvested_balance_impl(
+        vestingSchedBorsh,
+        currentTime,
+        tokenListingTime,
+    ))
 }
 fn get_unvested_balance_impl(
     vesting_sched_borsh: &[u8],

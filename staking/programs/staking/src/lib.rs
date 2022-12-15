@@ -86,7 +86,10 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn update_token_list_time(ctx: Context<UpdateTokenListTime>, token_list_time: Option<i64>) -> Result<()> {
+    pub fn update_token_list_time(
+        ctx: Context<UpdateTokenListTime>,
+        token_list_time: Option<i64>,
+    ) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.pyth_token_list_time = token_list_time;
         Ok(())
@@ -165,7 +168,10 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time(config), config.pyth_token_list_time)?;
+            .get_unvested_balance(
+                utils::clock::get_current_time(config),
+                config.pyth_token_list_time,
+            )?;
 
         utils::risk::validate(
             stake_account_positions,
@@ -313,7 +319,10 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time(config), config.pyth_token_list_time)
+            .get_unvested_balance(
+                utils::clock::get_current_time(config),
+                config.pyth_token_list_time,
+            )
             .unwrap();
 
         if destination_account.owner != *signer.key {
@@ -380,7 +389,10 @@ pub mod staking {
             .accounts
             .stake_account_metadata
             .lock
-            .get_unvested_balance(utils::clock::get_current_time(config), config.pyth_token_list_time)
+            .get_unvested_balance(
+                utils::clock::get_current_time(config),
+                config.pyth_token_list_time,
+            )
             .unwrap();
 
         utils::risk::validate(

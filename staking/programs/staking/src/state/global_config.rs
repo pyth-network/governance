@@ -15,12 +15,13 @@ pub struct GlobalConfig {
     pub freeze:                bool,
 
     /// Once the pyth token is listed, governance can update the config to set this value.
-    /// Once this value is set, vesting schedules that depend on the token list date can start vesting.
-    pub pyth_token_list_time:       Option<i64>,
+    /// Once this value is set, vesting schedules that depend on the token list date can start
+    /// vesting.
+    pub pyth_token_list_time: Option<i64>,
 
     #[cfg(feature = "mock-clock")]
-    pub mock_clock_time:       i64, /* this field needs to be greater than 0 otherwise the API
-                                     * will use real time */
+    pub mock_clock_time: i64, /* this field needs to be greater than 0 otherwise the API
+                               * will use real time */
 }
 
 impl GlobalConfig {
@@ -49,7 +50,7 @@ pub mod tests {
             unlocking_duration:                             1,
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         false,
-            pyth_token_list_time: None,
+            pyth_token_list_time:                           None,
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };
@@ -67,7 +68,7 @@ pub mod tests {
             unlocking_duration:                             1,
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         true,
-            pyth_token_list_time: None,
+            pyth_token_list_time:                           None,
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };
