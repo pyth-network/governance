@@ -82,6 +82,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         mockClockTime: new BN(10),
+        pythTokenListTime: null,
       })
       .rpc({
         skipPreflight: DEBUG,
@@ -118,6 +119,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         mockClockTime: new BN(10),
+        pythTokenListTime: null,
       })
     );
   });
@@ -140,6 +142,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         mockClockTime: new BN(15),
+        pythTokenListTime: null,
       })
     );
 
@@ -160,6 +163,51 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         mockClockTime: new BN(30),
+        pythTokenListTime: null,
+      })
+    );
+  });
+
+  it("updates token list time", async () => {
+    await program.methods.updateTokenListTime(new BN(5)).rpc({ skipPreflight: DEBUG });
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        mockClockTime: new BN(15),
+        pythTokenListTime: 5,
+      })
+    );
+
+    await program.methods
+      .updateTokenListTime(null)
+      .rpc({ skipPreflight: DEBUG });
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        mockClockTime: new BN(30),
+        pythTokenListTime: null,
       })
     );
   });
@@ -182,6 +230,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: true,
         mockClockTime: new BN(30),
+        pythTokenListTime: null,
       })
     );
 
@@ -228,6 +277,7 @@ describe("config", async () => {
         epochDuration: new BN(3600),
         freeze: false,
         mockClockTime: new BN(30),
+        pythTokenListTime: null,
       })
     );
 
