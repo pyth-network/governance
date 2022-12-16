@@ -345,6 +345,7 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
     freeze: false,
     mockClockTime: new BN(10),
     bump: 0,
+    pythTokenListTime: null,
   };
 }
 

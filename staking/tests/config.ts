@@ -81,6 +81,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: null,
         mockClockTime: new BN(10),
       })
       .rpc({
@@ -117,6 +118,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: null,
         mockClockTime: new BN(10),
       })
     );
@@ -139,6 +141,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: null,
         mockClockTime: new BN(15),
       })
     );
@@ -159,6 +162,51 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: null,
+        mockClockTime: new BN(30),
+      })
+    );
+  });
+
+  it("updates token list time", async () => {
+    await program.methods.updateTokenListTime(new BN(5)).rpc({ skipPreflight: DEBUG });
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        pythTokenListTime: new BN(5),
+        mockClockTime: new BN(30),
+      })
+    );
+
+    await program.methods
+      .updateTokenListTime(null)
+      .rpc({ skipPreflight: DEBUG });
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
     );
@@ -181,6 +229,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
     );
@@ -227,6 +276,7 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
+        pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
     );
@@ -305,7 +355,7 @@ describe("config", async () => {
     );
   });
 
-  it("someone else tries to freeze", async () => {
+  it("someone else tries to access admin methods", async () => {
     const sam = new Keypair();
     const samConnection = await StakeConnection.createStakeConnection(
       program.provider.connection,
@@ -328,6 +378,11 @@ describe("config", async () => {
     );
     await expectFail(
       samConnection.program.methods.updateGovernanceAuthority(new PublicKey(0)),
+      "An address constraint was violated",
+      errMap
+    );
+    await expectFail(
+      samConnection.program.methods.updateTokenListTime(new BN(7)),
       "An address constraint was violated",
       errMap
     );
