@@ -5,13 +5,13 @@ import Footer from './Footer'
 
 const Layout: React.FC<{}> = ({ children }) => {
   return (
-    <div className="flex flex-col justify-between h-screen">
+    <div className="flex h-screen flex-col justify-between">
       <Header />
-      <main>
-        {children}
-        <div className="background-left z-[-1]" />
-        <div className="sm:background-right z-[-1]" />
-      </main>
+      <main>{children}</main>
+      <img
+        src="/orb.png"
+        className="pointer-events-none absolute left-0 top-0 -z-[1] max-h-screen object-cover"
+      />
       <Footer />
     </div>
   )

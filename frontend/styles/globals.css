@@ -2,63 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-dark font-mono text-base text-light antialiased;
+  }
+}
+
+@layer utilities {
+  .gradient-border {
+    @apply absolute left-8 bottom-0 h-px w-[calc(100%-64px)] bg-radial opacity-60;
+  }
+}
+
 .primary-btn {
-  @apply rounded-full bg-pythPurple;
+  @apply rounded-full h-[45px] text-xs px-8 uppercase  font-mono border border-solid border-pythPurple bg-pythPurple whitespace-nowrap;
+}
+
+.secondary-btn {
+  @apply rounded-full  px-8 uppercase  font-mono  h-[45px] bg-darkGray2 leading-none  transition-colors ;
+}
+
+.action-btn{
+  @apply rounded-full px-8 uppercase  font-mono leading-none  h-[45px] transition-colors  bg-pythPurple hover:bg-mediumSlateBlue  font-semibold disabled:opacity-70 disabled:hover:bg-pythPurple ;
 }
 
 .outlined-btn {
-  @apply rounded-full border-2 border-mediumSlateBlue px-3 py-1 text-white;
+  @apply rounded-full bg-darkGray2 px-6 py-1 transition-colors;
 }
 
 .nav-link {
-  @apply font-roboto text-white hover:text-pink;
+  @apply  text-light text-sm hover:text-white;
 }
 
-.nav-link-active {
-  color: theme('textColor.pink');
+.diaglogPanel {
+  @apply pt-20 pb-8 px-6  lg:p-10  md:mt-[92px] flex h-full min-h-[420px] w-[calc(100%-64px)]  max-w-3xl transform items-center justify-center rounded-[40px] bg-[rgba(49,47,71,0.85)]  p-5 text-center  align-middle shadow-xl transition-all
+}
+.diaglogClose {
+  @apply absolute right-10 top-8  flex items-center leading-none
 }
 
-.nav-link-active::before {
-  content: '';
-  position: absolute;
-  transform: translate(-13px, 10px);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: theme('textColor.pink');
+.diaglogTitle {
+  @apply  mb-8 text-center font-body text-[32px] lg:text-[44px] lg:mb-11 leading-[1.1];
 }
+
+
 
 .input-no-spin::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0px;
 }
 
-.background-left {
-  position: fixed;
-  left: -69.93%;
-  right: 30.07%;
-  top: -78.82%;
-  bottom: 21.18%;
-
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    rgba(130, 70, 250, 0.41) 0%,
-    rgba(16, 14, 33, 0) 100%
-  );
+.wallet-adapter-dropdown-list{
+  @apply bg-darkGray2 border border-darkGray3 gap-1 text-xs
 }
 
-@layer components {
-  .background-right {
-    position: fixed;
-    left: 68.79%;
-    right: -50.64%;
-    top: -2.58%;
-    bottom: 10.31%;
+.wallet-adapter-modal-wrapper{
+  @apply bg-darkGray2  max-w-[660px] rounded-4xl
 
-    background: radial-gradient(
-      50% 50% at 50% 50%,
-      rgba(71, 131, 250, 0.26) 0%,
-      rgba(41, 93, 195, 0) 100%
-    );
-  }
+}
+
+
+.wallet-adapter-modal-title{
+  @apply text-[32px] md:text-[44px] font-body max-w-[480px] leading-[1.1] text-light
+}
+
+.wallet-adapter-modal-list{
+  @apply mx-auto max-w-[380px]  text-light 
+}
+
+.wallet-adapter-modal-list-more{
+  @apply mx-auto font-mono uppercase text-xs font-semibold
+}
+.wallet-adapter-dropdown-list .wallet-adapter-dropdown-list-item:hover,
+.wallet-adapter-modal-list .wallet-adapter-button:hover{
+   background-color: #413E53; 
+}
+
+
+
+.wallet-adapter-modal-button-close{
+ @apply bg-transparent
+}
+
+.wallet-adapter-button.secondary-btn:hover{
+  @apply hover:bg-pythPurple
 }

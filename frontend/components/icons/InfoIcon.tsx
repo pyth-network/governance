@@ -4,11 +4,10 @@ const InfoIcon = () => {
       width="17"
       height="17"
       viewBox="0 0 24 24"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        stroke="#8246FA"
+        stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
