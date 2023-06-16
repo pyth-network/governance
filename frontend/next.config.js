@@ -1,4 +1,4 @@
-require("dotenv").config()
+require('dotenv').config()
 
 /** @type {import('next').NextConfig} */
 module.exports = {
@@ -8,10 +8,10 @@ module.exports = {
   },
   env: {
     ENDPOINT: process.env.ENDPOINT,
-    CLUSTER : process.env.CLUSTER
+    CLUSTER: process.env.CLUSTER,
   },
   webpack: (config, { isServer, dev }) => {
-    config.experiments = { asyncWebAssembly: true, layers: true, }
+    config.experiments = { asyncWebAssembly: true, layers: true }
 
     return config
   },
