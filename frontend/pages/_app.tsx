@@ -15,15 +15,26 @@ import {
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
+import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import type { AppProps } from 'next/app'
 import { FC, useMemo } from 'react'
 
 import { Toaster } from 'react-hot-toast'
-
+import { siweClient } from 'utils/siweClient'
+import { WagmiConfig, createConfig } from 'wagmi'
 
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
+
+const config = createConfig(
+  getDefaultConfig({
+    alchemyId: process.env.NEXT_PUBLIC_ALCHEMY_KEY,
+    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
+    appName: 'Pyth Network',
+    appIcon: 'https://pyth.network/social-logo.png',
+  })
+)
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
@@ -56,16 +67,22 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <Component {...pageProps} />
-          <Toaster
-            position="bottom-left"
-            toastOptions={{
-              style: {
-                wordBreak: 'break-word',
-              },
-            }}
-            reverseOrder={false}
-          />
+          <WagmiConfig config={config}>
+            <siweClient.Provider>
+              <ConnectKitProvider>
+                <Component {...pageProps} />
+                <Toaster
+                  position="bottom-left"
+                  toastOptions={{
+                    style: {
+                      wordBreak: 'break-word',
+                    },
+                  }}
+                  reverseOrder={false}
+                />
+              </ConnectKitProvider>
+            </siweClient.Provider>
+          </WagmiConfig>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
