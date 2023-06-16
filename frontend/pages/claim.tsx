@@ -6,10 +6,8 @@ import SEO from '../components/SEO'
 
 const Claim: NextPage = () => {
   const { data, isSignedIn, signOut, signIn } = useSIWE()
-  console.log({ data, isSignedIn, signOut, signIn })
   const { address, isConnecting, isDisconnected } = useAccount()
   const { chain } = useNetwork()
-  console.log(chain)
   return (
     <Layout>
       <SEO title={'Claim'} />
