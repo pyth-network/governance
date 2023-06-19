@@ -1,13 +1,41 @@
 import { ConnectKitButton, useSIWE } from 'connectkit'
 import type { NextPage } from 'next'
-import { useAccount, useNetwork } from 'wagmi'
+import { useEffect, useState } from 'react'
+import { recoverMessageAddress } from 'viem'
+import { useAccount, useNetwork, useSignMessage } from 'wagmi'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 
+const MESSAGE = 'Pyth Grant Program'
+
 const Claim: NextPage = () => {
-  const { data, isSignedIn, signOut, signIn } = useSIWE()
-  const { address, isConnecting, isDisconnected } = useAccount()
+  const [recoveredAddress, setRecoveredAddress] = useState<string>()
+  const { data: signMessageData, signMessage, variables } = useSignMessage()
+  const { isSignedIn } = useSIWE()
+  const { address, isDisconnected } = useAccount()
   const { chain } = useNetwork()
+
+  useEffect(() => {
+    const verifyMessage = async () => {
+      if (variables?.message && signMessageData) {
+        const recoveredAddress = await recoverMessageAddress({
+          message: variables?.message,
+          signature: signMessageData,
+        })
+        setRecoveredAddress(recoveredAddress)
+      }
+    }
+
+    verifyMessage()
+    if (recoveredAddress && address) {
+      if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
+        console.log('Signature is valid')
+      } else {
+        console.log('Signature is invalid')
+      }
+    }
+  }, [recoveredAddress, address, signMessageData, variables?.message])
+
   return (
     <Layout>
       <SEO title={'Claim'} />
@@ -22,11 +50,29 @@ const Claim: NextPage = () => {
                 <div>Address: {address}</div>
                 {chain && <div>Chain: {chain.name}</div>}
                 {isSignedIn && <div>Signed in with Ethereum!</div>}
+                {recoveredAddress && (
+                  <div>Recovered Address: {recoveredAddress}</div>
+                )}
+                {signMessageData && (
+                  <div className="break-all">
+                    Signature: {signMessageData.toString()}
+                  </div>
+                )}
               </>
             )}
 
-            <div className="flex items-center justify-center py-2">
+            <div className="mt-2 flex items-center justify-center py-2">
               <ConnectKitButton />
+            </div>
+
+            <div className="my-2 flex justify-center md:mb-0">
+              <button
+                className="outlined-btn hover:bg-darkGray4"
+                disabled={isDisconnected}
+                onClick={() => signMessage({ message: MESSAGE })}
+              >
+                {isDisconnected ? 'Check Wallet' : 'Sign Message'}
+              </button>
             </div>
           </div>
         </div>

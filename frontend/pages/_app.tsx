@@ -33,6 +33,7 @@ const config = createConfig(
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
     appName: 'Pyth Network',
     appIcon: 'https://pyth.network/social-logo.png',
+    autoConnect: false,
   })
 )
 
