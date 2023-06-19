@@ -22,6 +22,8 @@ const Claim: NextPage = () => {
           message: variables?.message,
           signature: signMessageData,
         })
+        // alternatively, you can use ethers verifyMessage
+        // const recoveredAddress = verifyMessage(MESSAGE_BYTES, data)
         setRecoveredAddress(recoveredAddress)
       }
     }
