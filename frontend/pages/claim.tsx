@@ -23,7 +23,8 @@ const Claim: NextPage = () => {
           signature: signMessageData,
         })
         // alternatively, you can use ethers verifyMessage
-        // const recoveredAddress = verifyMessage(MESSAGE_BYTES, data)
+        // const MESSAGE_BYTES = toUtf8Bytes(MESSAGE)
+        // const recoveredAddress = verifyMessage(MESSAGE_BYTES, signMessageData)
         setRecoveredAddress(recoveredAddress)
       }
     }
