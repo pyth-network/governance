@@ -1,3 +1,4 @@
+import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import {
   ConnectionProvider,
@@ -17,6 +18,7 @@ import {
 import { clusterApiUrl } from '@solana/web3.js'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import type { AppProps } from 'next/app'
+import { PetraWallet } from 'petra-plugin-wallet-adapter'
 import { FC, useMemo } from 'react'
 
 import { Toaster } from 'react-hot-toast'
@@ -26,6 +28,7 @@ import { WagmiConfig, createConfig } from 'wagmi'
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
+require('@aptos-labs/wallet-adapter-ant-design/dist/index.css')
 
 const config = createConfig(
   getDefaultConfig({
@@ -62,28 +65,32 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
     []
   )
 
+  const aptosWallets = useMemo(() => [new PetraWallet()], [])
+
   return (
     <ConnectionProvider
       endpoint={endpoint || clusterApiUrl(WalletAdapterNetwork.Devnet)}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <WagmiConfig config={config}>
-            <siweClient.Provider>
-              <ConnectKitProvider>
-                <Component {...pageProps} />
-                <Toaster
-                  position="bottom-left"
-                  toastOptions={{
-                    style: {
-                      wordBreak: 'break-word',
-                    },
-                  }}
-                  reverseOrder={false}
-                />
-              </ConnectKitProvider>
-            </siweClient.Provider>
-          </WagmiConfig>
+          <AptosWalletAdapterProvider plugins={aptosWallets}>
+            <WagmiConfig config={config}>
+              <siweClient.Provider>
+                <ConnectKitProvider>
+                  <Component {...pageProps} />
+                  <Toaster
+                    position="bottom-left"
+                    toastOptions={{
+                      style: {
+                        wordBreak: 'break-word',
+                      },
+                    }}
+                    reverseOrder={false}
+                  />
+                </ConnectKitProvider>
+              </siweClient.Provider>
+            </WagmiConfig>
+          </AptosWalletAdapterProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

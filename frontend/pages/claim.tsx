@@ -1,3 +1,5 @@
+import { WalletSelector } from '@aptos-labs/wallet-adapter-ant-design'
+import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { ConnectKitButton, useSIWE } from 'connectkit'
 import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
@@ -14,6 +16,24 @@ const Claim: NextPage = () => {
   const { isSignedIn } = useSIWE()
   const { address, isDisconnected } = useAccount()
   const { chain } = useNetwork()
+  const [aptosSignMesage, setAptosSignMessage] = useState<string>()
+
+  const { signMessageAndVerify, connected } = useWallet()
+
+  const onSignMessageAndVerify = async () => {
+    const payload = {
+      message: MESSAGE,
+      nonce: 'random_string',
+    }
+    try {
+      const response = await signMessageAndVerify(payload)
+      setAptosSignMessage(JSON.stringify({ onSignMessageAndVerify: response }))
+      console.log('response', response)
+    } catch (error: any) {
+      console.log('error', error)
+      setAptosSignMessage(JSON.stringify({ onSignMessageAndVerify: error }))
+    }
+  }
 
   useEffect(() => {
     const verifyMessage = async () => {
@@ -64,17 +84,26 @@ const Claim: NextPage = () => {
               </>
             )}
 
-            <div className="mt-2 flex items-center justify-center py-2">
+            <div className="my-2 mt-2 flex flex-col items-center justify-center space-y-2 bg-darkGray3 py-2">
+              <p className="text-lg font-bold">EVM</p>
               <ConnectKitButton />
-            </div>
-
-            <div className="my-2 flex justify-center md:mb-0">
               <button
                 className="outlined-btn hover:bg-darkGray4"
                 disabled={isDisconnected}
                 onClick={() => signMessage({ message: MESSAGE })}
               >
-                {isDisconnected ? 'Check Wallet' : 'Sign Message'}
+                {isDisconnected ? 'Connect Wallet' : 'Sign Message'}
+              </button>
+            </div>
+            <div className="my-2 mt-2 flex flex-col items-center justify-center space-y-2 bg-darkGray3 py-2">
+              <p className="text-lg font-bold">Aptos</p>
+              <WalletSelector />
+              <button
+                className="outlined-btn hover:bg-darkGray4"
+                disabled={!connected}
+                onClick={onSignMessageAndVerify}
+              >
+                {connected ? 'Sign Message' : 'Connect Wallet'}
               </button>
             </div>
           </div>
