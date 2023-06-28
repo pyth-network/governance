@@ -1,4 +1,10 @@
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react'
+import { ChakraProvider } from '@chakra-ui/react'
+import { MainWalletBase, SignerOptions } from '@cosmos-kit/core'
+import { wallets as cosmostationWallets } from '@cosmos-kit/cosmostation'
+import { wallets as keplrWallets } from '@cosmos-kit/keplr'
+import { wallets as leapWallets } from '@cosmos-kit/leap'
+import { ChainProvider, noCssResetTheme } from '@cosmos-kit/react'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import {
   ConnectionProvider,
@@ -16,6 +22,7 @@ import {
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
+import { assets, chains } from 'chain-registry'
 import { ConnectKitProvider, getDefaultConfig } from 'connectkit'
 import type { AppProps } from 'next/app'
 import { PetraWallet } from 'petra-plugin-wallet-adapter'
@@ -47,6 +54,12 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // You can also provide a custom RPC endpoint
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
+  const signerOptions: SignerOptions = {
+    // signingStargate: (_chain: Chain) => {
+    //   return getSigningCosmosClientOptions();
+    // }
+  }
+
   const endpoint = process.env.ENDPOINT
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
@@ -77,16 +90,44 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
             <WagmiConfig config={config}>
               <siweClient.Provider>
                 <ConnectKitProvider>
-                  <Component {...pageProps} />
-                  <Toaster
-                    position="bottom-left"
-                    toastOptions={{
-                      style: {
-                        wordBreak: 'break-word',
-                      },
-                    }}
-                    reverseOrder={false}
-                  />
+                  <ChakraProvider theme={noCssResetTheme}>
+                    <ChainProvider
+                      chains={chains}
+                      assetLists={assets}
+                      wallets={
+                        [
+                          ...keplrWallets,
+                          ...cosmostationWallets,
+                          ...leapWallets,
+                        ] as unknown as MainWalletBase[]
+                      }
+                      walletConnectOptions={{
+                        signClient: {
+                          projectId: 'a8510432ebb71e6948cfd6cde54b70f7',
+                          relayUrl: 'wss://relay.walletconnect.org',
+                          metadata: {
+                            name: 'CosmosKit Template',
+                            description: 'CosmosKit dapp template',
+                            url: 'https://docs.cosmoskit.com/',
+                            icons: [],
+                          },
+                        },
+                      }}
+                      wrappedWithChakra={true}
+                      signerOptions={signerOptions}
+                    >
+                      <Component {...pageProps} />
+                      <Toaster
+                        position="bottom-left"
+                        toastOptions={{
+                          style: {
+                            wordBreak: 'break-word',
+                          },
+                        }}
+                        reverseOrder={false}
+                      />
+                    </ChainProvider>
+                  </ChakraProvider>
                 </ConnectKitProvider>
               </siweClient.Provider>
             </WagmiConfig>
