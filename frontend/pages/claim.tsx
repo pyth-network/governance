@@ -1,6 +1,8 @@
 import { WalletSelector } from '@aptos-labs/wallet-adapter-ant-design'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
-import { ConnectKitButton, useSIWE } from 'connectkit'
+import { Wallet } from '@components/wallets/cosmos/Wallet'
+import { useChainWallet } from '@cosmos-kit/react'
+import { ConnectKitButton } from 'connectkit'
 import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
 import { recoverMessageAddress } from 'viem'
@@ -13,12 +15,32 @@ const MESSAGE = 'Pyth Grant Program'
 const Claim: NextPage = () => {
   const [recoveredAddress, setRecoveredAddress] = useState<string>()
   const { data: signMessageData, signMessage, variables } = useSignMessage()
-  const { isSignedIn } = useSIWE()
   const { address, isDisconnected } = useAccount()
   const { chain } = useNetwork()
   const [aptosSignMesage, setAptosSignMessage] = useState<string>()
 
   const { signMessageAndVerify, connected } = useWallet()
+  const {
+    chain: cosmosChain,
+    address: cosmosAddress,
+    isWalletConnected,
+  } = useChainWallet('cosmoshub', 'keplr-extension')
+
+  const signCosmosMessage = async () => {
+    const signature = await (window as any).keplr.signArbitrary(
+      cosmosChain.chain_id,
+      cosmosAddress,
+      MESSAGE
+    )
+    console.log(signature)
+    const res = await (window as any).keplr.verifyArbitrary(
+      cosmosChain.chain_id,
+      cosmosAddress,
+      MESSAGE,
+      signature
+    )
+    console.log(res)
+  }
 
   const onSignMessageAndVerify = async () => {
     const payload = {
@@ -72,7 +94,6 @@ const Claim: NextPage = () => {
                 <div>Wallet connected!</div>
                 <div>Address: {address}</div>
                 {chain && <div>Chain: {chain.name}</div>}
-                {isSignedIn && <div>Signed in with Ethereum!</div>}
                 {recoveredAddress && (
                   <div>Recovered Address: {recoveredAddress}</div>
                 )}
@@ -104,6 +125,17 @@ const Claim: NextPage = () => {
                 onClick={onSignMessageAndVerify}
               >
                 {connected ? 'Sign Message' : 'Connect Wallet'}
+              </button>
+            </div>
+            <div className="my-2 mt-2 flex flex-col items-center justify-center space-y-2 bg-darkGray3 py-2">
+              <p className="text-lg font-bold">Cosmos</p>
+              <Wallet />
+              <button
+                className="outlined-btn hover:bg-darkGray4"
+                disabled={!isWalletConnected}
+                onClick={signCosmosMessage}
+              >
+                {isWalletConnected ? 'Sign Message' : 'Connect Wallet'}
               </button>
             </div>
           </div>
