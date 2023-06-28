@@ -2,7 +2,7 @@ import { WalletSelector } from '@aptos-labs/wallet-adapter-ant-design'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { Wallet } from '@components/wallets/cosmos/Wallet'
 import { useChainWallet } from '@cosmos-kit/react'
-import { ConnectKitButton, useSIWE } from 'connectkit'
+import { ConnectKitButton } from 'connectkit'
 import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
 import { recoverMessageAddress } from 'viem'
@@ -15,7 +15,6 @@ const MESSAGE = 'Pyth Grant Program'
 const Claim: NextPage = () => {
   const [recoveredAddress, setRecoveredAddress] = useState<string>()
   const { data: signMessageData, signMessage, variables } = useSignMessage()
-  const { isSignedIn } = useSIWE()
   const { address, isDisconnected } = useAccount()
   const { chain } = useNetwork()
   const [aptosSignMesage, setAptosSignMessage] = useState<string>()
@@ -95,7 +94,6 @@ const Claim: NextPage = () => {
                 <div>Wallet connected!</div>
                 <div>Address: {address}</div>
                 {chain && <div>Chain: {chain.name}</div>}
-                {isSignedIn && <div>Signed in with Ethereum!</div>}
                 {recoveredAddress && (
                   <div>Recovered Address: {recoveredAddress}</div>
                 )}

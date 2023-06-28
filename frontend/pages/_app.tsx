@@ -29,7 +29,6 @@ import { PetraWallet } from 'petra-plugin-wallet-adapter'
 import { FC, useMemo } from 'react'
 
 import { Toaster } from 'react-hot-toast'
-import { siweClient } from 'utils/siweClient'
 import { WagmiConfig, createConfig } from 'wagmi'
 
 // Use require instead of import since order matters
@@ -88,48 +87,47 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
         <WalletModalProvider>
           <AptosWalletAdapterProvider plugins={aptosWallets}>
             <WagmiConfig config={config}>
-              <siweClient.Provider>
-                <ConnectKitProvider>
-                  <ChakraProvider theme={noCssResetTheme}>
-                    <ChainProvider
-                      chains={chains}
-                      assetLists={assets}
-                      wallets={
-                        [
-                          ...keplrWallets,
-                          ...cosmostationWallets,
-                          ...leapWallets,
-                        ] as unknown as MainWalletBase[]
-                      }
-                      walletConnectOptions={{
-                        signClient: {
-                          projectId: 'a8510432ebb71e6948cfd6cde54b70f7',
-                          relayUrl: 'wss://relay.walletconnect.org',
-                          metadata: {
-                            name: 'CosmosKit Template',
-                            description: 'CosmosKit dapp template',
-                            url: 'https://docs.cosmoskit.com/',
-                            icons: [],
-                          },
+              <ConnectKitProvider>
+                <ChakraProvider theme={noCssResetTheme}>
+                  <ChainProvider
+                    chains={chains}
+                    assetLists={assets}
+                    wallets={
+                      [
+                        ...keplrWallets,
+                        ...cosmostationWallets,
+                        ...leapWallets,
+                      ] as unknown as MainWalletBase[]
+                    }
+                    walletConnectOptions={{
+                      signClient: {
+                        projectId:
+                          process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
+                        relayUrl: 'wss://relay.walletconnect.org',
+                        metadata: {
+                          name: 'Pyth Network',
+                          description: 'Pyth Network',
+                          url: 'https://pyth.network/',
+                          icons: [],
+                        },
+                      },
+                    }}
+                    wrappedWithChakra={true}
+                    signerOptions={signerOptions}
+                  >
+                    <Component {...pageProps} />
+                    <Toaster
+                      position="bottom-left"
+                      toastOptions={{
+                        style: {
+                          wordBreak: 'break-word',
                         },
                       }}
-                      wrappedWithChakra={true}
-                      signerOptions={signerOptions}
-                    >
-                      <Component {...pageProps} />
-                      <Toaster
-                        position="bottom-left"
-                        toastOptions={{
-                          style: {
-                            wordBreak: 'break-word',
-                          },
-                        }}
-                        reverseOrder={false}
-                      />
-                    </ChainProvider>
-                  </ChakraProvider>
-                </ConnectKitProvider>
-              </siweClient.Provider>
+                      reverseOrder={false}
+                    />
+                  </ChainProvider>
+                </ChakraProvider>
+              </ConnectKitProvider>
             </WagmiConfig>
           </AptosWalletAdapterProvider>
         </WalletModalProvider>
