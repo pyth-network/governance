@@ -28,13 +28,13 @@ const Claim: NextPage = () => {
   } = useChainWallet('cosmoshub', 'keplr-extension')
 
   const signCosmosMessage = async () => {
-    const signature = await window.keplr.signArbitrary(
+    const signature = await (window as any).keplr.signArbitrary(
       cosmosChain.chain_id,
       cosmosAddress,
       MESSAGE
     )
     console.log(signature)
-    const res = await window.keplr.verifyArbitrary(
+    const res = await (window as any).keplr.verifyArbitrary(
       cosmosChain.chain_id,
       cosmosAddress,
       MESSAGE,
