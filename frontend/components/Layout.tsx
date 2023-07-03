@@ -1,9 +1,9 @@
-import * as React from 'react'
 import PropTypes from 'prop-types'
-import Header from './Header'
+import * as React from 'react'
 import Footer from './Footer'
+import Header from './Header'
 
-const Layout: React.FC<{}> = ({ children }) => {
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex h-screen flex-col justify-between">
       <Header />
