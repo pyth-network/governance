@@ -2,6 +2,10 @@ import { WalletSelector } from '@aptos-labs/wallet-adapter-ant-design'
 import { useWallet } from '@aptos-labs/wallet-adapter-react'
 import { Wallet } from '@components/wallets/cosmos/Wallet'
 import { useChainWallet } from '@cosmos-kit/react'
+import {
+  ConnectButton as SuiConnectWalletButton,
+  useWallet as useSuiWallet,
+} from '@suiet/wallet-kit'
 import { ConnectKitButton } from 'connectkit'
 import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
@@ -18,6 +22,7 @@ const Claim: NextPage = () => {
   const { address, isDisconnected } = useAccount()
   const { chain } = useNetwork()
   const [aptosSignMesage, setAptosSignMessage] = useState<string>()
+  const suiWallet = useSuiWallet()
 
   const { signMessageAndVerify, connected } = useWallet()
   const {
@@ -81,6 +86,15 @@ const Claim: NextPage = () => {
     }
   }, [recoveredAddress, address, signMessageData, variables?.message])
 
+  // launch a move call for the connected account via wallet
+  const signSuiMessage = async () => {
+    const res = await suiWallet.signMessage({
+      message: new TextEncoder().encode(MESSAGE),
+    })
+    const { messageBytes, signature } = res
+    console.log(signature)
+  }
+
   return (
     <Layout>
       <SEO title={'Claim'} />
@@ -136,6 +150,17 @@ const Claim: NextPage = () => {
                 onClick={signCosmosMessage}
               >
                 {isWalletConnected ? 'Sign Message' : 'Connect Wallet'}
+              </button>
+            </div>
+            <div className="my-2 mt-2 flex flex-col items-center justify-center space-y-2 bg-darkGray3 py-2">
+              <p className="text-lg font-bold">Sui</p>
+              <SuiConnectWalletButton />
+              <button
+                className="outlined-btn hover:bg-darkGray4"
+                disabled={!suiWallet.connected}
+                onClick={signSuiMessage}
+              >
+                {suiWallet.connected ? 'Sign Message' : 'Connect Wallet'}
               </button>
             </div>
           </div>

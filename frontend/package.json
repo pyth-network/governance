@@ -29,6 +29,7 @@
     "@solana/wallet-adapter-react-ui": "^0.9.31",
     "@solana/wallet-adapter-wallets": "^0.19.16",
     "@solana/web3.js": "^1.36.0",
+    "@suiet/wallet-kit": "^0.2.15",
     "@tippyjs/react": "^4.2.6",
     "chain-registry": "1.14.0",
     "connectkit": "^1.4.0",

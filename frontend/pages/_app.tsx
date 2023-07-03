@@ -1,6 +1,6 @@
 import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react'
 import { ChakraProvider } from '@chakra-ui/react'
-import { MainWalletBase, SignerOptions } from '@cosmos-kit/core'
+import { MainWalletBase } from '@cosmos-kit/core'
 import { wallets as cosmostationWallets } from '@cosmos-kit/cosmostation'
 import { wallets as keplrWallets } from '@cosmos-kit/keplr'
 import { wallets as leapWallets } from '@cosmos-kit/leap'
@@ -28,6 +28,8 @@ import type { AppProps } from 'next/app'
 import { PetraWallet } from 'petra-plugin-wallet-adapter'
 import { FC, useMemo } from 'react'
 
+import { WalletProvider as SuiWalletProvider } from '@suiet/wallet-kit'
+import '@suiet/wallet-kit/style.css'
 import { Toaster } from 'react-hot-toast'
 import { WagmiConfig, createConfig } from 'wagmi'
 
@@ -52,7 +54,6 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
 
   // You can also provide a custom RPC endpoint
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
-
 
   const endpoint = process.env.ENDPOINT
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
@@ -109,16 +110,18 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
                     }}
                     wrappedWithChakra={true}
                   >
-                    <Component {...pageProps} />
-                    <Toaster
-                      position="bottom-left"
-                      toastOptions={{
-                        style: {
-                          wordBreak: 'break-word',
-                        },
-                      }}
-                      reverseOrder={false}
-                    />
+                    <SuiWalletProvider>
+                      <Component {...pageProps} />
+                      <Toaster
+                        position="bottom-left"
+                        toastOptions={{
+                          style: {
+                            wordBreak: 'break-word',
+                          },
+                        }}
+                        reverseOrder={false}
+                      />
+                    </SuiWalletProvider>
                   </ChainProvider>
                 </ChakraProvider>
               </ConnectKitProvider>
