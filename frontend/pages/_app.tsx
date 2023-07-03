@@ -53,11 +53,6 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // You can also provide a custom RPC endpoint
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
-  const signerOptions: SignerOptions = {
-    // signingStargate: (_chain: Chain) => {
-    //   return getSigningCosmosClientOptions();
-    // }
-  }
 
   const endpoint = process.env.ENDPOINT
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
@@ -113,7 +108,6 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
                       },
                     }}
                     wrappedWithChakra={true}
-                    signerOptions={signerOptions}
                   >
                     <Component {...pageProps} />
                     <Toaster
