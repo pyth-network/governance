@@ -48,6 +48,12 @@ pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQ
 #[program]
 pub mod staking {
 
+    use crate::state::positions::{
+        from_account_info,
+        from_account_info2,
+        PositionData2,
+    };
+
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -132,8 +138,8 @@ pub mod staking {
     /// Creates a position
     /// Looks for the first available place in the array, fails if array is full
     /// Computes risk and fails if new positions exceed risk limit
-    pub fn create_position(
-        ctx: Context<CreatePosition>,
+    pub fn create_position<'info>(
+        ctx: Context<'_, '_, '_, 'info, CreatePosition<'info>>,
         target_with_parameters: TargetWithParameters,
         amount: u64,
     ) -> Result<()> {
@@ -143,7 +149,10 @@ pub mod staking {
 
         // TODO: Should we check that target is legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake target
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let positions_account: AccountInfo<'info> =
+            ctx.accounts.stake_account_positions.to_account_info();
+        let mut stake_account_positions = from_account_info2(&positions_account);
+
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
@@ -158,10 +167,8 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        let i = PositionData::reserve_new_index(
-            stake_account_positions,
-            &mut ctx.accounts.stake_account_metadata.next_index,
-        )?;
+        let i = stake_account_positions
+            .reserve_new_index(&mut ctx.accounts.stake_account_metadata.next_index)?;
         stake_account_positions.write_position(i, &new_position)?;
 
         let unvested_balance = ctx
@@ -173,8 +180,8 @@ pub mod staking {
                 config.pyth_token_list_time,
             )?;
 
-        utils::risk::validate(
-            stake_account_positions,
+        utils::risk::validate2(
+            &stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
@@ -182,6 +189,7 @@ pub mod staking {
         )?;
 
         target_account.add_locking(amount, current_epoch)?;
+
 
         Ok(())
     }

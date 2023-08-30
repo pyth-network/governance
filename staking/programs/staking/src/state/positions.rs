@@ -1,12 +1,24 @@
 use crate::error::ErrorCode;
+use anchor_lang::accounts::account;
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
 use anchor_lang::solana_program::wasm_bindgen;
+use std::borrow::BorrowMut;
+use std::cell::{
+    Ref,
+    RefMut,
+};
 use std::fmt::{
     self,
     Debug,
 };
+use std::ops::DerefMut;
+use std::{
+    mem,
+    slice,
+};
+
 
 pub const MAX_POSITIONS: usize = 100;
 // Intentionally make the buffer for positions bigger than it needs for migrations
@@ -24,6 +36,23 @@ pub struct PositionData {
     pub owner: Pubkey,
     positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
+
+pub struct PositionData2<'a>(RefMut<'a, [u8]>);
+
+
+pub fn from_account_info<'info>(account_info: &'info AccountInfo) -> RefMut<'info, PositionData> {
+    let data = account_info.try_borrow_mut_data().unwrap();
+    RefMut::map(data, |data| {
+        bytemuck::from_bytes_mut(&mut data.deref_mut()[8..mem::size_of::<PositionData>() + 8])
+    })
+}
+
+pub fn from_account_info2<'info, 'a>(account_info: &'a AccountInfo<'info>) -> PositionData2<'a> {
+    let data: RefMut<'_, &mut [u8]> = account_info.try_borrow_mut_data().unwrap();
+    let (_, end) = RefMut::map_split(data, |slice| slice.split_at_mut(40));
+    PositionData2(end)
+}
+
 
 #[cfg(test)]
 impl Default for PositionData {
@@ -66,6 +95,50 @@ impl PositionData {
             self.positions
                 .get(i)
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
+        )
+    }
+}
+
+impl PositionData2<'_> {
+    /// Finds first index available for a new position, increments the internal counter
+    pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
+        let res = *next_index as usize;
+        *next_index += 1;
+        if res < MAX_POSITIONS {
+            Ok(res)
+        } else {
+            Err(error!(ErrorCode::TooManyPositions))
+        }
+    }
+
+    // Makes position at index i none, and swaps positions to preserve the invariant
+    pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
+        if (*next_index as usize) <= i {
+            return Err(error!(ErrorCode::PositionOutOfBounds));
+        }
+        *next_index -= 1;
+
+        for j in 0..POSITION_BUFFER_SIZE {
+            self.0[POSITION_BUFFER_SIZE * i + j] =
+                self.0[POSITION_BUFFER_SIZE * (*next_index as usize) + j]
+        }
+        None::<Option<Position>>.try_write(
+            &mut self.0[POSITION_BUFFER_SIZE * (*next_index as usize)
+                ..POSITION_BUFFER_SIZE * (*next_index as usize + 1)],
+        )
+    }
+
+    pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
+        Some(position)
+            .try_write(&mut self.0[POSITION_BUFFER_SIZE * i..POSITION_BUFFER_SIZE * (i + 1)])
+    }
+
+    pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
+        if i > MAX_POSITIONS {
+            return Err(error!(ErrorCode::PositionOutOfBounds));
+        }
+        Option::<Position>::try_read(
+            &self.0[POSITION_BUFFER_SIZE * i..POSITION_BUFFER_SIZE * (i + 1)],
         )
     }
 }
@@ -304,6 +377,7 @@ pub mod tests {
         );
         // Checks that the position struct fits in the individual position buffer
         assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
+        print!("Position size: {}", get_packed_len::<Position>());
     }
 
     #[test]

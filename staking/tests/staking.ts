@@ -241,6 +241,7 @@ describe("staking", async () => {
       stakeAccountPositionsSecret.publicKey
     );
     const positionAccount = new PositionAccountJs(inbuf.data, program.idl);
+    console.log(positionAccount);
     assert.equal(
       JSON.stringify(positionAccount.positions[0]),
       JSON.stringify({

@@ -95,7 +95,9 @@ describe("fills a stake account with positions", async () => {
     let testTransaction = new Transaction();
     testTransaction.add(createPosIx);
     testTransaction.add(createPosIx);
+    console.log("BEFORE SIMULATION");
     const simulationResults = await provider.simulate(testTransaction);
+    console.log(simulationResults.logs);
     let costs = [];
     const regex = /consumed (?<consumed>\d+) of (\d+) compute units/;
     for (const logline of simulationResults.logs) {
