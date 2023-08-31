@@ -1,2 +1,2 @@
 cd staking/
-yarn lint-staged
+npx lint-staged

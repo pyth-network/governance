@@ -17,11 +17,9 @@ jobs:
       uses: actions/setup-node@v2
       with:
         node-version: '16.13'
-    - name: Install yarn
-      run: corepack enable
-    - name: Yarn install everything else
+    - name: Npm install
       working-directory: ./staking
-      run: yarn install
+      run: npm install
     - name: Install Solana 
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.13.5/install)"
@@ -31,5 +29,5 @@ jobs:
       run: npm i -g @project-serum/anchor-cli@0.24.2
     - name: Anchor test
       working-directory: ./staking
-      run: yarn test
+      run: npm run test
 
