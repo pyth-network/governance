@@ -41,12 +41,12 @@
     "@metaplex-foundation/mpl-token-metadata": "^2.5.1"
   },
   "scripts": {
-    "test": "yarn generate_keypair && yarn build_wasm && anchor build -- --features mock-clock && yarn dump_governance && yarn run ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
-    "setup": "yarn generate_keypair && anchor build && yarn dump_governance && yarn ts-node ./app/scripts/setup_local.ts",
+    "test": "npm run generate_keypair && npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "setup": "npm run generate_keypair && anchor build && npm run dump_governance && ts-node ./app/scripts/setup_local.ts",
     "build_wasm": "./wasm/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
-    "start": "yarn ts-node ./docker/validator.ts",
+    "start": "ts-node ./docker/validator.ts",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
     "dump_governance": "./clone_programs.sh",
     "prepare": "cd .. && husky install staking/.husky",

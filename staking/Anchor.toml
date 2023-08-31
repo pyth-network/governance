@@ -27,7 +27,7 @@ cluster = "localnet"
 wallet = "./tests/keypairs/default_wallet.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/staking.ts"
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/staking.ts"
 
 [validator]
 ledger_dir = "./.anchor/test-ledger"
