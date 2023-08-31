@@ -1,4 +1,3 @@
-# This workflow will run `anchor test`
 name: Clippy
 
 on:
@@ -16,8 +15,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
+          toolchain: nightly-2023-07-23
           components: clippy
       - name: Run clippy check
         working-directory: ./staking
-        run: cargo +nightly clippy -- -D warnings
+        run: cargo +nightly-2023-07-23 clippy -- -D warnings
