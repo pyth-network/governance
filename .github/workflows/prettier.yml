@@ -19,7 +19,7 @@ jobs:
         node-version: '16.13'
     - name: Npm install
       working-directory: ./staking
-      run: npm install install
+      run: npm install
     - name : Run prettier check
       working-directory: ./staking
       run: npx prettier -c app/**/*.ts tests/**/*.ts
