@@ -55,6 +55,7 @@
     "@types/node": "20.3.1",
     "@types/react": "^18.0.1",
     "autoprefixer": "^10.4.0",
+    "copy-webpack-plugin": "^11.0.0",
     "eslint": "^8.42.0",
     "eslint-config-next": "^13.4.6",
     "postcss": "^8.4.5",
