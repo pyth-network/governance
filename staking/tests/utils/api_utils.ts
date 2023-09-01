@@ -21,7 +21,7 @@ import {
   VoteTypeKind,
 } from "@solana/spl-governance";
 import { serialize, BinaryWriter } from "borsh";
-import * as wasm from "../../wasm";
+import * as wasm from "pyth-staking-wasm";
 /**
  * Like BalanceSummary, but all fields are optional. If they aren't given, it's equivalent to them being specified as 0.
  */

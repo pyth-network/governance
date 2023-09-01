@@ -10,8 +10,5 @@
   ],
   "module": "staking.js",
   "types": "staking.d.ts",
-  "sideEffects": [
-    "./staking.js",
-    "./snippets/*"
-  ]
+  "sideEffects": false
 }
