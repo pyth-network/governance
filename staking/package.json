@@ -20,7 +20,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "pyth-staking-wasm": "0.3.3",
+    "pyth-staking-wasm": "*",
     "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },
@@ -43,7 +43,7 @@
   "scripts": {
     "test": "npm run generate_keypair && npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
     "setup": "npm run generate_keypair && anchor build && npm run dump_governance && ts-node ./app/scripts/setup_local.ts",
-    "build_wasm": "./wasm/build_wasm.sh",
+    "build_wasm": "./scripts/build_wasm.sh",
     "docker_build": "docker build -f docker/Dockerfile -t governance .",
     "docker_start": "docker run -ti -p 8899:8899 -p 8900:8900 governance",
     "start": "ts-node ./docker/validator.ts",
