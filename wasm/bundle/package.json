@@ -1,0 +1,17 @@
+{
+  "name": "pyth-staking-program",
+  "description": "Created with Anchor",
+  "version": "1.0.0",
+  "files": [
+    "staking_bg.wasm",
+    "staking.js",
+    "staking_bg.js",
+    "staking.d.ts"
+  ],
+  "module": "staking.js",
+  "types": "staking.d.ts",
+  "sideEffects": [
+    "./staking.js",
+    "./snippets/*"
+  ]
+}
