@@ -50,7 +50,7 @@
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
     "dump_governance": "./clone_programs.sh",
     "prepare": "cd .. && husky install staking/.husky",
-    "tsc": "tsc -d -p tsconfig.api.json"
+    "build": "anchor build && npm run build_wasm && tsc -d -p tsconfig.api.json"
   },
   "lint-staged": {
     "{app,tests}/**/*.ts": [

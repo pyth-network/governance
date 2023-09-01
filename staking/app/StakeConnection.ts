@@ -845,7 +845,7 @@ export class StakeAccount {
     let unvestedBalance = wasm.getUnvestedBalance(
       this.vestingSchedule,
       BigInt(unixTime.toString()),
-      this.config.pythTokenListTime,
+      BigInt(this.config.pythTokenListTime.toString())
     );
 
     let currentEpoch = unixTime.div(this.config.epochDuration);
@@ -984,7 +984,7 @@ export class StakeAccount {
     return wasm.getNextVesting(
       this.vestingSchedule,
       BigInt(unixTime.toString()),
-      this.config.pythTokenListTime,
+      BigInt(this.config.pythTokenListTime.toString())
     );
   }
 
