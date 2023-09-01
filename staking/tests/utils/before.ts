@@ -18,7 +18,7 @@ import {
   utils,
   AnchorProvider,
 } from "@project-serum/anchor";
-import * as wasm from "../../wasm/node/staking";
+import * as wasm from "pyth-staking-wasm";
 import {
   TOKEN_PROGRAM_ID,
   Token,
