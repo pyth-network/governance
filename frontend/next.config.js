@@ -11,8 +11,14 @@ module.exports = {
     ENDPOINT: process.env.ENDPOINT,
     CLUSTER: process.env.CLUSTER,
   },
-  webpack: (config, { isServer, dev }) => {
-    config.experiments = { asyncWebAssembly: true, layers: true }
+  webpack(config, { isServer }) {
+    if (isServer) {
+      config.output.webassemblyModuleFilename = './../static/wasm/[modulehash].wasm';
+    } else {
+      config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm';
+    }
+    config.experiments = { asyncWebAssembly: true, layers : true };
+    config.optimization.moduleIds = 'named';
 
     return config
   },
