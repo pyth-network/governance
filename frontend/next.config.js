@@ -12,6 +12,7 @@ module.exports = {
     CLUSTER: process.env.CLUSTER,
   },
   webpack(config, { isServer }) {
+    // This is hack to fix the import of the wasm files https://github.com/vercel/next.js/issues/25852
     if (isServer) {
       config.output.webassemblyModuleFilename = './../static/wasm/[modulehash].wasm';
     } else {
