@@ -59,7 +59,7 @@ pub struct VoterWeightRecord {
 }
 
 impl VoterWeightRecord {
-    pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 9 + 8 + 8;
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 9 + 2 + 33 + 8;
 }
 /// The governance action VoterWeight is evaluated for
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
