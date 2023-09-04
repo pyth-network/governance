@@ -3,8 +3,6 @@ use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 use std::convert::TryInto;
 
-pub const TARGET_METADATA_SIZE: usize = 10240;
-
 /// This represents a target that users can stake to
 /// Currently we store the last time the target account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch
@@ -18,7 +16,10 @@ pub struct TargetMetadata {
     pub delta_locked:      i64, // locked = locked + delta_locked for the next epoch
 }
 
+
 impl TargetMetadata {
+    pub const LEN: usize = 10240;
+
     // Updates the TargetMetadata struct.
     // If no time has passed, doesn't do anything
     // If 1 epoch has passed, locked becomes locked + delta_locked
@@ -256,5 +257,13 @@ pub mod tests {
         };
 
         assert!(target.add_unlocking(1, 0).is_err());
+    }
+
+    #[test]
+    fn check_size() {
+        assert!(
+            anchor_lang::solana_program::borsh::get_packed_len::<TargetMetadata>()
+                < TargetMetadata::LEN
+        );
     }
 }

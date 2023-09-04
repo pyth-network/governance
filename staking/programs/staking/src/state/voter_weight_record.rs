@@ -1,8 +1,6 @@
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 
-pub const VOTER_WEIGHT_RECORD_SIZE: usize = 8 + 32 + 32 + 32 + 8 + 9 + 2 + 33 + 8;
-
 /// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/voter_weight.rs
 /// Anchor has a macro (vote_weight_record) that is supposed to generate this struct, but it doesn't
 /// work because the error's macros are not updated for anchor 0.22.0.
@@ -59,6 +57,10 @@ pub struct VoterWeightRecord {
     /// Reserved space for future versions
     pub reserved: [u8; 8],
 }
+
+impl VoterWeightRecord {
+    pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 9 + 8 + 8;
+}
 /// The governance action VoterWeight is evaluated for
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
 pub enum VoterWeightAction {
@@ -81,10 +83,7 @@ pub enum VoterWeightAction {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::voter_weight_record::{
-        VoterWeightRecord,
-        VOTER_WEIGHT_RECORD_SIZE,
-    };
+    use crate::state::voter_weight_record::VoterWeightRecord;
     use anchor_lang::Discriminator;
 
     #[test]
@@ -92,7 +91,7 @@ pub mod tests {
         assert_eq!(
             anchor_lang::solana_program::borsh::get_packed_len::<VoterWeightRecord>()
                 + VoterWeightRecord::discriminator().len(),
-            VOTER_WEIGHT_RECORD_SIZE
+            VoterWeightRecord::LEN
         );
     }
 }

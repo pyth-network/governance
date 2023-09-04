@@ -1,8 +1,6 @@
 use anchor_lang::prelude::borsh::BorshSchema;
 use anchor_lang::prelude::*;
 
-pub const MAX_VOTER_WEIGHT_RECORD_SIZE: usize = 8 + 32 + 32 + 8 + 9 + 8;
-
 pub const MAX_VOTER_WEIGHT: u64 = 10_000_000_000_000_000; // 10 Billion with 6 decimals
 
 /// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/max_voter_weight.rs
@@ -34,12 +32,13 @@ pub struct MaxVoterWeightRecord {
     pub reserved: [u8; 8],
 }
 
+impl MaxVoterWeightRecord {
+    pub const LEN: usize = 8 + 32 + 32 + 8 + 9 + 8;
+}
+
 #[cfg(test)]
 pub mod tests {
-    use crate::state::max_voter_weight_record::{
-        MaxVoterWeightRecord,
-        MAX_VOTER_WEIGHT_RECORD_SIZE,
-    };
+    use crate::state::max_voter_weight_record::MaxVoterWeightRecord;
     use anchor_lang::Discriminator;
 
     #[test]
@@ -47,7 +46,7 @@ pub mod tests {
         assert_eq!(
             anchor_lang::solana_program::borsh::get_packed_len::<MaxVoterWeightRecord>()
                 + MaxVoterWeightRecord::discriminator().len(),
-            MAX_VOTER_WEIGHT_RECORD_SIZE
+            MaxVoterWeightRecord::LEN
         );
     }
 }
