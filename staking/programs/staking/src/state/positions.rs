@@ -407,7 +407,8 @@ pub mod tests {
                         position_data.write_position(i, &position).unwrap();
                     } else {
                         assert!(set.len() == MAX_POSITIONS);
-                        assert!(position_data.reserve_new_index(&mut next_index).is_err())
+                        assert!(position_data.reserve_new_index(&mut next_index).is_err());
+                        next_index -= 1;
                     }
                 }
                 DataOperation::Modify(position) => {
