@@ -14,7 +14,7 @@ curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -y
 sh -c "$(curl -sSfL https://release.solana.com/v1.14.20/install)"
 
 # Install anchor
-cargo install --git https://github.com/coral-xyz/anchor --tag v0.27.0 anchor-cli --locked
+npm i -g @coral-xyz/anchor-cli@0.27.0
 
 
 # npm install 
