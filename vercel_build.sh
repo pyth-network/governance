@@ -1,5 +1,5 @@
-cat "~/profile"
-source "~/profile"
+cat "/vercel/profile"
+source "/vercel/profile"
 echo $PATH
 pushd staking/
 npm run build_wasm
