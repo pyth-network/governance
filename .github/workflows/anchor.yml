@@ -29,7 +29,6 @@ jobs:
     - name: Anchor test
       working-directory: ./staking
       run: npm run test
-    - name: Check commited idl is up to date
+    - name: Check commited idl is up to date
       working-directory: ./staking
       run: git diff --exit-code target/*
-
