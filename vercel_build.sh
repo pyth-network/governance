@@ -1,4 +1,5 @@
-source "$HOME/.cargo/env"
+cat "~/profile"
+source "~/profile"
 echo $PATH
 pushd staking/
 npm run build_wasm
