@@ -1,3 +1,5 @@
+source "$HOME/.cargo/env"
+echo $PATH
 pushd staking/
 npm run build_wasm
 anchor build
