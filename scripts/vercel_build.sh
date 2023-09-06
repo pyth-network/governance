@@ -1,5 +1,6 @@
 source "$HOME/.cargo/env"
 pushd staking/
+# generate wasm
 npm run build_wasm
 
 popd
