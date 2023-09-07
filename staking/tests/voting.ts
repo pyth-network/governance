@@ -13,7 +13,7 @@ import {
   CustomAbortController,
   withCreateDefaultGovernance,
 } from "./utils/before";
-import * as wasm from "../wasm/node/staking";
+import * as wasm from "pyth-staking-wasm";
 import { StakeConnection, PythBalance } from "../app";
 import {
   getProposal,

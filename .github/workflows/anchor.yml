@@ -21,12 +21,14 @@ jobs:
       run: npm install
     - name: Install Solana 
       run: |
-        sh -c "$(curl -sSfL https://release.solana.com/v1.13.5/install)"
+        sh -c "$(curl -sSfL https://release.solana.com/v1.14.20/install)"
         echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
     - name: Install Anchor
       working-directory: ./staking
-      run: npm i -g @project-serum/anchor-cli@0.24.2
+      run: npm i -g @coral-xyz/anchor-cli@0.27.0
     - name: Anchor test
       working-directory: ./staking
       run: npm run test
-
+    - name: Check commited idl is up to date
+      working-directory: ./staking
+      run: git diff --exit-code target/*

@@ -16,7 +16,7 @@ import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
-import * as wasm from "../wasm/node/staking";
+import * as wasm from "pyth-staking-wasm";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
@@ -169,7 +169,9 @@ describe("config", async () => {
   });
 
   it("updates token list time", async () => {
-    await program.methods.updateTokenListTime(new BN(5)).rpc({ skipPreflight: DEBUG });
+    await program.methods
+      .updateTokenListTime(new BN(5))
+      .rpc({ skipPreflight: DEBUG });
 
     let configAccountData = await program.account.globalConfig.fetch(
       configAccount
