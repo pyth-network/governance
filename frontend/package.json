@@ -18,6 +18,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.16",
     "@solana/web3.js": "^1.36.0",
     "@tippyjs/react": "^4.2.6",
+    "connectkit-next-siwe": "^0.2.0",
     "dotenv": "^16.0.0",
     "ethers": "^6.6.0",
     "framer-motion": "9.0.7",
