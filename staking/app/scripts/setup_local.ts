@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import BN from "bn.js";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import {
   readAnchorConfig,
   standardSetup,
@@ -8,11 +8,10 @@ import {
   requestPythAirdrop,
   CustomAbortController,
 } from "../../tests/utils/before";
-import path from "path";
+import { loadKeypair } from "../../tests/utils/keys";
 import { StakeConnection, PythBalance } from "..";
 import fs from "fs";
 import os from "os";
-import { GlobalConfig } from "../StakeConnection";
 
 const FRONTEND_ENV_FILE = "../frontend/.env";
 const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample";
@@ -41,23 +40,12 @@ const portNumber = 8899;
 async function main() {
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-  let globalConfig: GlobalConfig;
 
-  const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
 
-  const alice = new Keypair();
-  const bob = new Keypair();
-
-  fs.writeFileSync(
-    `./app/keypairs/alice.json`,
-    `[${alice.secretKey.toString()}]`
-  );
-  fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
-  fs.writeFileSync(
-    `./app/keypairs/pyth_mint.json`,
-    JSON.stringify(pythMintAccount.publicKey.toBase58())
-  );
+  const alice = loadKeypair("./app/keypairs/alice.json");
+  const bob = loadKeypair("./app/keypairs/bob.json");
+  const pythMintAccount = loadKeypair("./app/keypairs/pyth_mint.json");
 
   console.log("Validator at port ", portNumber);
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
