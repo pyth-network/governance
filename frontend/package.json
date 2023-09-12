@@ -18,7 +18,6 @@
     "@solana/wallet-adapter-wallets": "^0.19.16",
     "@solana/web3.js": "^1.36.0",
     "@tippyjs/react": "^4.2.6",
-    "connectkit-next-siwe": "^0.2.0",
     "dotenv": "^16.0.0",
     "next": "12.2.5",
     "prop-types": "^15.8.1",
