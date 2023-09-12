@@ -328,17 +328,14 @@ export class StakeConnection {
           el // position is voting
         ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
       )
-      .filter(
-        (
-          el // position locking or locked
-        ) =>
-          [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
-            stakeAccount.stakeAccountPositionsWasm.getPositionState(
-              el.index,
-              BigInt(currentEpoch.toString()),
-              this.config.unlockingDuration
-            )
+      .filter((el) =>
+        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+            el.index,
+            BigInt(currentEpoch.toString()),
+            this.config.unlockingDuration
           )
+        )
       )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
@@ -713,7 +710,7 @@ export class StakeConnection {
     );
 
     if (stakeAccount) {
-      ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount)));
+      ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount))); // Try to make room by closing unlocked positions
     }
     await this.program.methods
       .createPosition(this.votingProduct, amount.toBN())
