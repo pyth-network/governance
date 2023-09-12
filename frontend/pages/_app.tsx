@@ -12,6 +12,7 @@ import {
   SolletExtensionWalletAdapter,
   SolletWalletAdapter,
   TorusWalletAdapter,
+  WalletConnectWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import type { AppProps } from 'next/app'
 import { FC, useMemo } from 'react'
@@ -22,6 +23,11 @@ import { Toaster } from 'react-hot-toast'
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
+function getWalletConnectConfig(cluster : string | undefined) {
+  const network : WalletAdapterNetwork = (cluster === "mainnet") ? WalletAdapterNetwork.Mainnet : WalletAdapterNetwork.Devnet;
+  return {network, options : {}};
+}
+
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
   // const network = WalletAdapterNetwork.Devnet
@@ -30,6 +36,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // const endpoint = useMemo(() => clusterApiUrl(network), [network])
 
   const endpoint = process.env.ENDPOINT
+  const cluster = process.env.CLUSTER
   // @solana/wallet-adapter-wallets includes all the adapters but supports tree shaking and lazy loading --
   // Only the wallets you configure here will be compiled into your application, and only the dependencies
   // of wallets that your users connect to will be loaded
@@ -43,6 +50,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
       new LedgerWalletAdapter(),
       new SolletWalletAdapter(),
       new SolletExtensionWalletAdapter(),
+      new WalletConnectWalletAdapter(getWalletConnectConfig(cluster))
     ],
     []
   )
