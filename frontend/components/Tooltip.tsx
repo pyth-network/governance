@@ -1,5 +1,5 @@
-import Tippy from '@tippyjs/react'
 import React, { ReactNode } from 'react'
+import Tippy from '@tippyjs/react'
 import 'tippy.js/animations/scale.css'
 
 type TooltipProps = {
@@ -39,7 +39,7 @@ const Tooltip = ({
   )
 }
 
-const Content: React.FC<{ className: string; children: React.ReactNode }> = ({
+const Content: React.FC<{ className: string }> = ({
   className = '',
   children,
 }) => {

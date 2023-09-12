@@ -1,8 +1,9 @@
-import { Dialog } from '@headlessui/react'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { Dialog } from '@headlessui/react'
 import { useState } from 'react'
+import { classNames } from 'utils/classNames'
 
 const Header = () => {
   const router = useRouter()
@@ -17,15 +18,6 @@ const Header = () => {
           </Link>
         </div>
         <div className="hidden space-x-10 md:flex">
-          <Link href="/claim">
-            <a
-              className={
-                router.pathname == '/claim' ? 'nav-link font-bold' : 'nav-link '
-              }
-            >
-              Claim
-            </a>
-          </Link>{' '}
           <Link href="/staking">
             <a
               className={
