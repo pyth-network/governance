@@ -931,7 +931,7 @@
                     200
                   ]
                 },
-                100
+                10
               ]
             }
           }
@@ -939,7 +939,12 @@
       }
     },
     {
-      "name": "StakeAccountMetadataV2",
+      "name": "StakeAccountMetadata",
+      "docs": [
+        "This is the metadata account for each staker",
+        "It is derived from the positions account with seeds \"stake_metadata\" and the positions account",
+        "pubkey It stores some PDA bumps, the owner of the account and the vesting schedule"
+      ],
       "type": {
         "kind": "struct",
         "fields": [

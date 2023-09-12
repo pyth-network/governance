@@ -5,7 +5,6 @@ use crate::state::positions::{
     PositionData,
     PositionState,
     MAX_POSITIONS,
-    POSITIONS_ACCOUNT_SIZE,
 };
 use crate::state::target::TargetMetadata;
 use crate::state::vesting::VestingEvent;
@@ -42,7 +41,7 @@ impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
         convert_error(WasmPositionData::from_buffer_impl(
-            &buffer[..POSITIONS_ACCOUNT_SIZE],
+            &buffer[..PositionData::LEN],
         ))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
@@ -304,7 +303,7 @@ impl Constants {
     }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
-        POSITIONS_ACCOUNT_SIZE
+        PositionData::LEN
     }
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {

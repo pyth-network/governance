@@ -47,7 +47,7 @@ interface ClosingItem {
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
 type PositionData = IdlAccounts<Staking>["positionData"];
-type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadataV2"];
+type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadata"];
 type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
 type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
 
@@ -218,7 +218,7 @@ export class StakeConnection {
     )[0];
 
     const stakeAccountMetadata =
-      (await this.program.account.stakeAccountMetadataV2.fetch(
+      (await this.program.account.stakeAccountMetadata.fetch(
         metadataAddress
       )) as any as StakeAccountMetadata; // TS complains about types. Not exactly sure why they're incompatible.
     const vestingSchedule = StakeAccount.serializeVesting(
