@@ -712,8 +712,9 @@ export class StakeConnection {
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
-    ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount)));
-
+    if (stakeAccount) {
+      ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount)));
+    }
     await this.program.methods
       .createPosition(this.votingProduct, amount.toBN())
       .preInstructions(ixs)
