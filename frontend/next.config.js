@@ -7,7 +7,6 @@ module.exports = {
   experimental: {
     externalDir: true,
   },
-  swcMinify: false,
   env: {
     ENDPOINT: process.env.ENDPOINT,
     CLUSTER: process.env.CLUSTER,
