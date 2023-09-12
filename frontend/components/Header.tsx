@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Dialog } from '@headlessui/react'
 import { useState } from 'react'
-import { classNames } from 'utils/classNames'
 
 const Header = () => {
   const router = useRouter()
