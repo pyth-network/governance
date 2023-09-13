@@ -1,6 +1,10 @@
-use crate::state::vesting::VestingSchedule;
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
+use {
+    crate::state::vesting::VestingSchedule,
+    anchor_lang::prelude::{
+        borsh::BorshSchema,
+        *,
+    },
+};
 
 /// This is the metadata account for each staker
 /// It is derived from the positions account with seeds "stake_metadata" and the positions account
@@ -22,12 +26,13 @@ pub struct StakeAccountMetadataV2 {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::stake_account::{
-        StakeAccountMetadataV2,
-        STAKE_ACCOUNT_METADATA_SIZE,
+    use {
+        crate::state::stake_account::{
+            StakeAccountMetadataV2,
+            STAKE_ACCOUNT_METADATA_SIZE,
+        },
+        anchor_lang::Discriminator,
     };
-
-    use anchor_lang::Discriminator;
 
     #[test]
     fn check_size() {

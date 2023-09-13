@@ -1,10 +1,16 @@
 #![allow(clippy::unused_unit)]
 
-use crate::error::ErrorCode;
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::wasm_bindgen;
-use std::convert::TryInto;
+use {
+    crate::error::ErrorCode,
+    anchor_lang::{
+        prelude::{
+            borsh::BorshSchema,
+            *,
+        },
+        solana_program::wasm_bindgen,
+    },
+    std::convert::TryInto,
+};
 
 // We would like to say:
 // type UnixTimestamp = i64;
@@ -233,11 +239,13 @@ impl VestingSchedule {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::vesting::{
-        VestingEvent,
-        VestingSchedule,
+    use {
+        crate::state::vesting::{
+            VestingEvent,
+            VestingSchedule,
+        },
+        std::convert::TryInto,
     };
-    use std::convert::TryInto;
 
     #[test]
     fn test_novesting() {

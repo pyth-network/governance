@@ -1,11 +1,15 @@
-use crate::error::ErrorCode;
-use crate::state::positions::{
-    PositionData,
-    PositionState,
-    MAX_POSITIONS,
+use {
+    crate::{
+        error::ErrorCode,
+        state::positions::{
+            PositionData,
+            PositionState,
+            MAX_POSITIONS,
+        },
+    },
+    anchor_lang::prelude::*,
+    std::convert::TryInto,
 };
-use anchor_lang::prelude::*;
-use std::convert::TryInto;
 
 pub fn compute_voter_weight(
     stake_account_positions: &PositionData,
@@ -39,14 +43,18 @@ pub fn compute_voter_weight(
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{
-        Position,
-        PositionData,
-        Publisher,
-        TargetWithParameters,
+    use {
+        crate::{
+            state::positions::{
+                Position,
+                PositionData,
+                Publisher,
+                TargetWithParameters,
+            },
+            utils::voter_weight::compute_voter_weight,
+        },
+        anchor_lang::prelude::Pubkey,
     };
-    use crate::utils::voter_weight::compute_voter_weight;
-    use anchor_lang::prelude::Pubkey;
 
 
     #[test]

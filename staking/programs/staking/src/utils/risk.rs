@@ -1,18 +1,23 @@
-use anchor_lang::prelude::*;
-use std::cmp;
-use std::collections::BTreeMap;
-
-use crate::state::positions::{
-    PositionData,
-    PositionState,
-    Target,
-    MAX_POSITIONS,
-};
-use crate::ErrorCode::{
-    RiskLimitExceeded,
-    TokensNotYetVested,
-    TooMuchExposureToGovernance,
-    TooMuchExposureToProduct,
+use {
+    crate::{
+        state::positions::{
+            PositionData,
+            PositionState,
+            Target,
+            MAX_POSITIONS,
+        },
+        ErrorCode::{
+            RiskLimitExceeded,
+            TokensNotYetVested,
+            TooMuchExposureToGovernance,
+            TooMuchExposureToProduct,
+        },
+    },
+    anchor_lang::prelude::*,
+    std::{
+        cmp,
+        collections::BTreeMap,
+    },
 };
 
 
@@ -121,16 +126,19 @@ pub fn validate(
 
 #[cfg(test)]
 pub mod tests {
-    use anchor_lang::prelude::Pubkey;
-
-    use crate::state::positions::{
-        Position,
-        PositionData,
-        PositionState,
-        Publisher,
-        TargetWithParameters,
+    use {
+        crate::{
+            state::positions::{
+                Position,
+                PositionData,
+                PositionState,
+                Publisher,
+                TargetWithParameters,
+            },
+            utils::risk::validate,
+        },
+        anchor_lang::prelude::Pubkey,
     };
-    use crate::utils::risk::validate;
 
 
     #[test]

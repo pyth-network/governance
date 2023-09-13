@@ -1,28 +1,32 @@
 #![allow(non_snake_case)]
-use crate::error::ErrorCode;
-use crate::state::max_voter_weight_record::MAX_VOTER_WEIGHT;
-use crate::state::positions::{
-    PositionData,
-    PositionState,
-    MAX_POSITIONS,
-    POSITIONS_ACCOUNT_SIZE,
+use {
+    crate::{
+        error::ErrorCode,
+        state::{
+            max_voter_weight_record::MAX_VOTER_WEIGHT,
+            positions::{
+                PositionData,
+                PositionState,
+                MAX_POSITIONS,
+                POSITIONS_ACCOUNT_SIZE,
+            },
+            target::TargetMetadata,
+            vesting::VestingEvent,
+        },
+        VestingSchedule,
+        GOVERNANCE_PROGRAM,
+    },
+    anchor_lang::{
+        prelude::{
+            error,
+            Clock,
+            Error,
+        },
+        AccountDeserialize,
+        AnchorDeserialize,
+    },
+    wasm_bindgen::prelude::*,
 };
-use crate::state::target::TargetMetadata;
-use crate::state::vesting::VestingEvent;
-use crate::{
-    VestingSchedule,
-    GOVERNANCE_PROGRAM,
-};
-use anchor_lang::prelude::{
-    error,
-    Clock,
-    Error,
-};
-use anchor_lang::{
-    AccountDeserialize,
-    AnchorDeserialize,
-};
-use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct WasmPositionData {

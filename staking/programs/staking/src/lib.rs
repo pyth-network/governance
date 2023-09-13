@@ -5,33 +5,43 @@
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
-use crate::error::ErrorCode;
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::pubkey;
-use anchor_spl::token::transfer;
-use context::*;
-use spl_governance::state::governance::get_governance_data_for_realm;
-use spl_governance::state::proposal::{
-    get_proposal_data,
-    ProposalV2,
+use {
+    crate::error::ErrorCode,
+    anchor_lang::{
+        prelude::*,
+        solana_program::pubkey,
+    },
+    anchor_spl::token::transfer,
+    context::*,
+    spl_governance::state::{
+        governance::get_governance_data_for_realm,
+        proposal::{
+            get_proposal_data,
+            ProposalV2,
+        },
+    },
+    state::{
+        global_config::GlobalConfig,
+        max_voter_weight_record::MAX_VOTER_WEIGHT,
+        positions::{
+            Position,
+            PositionData,
+            PositionState,
+            Target,
+            TargetWithParameters,
+        },
+        vesting::VestingSchedule,
+        voter_weight_record::VoterWeightAction,
+    },
+    std::convert::TryInto,
+    utils::{
+        clock::{
+            get_current_epoch,
+            time_to_epoch,
+        },
+        voter_weight::compute_voter_weight,
+    },
 };
-use state::global_config::GlobalConfig;
-use state::max_voter_weight_record::MAX_VOTER_WEIGHT;
-use state::positions::{
-    Position,
-    PositionData,
-    PositionState,
-    Target,
-    TargetWithParameters,
-};
-use state::vesting::VestingSchedule;
-use state::voter_weight_record::VoterWeightAction;
-use std::convert::TryInto;
-use utils::clock::{
-    get_current_epoch,
-    time_to_epoch,
-};
-use utils::voter_weight::compute_voter_weight;
 
 mod constants;
 mod context;
