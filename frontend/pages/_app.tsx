@@ -52,7 +52,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
 
   return (
     <ConnectionProvider
-      endpoint={endpoint || clusterApiUrl(WalletAdapterNetwork.Devnet)}
+      endpoint={endpoint || "https://localhost:8899"}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
