@@ -1,3 +1,4 @@
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import {
   ConnectionProvider,
   WalletProvider,
@@ -24,9 +25,19 @@ import { Toaster } from 'react-hot-toast'
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
+console.log("Project id :",  process.env.WALLETCONNECT_PROJECT_ID)
 const walletConnectConfig : WalletConnectWalletAdapterConfig = {
-  network : (process.env.CLUSTER === "mainnet") ? WalletAdapterNetwork.Mainnet : WalletAdapterNetwork.Devnet,
-  options : {} 
+  network :  WalletAdapterNetwork.Devnet,
+  options : {
+    relayUrl : 'wss://relay.walletconnect.com',
+    projectId : process.env.WALLETCONNECT_PROJECT_ID,
+    metadata: {
+      name: 'Example App',
+      description: 'Example App',
+      url: 'https://github.com/solana-labs/wallet-adapter',
+      icons: ['https://avatars.githubusercontent.com/u/35608259?s=200'],
+  },
+  } 
 } // TO DO : add options
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
