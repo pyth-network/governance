@@ -1,12 +1,8 @@
-import { PublicKey, Keypair } from "@solana/web3.js";
-import fs from "fs";
+import { PublicKey } from "@solana/web3.js";
 import { homedir } from "os";
+import { loadKeypair } from "../../tests/utils/keys";
 export const AUTHORITY_PATH = "/.config/solana/deployer.json";
-export const AUTHORITY_KEYPAIR = Keypair.fromSecretKey(
-  new Uint8Array(
-    JSON.parse(fs.readFileSync(homedir() + AUTHORITY_PATH).toString())
-  )
-);
+export const AUTHORITY_KEYPAIR = loadKeypair(homedir() + AUTHORITY_PATH);
 
 export const MULTISIG_AUTHORITY = new PublicKey(
   "6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT"

@@ -1,4 +1,3 @@
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import {
   ConnectionProvider,
   WalletProvider,
@@ -14,7 +13,6 @@ import {
   SolletWalletAdapter,
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
-import { clusterApiUrl } from '@solana/web3.js'
 import type { AppProps } from 'next/app'
 import { FC, useMemo } from 'react'
 
@@ -52,7 +50,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
 
   return (
     <ConnectionProvider
-      endpoint={endpoint || clusterApiUrl(WalletAdapterNetwork.Devnet)}
+      endpoint={endpoint || "http://localhost:8899"}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>

@@ -5,19 +5,10 @@ import {
   Connection,
   Keypair,
   Transaction,
-  SystemProgram,
-  BPF_LOADER_PROGRAM_ID,
-  TransactionInstruction,
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import fs from "fs";
-import {
-  Program,
-  Provider,
-  Wallet,
-  utils,
-  AnchorProvider,
-} from "@project-serum/anchor";
+import { Program, Wallet, utils, AnchorProvider } from "@project-serum/anchor";
 import * as wasm from "pyth-staking-wasm";
 import {
   TOKEN_PROGRAM_ID,
@@ -25,7 +16,6 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   u64,
 } from "@solana/spl-token";
-import { MintLayout } from "@solana/spl-token";
 import {
   GovernanceConfig,
   GoverningTokenType,
@@ -46,6 +36,7 @@ import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 import { createMint, getTargetAccount as getTargetAccount } from "./utils";
+import { loadKeypair } from "./keys";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -163,11 +154,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   const idlPath = config.path.idl_path;
   const binaryPath = config.path.binary_path;
 
-  const user = Keypair.fromSecretKey(
-    new Uint8Array(
-      JSON.parse(fs.readFileSync(config.provider.wallet).toString())
-    )
-  );
+  const user = loadKeypair(config.provider.wallet);
 
   const otherArgs = `--mint ${
     user.publicKey

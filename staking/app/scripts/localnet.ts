@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import BN from "bn.js";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import {
   readAnchorConfig,
   standardSetup,
@@ -8,56 +8,19 @@ import {
   requestPythAirdrop,
   CustomAbortController,
 } from "../../tests/utils/before";
-import path from "path";
 import { StakeConnection, PythBalance } from "..";
-import fs from "fs";
-import os from "os";
-import { GlobalConfig } from "../StakeConnection";
-
-const FRONTEND_ENV_FILE = "../frontend/.env";
-const FRONTEND_SAMPLE_FILE = "../frontend/.env.sample";
-
-//https://stackoverflow.com/questions/53360535/how-to-save-changes-in-env-file-in-node-js
-const readEnvVars = (path) => fs.readFileSync(path, "utf-8").split(os.EOL);
-
-//https://stackoverflow.com/questions/53360535/how-to-save-changes-in-env-file-in-node-js
-const setEnvValue = (key, value, path) => {
-  const envVars = readEnvVars(path);
-  const targetLine = envVars.find((line) => line.split("=")[0] === key);
-  if (targetLine !== undefined) {
-    // update existing line
-    const targetLineIndex = envVars.indexOf(targetLine);
-    // replace the key/value with the new value
-    envVars.splice(targetLineIndex, 1, `${key}="${value}"`);
-  } else {
-    // create new key value
-    envVars.push(`${key}=${value}`);
-  }
-  // write everything back to the file system
-  fs.writeFileSync(FRONTEND_ENV_FILE, envVars.join(os.EOL));
-};
+import { loadKeypair } from "../../tests/utils/keys";
 
 const portNumber = 8899;
 async function main() {
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-  let globalConfig: GlobalConfig;
 
-  const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
 
-  const alice = new Keypair();
-  const bob = new Keypair();
-
-  fs.writeFileSync(
-    `./app/keypairs/alice.json`,
-    `[${alice.secretKey.toString()}]`
-  );
-  fs.writeFileSync(`./app/keypairs/bob.json`, `[${bob.secretKey.toString()}]`);
-  fs.writeFileSync(
-    `./app/keypairs/pyth_mint.json`,
-    JSON.stringify(pythMintAccount.publicKey.toBase58())
-  );
+  const alice = loadKeypair("./app/keypairs/alice.json");
+  const bob = loadKeypair("./app/keypairs/bob.json");
+  const pythMintAccount = loadKeypair("./app/keypairs/pyth_mint.json");
 
   console.log("Validator at port ", portNumber);
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
@@ -126,17 +89,6 @@ async function main() {
     bob.publicKey,
     vestingSchedule
   );
-
-  const envPath = fs.existsSync(FRONTEND_ENV_FILE)
-    ? FRONTEND_ENV_FILE
-    : FRONTEND_SAMPLE_FILE;
-  setEnvValue(
-    "LOCALNET_PYTH_MINT",
-    pythMintAccount.publicKey.toBase58(),
-    envPath
-  );
-
-  setEnvValue("ENDPOINT", "http://localhost:8899", envPath);
 
   while (true) {}
 }
