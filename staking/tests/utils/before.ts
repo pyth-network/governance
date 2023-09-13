@@ -46,6 +46,7 @@ import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
 import { createMint, getTargetAccount as getTargetAccount } from "./utils";
+import { loadKeypair } from "./keys";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -163,11 +164,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
   const idlPath = config.path.idl_path;
   const binaryPath = config.path.binary_path;
 
-  const user = Keypair.fromSecretKey(
-    new Uint8Array(
-      JSON.parse(fs.readFileSync(config.provider.wallet).toString())
-    )
-  );
+  const user = loadKeypair(config.provider.wallet);
 
   const otherArgs = `--mint ${
     user.publicKey
