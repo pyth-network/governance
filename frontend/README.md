@@ -23,17 +23,12 @@ cd staking
 npm run localnet
 ```
 
-### 4. Setup the relevant accounts
+This script will start a validator and additionally it will create the Pyth token, as well as send SOL, send Pyth tokens, create stake accounts and deposit and lock tokens for the keys in `staking/app/keypairs/`.
 
-Once the Idl account has been created, keep the process running, open a new terminal process in the same directory and run the setup script to create the Pyth token, as well as send SOL, send Pyth tokens, create stake accounts and deposit and lock tokens for the keys in `staking/app/keypairs/`:
+### 4. Run the frontend in dev mode
 
-```bash
-npm run setup
-```
-
-Once that's done, change directory to the frontend directory and run:
+Once that's done, keep the process running. Open a new terminal, change directory to the `frontend/` directory and run:
 
 ```bash
-cd frontend
 npm run dev
 ```

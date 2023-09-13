@@ -1,41 +1,96 @@
-import fs from "fs";
-import toml from "toml";
-import { PublicKey, Connection } from "@solana/web3.js";
-import { exec } from "child_process";
-import shell from "shelljs";
+import * as anchor from "@project-serum/anchor";
+import BN from "bn.js";
+import { Keypair } from "@solana/web3.js";
+import {
+  readAnchorConfig,
+  standardSetup,
+  ANCHOR_CONFIG_PATH,
+  requestPythAirdrop,
+  CustomAbortController,
+} from "../../tests/utils/before";
+import { StakeConnection, PythBalance } from "..";
 import { loadKeypair } from "../../tests/utils/keys";
 
+const portNumber = 8899;
 async function main() {
-  const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
+  let stakeConnection: StakeConnection;
+  let controller: CustomAbortController;
 
-  const ledgerDir = config.validator.ledger_dir;
-  const walletPubkeyPath = config.provider.wallet;
-  const programAddress = new PublicKey(config.programs.localnet.staking);
+  const pythMintAuthority = new Keypair();
 
-  shell.exec("anchor build");
+  const alice = loadKeypair("./app/keypairs/alice.json");
+  const bob = loadKeypair("./app/keypairs/bob.json");
+  const pythMintAccount = loadKeypair("./app/keypairs/pyth_mint.json");
 
-  const walletPubkey = loadKeypair(walletPubkeyPath).publicKey;
+  console.log("Validator at port ", portNumber);
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+  ({ controller, stakeConnection } = await standardSetup(
+    portNumber,
+    config,
+    pythMintAccount,
+    pythMintAuthority,
+    {
+      bump: 0,
+      governanceAuthority: null,
+      pythGovernanceRealm: null,
+      pythTokenMint: pythMintAccount.publicKey,
+      unlockingDuration: 2,
+      epochDuration: new BN(1),
+      mockClockTime: new BN(10),
+      freeze: false,
+      pythTokenListTime: null,
+    }
+  ));
 
-  shell.exec(`mkdir -p ${ledgerDir}`);
-
-  exec(
-    `solana-test-validator --ledger ${ledgerDir} --mint ${walletPubkey} --reset --bpf-program  ${programAddress} ./target/deploy/staking.so`
-  );
-
-  //wait until validator is responsive
-  const connection = new Connection("http://localhost:8899");
-  while (true) {
-    try {
-      console.log("waiting for validator");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      await connection.getEpochInfo();
-      break;
-    } catch (e) {}
+  for (let owner of [alice.publicKey, bob.publicKey]) {
+    await stakeConnection.program.provider.connection.requestAirdrop(
+      owner,
+      1_000_000_000_000
+    );
+    await requestPythAirdrop(
+      owner,
+      pythMintAccount.publicKey,
+      pythMintAuthority,
+      PythBalance.fromString("1000"),
+      stakeConnection.program.provider.connection
+    );
   }
 
-  shell.exec(
-    `anchor idl init --filepath target/idl/staking.json ${programAddress}`
+  const aliceStakeConnection = await StakeConnection.createStakeConnection(
+    stakeConnection.program.provider.connection,
+    new anchor.Wallet(alice),
+    stakeConnection.program.programId
   );
+
+  const bobStakeConnection = await StakeConnection.createStakeConnection(
+    stakeConnection.program.provider.connection,
+    new anchor.Wallet(bob),
+    stakeConnection.program.programId
+  );
+
+  // Alice tokens are fully vested
+  await aliceStakeConnection.depositAndLockTokens(
+    undefined,
+    PythBalance.fromString("500")
+  );
+
+  const vestingSchedule = {
+    periodicVesting: {
+      initialBalance: PythBalance.fromString("100").toBN(),
+      startDate: await stakeConnection.getTime(),
+      periodDuration: new BN(3600),
+      numPeriods: new BN(1000),
+    },
+  };
+
+  // Bob has a vesting schedule
+  await bobStakeConnection.setupVestingAccount(
+    PythBalance.fromString("500"),
+    bob.publicKey,
+    vestingSchedule
+  );
+
+  while (true) {}
 }
 
 main();
