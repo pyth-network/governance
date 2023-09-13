@@ -1,5 +1,16 @@
 ## Getting started
 
+
+### 0. Dependecies
+
+The versions are the ones that work for me locally.
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Solana CLI tools](https://docs.solana.com/cli/install-solana-cli-tools) (`v1.14.20`)
+- [Anchor CLI](https://www.anchor-lang.com/docs/installation) (`v0.27.0`)
+- [Node](https://github.com/nvm-sh/nvm)(`v16.19.1`)
+- [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)(`v0.12.1`)
+
 ### 1. Install and build
 
 From the root directory : 
@@ -16,7 +27,15 @@ cd staking
 npm run localnet
 ```
 
-This script will start a validator and additionally it will create the Pyth token as well as send SOL and Pyth tokens, create stake accounts and deposit and lock tokens for the keys in `staking/app/keypairs/`.
+This command spawns a validator at `http://localhost:8899` with the staking program deployed in the genesis block at the address :
+```sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d```
+
+Additionally it will :
+- Initialize and configure the staking program
+- Create the Pyth token at the address in `staking/app/keypairs/pyth_mint.json`  
+- Airdrop SOL to two hypothetical users Alice and Bob (their keys are in `staking/app/keypairs/`)
+- Airdrop Pyth tokens to Alice and Bob
+- Create some stake accounts for Alice and Bob and deposit some tokens
 
 ### 3. Run the frontend in dev mode
 
