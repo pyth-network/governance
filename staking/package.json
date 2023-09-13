@@ -34,7 +34,6 @@
     "build": "npm run build_wasm && tsc -p tsconfig.api.json",
     "build_wasm": "./scripts/build_wasm.sh",
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
-    "dump_governance": "./clone_programs.sh",
-    "prepare": "cd .. && husky install staking/.husky"
+    "dump_governance": "./clone_programs.sh"
   }
 }
