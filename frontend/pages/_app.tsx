@@ -52,7 +52,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
 
   return (
     <ConnectionProvider
-      endpoint={endpoint || "https://localhost:8899"}
+      endpoint={endpoint || "http://localhost:8899"}
     >
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
