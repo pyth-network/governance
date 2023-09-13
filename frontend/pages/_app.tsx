@@ -25,7 +25,6 @@ import { Toaster } from 'react-hot-toast'
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
-console.log("Project id :",  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID)
 const walletConnectConfig : WalletConnectWalletAdapterConfig = {
   network :  WalletAdapterNetwork.Devnet,
   options : {
