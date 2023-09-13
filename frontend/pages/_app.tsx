@@ -31,10 +31,10 @@ const walletConnectConfig : WalletConnectWalletAdapterConfig = {
     relayUrl : 'wss://relay.walletconnect.com',
     projectId : process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
     metadata: {
-      name: 'Example App',
-      description: 'Example App',
-      url: 'https://github.com/solana-labs/wallet-adapter',
-      icons: ['https://avatars.githubusercontent.com/u/35608259?s=200'],
+      name: 'Pyth Staking',
+      description: 'Stake your PYTH tokens to participate in governance',
+      url: 'https://pyth.network/',
+      icons: ['https://pyth.network/token.svg'],
   },
   } 
 } // TO DO : add options
