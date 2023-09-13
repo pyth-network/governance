@@ -36,9 +36,11 @@
     "setup": "npm run generate_keypair && anchor build && npm run dump_governance && ts-node ./app/scripts/setup_local.ts",
     "build_wasm": "./scripts/build_wasm.sh",
     "generate_keypair": "solana-keygen new -o ./tests/keypairs/default_wallet.json --no-bip39-passphrase --force",
+    "build": "npm run build_wasm && tsc -p tsconfig.api.json",
+    "localnet" : "anchor build && ts-node ./app/scripts/setup_local.ts",
     "dump_governance": "./clone_programs.sh",
-    "prepare": "cd .. && husky install staking/.husky",
-    "build": "tsc -p tsconfig.api.json"
+    "prepare": "cd .. && husky install staking/.husky"
+
   },
   "lint-staged": {
     "{app,tests}/**/*.ts": [
