@@ -1,8 +1,9 @@
 import fs from "fs";
 import toml from "toml";
-import { PublicKey, Keypair, Connection } from "@solana/web3.js";
+import { PublicKey, Connection } from "@solana/web3.js";
 import { exec } from "child_process";
 import shell from "shelljs";
+import { loadKeypair } from "../../tests/utils/keys";
 
 async function main() {
   const config = toml.parse(fs.readFileSync("./Anchor.toml").toString());
@@ -11,14 +12,9 @@ async function main() {
   const walletPubkeyPath = config.provider.wallet;
   const programAddress = new PublicKey(config.programs.localnet.staking);
 
-  shell.exec(
-    `solana-keygen new -o ${walletPubkeyPath} --no-bip39-passphrase --force`
-  );
   shell.exec("anchor build");
 
-  const walletPubkey = Keypair.fromSecretKey(
-    new Uint8Array(JSON.parse(fs.readFileSync(walletPubkeyPath).toString()))
-  ).publicKey;
+  const walletPubkey = loadKeypair(walletPubkeyPath).publicKey;
 
   shell.exec(`mkdir -p ${ledgerDir}`);
 
