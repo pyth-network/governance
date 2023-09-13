@@ -1,10 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import {
-  AnchorProvider,
-  IdlAccounts,
-  Program,
-  utils,
-} from "@project-serum/anchor";
+import { AnchorProvider, Program, utils } from "@project-serum/anchor";
 import {
   Connection,
   Keypair,
@@ -22,12 +17,9 @@ import { Staking } from "../../target/types/staking";
 import { assert } from "node:console";
 import * as wasm from "../../wasm";
 import { idlAddress } from "@project-serum/anchor/dist/cjs/idl";
-import { exec } from "child_process";
 import shell from "shelljs";
-
-import fs from "fs";
-import { PositionAccountJs } from "../PositionAccountJs";
-import { StakeAccount, StakeConnection } from "../StakeConnection";
+import { StakeConnection } from "../StakeConnection";
+import { loadKeypair } from "../../tests/utils/keys";
 
 const DRY_RUN = true;
 const UPGRADE_AUTH_KEYPAIR_PATH =
@@ -153,11 +145,8 @@ async function launchClonedValidator(
 
 async function main() {
   const devnet = new Connection(DEVNET_ENDPOINT);
-  const upgradeAuth = Keypair.fromSecretKey(
-    new Uint8Array(
-      JSON.parse(fs.readFileSync(UPGRADE_AUTH_KEYPAIR_PATH).toString())
-    )
-  );
+  const upgradeAuth = loadKeypair(UPGRADE_AUTH_KEYPAIR_PATH);
+
   const bpfAccounts = await getBPFUpgradeableUtilAccounts(
     devnet,
     STAKING_ADDRESS
