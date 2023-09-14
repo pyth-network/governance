@@ -37,7 +37,7 @@ const walletConnectConfig : WalletConnectWalletAdapterConfig = {
       icons: ['https://pyth.network/token.svg'],
   },
   } 
-} // TO DO : add options
+}
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
