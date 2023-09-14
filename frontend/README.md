@@ -1,6 +1,5 @@
 ## Getting started
 
-
 ### 0. Dependecies
 
 The versions are the ones that work for me locally.
@@ -13,7 +12,7 @@ The versions are the ones that work for me locally.
 
 ### 1. Install and build
 
-From the root directory : 
+From the root directory :
 
 ```bash
 npm install
@@ -28,11 +27,12 @@ npm run localnet
 ```
 
 This command spawns a validator at `http://localhost:8899` with the staking program deployed in the genesis block at the address :
-```sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d```
+`sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d`
 
 Additionally it will :
+
 - Initialize and configure the staking program
-- Create the Pyth token at the address in `staking/app/keypairs/pyth_mint.json`  
+- Create the Pyth token at the address in `staking/app/keypairs/pyth_mint.json`
 - Airdrop SOL to two hypothetical users Alice and Bob (their keys are in `staking/app/keypairs/`)
 - Airdrop Pyth tokens to Alice and Bob
 - Create some stake accounts for Alice and Bob and deposit some tokens

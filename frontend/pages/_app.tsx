@@ -18,7 +18,6 @@ import { FC, useMemo } from 'react'
 
 import { Toaster } from 'react-hot-toast'
 
-
 // Use require instead of import since order matters
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
@@ -49,9 +48,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   )
 
   return (
-    <ConnectionProvider
-      endpoint={endpoint || "http://localhost:8899"}
-    >
+    <ConnectionProvider endpoint={endpoint || 'http://localhost:8899'}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <Component {...pageProps} />

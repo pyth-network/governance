@@ -1,6 +1,6 @@
 # Security
 
-## Bug Bounty Program (*work in progress*)
+## Bug Bounty Program (_work in progress_)
 
 We are in the process of designing a **bug bounty program** for Pyth.
 
@@ -8,11 +8,11 @@ In the mean-time, if you find a security issue in Pyth, we ask that you reach ou
 
 ## 3rd Party Security Audits
 
-We engage 3rd party firms to conduct independent security audits of Pyth.  At any given time, we likely have multiple audit streams in progress.
+We engage 3rd party firms to conduct independent security audits of Pyth. At any given time, we likely have multiple audit streams in progress.
 
 As these 3rd party audits are completed and issues are sufficiently addressed, we make those audit reports public.
 
 - **[May 6, 2022 - Zellic](https://github.com/pyth-network/audit-reports/blob/main/2022_05_06/pyth_governance_zellic.pdf)**
-    - **Scope**: *Pyth Governance*
+  - **Scope**: _Pyth Governance_
 - **[July 8, 2022 - OtterSec](https://github.com/pyth-network/audit-reports/blob/main/2022_07_08/pyth-governance-ottersec.pdf)**
-    - **Scope**: *Pyth Governance*
+  - **Scope**: _Pyth Governance_

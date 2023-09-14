@@ -2,33 +2,33 @@ name: Anchor Test CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16.13'
-    - name: Npm install
-      working-directory: ./staking
-      run: npm install
-    - name: Install Solana 
-      run: |
-        sh -c "$(curl -sSfL https://release.solana.com/v1.14.20/install)"
-        echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-    - name: Install Anchor
-      working-directory: ./staking
-      run: npm i -g @coral-xyz/anchor-cli@0.27.0
-    - name: Anchor test
-      working-directory: ./staking
-      run: npm run test
-    - name: Check commited idl is up to date
-      working-directory: ./staking
-      run: git diff --exit-code target/*
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.13"
+      - name: Npm install
+        working-directory: ./staking
+        run: npm install
+      - name: Install Solana
+        run: |
+          sh -c "$(curl -sSfL https://release.solana.com/v1.14.20/install)"
+          echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+      - name: Install Anchor
+        working-directory: ./staking
+        run: npm i -g @coral-xyz/anchor-cli@0.27.0
+      - name: Anchor test
+        working-directory: ./staking
+        run: npm run test
+      - name: Check commited idl is up to date
+        working-directory: ./staking
+        run: git diff --exit-code target/*

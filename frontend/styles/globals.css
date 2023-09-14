@@ -19,11 +19,11 @@
 }
 
 .secondary-btn {
-  @apply rounded-full  px-8 uppercase  font-mono  h-[45px] bg-darkGray2 leading-none  transition-colors ;
+  @apply rounded-full  px-8 uppercase  font-mono  h-[45px] bg-darkGray2 leading-none  transition-colors;
 }
 
-.action-btn{
-  @apply rounded-full px-8 uppercase  font-mono leading-none  h-[45px] transition-colors  bg-pythPurple hover:bg-mediumSlateBlue  font-semibold disabled:opacity-70 disabled:hover:bg-pythPurple ;
+.action-btn {
+  @apply rounded-full px-8 uppercase  font-mono leading-none  h-[45px] transition-colors  bg-pythPurple hover:bg-mediumSlateBlue  font-semibold disabled:opacity-70 disabled:hover:bg-pythPurple;
 }
 
 .outlined-btn {
@@ -31,59 +31,53 @@
 }
 
 .nav-link {
-  @apply  text-light text-sm hover:text-white;
+  @apply text-light text-sm hover:text-white;
 }
 
 .diaglogPanel {
-  @apply pt-20 pb-8 px-6  lg:p-10  md:mt-[92px] flex h-full min-h-[420px] w-[calc(100%-64px)]  max-w-3xl transform items-center justify-center rounded-[40px] bg-[rgba(49,47,71,0.85)]  p-5 text-center  align-middle shadow-xl transition-all
+  @apply pt-20 pb-8 px-6  lg:p-10  md:mt-[92px] flex h-full min-h-[420px] w-[calc(100%-64px)]  max-w-3xl transform items-center justify-center rounded-[40px] bg-[rgba(49,47,71,0.85)]  p-5 text-center  align-middle shadow-xl transition-all;
 }
 .diaglogClose {
-  @apply absolute right-10 top-8  flex items-center leading-none
+  @apply absolute right-10 top-8  flex items-center leading-none;
 }
 
 .diaglogTitle {
-  @apply  mb-8 text-center font-body text-[32px] lg:text-[44px] lg:mb-11 leading-[1.1];
+  @apply mb-8 text-center font-body text-[32px] lg:text-[44px] lg:mb-11 leading-[1.1];
 }
-
-
 
 .input-no-spin::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0px;
 }
 
-.wallet-adapter-dropdown-list{
-  @apply bg-darkGray2 border border-darkGray3 gap-1 text-xs
+.wallet-adapter-dropdown-list {
+  @apply bg-darkGray2 border border-darkGray3 gap-1 text-xs;
 }
 
-.wallet-adapter-modal-wrapper{
-  @apply bg-darkGray2  max-w-[660px] rounded-4xl
-
+.wallet-adapter-modal-wrapper {
+  @apply bg-darkGray2  max-w-[660px] rounded-4xl;
 }
 
-
-.wallet-adapter-modal-title{
-  @apply text-[32px] md:text-[44px] font-body max-w-[480px] leading-[1.1] text-light
+.wallet-adapter-modal-title {
+  @apply text-[32px] md:text-[44px] font-body max-w-[480px] leading-[1.1] text-light;
 }
 
-.wallet-adapter-modal-list{
-  @apply mx-auto max-w-[380px]  text-light 
+.wallet-adapter-modal-list {
+  @apply mx-auto max-w-[380px]  text-light;
 }
 
-.wallet-adapter-modal-list-more{
-  @apply mx-auto font-mono uppercase text-xs font-semibold
+.wallet-adapter-modal-list-more {
+  @apply mx-auto font-mono uppercase text-xs font-semibold;
 }
 .wallet-adapter-dropdown-list .wallet-adapter-dropdown-list-item:hover,
-.wallet-adapter-modal-list .wallet-adapter-button:hover{
-   background-color: #413E53; 
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background-color: #413e53;
 }
 
-
-
-.wallet-adapter-modal-button-close{
- @apply bg-transparent
+.wallet-adapter-modal-button-close {
+  @apply bg-transparent;
 }
 
-.wallet-adapter-button.secondary-btn:hover{
-  @apply hover:bg-pythPurple
+.wallet-adapter-button.secondary-btn:hover {
+  @apply hover:bg-pythPurple;
 }
