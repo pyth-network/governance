@@ -25,18 +25,18 @@ import { Toaster } from 'react-hot-toast'
 require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
-const walletConnectConfig : WalletConnectWalletAdapterConfig = {
-  network :  WalletAdapterNetwork.Devnet,
-  options : {
-    relayUrl : 'wss://relay.walletconnect.com',
-    projectId : process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+const walletConnectConfig: WalletConnectWalletAdapterConfig = {
+  network: WalletAdapterNetwork.Devnet,
+  options: {
+    relayUrl: 'wss://relay.walletconnect.com',
+    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
     metadata: {
       name: 'Pyth Staking',
       description: 'Stake your PYTH tokens to participate in governance',
       url: 'https://pyth.network/',
       icons: ['https://pyth.network/token.svg'],
+    },
   },
-  } 
 }
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
@@ -60,7 +60,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
       new LedgerWalletAdapter(),
       new SolletWalletAdapter(),
       new SolletExtensionWalletAdapter(),
-      new WalletConnectWalletAdapter(walletConnectConfig)
+      new WalletConnectWalletAdapter(walletConnectConfig),
     ],
     []
   )
