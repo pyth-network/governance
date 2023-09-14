@@ -1,11 +1,19 @@
-use crate::error::ErrorCode;
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::borsh::try_from_slice_unchecked;
-use anchor_lang::solana_program::wasm_bindgen;
-use std::fmt::{
-    self,
-    Debug,
+use {
+    crate::error::ErrorCode,
+    anchor_lang::{
+        prelude::{
+            borsh::BorshSchema,
+            *,
+        },
+        solana_program::{
+            borsh::try_from_slice_unchecked,
+            wasm_bindgen,
+        },
+    },
+    std::fmt::{
+        self,
+        Debug,
+    },
 };
 
 pub const MAX_POSITIONS: usize = 100;
@@ -212,26 +220,30 @@ impl std::fmt::Display for PositionState {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::positions::{
-        Position,
-        PositionData,
-        PositionState,
-        Publisher,
-        TargetWithParameters,
-        TryBorsh,
-        MAX_POSITIONS,
-        POSITIONS_ACCOUNT_SIZE,
-        POSITION_BUFFER_SIZE,
+    use {
+        crate::state::positions::{
+            Position,
+            PositionData,
+            PositionState,
+            Publisher,
+            TargetWithParameters,
+            TryBorsh,
+            MAX_POSITIONS,
+            POSITIONS_ACCOUNT_SIZE,
+            POSITION_BUFFER_SIZE,
+        },
+        anchor_lang::{
+            prelude::*,
+            solana_program::borsh::get_packed_len,
+        },
+        quickcheck::{
+            Arbitrary,
+            Gen,
+        },
+        quickcheck_macros::quickcheck,
+        rand::Rng,
+        std::collections::HashSet,
     };
-    use anchor_lang::prelude::*;
-    use anchor_lang::solana_program::borsh::get_packed_len;
-    use quickcheck::{
-        Arbitrary,
-        Gen,
-    };
-    use quickcheck_macros::quickcheck;
-    use rand::Rng;
-    use std::collections::HashSet;
     #[test]
     fn lifecycle_lock_unlock() {
         let p = Position {

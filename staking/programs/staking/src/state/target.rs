@@ -1,7 +1,11 @@
-use crate::error::ErrorCode;
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
-use std::convert::TryInto;
+use {
+    crate::error::ErrorCode,
+    anchor_lang::prelude::{
+        borsh::BorshSchema,
+        *,
+    },
+    std::convert::TryInto,
+};
 
 pub const TARGET_METADATA_SIZE: usize = 10240;
 

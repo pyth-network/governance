@@ -1,5 +1,7 @@
-use crate::error::ErrorCode;
-use anchor_lang::prelude::*;
+use {
+    crate::error::ErrorCode,
+    anchor_lang::prelude::*,
+};
 
 pub const GLOBAL_CONFIG_SIZE: usize = 10240;
 
@@ -37,8 +39,10 @@ impl GlobalConfig {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::global_config::GlobalConfig;
-    use anchor_lang::prelude::*;
+    use {
+        crate::state::global_config::GlobalConfig,
+        anchor_lang::prelude::*,
+    };
 
     #[test]
     fn test_unfrozen() {

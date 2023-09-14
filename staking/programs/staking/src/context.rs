@@ -1,12 +1,14 @@
-use crate::state::*;
-use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    Mint,
-    Token,
-    TokenAccount,
-    Transfer,
+use {
+    crate::state::*,
+    anchor_lang::prelude::*,
+    anchor_spl::token::{
+        Mint,
+        Token,
+        TokenAccount,
+        Transfer,
+    },
+    std::iter::Iterator,
 };
-use std::iter::Iterator;
 
 pub const AUTHORITY_SEED: &str = "authority";
 pub const CUSTODY_SEED: &str = "custody";

@@ -1,8 +1,14 @@
-use crate::error::ErrorCode;
-use crate::state::global_config::GlobalConfig;
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock::UnixTimestamp;
-use std::convert::TryInto;
+use {
+    crate::{
+        error::ErrorCode,
+        state::global_config::GlobalConfig,
+    },
+    anchor_lang::{
+        prelude::*,
+        solana_program::clock::UnixTimestamp,
+    },
+    std::convert::TryInto,
+};
 
 /// Computes Pyth clock.
 /// Right now it's just the current Unix timestamp divided by the epoch length

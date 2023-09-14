@@ -1,5 +1,7 @@
-use anchor_lang::prelude::borsh::BorshSchema;
-use anchor_lang::prelude::*;
+use anchor_lang::prelude::{
+    borsh::BorshSchema,
+    *,
+};
 
 pub const MAX_VOTER_WEIGHT_RECORD_SIZE: usize = 8 + 32 + 32 + 8 + 9 + 8;
 
@@ -36,11 +38,13 @@ pub struct MaxVoterWeightRecord {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::state::max_voter_weight_record::{
-        MaxVoterWeightRecord,
-        MAX_VOTER_WEIGHT_RECORD_SIZE,
+    use {
+        crate::state::max_voter_weight_record::{
+            MaxVoterWeightRecord,
+            MAX_VOTER_WEIGHT_RECORD_SIZE,
+        },
+        anchor_lang::Discriminator,
     };
-    use anchor_lang::Discriminator;
 
     #[test]
     fn check_size() {
