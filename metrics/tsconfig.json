@@ -6,9 +6,7 @@
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-  "include": [
-    "./governance_metrics.ts"
-  ],
+  "include": ["./governance_metrics.ts"]
 }

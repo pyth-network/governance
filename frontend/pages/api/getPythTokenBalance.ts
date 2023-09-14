@@ -7,14 +7,16 @@ export const getPythTokenBalance = async (
   publicKey: PublicKey,
   pythTokenMint: PublicKey
 ) => {
-  let balance = new BN(0);
-    try {
+  let balance = new BN(0)
+  try {
     const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
       mint: pythTokenMint,
     })
     for (const account of tokenAccounts.value) {
       const test = await connection.getTokenAccountBalance(account.pubkey)
-      balance.iadd(new BN(test.value.amount) ? new BN(test.value.amount) : new BN(0))
+      balance.iadd(
+        new BN(test.value.amount) ? new BN(test.value.amount) : new BN(0)
+      )
     }
   } catch (e) {
     console.error(e)

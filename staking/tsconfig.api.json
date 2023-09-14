@@ -1,20 +1,14 @@
 {
   "compilerOptions": {
-    "types": ["mocha","node"],
+    "types": ["mocha", "node"],
     "lib": ["es2015"],
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "outDir": "lib",
-    "declaration": true,
+    "declaration": true
   },
-  "include": [
-    "./app/*.ts",
-  ],
-  "exclude": [
-    "./tests",
-    "./docker",
-    "./migrations"
-  ]
+  "include": ["./app/*.ts"],
+  "exclude": ["./tests", "./docker", "./migrations"]
 }
