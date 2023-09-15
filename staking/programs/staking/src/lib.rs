@@ -43,7 +43,6 @@ use {
     },
 };
 
-mod constants;
 mod context;
 mod error;
 mod state;
