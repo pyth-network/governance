@@ -713,6 +713,7 @@ export class StakeConnection {
     );
 
     if (stakeAccount) {
+      // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we fit in the transaction
       ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount))); // Try to make room by closing unlocked positions
     }
     await this.program.methods
