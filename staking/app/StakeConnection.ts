@@ -338,7 +338,8 @@ export class StakeConnection {
               BigInt(currentEpoch.toString()),
               this.config.unlockingDuration
             )
-      ))
+          )
+      )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
