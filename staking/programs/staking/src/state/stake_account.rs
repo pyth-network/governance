@@ -12,7 +12,7 @@ use {
 
 #[account]
 #[derive(BorshSchema)]
-pub struct StakeAccountMetadata {
+pub struct StakeAccountMetadataV2 {
     pub metadata_bump:  u8,
     pub custody_bump:   u8,
     pub authority_bump: u8,
@@ -22,23 +22,23 @@ pub struct StakeAccountMetadata {
     pub next_index:     u8,
 }
 
-impl StakeAccountMetadata {
+impl StakeAccountMetadataV2 {
     pub const LEN: usize = 78;
 }
 
 #[cfg(test)]
 pub mod tests {
     use {
-        crate::state::stake_account::StakeAccountMetadata,
+        crate::state::stake_account::StakeAccountMetadataV2,
         anchor_lang::Discriminator,
     };
 
     #[test]
     fn check_size() {
         assert_eq!(
-            anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadata>()
-                + StakeAccountMetadata::discriminator().len(),
-            StakeAccountMetadata::LEN
+            anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadataV2>()
+                + StakeAccountMetadataV2::discriminator().len(),
+            StakeAccountMetadataV2::LEN
         );
     }
 }
