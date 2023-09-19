@@ -325,9 +325,15 @@ export class StakeConnection {
       .filter((el) => el.value) // position not null
       .filter(
         (
-          el // position is voting
-        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
-      )
+          el // position locking or locked
+        ) =>
+          [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
+            stakeAccount.stakeAccountPositionsWasm.getPositionState(
+              el.index,
+              BigInt(currentEpoch.toString()),
+              this.config.unlockingDuration
+            )
+      ))
       .filter((el) =>
         [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
           stakeAccount.stakeAccountPositionsWasm.getPositionState(
