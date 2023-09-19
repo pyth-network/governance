@@ -745,7 +745,7 @@ export class StakeConnection {
       )
       .filter(
         (
-          el // position locking or locked
+          el // position is unlocked
         ) =>
           stakeAccount.stakeAccountPositionsWasm.getPositionState(
             el.index,
