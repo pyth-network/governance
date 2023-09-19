@@ -753,7 +753,7 @@ export class StakeConnection {
             this.config.unlockingDuration
           ) === wasm.PositionState.UNLOCKED
       )
-      .reverse();
+      .reverse(); // reverse so that earlier deletions don't affect later ones
 
     return await Promise.all(
       unlockedPositions.map((position) =>
