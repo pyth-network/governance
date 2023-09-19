@@ -748,7 +748,8 @@ export class StakeConnection {
             BigInt(currentEpoch.toString()),
             this.config.unlockingDuration
           ) === wasm.PositionState.UNLOCKED
-      ).reverse();
+      )
+      .reverse();
 
     return await Promise.all(
       unlockedPositions.map((position) =>
