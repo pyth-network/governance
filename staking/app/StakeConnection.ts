@@ -325,6 +325,11 @@ export class StakeConnection {
       .filter((el) => el.value) // position not null
       .filter(
         (
+          el // position is voting
+        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
+      )
+      .filter(
+        (
           el // position locking or locked
         ) =>
           [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
@@ -334,15 +339,6 @@ export class StakeConnection {
               this.config.unlockingDuration
             )
       ))
-      .filter((el) =>
-        [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
-            el.index,
-            BigInt(currentEpoch.toString()),
-            this.config.unlockingDuration
-          )
-        )
-      )
       .sort(
         (a, b) => (a.value.activationEpoch.gt(b.value.activationEpoch) ? 1 : -1) // FIFO closing
       );
