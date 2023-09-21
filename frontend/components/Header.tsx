@@ -1,5 +1,4 @@
 import { Dialog } from '@headlessui/react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
