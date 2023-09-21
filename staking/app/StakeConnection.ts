@@ -454,14 +454,14 @@ export class StakeConnection {
     stakeAccountPositionsAddress: PublicKey,
     index: number,
     amount: BN
-  ) {
+  ): Promise<TransactionInstruction> {
     return await this.program.methods
       .closePosition(index, amount, this.votingProduct)
       .accounts({
         targetAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
-      .rpc();
+      .instruction();
   }
 
   public async buildTransferInstruction(
@@ -712,6 +712,10 @@ export class StakeConnection {
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
+    if (stakeAccount) {
+      // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we fit in the transaction
+      ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount))); // Try to make room by closing unlocked positions
+    }
     await this.program.methods
       .createPosition(this.votingProduct, amount.toBN())
       .preInstructions(ixs)
@@ -721,6 +725,45 @@ export class StakeConnection {
       })
       .signers(signers)
       .rpc({ skipPreflight: true });
+  }
+
+  public async buildCleanupUnlockedPositions(
+    stakeAccount: StakeAccount
+  ): Promise<TransactionInstruction[]> {
+    const time = await this.getTime();
+    const currentEpoch = time.div(this.config.epochDuration);
+
+    const unlockedPositions = stakeAccount.stakeAccountPositionsJs.positions
+      .map((value, index) => {
+        return { index, value };
+      })
+      .filter((el) => el.value) // position not null
+      .filter(
+        (
+          el // position is voting
+        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
+      )
+      .filter(
+        (
+          el // position is unlocked
+        ) =>
+          stakeAccount.stakeAccountPositionsWasm.getPositionState(
+            el.index,
+            BigInt(currentEpoch.toString()),
+            this.config.unlockingDuration
+          ) === wasm.PositionState.UNLOCKED
+      )
+      .reverse(); // reverse so that earlier deletions don't affect later ones
+
+    return await Promise.all(
+      unlockedPositions.map((position) =>
+        this.buildCloseInstruction(
+          stakeAccount.address,
+          position.index,
+          position.value.amount
+        )
+      )
+    );
   }
 
   //withdraw tokens
