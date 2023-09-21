@@ -11,7 +11,6 @@ import {
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import BN from 'bn.js'
 import type { NextPage } from 'next'
-import { useRouter } from 'next/router'
 import {
   PythBalance,
   StakeAccount,
@@ -50,7 +49,6 @@ const Staking: NextPage = () => {
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
   const { publicKey, connected } = useWallet()
-  const { isReady } = useRouter()
   const [
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
@@ -1064,8 +1062,7 @@ const Staking: NextPage = () => {
                     ))}
                 </Tab.List>
                 <Tab.Panels className="mt-4 sm:mt-11">
-                  {isReady &&
-                    Object.keys(TabEnum)
+                  {Object.keys(TabEnum)
                       .slice(3)
                       .map((v, idx) => (
                         <Tab.Panel key={idx}>
