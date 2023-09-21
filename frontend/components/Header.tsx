@@ -3,10 +3,17 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Dialog } from '@headlessui/react'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 
 const Header = () => {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const WalletMultiButtonDynamic = dynamic(
+    async () =>
+      (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+    { ssr: false }
+  )
 
   return (
     <div className="before:gradient-border relative -bottom-[1px]  mb-3">
@@ -42,7 +49,7 @@ const Header = () => {
           </Link>
         </div>
         <div className="flex items-center justify-end space-x-2">
-          <WalletMultiButton className="primary-btn pt-0.5" />
+          <WalletMultiButtonDynamic className="primary-btn pt-0.5" />
           <div className="flex-shrink-0 md:hidden">
             <button
               className="rounded-full p-2 hover:bg-hoverGray"
