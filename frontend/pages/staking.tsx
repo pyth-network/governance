@@ -1063,125 +1063,125 @@ const Staking: NextPage = () => {
                 </Tab.List>
                 <Tab.Panels className="mt-4 sm:mt-11">
                   {Object.keys(TabEnum)
-                      .slice(3)
-                      .map((v, idx) => (
-                        <Tab.Panel key={idx}>
-                          <div className="mx-auto max-w-xl text-center leading-6">
-                            <div className="mb-4 h-36  sm:mb-12 sm:h-16">
-                              {tabDescriptions[v as keyof typeof TabEnum]}
-                            </div>
+                    .slice(3)
+                    .map((v, idx) => (
+                      <Tab.Panel key={idx}>
+                        <div className="mx-auto max-w-xl text-center leading-6">
+                          <div className="mb-4 h-36  sm:mb-12 sm:h-16">
+                            {tabDescriptions[v as keyof typeof TabEnum]}
+                          </div>
 
-                            <div className="mb-4 flex items-end justify-between md:items-center ">
-                              <label htmlFor="amount" className="block ">
-                                Amount (PYTH)
-                              </label>
-                              <div className="ml-auto mr-0 flex flex-col-reverse items-end space-x-2 md:flex-row md:items-center">
-                                {isBalanceLoading ? (
-                                  <div className="h-5 w-14  animate-pulse rounded-lg bg-darkGray4" />
-                                ) : (
-                                  <p className="mt-2 md:mt-0">
-                                    {currentTab === TabEnum.Lock
-                                      ? 'Balance'
-                                      : currentTab === TabEnum.Unlock
-                                      ? 'Locked Tokens'
-                                      : 'Withdrawable'}
-                                    : {connected ? balance?.toString() : '-'}
-                                  </p>
-                                )}
-                                <div className="mb-2  flex space-x-2 md:mb-0">
-                                  <button
-                                    className="outlined-btn hover:bg-darkGray4"
-                                    onClick={handleHalfBalanceClick}
-                                  >
-                                    Half
-                                  </button>
-                                  <button
-                                    className="outlined-btn hover:bg-darkGray4"
-                                    onClick={handleMaxBalanceClick}
-                                  >
-                                    Max
-                                  </button>
-                                </div>
+                          <div className="mb-4 flex items-end justify-between md:items-center ">
+                            <label htmlFor="amount" className="block ">
+                              Amount (PYTH)
+                            </label>
+                            <div className="ml-auto mr-0 flex flex-col-reverse items-end space-x-2 md:flex-row md:items-center">
+                              {isBalanceLoading ? (
+                                <div className="h-5 w-14  animate-pulse rounded-lg bg-darkGray4" />
+                              ) : (
+                                <p className="mt-2 md:mt-0">
+                                  {currentTab === TabEnum.Lock
+                                    ? 'Balance'
+                                    : currentTab === TabEnum.Unlock
+                                    ? 'Locked Tokens'
+                                    : 'Withdrawable'}
+                                  : {connected ? balance?.toString() : '-'}
+                                </p>
+                              )}
+                              <div className="mb-2  flex space-x-2 md:mb-0">
+                                <button
+                                  className="outlined-btn hover:bg-darkGray4"
+                                  onClick={handleHalfBalanceClick}
+                                >
+                                  Half
+                                </button>
+                                <button
+                                  className="outlined-btn hover:bg-darkGray4"
+                                  onClick={handleMaxBalanceClick}
+                                >
+                                  Max
+                                </button>
                               </div>
                             </div>
-                            <input
-                              type="text"
-                              name="amount"
-                              id="amount"
-                              autoComplete="amount"
-                              value={amount}
-                              onChange={handleAmountChange}
-                              className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
-                            />
-
-                            <div className="flex items-center justify-center ">
-                              {!connected ? (
-                                <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
-                              ) : currentTab === TabEnum.Lock ? (
-                                <button
-                                  className="action-btn text-base "
-                                  onClick={handleDeposit}
-                                  disabled={
-                                    isLockButtonDisabled ||
-                                    !isSufficientBalance ||
-                                    isActionLoading
-                                  }
-                                >
-                                  {isActionLoading ? (
-                                    <Spinner />
-                                  ) : isLockButtonDisabled ? (
-                                    <Tooltip content="You are currently not enrolled in governance.">
-                                      Lock
-                                    </Tooltip>
-                                  ) : isSufficientBalance ? (
-                                    'Lock'
-                                  ) : (
-                                    'Insufficient Balance'
-                                  )}
-                                </button>
-                              ) : currentTab === TabEnum.Unlock ? (
-                                <button
-                                  className="action-btn font-base"
-                                  onClick={handleUnlock}
-                                  disabled={
-                                    isLockButtonDisabled ||
-                                    !isSufficientBalance ||
-                                    isActionLoading
-                                  }
-                                >
-                                  {isActionLoading ? (
-                                    <Spinner />
-                                  ) : isLockButtonDisabled ? (
-                                    <Tooltip content="You are currently not enrolled in governance.">
-                                      Unlock
-                                    </Tooltip>
-                                  ) : isSufficientBalance ? (
-                                    'Unlock'
-                                  ) : (
-                                    'Insufficient Balance'
-                                  )}
-                                </button>
-                              ) : (
-                                <button
-                                  className="action-btn font-base"
-                                  onClick={handleWithdraw}
-                                  disabled={
-                                    !isSufficientBalance || isActionLoading
-                                  }
-                                >
-                                  {isActionLoading ? (
-                                    <Spinner />
-                                  ) : isSufficientBalance ? (
-                                    'Withdraw'
-                                  ) : (
-                                    'Insufficient Balance'
-                                  )}
-                                </button>
-                              )}
-                            </div>
                           </div>
-                        </Tab.Panel>
-                      ))}
+                          <input
+                            type="text"
+                            name="amount"
+                            id="amount"
+                            autoComplete="amount"
+                            value={amount}
+                            onChange={handleAmountChange}
+                            className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
+                          />
+
+                          <div className="flex items-center justify-center ">
+                            {!connected ? (
+                              <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
+                            ) : currentTab === TabEnum.Lock ? (
+                              <button
+                                className="action-btn text-base "
+                                onClick={handleDeposit}
+                                disabled={
+                                  isLockButtonDisabled ||
+                                  !isSufficientBalance ||
+                                  isActionLoading
+                                }
+                              >
+                                {isActionLoading ? (
+                                  <Spinner />
+                                ) : isLockButtonDisabled ? (
+                                  <Tooltip content="You are currently not enrolled in governance.">
+                                    Lock
+                                  </Tooltip>
+                                ) : isSufficientBalance ? (
+                                  'Lock'
+                                ) : (
+                                  'Insufficient Balance'
+                                )}
+                              </button>
+                            ) : currentTab === TabEnum.Unlock ? (
+                              <button
+                                className="action-btn font-base"
+                                onClick={handleUnlock}
+                                disabled={
+                                  isLockButtonDisabled ||
+                                  !isSufficientBalance ||
+                                  isActionLoading
+                                }
+                              >
+                                {isActionLoading ? (
+                                  <Spinner />
+                                ) : isLockButtonDisabled ? (
+                                  <Tooltip content="You are currently not enrolled in governance.">
+                                    Unlock
+                                  </Tooltip>
+                                ) : isSufficientBalance ? (
+                                  'Unlock'
+                                ) : (
+                                  'Insufficient Balance'
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                className="action-btn font-base"
+                                onClick={handleWithdraw}
+                                disabled={
+                                  !isSufficientBalance || isActionLoading
+                                }
+                              >
+                                {isActionLoading ? (
+                                  <Spinner />
+                                ) : isSufficientBalance ? (
+                                  'Withdraw'
+                                ) : (
+                                  'Insufficient Balance'
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </Tab.Panel>
+                    ))}
                 </Tab.Panels>
               </Tab.Group>
             </div>
