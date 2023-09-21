@@ -1,0 +1,15 @@
+[0m[38;5;8m[[0m2023-09-21T05:46:47.582769000Z [0m[32mINFO [0m solana_test_validator[0m[38;5;8m][0m solana-validator 1.14.10 (src:df128573; feat:3036606309)
+[0m[38;5;8m[[0m2023-09-21T05:46:47.582816000Z [0m[32mINFO [0m solana_test_validator[0m[38;5;8m][0m Starting validator with: ArgsOs {
+        inner: [
+            "solana-test-validator",
+        ],
+    }
+[0m[38;5;8m[[0m2023-09-21T05:46:47.582844000Z [0m[33mWARN [0m solana_perf[0m[38;5;8m][0m CUDA is disabled
+[0m[38;5;8m[[0m2023-09-21T05:46:47.586084000Z [0m[32mINFO [0m solana_faucet::faucet[0m[38;5;8m][0m Faucet started. Listening on: 0.0.0.0:9900
+[0m[38;5;8m[[0m2023-09-21T05:46:47.586101000Z [0m[32mINFO [0m solana_faucet::faucet[0m[38;5;8m][0m Faucet account address: 46Z2tQgj7nc6dixW6QjqC4CTjPBYj8ZnJsEU8LPg2Rjr
+[0m[38;5;8m[[0m2023-09-21T05:46:47.589194000Z [0m[32mINFO [0m solana_ledger::blockstore[0m[38;5;8m][0m Maximum open file descriptors: 1000000
+[0m[38;5;8m[[0m2023-09-21T05:46:47.589204000Z [0m[32mINFO [0m solana_ledger::blockstore[0m[38;5;8m][0m Opening database at "test-ledger/rocksdb"
+[0m[38;5;8m[[0m2023-09-21T05:46:47.688905000Z [0m[32mINFO [0m solana_ledger::blockstore[0m[38;5;8m][0m "test-ledger/rocksdb" open took 99ms
+[0m[38;5;8m[[0m2023-09-21T05:46:47.690526000Z [0m[32mINFO [0m solana_metrics::metrics[0m[38;5;8m][0m metrics disabled: SOLANA_METRICS_CONFIG: environment variable not found
+[0m[38;5;8m[[0m2023-09-21T05:46:47.690571000Z [0m[32mINFO [0m solana_metrics::metrics[0m[38;5;8m][0m datapoint: shred_insert_is_full total_time_ms=0i slot=0i last_index=3i num_repaired=0i num_recovered=0i
+[0m[38;5;8m[[0m2023-09-21T05:46:47.740576000Z [0m[32mINFO [0m solana_runtime::hardened_unpack[0m[38;5;8m][0m Extracting "test-ledger/genesis.tar.bz2"...
