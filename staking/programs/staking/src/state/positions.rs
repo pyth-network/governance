@@ -16,7 +16,7 @@ use {
     },
 };
 
-pub const MAX_POSITIONS: usize = 10;
+pub const MAX_POSITIONS: usize = 20;
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
