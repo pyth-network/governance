@@ -931,7 +931,7 @@ export type Staking = {
                     200
                   ]
                 },
-                10
+                20
               ]
             }
           }
@@ -2410,7 +2410,7 @@ export const IDL: Staking = {
                     200
                   ]
                 },
-                10
+                20
               ]
             }
           }
