@@ -16,11 +16,10 @@ use {
     },
 };
 
-pub const MAX_POSITIONS: usize = 100;
+pub const MAX_POSITIONS: usize = 20;
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
-pub const POSITIONS_ACCOUNT_SIZE: usize = 20040;
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
 /// The invariant we preserve is : For i < next_index, positions[i] == Some
@@ -31,6 +30,10 @@ pub const POSITIONS_ACCOUNT_SIZE: usize = 20040;
 pub struct PositionData {
     pub owner: Pubkey,
     positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+}
+
+impl PositionData {
+    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
 }
 
 #[cfg(test)]
@@ -229,7 +232,6 @@ pub mod tests {
             TargetWithParameters,
             TryBorsh,
             MAX_POSITIONS,
-            POSITIONS_ACCOUNT_SIZE,
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::{
@@ -311,7 +313,7 @@ pub mod tests {
             32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
         assert_eq!(
-            POSITIONS_ACCOUNT_SIZE,
+            PositionData::LEN,
             8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
         // Checks that the position struct fits in the individual position buffer
@@ -417,7 +419,8 @@ pub mod tests {
                         position_data.write_position(i, &position).unwrap();
                     } else {
                         assert!(set.len() == MAX_POSITIONS);
-                        assert!(position_data.reserve_new_index(&mut next_index).is_err())
+                        assert!(position_data.reserve_new_index(&mut next_index).is_err());
+                        next_index -= 1;
                     }
                 }
                 DataOperation::Modify(position) => {

@@ -19,6 +19,7 @@ import {
   makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
+import { Constants } from "pyth-staking-wasm";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them
@@ -109,7 +110,11 @@ describe("fills a stake account with positions", async () => {
     let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
 
     let transaction = new Transaction();
-    for (let numPositions = 0; numPositions < 100; numPositions++) {
+    for (
+      let numPositions = 0;
+      numPositions < Constants.MAX_POSITIONS();
+      numPositions++
+    ) {
       if (
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions

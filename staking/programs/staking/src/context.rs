@@ -45,7 +45,7 @@ pub struct InitConfig<'info> {
         seeds = [CONFIG_SEED.as_bytes()],
         bump,
         payer = payer,
-        space = global_config::GLOBAL_CONFIG_SIZE
+        space = global_config::GlobalConfig::LEN
     )]
     // Stake program accounts:
     pub config_account: Account<'info, global_config::GlobalConfig>,
@@ -90,7 +90,7 @@ pub struct CreateStakeAccount<'info> {
     // Stake program accounts:
     #[account(zero)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(init, payer = payer, space = stake_account::STAKE_ACCOUNT_METADATA_SIZE, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    #[account(init, payer = payer, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
         init,
@@ -107,7 +107,7 @@ pub struct CreateStakeAccount<'info> {
     #[account(
         init,
         payer = payer,
-        space = voter_weight_record::VOTER_WEIGHT_RECORD_SIZE,
+        space = voter_weight_record::VoterWeightRecord::LEN,
         seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump)]
     pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
@@ -251,7 +251,7 @@ pub struct UpdateMaxVoterWeight<'info> {
     // Native payer:
     #[account(mut)]
     pub payer:            Signer<'info>,
-    #[account(init, payer = payer, space = max_voter_weight_record::MAX_VOTER_WEIGHT_RECORD_SIZE ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
+    #[account(init, payer = payer, space = max_voter_weight_record::MaxVoterWeightRecord::LEN ,seeds = [MAX_VOTER_RECORD_SEED.as_bytes()], bump)]
     pub max_voter_record: Account<'info, max_voter_weight_record::MaxVoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:           Account<'info, global_config::GlobalConfig>,
@@ -272,7 +272,7 @@ pub struct CreateTarget<'info> {
         init,
         payer = payer,
         seeds =  [TARGET_SEED.as_bytes(), &target.get_seed()[..]],
-        space = target::TARGET_METADATA_SIZE,
+        space = target::TargetMetadata::LEN,
         bump)]
     pub target_account:    Account<'info, target::TargetMetadata>,
     pub system_program:    Program<'info, System>,

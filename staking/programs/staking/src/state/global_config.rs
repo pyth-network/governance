@@ -1,12 +1,11 @@
 use {
     crate::error::ErrorCode,
     anchor_lang::prelude::*,
+    borsh::BorshSchema,
 };
 
-pub const GLOBAL_CONFIG_SIZE: usize = 10240;
-
 #[account]
-#[derive(Default)]
+#[derive(Default, BorshSchema)]
 pub struct GlobalConfig {
     pub bump:                  u8,
     pub governance_authority:  Pubkey,
@@ -24,6 +23,10 @@ pub struct GlobalConfig {
     #[cfg(feature = "mock-clock")]
     pub mock_clock_time: i64, /* this field needs to be greater than 0 otherwise the API
                                * will use real time */
+}
+
+impl GlobalConfig {
+    pub const LEN: usize = 10240;
 }
 
 impl GlobalConfig {
@@ -78,5 +81,13 @@ pub mod tests {
         };
 
         assert!(c.check_frozen().is_err())
+    }
+
+    #[test]
+    fn check_size() {
+        assert!(
+            anchor_lang::solana_program::borsh::get_packed_len::<GlobalConfig>()
+                < GlobalConfig::LEN
+        );
     }
 }
