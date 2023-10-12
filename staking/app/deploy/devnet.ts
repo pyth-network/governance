@@ -13,4 +13,3 @@ export const PYTH_TOKEN = new PublicKey(
 );
 
 export const RPC_NODE = "https://api.devnet.solana.com";
-

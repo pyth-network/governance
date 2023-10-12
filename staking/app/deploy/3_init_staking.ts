@@ -1,13 +1,9 @@
 import { Wallet, AnchorProvider, Program } from "@project-serum/anchor";
 import { Connection } from "@solana/web3.js";
 import { getTargetAccount } from "../../tests/utils/utils";
-import {
-  AUTHORITY_KEYPAIR,
-  PYTH_TOKEN,
-  RPC_NODE,
-} from "./devnet";
+import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./devnet";
 import { BN } from "bn.js";
-import { STAKING_ADDRESS, REALM_ID , EPOCH_DURATION} from "../constants";
+import { STAKING_ADDRESS, REALM_ID, EPOCH_DURATION } from "../constants";
 
 // Actual transaction hash :
 // mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam

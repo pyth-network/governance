@@ -12,7 +12,4 @@ export const PYTH_TOKEN = new PublicKey(
   "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3"
 );
 
-
-
 export const RPC_NODE = "https://api.mainnet-beta.solana.com";
-
