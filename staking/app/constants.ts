@@ -10,7 +10,7 @@ export const STAKING_ADDRESS = new PublicKey(
 );
 
 export const REALM_ID = new PublicKey(
-  "A1f6LNEymJSSJsEVCL1FSgtS1jA9dNTC4ni8SkmbwQjG"
+  "4ct8XU5tKbMNRphWy4rePsS9kBqPhDdvZoGpmprPaug4"
 );
 
 export const EPOCH_DURATION = 3600 * 24 * 7;

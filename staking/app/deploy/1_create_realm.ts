@@ -11,7 +11,7 @@ import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./devnet";
 import { STAKING_ADDRESS, GOVERNANCE_ADDRESS } from "../constants";
 // Actual transaction hash :
 // mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
-// devnet : ZoyuaKQbahuWcUkbvY4R5Cn8do8Ra1sjdKKHNQ3oVeorcn5xU7fz5uGKDAHAazD792LNytkeJz4cUu7eun8hrHr
+// devnet (10/12/23): ZoyuaKQbahuWcUkbvY4R5Cn8do8Ra1sjdKKHNQ3oVeorcn5xU7fz5uGKDAHAazD792LNytkeJz4cUu7eun8hrHr
 
 async function main() {
   const tx = new Transaction();
