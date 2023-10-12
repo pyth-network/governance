@@ -50,8 +50,8 @@ mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-declare_id!("sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d");
-pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV");
+declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
+pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U");
 
 
 #[program]

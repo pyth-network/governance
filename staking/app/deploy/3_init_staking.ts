@@ -5,10 +5,9 @@ import {
   AUTHORITY_KEYPAIR,
   PYTH_TOKEN,
   RPC_NODE,
-  EPOCH_DURATION,
-} from "./mainnet_beta";
+} from "./devnet";
 import { BN } from "bn.js";
-import { STAKING_ADDRESS, REALM_ID } from "../constants";
+import { STAKING_ADDRESS, REALM_ID , EPOCH_DURATION} from "../constants";
 
 // Actual transaction hash :
 // mainnet-beta : KrWZD8gbH6Afg6suwHrmUi1xDo25rLDqqMAoAdunXmtUmuVk5HZgQvDqxFHC2uidL6TfXSmwKdQnkbnbZc8BZam

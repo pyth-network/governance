@@ -7,7 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@project-serum/anchor": "0.24.2",
-    "@solana/spl-governance": "0.3.15",
+    "@solana/spl-governance": "0.3.28",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",

@@ -7,17 +7,17 @@ seeds = true
 members = ["programs/staking"]
 
 [programs.localnet]
-staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
+governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 
 [programs.devnet]
-staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
+governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 
 [programs.mainnet]
-staking = "sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d"
-governance = "GovFUVGZWWwyoLq8rhnoVWknRFkhDSbQiSoREJ5LiZCV"
+staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
+governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 
 [registry]
 url = "https://anchor.projectserum.com"

@@ -9,9 +9,10 @@ export const MULTISIG_AUTHORITY = new PublicKey(
 );
 
 export const PYTH_TOKEN = new PublicKey(
-  "3ho8ZM4JVqJzD56FADKdW7NTG5Tv6GiBPFUvyRXMy35Q"
+  "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3"
 );
+
+
 
 export const RPC_NODE = "https://api.mainnet-beta.solana.com";
 
-export const EPOCH_DURATION = 3600 * 24 * 7;
