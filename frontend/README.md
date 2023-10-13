@@ -27,7 +27,7 @@ npm run localnet
 ```
 
 This command spawns a validator at `http://localhost:8899` with the staking program deployed in the genesis block at the address :
-`sta99txADjRfwHQQMNckb8vUN4jcAAhN2HBMTR2Ah6d`
+`pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
 
 Additionally it will :
 

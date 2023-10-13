@@ -9,9 +9,9 @@ import {
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { Constants } from "pyth-staking-wasm";
-import { EPOCH_DURATION, AUTHORITY_KEYPAIR, RPC_NODE } from "./mainnet_beta";
+import { AUTHORITY_KEYPAIR, RPC_NODE } from "./mainnet_beta";
 
-import { GOVERNANCE_ADDRESS, REALM_ID } from "../constants";
+import { GOVERNANCE_ADDRESS, REALM_ID, EPOCH_DURATION } from "../constants";
 // Actual transaction hash :
 // mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
 // devnet : 3gKKKPGAfV15yV1Ce6Tn9vmwbeRnMHcyrvDxDpPhHAEr6L8VAe4N3rkNizhLGa7cM19xQaJykt6rxjx651fFRqXM

@@ -371,7 +371,7 @@ export async function withCreateDefaultGovernance(
     }),
     minCommunityTokensToCreateProposal: PythBalance.fromNumber(200).toBN(),
     minInstructionHoldUpTime: 1,
-    maxVotingTime: maxVotingTime,
+    baseVotingTime: maxVotingTime,
     minCouncilTokensToCreateProposal: new BN(1),
     councilVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.YesVotePercentage,
@@ -386,6 +386,8 @@ export async function withCreateDefaultGovernance(
       value: 0,
     }),
     councilVoteTipping: VoteTipping.Strict,
+    votingCoolOffTime: 0,
+    depositExemptProposalCount: 255,
   });
   const governance = await withCreateGovernance(
     tx.instructions,

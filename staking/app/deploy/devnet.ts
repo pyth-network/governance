@@ -13,5 +13,3 @@ export const PYTH_TOKEN = new PublicKey(
 );
 
 export const RPC_NODE = "https://api.devnet.solana.com";
-
-export const EPOCH_DURATION = 3600;
