@@ -2485,10 +2485,15 @@ export const IDL: Staking = {
             "type": "u8"
           },
           {
+<<<<<<< HEAD
             "name": "transferEpoch",
             "type": {
               "option": "u64"
             }
+=======
+            "name": "creationEpoch",
+            "type": "u64"
+>>>>>>> 7902b94 (Draft)
           }
         ]
       }

@@ -413,6 +413,10 @@ pub mod staking {
         let epoch_of_snapshot: u64;
         voter_record.weight_action = Some(action);
 
+        if get_current_epoch(&config)? < ctx.accounts.stake_account_metadata.creation_epoch {
+            return Err(error!(ErrorCode::NoRemainingAccount));
+        }
+
         match action {
             VoterWeightAction::CastVote => {
                 let proposal_account: &AccountInfo = ctx
