@@ -977,6 +977,10 @@
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "creationEpoch",
+            "type": "u64"
           }
         ]
       }

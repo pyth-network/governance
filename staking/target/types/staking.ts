@@ -977,6 +977,10 @@ export type Staking = {
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "creationEpoch",
+            "type": "u64"
           }
         ]
       }
@@ -2456,6 +2460,10 @@ export const IDL: Staking = {
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "creationEpoch",
+            "type": "u64"
           }
         ]
       }
