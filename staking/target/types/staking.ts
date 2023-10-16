@@ -828,6 +828,14 @@ export type Staking = {
             "type": "bool"
           },
           {
+            "name": "pdaAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "governanceProgram",
+            "type": "publicKey"
+          },
+          {
             "name": "pythTokenListTime",
             "docs": [
               "Once the pyth token is listed, governance can update the config to set this value.",
@@ -977,6 +985,12 @@ export type Staking = {
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -1471,6 +1485,11 @@ export type Staking = {
     },
     {
       "code": 6028,
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
+    },
+    {
+      "code": 6029,
       "name": "Other",
       "msg": "Other"
     }
@@ -2307,6 +2326,14 @@ export const IDL: Staking = {
             "type": "bool"
           },
           {
+            "name": "pdaAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "governanceProgram",
+            "type": "publicKey"
+          },
+          {
             "name": "pythTokenListTime",
             "docs": [
               "Once the pyth token is listed, governance can update the config to set this value.",
@@ -2456,6 +2483,12 @@ export const IDL: Staking = {
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -2950,6 +2983,11 @@ export const IDL: Staking = {
     },
     {
       "code": 6028,
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
+    },
+    {
+      "code": 6029,
       "name": "Other",
       "msg": "Other"
     }

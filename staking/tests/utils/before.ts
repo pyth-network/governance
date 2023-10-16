@@ -322,7 +322,10 @@ export async function initConfig(
   });
 }
 
-export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
+export function makeDefaultConfig(
+  pythMint: PublicKey,
+  governanceProgram: PublicKey = PublicKey.unique()
+): GlobalConfig {
   return {
     governanceAuthority: null,
     pythGovernanceRealm: null,
@@ -333,6 +336,8 @@ export function makeDefaultConfig(pythMint: PublicKey): GlobalConfig {
     mockClockTime: new BN(10),
     bump: 0,
     pythTokenListTime: null,
+    governanceProgram,
+    pdaAuthority: PublicKey.unique(),
   };
 }
 

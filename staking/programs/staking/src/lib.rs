@@ -7,10 +7,7 @@
 
 use {
     crate::error::ErrorCode,
-    anchor_lang::{
-        prelude::*,
-        solana_program::pubkey,
-    },
+    anchor_lang::prelude::*,
     anchor_spl::token::transfer,
     context::*,
     spl_governance::state::{
@@ -51,9 +48,6 @@ mod utils;
 pub mod wasm;
 
 declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
-pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U");
-
-
 #[program]
 pub mod staking {
 
@@ -68,6 +62,9 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
+        config_account.pda_authority = global_config.pda_authority;
+        config_account.governance_program = global_config.governance_program;
+        config_account.pyth_token_list_time = None;
 
         #[cfg(feature = "mock-clock")]
         {
@@ -125,6 +122,7 @@ pub mod staking {
         stake_account_metadata.next_index = 0;
 
         stake_account_metadata.lock = lock;
+        stake_account_metadata.transfer_epoch = None;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
@@ -423,7 +421,7 @@ pub mod staking {
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let proposal_data: ProposalV2 =
-                    get_proposal_data(&GOVERNANCE_PROGRAM, proposal_account)?;
+                    get_proposal_data(&config.governance_program, proposal_account)?;
 
                 let proposal_start = proposal_data
                     .voting_at
@@ -445,7 +443,7 @@ pub mod staking {
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let governance_data = get_governance_data_for_realm(
-                    &GOVERNANCE_PROGRAM,
+                    &config.governance_program,
                     governance_account,
                     &config.pyth_governance_realm,
                 )?;
@@ -471,6 +469,12 @@ pub mod staking {
 
         if !((current_epoch <= epoch_of_snapshot + 1) && (epoch_of_snapshot <= current_epoch)) {
             return Err(error!(ErrorCode::InvalidVotingEpoch));
+        }
+
+        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
+            if epoch_of_snapshot <= transfer_epoch {
+                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
+            }
         }
 
         voter_record.voter_weight = compute_voter_weight(

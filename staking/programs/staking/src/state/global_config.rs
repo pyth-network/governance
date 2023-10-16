@@ -14,6 +14,8 @@ pub struct GlobalConfig {
     pub unlocking_duration:    u8,
     pub epoch_duration:        u64, // epoch duration in seconds
     pub freeze:                bool,
+    pub pda_authority:         Pubkey, // Authority that can authorize the transfer of locked tokens
+    pub governance_program:    Pubkey, // Governance program id
 
     /// Once the pyth token is listed, governance can update the config to set this value.
     /// Once this value is set, vesting schedules that depend on the token list date can start
@@ -58,6 +60,8 @@ pub mod tests {
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         false,
             pyth_token_list_time:                           None,
+            pda_authority:                                  Pubkey::default(),
+            governance_program:                             Pubkey::default(),
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };
@@ -76,6 +80,8 @@ pub mod tests {
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         true,
             pyth_token_list_time:                           None,
+            pda_authority:                                  Pubkey::default(),
+            governance_program:                             Pubkey::default(),
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };

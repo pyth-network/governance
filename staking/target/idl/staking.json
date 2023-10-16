@@ -828,6 +828,14 @@
             "type": "bool"
           },
           {
+            "name": "pdaAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "governanceProgram",
+            "type": "publicKey"
+          },
+          {
             "name": "pythTokenListTime",
             "docs": [
               "Once the pyth token is listed, governance can update the config to set this value.",
@@ -977,6 +985,12 @@
           {
             "name": "nextIndex",
             "type": "u8"
+          },
+          {
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -1471,6 +1485,11 @@
     },
     {
       "code": 6028,
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
+    },
+    {
+      "code": 6029,
       "name": "Other",
       "msg": "Other"
     }
