@@ -324,7 +324,7 @@ export async function initConfig(
 
 export function makeDefaultConfig(
   pythMint: PublicKey,
-  governanceProgram: PublicKey
+  governanceProgram: PublicKey = PublicKey.unique()
 ): GlobalConfig {
   return {
     governanceAuthority: null,

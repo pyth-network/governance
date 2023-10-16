@@ -67,7 +67,7 @@ describe("staking", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
     provider = stakeConnection.provider;
