@@ -967,20 +967,6 @@ export type Staking = {
           }
         },
         {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "config"
-              }
-            ]
-          }
-        },
-        {
           "name": "newStakeAccountPositions",
           "isMut": true,
           "isSigner": false
@@ -1060,6 +1046,20 @@ export type Staking = {
                 "kind": "account",
                 "type": "publicKey",
                 "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
               }
             ]
           }
@@ -2776,20 +2776,6 @@ export const IDL: Staking = {
           }
         },
         {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "config"
-              }
-            ]
-          }
-        },
-        {
           "name": "newStakeAccountPositions",
           "isMut": true,
           "isSigner": false
@@ -2869,6 +2855,20 @@ export const IDL: Staking = {
                 "kind": "account",
                 "type": "publicKey",
                 "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
               }
             ]
           }
@@ -3605,18 +3605,8 @@ export const IDL: Staking = {
     },
     {
       "code": 6028,
-<<<<<<< HEAD
-<<<<<<< HEAD
       "name": "VoteDuringTransferEpoch",
       "msg": "Can't vote during an account's transfer epoch"
-=======
-      "name": "VoteCreationEpoch",
-      "msg": "Can't vote on the creation epoch"
->>>>>>> dc00407 (Checkpoint)
-=======
-      "name": "VoteDuringTransferEpoch",
-      "msg": "Can't vote during an account's transfer epoch"
->>>>>>> f92af94 (Update stuff)
     },
     {
       "code": 6029,

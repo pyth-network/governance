@@ -967,20 +967,6 @@
           }
         },
         {
-          "name": "config",
-          "isMut": false,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "config"
-              }
-            ]
-          }
-        },
-        {
           "name": "newStakeAccountPositions",
           "isMut": true,
           "isSigner": false
@@ -1060,6 +1046,20 @@
                 "kind": "account",
                 "type": "publicKey",
                 "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
               }
             ]
           }
