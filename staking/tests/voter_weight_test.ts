@@ -29,15 +29,15 @@ describe("voter_weight_test", async () => {
 
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+    const governanceProgram = new PublicKey(
+      config.programs.localnet.governance
+    );
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(
-        pythMintAccount.publicKey,
-        new PublicKey(config.programs.localnet.governance)
-      )
+      makeDefaultConfig(pythMintAccount.publicKey, governanceProgram)
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
