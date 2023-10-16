@@ -34,7 +34,7 @@ describe("unlock_api", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;

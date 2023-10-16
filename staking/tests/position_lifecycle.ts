@@ -54,7 +54,7 @@ describe("position_lifecycle", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
     program = stakeConnection.program;
     owner = stakeConnection.provider.wallet.publicKey;
