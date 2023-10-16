@@ -59,8 +59,8 @@ pub enum ErrorCode {
     PositionSerDe,
     #[msg("Position out of bounds")] //6027
     PositionOutOfBounds,
-    #[msg("Can't vote on the creation epoch")] //6028
-    VoteCreationEpoch,
+    #[msg("Can't vote during an account's transfer epoch")] //6028
+    VoteDuringTransferEpoch,
     #[msg("Other")] //6028
     Other,
 }

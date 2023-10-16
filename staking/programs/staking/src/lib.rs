@@ -421,7 +421,7 @@ pub mod staking {
 
         if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
             if get_current_epoch(config)? < transfer_epoch {
-                return Err(error!(ErrorCode::VoteCreationEpoch));
+                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
             }
         }
 
