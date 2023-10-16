@@ -543,9 +543,9 @@ pub mod staking {
 
 
     pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
-        // Split vesting schedule between both accounts
+        // TODO : Split vesting schedule between both accounts
 
-        // Transfer stake positions to the new account
+        // TODO : Transfer stake positions to the new account if need
 
         // Transfer tokens
         {
@@ -559,11 +559,13 @@ pub mod staking {
                 split_request.amount,
             )?;
         }
+
+        // Delete current request
         {
             ctx.accounts.current_stake_account_split_request.amount = 0;
         }
         Ok(())
 
-        // Check both accounts are valid after the transfer
+        // TODO Check both accounts are valid after the transfer
     }
 }
