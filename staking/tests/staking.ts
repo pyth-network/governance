@@ -67,7 +67,7 @@ describe("staking", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
     ));
     program = stakeConnection.program;
     provider = stakeConnection.provider;
@@ -157,7 +157,7 @@ describe("staking", async () => {
         owner,
         lock: { fullyVested: {} },
         nextIndex: 0,
-        creationEpoch: new BN(0),
+        transferEpoch: null,
       })
     );
   });

@@ -56,7 +56,7 @@ describe("fills a stake account with positions", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
     ));
     program = stakeConnection.program;
     provider = stakeConnection.provider;

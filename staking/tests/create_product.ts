@@ -35,7 +35,10 @@ describe("create_product", async () => {
 
   before(async () => {
     const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    let globalConfig = makeDefaultConfig(pythMintAccount.publicKey);
+    let globalConfig = makeDefaultConfig(
+      pythMintAccount.publicKey,
+      PublicKey.unique()
+    );
 
     ({ controller, stakeConnection } = await standardSetup(
       portNumber,

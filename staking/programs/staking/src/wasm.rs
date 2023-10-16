@@ -13,7 +13,6 @@ use {
             vesting::VestingEvent,
         },
         VestingSchedule,
-        GOVERNANCE_PROGRAM,
     },
     anchor_lang::{
         prelude::{
@@ -315,9 +314,6 @@ impl Constants {
     }
     pub fn POSITION_BUFFER_SIZE() -> usize {
         crate::state::positions::POSITION_BUFFER_SIZE
-    }
-    pub fn GOVERNANCE_PROGRAM() -> js_sys::JsString {
-        GOVERNANCE_PROGRAM.to_string().into()
     }
 }
 

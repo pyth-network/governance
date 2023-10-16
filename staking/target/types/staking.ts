@@ -987,8 +987,10 @@ export type Staking = {
             "type": "u8"
           },
           {
-            "name": "creationEpoch",
-            "type": "u64"
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -1483,8 +1485,8 @@ export type Staking = {
     },
     {
       "code": 6028,
-      "name": "VoteCreationEpoch",
-      "msg": "Can't vote on the creation epoch"
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
     },
     {
       "code": 6029,
@@ -2483,8 +2485,10 @@ export const IDL: Staking = {
             "type": "u8"
           },
           {
-            "name": "creationEpoch",
-            "type": "u64"
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -2979,8 +2983,8 @@ export const IDL: Staking = {
     },
     {
       "code": 6028,
-      "name": "VoteCreationEpoch",
-      "msg": "Can't vote on the creation epoch"
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
     },
     {
       "code": 6029,

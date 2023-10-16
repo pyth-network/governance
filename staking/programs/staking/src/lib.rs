@@ -7,10 +7,7 @@
 
 use {
     crate::error::ErrorCode,
-    anchor_lang::{
-        prelude::*,
-        solana_program::pubkey,
-    },
+    anchor_lang::prelude::*,
     anchor_spl::token::transfer,
     context::*,
     spl_governance::state::{
@@ -51,9 +48,6 @@ mod utils;
 pub mod wasm;
 
 declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
-pub const GOVERNANCE_PROGRAM: Pubkey = pubkey!("pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U");
-
-
 #[program]
 pub mod staking {
 
@@ -433,7 +427,7 @@ pub mod staking {
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let proposal_data: ProposalV2 =
-                    get_proposal_data(&GOVERNANCE_PROGRAM, proposal_account)?;
+                    get_proposal_data(&config.governance_program, proposal_account)?;
 
                 let proposal_start = proposal_data
                     .voting_at
@@ -455,7 +449,7 @@ pub mod staking {
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let governance_data = get_governance_data_for_realm(
-                    &GOVERNANCE_PROGRAM,
+                    &config.governance_program,
                     governance_account,
                     &config.pyth_governance_realm,
                 )?;

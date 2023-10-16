@@ -1,8 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
-import { wasm } from "./StakeConnection";
 
-export function GOVERNANCE_ADDRESS() {
-  return new PublicKey(wasm.Constants.GOVERNANCE_PROGRAM());
+export function GOVERNANCE_ADDRESS(): PublicKey {
+  return new PublicKey("pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U");
 }
 
 export const STAKING_ADDRESS = new PublicKey(

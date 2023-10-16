@@ -34,7 +34,10 @@ describe("voter_weight_test", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+      makeDefaultConfig(
+        pythMintAccount.publicKey,
+        new PublicKey(config.programs.localnet.governance)
+      )
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;

@@ -987,8 +987,10 @@
             "type": "u8"
           },
           {
-            "name": "creationEpoch",
-            "type": "u64"
+            "name": "transferEpoch",
+            "type": {
+              "option": "u64"
+            }
           }
         ]
       }
@@ -1483,8 +1485,8 @@
     },
     {
       "code": 6028,
-      "name": "VoteCreationEpoch",
-      "msg": "Can't vote on the creation epoch"
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
     },
     {
       "code": 6029,
