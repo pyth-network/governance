@@ -413,8 +413,10 @@ pub mod staking {
         let epoch_of_snapshot: u64;
         voter_record.weight_action = Some(action);
 
-        if get_current_epoch(config)? < ctx.accounts.stake_account_metadata.creation_epoch {
-            return Err(error!(ErrorCode::VoteCreationEpoch));
+        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
+            if get_current_epoch(config)? < transfer_epoch {
+                return Err(error!(ErrorCode::VoteCreationEpoch));
+            }
         }
 
         match action {
