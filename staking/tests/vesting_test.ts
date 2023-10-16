@@ -47,7 +47,7 @@ describe("vesting", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
