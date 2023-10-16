@@ -20,7 +20,7 @@ pub struct StakeAccountMetadataV2 {
     pub owner:          Pubkey,
     pub lock:           VestingSchedule,
     pub next_index:     u8,
-    pub creation_epoch: u64,
+    pub transfer_epoch: Option<u64>, // null if the account was created, some epoch if the account received a transfer
 }
 
 impl StakeAccountMetadataV2 {

@@ -128,7 +128,7 @@ pub mod staking {
         stake_account_metadata.next_index = 0;
 
         stake_account_metadata.lock = lock;
-        stake_account_metadata.creation_epoch = get_current_epoch(config)?;
+        stake_account_metadata.transfer_epoch = None;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
@@ -419,8 +419,10 @@ pub mod staking {
         let epoch_of_snapshot: u64;
         voter_record.weight_action = Some(action);
 
-        if get_current_epoch(config)? < ctx.accounts.stake_account_metadata.creation_epoch {
-            return Err(error!(ErrorCode::VoteCreationEpoch));
+        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
+            if get_current_epoch(config)? < transfer_epoch {
+                return Err(error!(ErrorCode::VoteCreationEpoch));
+            }
         }
 
         match action {
