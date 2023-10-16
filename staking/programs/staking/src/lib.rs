@@ -417,7 +417,7 @@ pub mod staking {
         voter_record.weight_action = Some(action);
 
         if get_current_epoch(&config)? < ctx.accounts.stake_account_metadata.creation_epoch {
-            return Err(error!(ErrorCode::NoRemainingAccount));
+            return Err(error!(ErrorCode::VoteCreationEpoch));
         }
 
         match action {
