@@ -60,6 +60,8 @@ pub mod tests {
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         false,
             pyth_token_list_time:                           None,
+            pda_authority:                                  Pubkey::default(),
+            governance_program:                             Pubkey::default(),
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };
@@ -78,6 +80,8 @@ pub mod tests {
             epoch_duration:                                 1, // epoch duration in seconds
             freeze:                                         true,
             pyth_token_list_time:                           None,
+            pda_authority:                                  Pubkey::default(),
+            governance_program:                             Pubkey::default(),
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };

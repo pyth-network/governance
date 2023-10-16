@@ -24,7 +24,7 @@ pub struct StakeAccountMetadataV2 {
 }
 
 impl StakeAccountMetadataV2 {
-    pub const LEN: usize = 86;
+    pub const LEN: usize = 87;
 }
 
 #[cfg(test)]
