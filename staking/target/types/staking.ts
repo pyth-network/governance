@@ -2988,8 +2988,13 @@ export const IDL: Staking = {
     },
     {
       "code": 6028,
+<<<<<<< HEAD
       "name": "VoteDuringTransferEpoch",
       "msg": "Can't vote during an account's transfer epoch"
+=======
+      "name": "VoteCreationEpoch",
+      "msg": "Can't vote on the creation epoch"
+>>>>>>> dc00407 (Checkpoint)
     },
     {
       "code": 6029,
