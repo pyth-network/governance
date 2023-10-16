@@ -1,4 +1,4 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import assert from "assert";
 import { StakeConnection } from "../app/StakeConnection";
 import {
@@ -39,7 +39,7 @@ describe("api", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique()),
+      makeDefaultConfig(pythMintAccount.publicKey),
       PythBalance.fromString("1000")
     ));
 

@@ -8,7 +8,7 @@ import {
   standardSetup,
 } from "./utils/before";
 import path from "path";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import { StakeConnection } from "../app";
 import assert from "assert";
 import { BN } from "@project-serum/anchor";
@@ -33,7 +33,7 @@ describe("clock_api", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(pythMintAccount.publicKey)
     ));
   });
 
