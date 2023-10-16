@@ -793,7 +793,7 @@ export type Staking = {
       ]
     },
     {
-      "name": "createSplitRequest",
+      "name": "requestSplit",
       "accounts": [
         {
           "name": "payer",
@@ -875,7 +875,7 @@ export type Staking = {
       ]
     },
     {
-      "name": "acceptSplitRequest",
+      "name": "acceptSplit",
       "accounts": [
         {
           "name": "payer",
@@ -982,7 +982,7 @@ export type Staking = {
         },
         {
           "name": "newStakeAccountPositions",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -2602,7 +2602,7 @@ export const IDL: Staking = {
       ]
     },
     {
-      "name": "createSplitRequest",
+      "name": "requestSplit",
       "accounts": [
         {
           "name": "payer",
@@ -2684,7 +2684,7 @@ export const IDL: Staking = {
       ]
     },
     {
-      "name": "acceptSplitRequest",
+      "name": "acceptSplit",
       "accounts": [
         {
           "name": "payer",
@@ -2791,7 +2791,7 @@ export const IDL: Staking = {
         },
         {
           "name": "newStakeAccountPositions",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {

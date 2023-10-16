@@ -43,7 +43,11 @@ describe("split vesting account", async () => {
       config,
       pythMintAccount,
       pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, PublicKey.unique())
+      makeDefaultConfig(
+        pythMintAccount.publicKey,
+        PublicKey.unique(),
+        pdaAuthority.publicKey
+      )
     ));
 
     EPOCH_DURATION = stakeConnection.config.epochDuration;
@@ -133,7 +137,7 @@ describe("split vesting account", async () => {
       alice.publicKey
     );
 
-    await pdaConnection.confirmSplit(stakeAccount);
+    await pdaConnection.acceptSplit(stakeAccount);
   });
 
   // it("one month minus 1 later", async () => {

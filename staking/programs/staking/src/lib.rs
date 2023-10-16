@@ -535,19 +535,19 @@ pub mod staking {
         }
     }
 
-    pub fn create_split_request(
-        ctx: Context<CreateSplitRequest>,
-        amount: u64,
-        recipient: Pubkey,
-    ) -> Result<()> {
+    pub fn request_split(ctx: Context<RequestSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         ctx.accounts.stake_account_split_request.amount = amount;
         ctx.accounts.stake_account_split_request.recipient = recipient;
         Ok(())
     }
 
 
-    pub fn accept_split_request(ctx: Context<AcceptSplitRequest>) -> Result<()> {
+    pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
         let split_request = &ctx.accounts.current_stake_account_split_request;
+
+        // Split vesting schedule between both accounts
+
+        // Transfer stake positions to the new account
 
         // Transfer tokens
         transfer(
@@ -559,5 +559,7 @@ pub mod staking {
             split_request.amount,
         )?;
         Ok(())
+
+        // Check both accounts are valid after the transfer
     }
 }

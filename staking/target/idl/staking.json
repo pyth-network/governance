@@ -793,7 +793,7 @@
       ]
     },
     {
-      "name": "createSplitRequest",
+      "name": "requestSplit",
       "accounts": [
         {
           "name": "payer",
@@ -875,7 +875,7 @@
       ]
     },
     {
-      "name": "acceptSplitRequest",
+      "name": "acceptSplit",
       "accounts": [
         {
           "name": "payer",
@@ -982,7 +982,7 @@
         },
         {
           "name": "newStakeAccountPositions",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {

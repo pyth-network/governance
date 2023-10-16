@@ -817,14 +817,14 @@ export class StakeConnection {
     recipient: PublicKey
   ) {
     await this.program.methods
-      .createSplitRequest(amount.toBN(), recipient)
+      .requestSplit(amount.toBN(), recipient)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
       })
       .rpc();
   }
 
-  public async confirmSplit(stakeAccount: StakeAccount) {
+  public async acceptSplit(stakeAccount: StakeAccount) {
     const newStakeAccountKeypair = new Keypair();
 
     const instructions = [];
@@ -836,7 +836,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .acceptSplitRequest()
+      .acceptSplit()
       .accounts({
         currentStakeAccountPositions: stakeAccount.address,
         newStakeAccountPositions: newStakeAccountKeypair.publicKey,

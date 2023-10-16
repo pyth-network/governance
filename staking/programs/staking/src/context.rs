@@ -281,7 +281,7 @@ pub struct CreateTarget<'info> {
 
 #[derive(Accounts)]
 #[instruction(amount : u64, recipient : Pubkey)]
-pub struct CreateSplitRequest<'info> {
+pub struct RequestSplit<'info> {
     // Native payer:
     #[account(mut, address = stake_account_metadata.owner)]
     pub payer:                       Signer<'info>,
@@ -298,7 +298,7 @@ pub struct CreateSplitRequest<'info> {
 }
 
 #[derive(Accounts)]
-pub struct AcceptSplitRequest<'info> {
+pub struct AcceptSplit<'info> {
     // Native payer:
     #[account(mut, address = config.pda_authority)]
     pub payer:                               Signer<'info>,
@@ -306,9 +306,9 @@ pub struct AcceptSplitRequest<'info> {
     #[account(mut)]
     pub current_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), current_stake_account_positions.key().as_ref()], bump = current_stake_account_metadata.metadata_bump)]
-    pub current_stake_account_metadata:      Account<'info, stake_account::StakeAccountMetadataV2>,
+    pub current_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(seeds = [SPLIT_REQUEST.as_bytes(), current_stake_account_positions.key().as_ref()], bump)]
-    pub current_stake_account_split_request: Account<'info, split_request::SplitRequest>,
+    pub current_stake_account_split_request: Box<Account<'info, split_request::SplitRequest>>,
     #[account(
         mut,
         seeds = [CUSTODY_SEED.as_bytes(), current_stake_account_positions.key().as_ref()],
@@ -322,6 +322,7 @@ pub struct AcceptSplitRequest<'info> {
     pub config:                              Account<'info, global_config::GlobalConfig>,
 
     // New stake accounts :
+    #[account(zero)]
     pub new_stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(init, payer = payer, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
@@ -343,7 +344,7 @@ pub struct AcceptSplitRequest<'info> {
         space = voter_weight_record::VoterWeightRecord::LEN,
         seeds = [VOTER_RECORD_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
         bump)]
-    pub new_voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
+    pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
     // Other accounts needed
     #[account(address = config.pyth_token_mint)]
     pub mint:                        Account<'info, Mint>,
@@ -352,12 +353,10 @@ pub struct AcceptSplitRequest<'info> {
     pub system_program:              Program<'info, System>,
 }
 
-impl<'a, 'b, 'c, 'info> From<&AcceptSplitRequest<'info>>
+impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
     for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
 {
-    fn from(
-        accounts: &AcceptSplitRequest<'info>,
-    ) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+    fn from(accounts: &AcceptSplit<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from:      accounts.current_stake_account_custody.to_account_info(),
             to:        accounts.new_stake_account_custody.to_account_info(),
