@@ -413,12 +413,6 @@ pub mod staking {
         let epoch_of_snapshot: u64;
         voter_record.weight_action = Some(action);
 
-        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
-            if get_current_epoch(config)? < transfer_epoch {
-                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
-            }
-        }
-
         match action {
             VoterWeightAction::CastVote => {
                 let proposal_account: &AccountInfo = ctx
@@ -475,6 +469,12 @@ pub mod staking {
 
         if !((current_epoch <= epoch_of_snapshot + 1) && (epoch_of_snapshot <= current_epoch)) {
             return Err(error!(ErrorCode::InvalidVotingEpoch));
+        }
+
+        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
+            if epoch_of_snapshot <= transfer_epoch {
+                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
+            }
         }
 
         voter_record.voter_weight = compute_voter_weight(
