@@ -2485,15 +2485,10 @@ export const IDL: Staking = {
             "type": "u8"
           },
           {
-<<<<<<< HEAD
             "name": "transferEpoch",
             "type": {
               "option": "u64"
             }
-=======
-            "name": "creationEpoch",
-            "type": "u64"
->>>>>>> 7902b94 (Draft)
           }
         ]
       }
@@ -2989,12 +2984,17 @@ export const IDL: Staking = {
     {
       "code": 6028,
 <<<<<<< HEAD
+<<<<<<< HEAD
       "name": "VoteDuringTransferEpoch",
       "msg": "Can't vote during an account's transfer epoch"
 =======
       "name": "VoteCreationEpoch",
       "msg": "Can't vote on the creation epoch"
 >>>>>>> dc00407 (Checkpoint)
+=======
+      "name": "VoteDuringTransferEpoch",
+      "msg": "Can't vote during an account's transfer epoch"
+>>>>>>> f92af94 (Update stuff)
     },
     {
       "code": 6029,
