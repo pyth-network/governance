@@ -15,6 +15,7 @@ pub struct GlobalConfig {
     pub epoch_duration:        u64, // epoch duration in seconds
     pub freeze:                bool,
     pub pda_authority:         Pubkey, // Authority that can authorize the transfer of locked tokens
+    pub governance_program:    Pubkey, // Governance program id
 
     /// Once the pyth token is listed, governance can update the config to set this value.
     /// Once this value is set, vesting schedules that depend on the token list date can start

@@ -31,6 +31,8 @@ describe("config", async () => {
   const zeroPubkey = new PublicKey(0);
 
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+  const pdaAuthority = PublicKey.unique();
+  const governanceProgram = new PublicKey(config.programs.localnet.governance);
 
   let errMap: Map<number, string>;
 
@@ -81,6 +83,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(10),
       })
@@ -118,6 +122,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(10),
       })
@@ -141,6 +147,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(15),
       })
@@ -162,6 +170,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
@@ -187,6 +197,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: new BN(5),
         mockClockTime: new BN(30),
       })
@@ -208,6 +220,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
@@ -231,6 +245,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(30),
       })
@@ -278,6 +294,8 @@ describe("config", async () => {
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
+        pdaAuthority: pdaAuthority,
+        governanceProgram: governanceProgram,
         pythTokenListTime: null,
         mockClockTime: new BN(30),
       })

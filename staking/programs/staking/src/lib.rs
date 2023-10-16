@@ -68,6 +68,9 @@ pub mod staking {
         config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
+        config_account.pda_authority = global_config.pda_authority;
+        config_account.governance_program = global_config.governance_program;
+        config_account.pyth_token_list_time = None;
 
         #[cfg(feature = "mock-clock")]
         {

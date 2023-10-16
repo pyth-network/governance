@@ -828,6 +828,14 @@ export type Staking = {
             "type": "bool"
           },
           {
+            "name": "pdaAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "governanceProgram",
+            "type": "publicKey"
+          },
+          {
             "name": "pythTokenListTime",
             "docs": [
               "Once the pyth token is listed, governance can update the config to set this value.",
@@ -1475,6 +1483,11 @@ export type Staking = {
     },
     {
       "code": 6028,
+      "name": "VoteCreationEpoch",
+      "msg": "Can't vote on the creation epoch"
+    },
+    {
+      "code": 6029,
       "name": "Other",
       "msg": "Other"
     }
@@ -2311,6 +2324,14 @@ export const IDL: Staking = {
             "type": "bool"
           },
           {
+            "name": "pdaAuthority",
+            "type": "publicKey"
+          },
+          {
+            "name": "governanceProgram",
+            "type": "publicKey"
+          },
+          {
             "name": "pythTokenListTime",
             "docs": [
               "Once the pyth token is listed, governance can update the config to set this value.",
@@ -2958,6 +2979,11 @@ export const IDL: Staking = {
     },
     {
       "code": 6028,
+      "name": "VoteCreationEpoch",
+      "msg": "Can't vote on the creation epoch"
+    },
+    {
+      "code": 6029,
       "name": "Other",
       "msg": "Other"
     }
