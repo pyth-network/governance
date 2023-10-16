@@ -293,8 +293,8 @@ pub struct RequestSplit<'info> {
     pub stake_account_split_request: Account<'info, split_request::SplitRequest>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                      Account<'info, global_config::GlobalConfig>,
-
-    pub system_program: Program<'info, System>,
+    // Primitive accounts :
+    pub system_program:              Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -318,8 +318,6 @@ pub struct AcceptSplit<'info> {
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), current_stake_account_positions.key().as_ref()], bump = current_stake_account_metadata.authority_bump)]
     pub current_custody_authority:           AccountInfo<'info>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:                              Account<'info, global_config::GlobalConfig>,
 
     // New stake accounts :
     #[account(zero)]
@@ -345,12 +343,17 @@ pub struct AcceptSplit<'info> {
         seeds = [VOTER_RECORD_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
         bump)]
     pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
-    // Other accounts needed
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+
+    // Pyth token mint:
     #[account(address = config.pyth_token_mint)]
-    pub mint:                        Account<'info, Mint>,
-    pub rent:                        Sysvar<'info, Rent>,
-    pub token_program:               Program<'info, Token>,
-    pub system_program:              Program<'info, System>,
+    pub mint:           Account<'info, Mint>,
+    // Primitive accounts :
+    pub rent:           Sysvar<'info, Rent>,
+    pub token_program:  Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>

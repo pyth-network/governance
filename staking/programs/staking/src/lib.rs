@@ -543,21 +543,25 @@ pub mod staking {
 
 
     pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
-        let split_request = &ctx.accounts.current_stake_account_split_request;
-
         // Split vesting schedule between both accounts
 
         // Transfer stake positions to the new account
 
         // Transfer tokens
-        transfer(
-            CpiContext::from(&*ctx.accounts).with_signer(&[&[
-                AUTHORITY_SEED.as_bytes(),
-                ctx.accounts.current_stake_account_positions.key().as_ref(),
-                &[ctx.accounts.current_stake_account_metadata.authority_bump],
-            ]]),
-            split_request.amount,
-        )?;
+        {
+            let split_request = &ctx.accounts.current_stake_account_split_request;
+            transfer(
+                CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                    AUTHORITY_SEED.as_bytes(),
+                    ctx.accounts.current_stake_account_positions.key().as_ref(),
+                    &[ctx.accounts.current_stake_account_metadata.authority_bump],
+                ]]),
+                split_request.amount,
+            )?;
+        }
+        {
+            ctx.accounts.current_stake_account_split_request.amount = 0;
+        }
         Ok(())
 
         // Check both accounts are valid after the transfer
