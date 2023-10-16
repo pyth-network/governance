@@ -810,6 +810,42 @@ export class StakeConnection {
       })
       .rpc();
   }
+
+  public async requestSplit(
+    stakeAccount: StakeAccount,
+    amount: PythBalance,
+    recipient: PublicKey
+  ) {
+    await this.program.methods
+      .createSplitRequest(amount.toBN(), recipient)
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+      })
+      .rpc();
+  }
+
+  public async confirmSplit(stakeAccount: StakeAccount) {
+    const newStakeAccountKeypair = new Keypair();
+
+    const instructions = [];
+    instructions.push(
+      await this.program.account.positionData.createInstruction(
+        newStakeAccountKeypair,
+        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+      )
+    );
+
+    await this.program.methods
+      .acceptSplitRequest()
+      .accounts({
+        currentStakeAccountPositions: stakeAccount.address,
+        newStakeAccountPositions: newStakeAccountKeypair.publicKey,
+        mint: this.config.pythTokenMint,
+      })
+      .signers([newStakeAccountKeypair])
+      .preInstructions(instructions)
+      .rpc();
+  }
 }
 export interface BalanceSummary {
   withdrawable: PythBalance;

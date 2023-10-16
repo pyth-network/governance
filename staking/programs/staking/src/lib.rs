@@ -534,4 +534,30 @@ pub mod staking {
             Err(error!(ErrorCode::DebuggingOnly))
         }
     }
+
+    pub fn create_split_request(
+        ctx: Context<CreateSplitRequest>,
+        amount: u64,
+        recipient: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.stake_account_split_request.amount = amount;
+        ctx.accounts.stake_account_split_request.recipient = recipient;
+        Ok(())
+    }
+
+
+    pub fn accept_split_request(ctx: Context<AcceptSplitRequest>) -> Result<()> {
+        let split_request = &ctx.accounts.current_stake_account_split_request;
+
+        // Transfer tokens
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.current_stake_account_positions.key().as_ref(),
+                &[ctx.accounts.current_stake_account_metadata.authority_bump],
+            ]]),
+            split_request.amount,
+        )?;
+        Ok(())
+    }
 }

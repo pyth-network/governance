@@ -791,6 +791,301 @@ export type Staking = {
           "type": "i64"
         }
       ]
+    },
+    {
+      "name": "createSplitRequest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakeAccountSplitRequest",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "split_request"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "acceptSplitRequest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "currentStakeAccountPositions",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "currentStakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentStakeAccountSplitRequest",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "split_request"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentStakeAccountCustody",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "custody"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentCustodyAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newStakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newStakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newStakeAccountCustody",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "custody"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newCustodyAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newVoterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -942,6 +1237,22 @@ export type Staking = {
                 20
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "splitRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "recipient",
+            "type": "publicKey"
           }
         ]
       }
@@ -2289,6 +2600,301 @@ export const IDL: Staking = {
           "type": "i64"
         }
       ]
+    },
+    {
+      "name": "createSplitRequest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakeAccountSplitRequest",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "split_request"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "acceptSplitRequest",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "currentStakeAccountPositions",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "currentStakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentStakeAccountSplitRequest",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "split_request"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentStakeAccountCustody",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "custody"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "currentCustodyAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "current_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newStakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newStakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newStakeAccountCustody",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "custody"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newCustodyAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "authority"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "newVoterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -2440,6 +3046,22 @@ export const IDL: Staking = {
                 20
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "splitRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "recipient",
+            "type": "publicKey"
           }
         ]
       }
