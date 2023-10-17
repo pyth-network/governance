@@ -684,6 +684,6 @@ pub mod staking {
         // Delete current request
         ctx.accounts.source_stake_account_split_request.amount = 0;
 
-        err!(ErrorCode::NotImplemented)
+        Ok(())
     }
 }
