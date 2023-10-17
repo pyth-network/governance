@@ -1807,6 +1807,21 @@ export type Staking = {
     },
     {
       "code": 6029,
+      "name": "SplitZeroTokens",
+      "msg": "Can't split 0 tokens from an account"
+    },
+    {
+      "code": 6030,
+      "name": "SplitTooManyTokens",
+      "msg": "Can't split more tokens than are in the account"
+    },
+    {
+      "code": 6031,
+      "name": "SanityCheckFailed",
+      "msg": "Sanity check failed"
+    },
+    {
+      "code": 6032,
       "name": "Other",
       "msg": "Other"
     }
@@ -3622,6 +3637,21 @@ export const IDL: Staking = {
     },
     {
       "code": 6029,
+      "name": "SplitZeroTokens",
+      "msg": "Can't split 0 tokens from an account"
+    },
+    {
+      "code": 6030,
+      "name": "SplitTooManyTokens",
+      "msg": "Can't split more tokens than are in the account"
+    },
+    {
+      "code": 6031,
+      "name": "SanityCheckFailed",
+      "msg": "Sanity check failed"
+    },
+    {
+      "code": 6032,
       "name": "Other",
       "msg": "Other"
     }
