@@ -314,7 +314,7 @@ pub struct AcceptSplit<'info> {
         seeds = [CUSTODY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()],
         bump = source_stake_account_metadata.custody_bump,
     )]
-    pub source_stake_account_custody:       Account<'info, TokenAccount>,
+    pub source_stake_account_custody:       Box<Account<'info, TokenAccount>>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.authority_bump)]
     pub source_custody_authority:           AccountInfo<'info>,
@@ -332,7 +332,7 @@ pub struct AcceptSplit<'info> {
         token::mint = mint,
         token::authority = new_custody_authority,
     )]
-    pub new_stake_account_custody:   Account<'info, TokenAccount>,
+    pub new_stake_account_custody:   Box<Account<'info, TokenAccount>>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_custody_authority:       AccountInfo<'info>,
@@ -345,11 +345,11 @@ pub struct AcceptSplit<'info> {
     pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
 
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config: Account<'info, global_config::GlobalConfig>,
+    pub config: Box<Account<'info, global_config::GlobalConfig>>,
 
     // Pyth token mint:
     #[account(address = config.pyth_token_mint)]
-    pub mint:           Account<'info, Mint>,
+    pub mint:           Box<Account<'info, Mint>>,
     // Primitive accounts :
     pub rent:           Sysvar<'info, Rent>,
     pub token_program:  Program<'info, Token>,

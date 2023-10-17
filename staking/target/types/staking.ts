@@ -794,6 +794,9 @@ export type Staking = {
     },
     {
       "name": "requestSplit",
+      "docs": [
+        "* Any user of the staking program can request to split their account and\n     * give a part of it to another user. This is mostly useful to transfer unvested\n     * tokens.\n     * In the first step, the user requests a split by specifying the amount of tokens\n     * they want to give to the other user and the recipient's pubkey."
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -876,6 +879,9 @@ export type Staking = {
     },
     {
       "name": "acceptSplit",
+      "docs": [
+        "* A split request can only be accepted by the pda_authority from\n     * the config account. If accepted `amount` tokens are transferred to the\n     * recipient and the split request is reset (by setting amount to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -883,12 +889,12 @@ export type Staking = {
           "isSigner": true
         },
         {
-          "name": "currentStakeAccountPositions",
+          "name": "sourceStakeAccountPositions",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "currentStakeAccountMetadata",
+          "name": "sourceStakeAccountMetadata",
           "isMut": true,
           "isSigner": false,
           "pda": {
@@ -901,13 +907,13 @@ export type Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentStakeAccountSplitRequest",
+          "name": "sourceStakeAccountSplitRequest",
           "isMut": false,
           "isSigner": false,
           "pda": {
@@ -920,13 +926,13 @@ export type Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentStakeAccountCustody",
+          "name": "sourceStakeAccountCustody",
           "isMut": true,
           "isSigner": false,
           "pda": {
@@ -939,13 +945,13 @@ export type Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentCustodyAuthority",
+          "name": "sourceCustodyAuthority",
           "isMut": false,
           "isSigner": false,
           "docs": [
@@ -961,7 +967,7 @@ export type Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
@@ -2603,6 +2609,9 @@ export const IDL: Staking = {
     },
     {
       "name": "requestSplit",
+      "docs": [
+        "* Any user of the staking program can request to split their account and\n     * give a part of it to another user. This is mostly useful to transfer unvested\n     * tokens.\n     * In the first step, the user requests a split by specifying the amount of tokens\n     * they want to give to the other user and the recipient's pubkey."
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -2685,6 +2694,9 @@ export const IDL: Staking = {
     },
     {
       "name": "acceptSplit",
+      "docs": [
+        "* A split request can only be accepted by the pda_authority from\n     * the config account. If accepted `amount` tokens are transferred to the\n     * recipient and the split request is reset (by setting amount to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -2692,12 +2704,12 @@ export const IDL: Staking = {
           "isSigner": true
         },
         {
-          "name": "currentStakeAccountPositions",
+          "name": "sourceStakeAccountPositions",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "currentStakeAccountMetadata",
+          "name": "sourceStakeAccountMetadata",
           "isMut": true,
           "isSigner": false,
           "pda": {
@@ -2710,13 +2722,13 @@ export const IDL: Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentStakeAccountSplitRequest",
+          "name": "sourceStakeAccountSplitRequest",
           "isMut": false,
           "isSigner": false,
           "pda": {
@@ -2729,13 +2741,13 @@ export const IDL: Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentStakeAccountCustody",
+          "name": "sourceStakeAccountCustody",
           "isMut": true,
           "isSigner": false,
           "pda": {
@@ -2748,13 +2760,13 @@ export const IDL: Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
         },
         {
-          "name": "currentCustodyAuthority",
+          "name": "sourceCustodyAuthority",
           "isMut": false,
           "isSigner": false,
           "docs": [
@@ -2770,7 +2782,7 @@ export const IDL: Staking = {
               {
                 "kind": "account",
                 "type": "publicKey",
-                "path": "current_stake_account_positions"
+                "path": "source_stake_account_positions"
               }
             ]
           }
