@@ -539,8 +539,8 @@ pub mod staking {
      * Any user of the staking program can request to split their account and
      * give a part of it to another user. This is mostly useful to transfer unvested
      * tokens.
-     * In the first step, the user requests a split by specifying the amount of tokens
-     * they want to give to the other user and the recipient's pubkey.
+     * In the first step, the user requests a split by specifying the `amount` of tokens
+     * they want to give to the other user and the `recipient`'s pubkey.
      */
     pub fn request_split(ctx: Context<RequestSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         ctx.accounts.stake_account_split_request.amount = amount;
@@ -550,9 +550,9 @@ pub mod staking {
 
 
     /**
-     * A split request can only be accepted by the pda_authority from
-     * the config account. If accepted `amount` tokens are transferred to the
-     * recipient and the split request is reset (by setting amount to 0).
+     * A split request can only be accepted by the `pda_authority`` from
+     * the config account. If accepted, `amount` tokens are transferred to a new stake account
+     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).
      * The recipient of a transfer can't vote during the epoch of the transfer.
      */
     pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
