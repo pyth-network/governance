@@ -627,8 +627,8 @@ pub mod staking {
         // Split positions
         source_stake_account_positions.split(
             new_stake_account_positions,
-            &mut new_stake_account_metadata.next_index,
             &mut source_stake_account_metadata.next_index,
+            &mut new_stake_account_metadata.next_index,
             remaining_amount,
             split_request.amount,
             source_stake_account_custody.amount,
