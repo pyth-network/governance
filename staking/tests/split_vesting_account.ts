@@ -121,6 +121,8 @@ describe("split vesting account", async () => {
       },
       await samConnection.getTime()
     );
+
+    await samConnection.lockAllUnvested(stakeAccount);
   });
 
   it("request split", async () => {
