@@ -795,7 +795,7 @@
     {
       "name": "requestSplit",
       "docs": [
-        "* Any user of the staking program can request to split their account and\n     * give a part of it to another user. This is mostly useful to transfer unvested\n     * tokens.\n     * In the first step, the user requests a split by specifying the amount of tokens\n     * they want to give to the other user and the recipient's pubkey."
+        "* Any user of the staking program can request to split their account and\n     * give a part of it to another user.\n     * This is mostly useful to transfer unvested tokens. Each user can only have one active\n     * request at a time.\n     * In the first step, the user requests a split by specifying the `amount` of tokens\n     * they want to give to the other user and the `recipient`'s pubkey."
       ],
       "accounts": [
         {
@@ -880,7 +880,7 @@
     {
       "name": "acceptSplit",
       "docs": [
-        "* A split request can only be accepted by the pda_authority from\n     * the config account. If accepted `amount` tokens are transferred to the\n     * recipient and the split request is reset (by setting amount to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
+        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
       ],
       "accounts": [
         {
