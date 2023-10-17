@@ -301,23 +301,23 @@ pub struct RequestSplit<'info> {
 pub struct AcceptSplit<'info> {
     // Native payer:
     #[account(mut, address = config.pda_authority)]
-    pub payer:                               Signer<'info>,
+    pub payer:                              Signer<'info>,
     // Current stake accounts:
     #[account(mut)]
-    pub current_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
-    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), current_stake_account_positions.key().as_ref()], bump = current_stake_account_metadata.metadata_bump)]
-    pub current_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
-    #[account(seeds = [SPLIT_REQUEST.as_bytes(), current_stake_account_positions.key().as_ref()], bump)]
-    pub current_stake_account_split_request: Box<Account<'info, split_request::SplitRequest>>,
+    pub source_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.metadata_bump)]
+    pub source_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
+    #[account(seeds = [SPLIT_REQUEST.as_bytes(), source_stake_account_positions.key().as_ref()], bump)]
+    pub source_stake_account_split_request: Box<Account<'info, split_request::SplitRequest>>,
     #[account(
         mut,
-        seeds = [CUSTODY_SEED.as_bytes(), current_stake_account_positions.key().as_ref()],
-        bump = current_stake_account_metadata.custody_bump,
+        seeds = [CUSTODY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()],
+        bump = source_stake_account_metadata.custody_bump,
     )]
-    pub current_stake_account_custody:       Account<'info, TokenAccount>,
+    pub source_stake_account_custody:       Account<'info, TokenAccount>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
-    #[account(seeds = [AUTHORITY_SEED.as_bytes(), current_stake_account_positions.key().as_ref()], bump = current_stake_account_metadata.authority_bump)]
-    pub current_custody_authority:           AccountInfo<'info>,
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.authority_bump)]
+    pub source_custody_authority:           AccountInfo<'info>,
 
     // New stake accounts :
     #[account(zero)]
@@ -361,9 +361,9 @@ impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
 {
     fn from(accounts: &AcceptSplit<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from:      accounts.current_stake_account_custody.to_account_info(),
+            from:      accounts.source_stake_account_custody.to_account_info(),
             to:        accounts.new_stake_account_custody.to_account_info(),
-            authority: accounts.current_custody_authority.to_account_info(),
+            authority: accounts.source_custody_authority.to_account_info(),
         };
         let cpi_program = accounts.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)

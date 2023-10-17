@@ -535,6 +535,13 @@ pub mod staking {
         }
     }
 
+    /**
+     * Any user of the staking program can request to split their account and
+     * give a part of it to another user. This is mostly useful to transfer unvested
+     * tokens.
+     * In the first step, the user requests a split by specifying the amount of tokens
+     * they want to give to the other user and the recipient's pubkey.
+     */
     pub fn request_split(ctx: Context<RequestSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         ctx.accounts.stake_account_split_request.amount = amount;
         ctx.accounts.stake_account_split_request.recipient = recipient;
@@ -542,6 +549,12 @@ pub mod staking {
     }
 
 
+    /**
+     * A split request can only be accepted by the pda_authority from
+     * the config account. If accepted `amount` tokens are transferred to the
+     * recipient and the split request is reset (by setting amount to 0).
+     * The recipient of a transfer can't vote during the epoch of the transfer.
+     */
     pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
         // TODO : Split vesting schedule between both accounts
 
@@ -551,12 +564,12 @@ pub mod staking {
 
         // Transfer tokens
         {
-            let split_request = &ctx.accounts.current_stake_account_split_request;
+            let split_request = &ctx.accounts.source_stake_account_split_request;
             transfer(
                 CpiContext::from(&*ctx.accounts).with_signer(&[&[
                     AUTHORITY_SEED.as_bytes(),
-                    ctx.accounts.current_stake_account_positions.key().as_ref(),
-                    &[ctx.accounts.current_stake_account_metadata.authority_bump],
+                    ctx.accounts.source_stake_account_positions.key().as_ref(),
+                    &[ctx.accounts.source_stake_account_metadata.authority_bump],
                 ]]),
                 split_request.amount,
             )?;
@@ -564,7 +577,7 @@ pub mod staking {
 
         // Delete current request
         {
-            ctx.accounts.current_stake_account_split_request.amount = 0;
+            ctx.accounts.source_stake_account_split_request.amount = 0;
         }
         err!(ErrorCode::NotImplemented)
     }
