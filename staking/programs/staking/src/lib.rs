@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::result_large_err)]
+#![allow(clippy::too_many_arguments)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 

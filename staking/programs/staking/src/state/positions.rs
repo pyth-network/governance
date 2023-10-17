@@ -112,7 +112,7 @@ impl PositionData {
                 }
             }
         }
-        return Ok(exposure);
+        Ok(exposure)
     }
 
     pub fn split(
@@ -200,7 +200,7 @@ impl PositionData {
         }
 
 
-        return Ok(());
+        Ok(())
     }
 }
 
