@@ -572,10 +572,10 @@ pub mod staking {
             Account<'_, state::stake_account::StakeAccountMetadataV2>,
         > = &mut ctx.accounts.new_stake_account_metadata;
         new_stake_account_metadata.initialize(
-            *ctx.bumps.get("stake_account_metadata").unwrap(),
-            *ctx.bumps.get("stake_account_custody").unwrap(),
-            *ctx.bumps.get("custody_authority").unwrap(),
-            *ctx.bumps.get("voter_record").unwrap(),
+            *ctx.bumps.get("new_stake_account_metadata").unwrap(),
+            *ctx.bumps.get("new_stake_account_custody").unwrap(),
+            *ctx.bumps.get("new_custody_authority").unwrap(),
+            *ctx.bumps.get("new_voter_record").unwrap(),
             &split_request.recipient,
             None,
         );
