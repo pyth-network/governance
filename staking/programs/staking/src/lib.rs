@@ -547,6 +547,8 @@ pub mod staking {
 
         // TODO : Transfer stake positions to the new account if need
 
+        // TODO Check both accounts are valid after the transfer
+
         // Transfer tokens
         {
             let split_request = &ctx.accounts.current_stake_account_split_request;
@@ -564,8 +566,6 @@ pub mod staking {
         {
             ctx.accounts.current_stake_account_split_request.amount = 0;
         }
-        Ok(())
-
-        // TODO Check both accounts are valid after the transfer
+        err!(ErrorCode::NotImplemented)
     }
 }
