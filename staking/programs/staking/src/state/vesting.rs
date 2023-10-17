@@ -258,48 +258,40 @@ impl VestingSchedule {
                 start_date,
                 period_duration,
                 num_periods,
-            } => {
-                return Ok((
-                    VestingSchedule::PeriodicVesting {
-                        initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128))
-                            as u64,
-                        start_date:      *start_date,
-                        period_duration: *period_duration,
-                        num_periods:     *num_periods,
-                    },
-                    VestingSchedule::PeriodicVesting {
-                        initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128))
-                            as u64,
-                        start_date:      *start_date,
-                        period_duration: *period_duration,
-                        num_periods:     *num_periods,
-                    },
-                ));
-            }
+            } => Ok((
+                VestingSchedule::PeriodicVesting {
+                    initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    start_date:      *start_date,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+                VestingSchedule::PeriodicVesting {
+                    initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    start_date:      *start_date,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+            )),
             VestingSchedule::PeriodicVestingAfterListing {
                 initial_balance,
                 period_duration,
                 num_periods,
-            } => {
-                return Ok((
-                    VestingSchedule::PeriodicVestingAfterListing {
-                        initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128))
-                            as u64,
-                        period_duration: *period_duration,
-                        num_periods:     *num_periods,
-                    },
-                    VestingSchedule::PeriodicVestingAfterListing {
-                        initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128))
-                            as u64,
-                        period_duration: *period_duration,
-                        num_periods:     *num_periods,
-                    },
-                ));
-            }
+            } => Ok((
+                VestingSchedule::PeriodicVestingAfterListing {
+                    initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+                VestingSchedule::PeriodicVestingAfterListing {
+                    initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+            )),
         }
     }
 }

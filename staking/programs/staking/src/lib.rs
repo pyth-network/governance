@@ -53,10 +53,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use {
-        crate::state::stake_account,
-        state::split_request,
-    };
+
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
@@ -595,7 +592,7 @@ pub mod staking {
 
         // Pre-check
         utils::risk::validate(
-            &source_stake_account_positions,
+            source_stake_account_positions,
             source_stake_account_custody.amount,
             source_stake_account_metadata.lock.get_unvested_balance(
                 utils::clock::get_current_time(config),
@@ -654,7 +651,7 @@ pub mod staking {
 
         // Post-check
         utils::risk::validate(
-            &source_stake_account_positions,
+            source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
             ctx.accounts
                 .source_stake_account_metadata
@@ -668,7 +665,7 @@ pub mod staking {
         )?;
 
         utils::risk::validate(
-            &new_stake_account_positions,
+            new_stake_account_positions,
             ctx.accounts.new_stake_account_custody.amount,
             ctx.accounts
                 .new_stake_account_metadata
