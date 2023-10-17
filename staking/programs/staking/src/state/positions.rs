@@ -1,5 +1,4 @@
 use {
-    super::target,
     crate::error::ErrorCode,
     anchor_lang::{
         prelude::{
@@ -12,10 +11,7 @@ use {
         },
     },
     std::{
-        convert::{
-            TryFrom,
-            TryInto,
-        },
+        convert::TryInto,
         fmt::{
             self,
             Debug,
@@ -149,7 +145,7 @@ impl PositionData {
             let mut excess_governance_exposure =
                 governance_exposure.saturating_sub(remaining_amount);
 
-            while (excess_governance_exposure > 0 && *src_next_index > 0) {
+            while excess_governance_exposure > 0 && *src_next_index > 0 {
                 let index = TryInto::<usize>::try_into(*src_next_index - 1)
                     .map_err(|_| ErrorCode::GenericOverflow)?;
                 match self.read_position(index)? {
