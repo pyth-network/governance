@@ -19,6 +19,7 @@ pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
 pub const VOTING_TARGET_SEED: &str = "voting";
 pub const DATA_TARGET_SEED: &str = "staking";
+pub const SPLIT_REQUEST: &str = "split_request";
 
 impl positions::Target {
     pub fn get_seed(&self) -> Vec<u8> {
@@ -276,6 +277,97 @@ pub struct CreateTarget<'info> {
         bump)]
     pub target_account:    Account<'info, target::TargetMetadata>,
     pub system_program:    Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(amount : u64, recipient : Pubkey)]
+pub struct RequestSplit<'info> {
+    // Native payer:
+    #[account(mut, address = stake_account_metadata.owner)]
+    pub payer:                       Signer<'info>,
+    // Stake program accounts:
+    pub stake_account_positions:     AccountLoader<'info, positions::PositionData>,
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:      Account<'info, stake_account::StakeAccountMetadataV2>,
+    #[account(init_if_needed, payer = payer, space=split_request::SplitRequest::LEN ,  seeds = [SPLIT_REQUEST.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    pub stake_account_split_request: Account<'info, split_request::SplitRequest>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:                      Account<'info, global_config::GlobalConfig>,
+    // Primitive accounts :
+    pub system_program:              Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptSplit<'info> {
+    // Native payer:
+    #[account(mut, address = config.pda_authority)]
+    pub payer:                              Signer<'info>,
+    // Current stake accounts:
+    #[account(mut)]
+    pub source_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.metadata_bump)]
+    pub source_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
+    #[account(seeds = [SPLIT_REQUEST.as_bytes(), source_stake_account_positions.key().as_ref()], bump)]
+    pub source_stake_account_split_request: Box<Account<'info, split_request::SplitRequest>>,
+    #[account(
+        mut,
+        seeds = [CUSTODY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()],
+        bump = source_stake_account_metadata.custody_bump,
+    )]
+    pub source_stake_account_custody:       Box<Account<'info, TokenAccount>>,
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.authority_bump)]
+    pub source_custody_authority:           AccountInfo<'info>,
+
+    // New stake accounts :
+    #[account(zero)]
+    pub new_stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    #[account(init, payer = payer, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
+    pub new_stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
+    #[account(
+        init,
+        seeds = [CUSTODY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
+        bump,
+        payer = payer,
+        token::mint = mint,
+        token::authority = new_custody_authority,
+    )]
+    pub new_stake_account_custody:   Box<Account<'info, TokenAccount>>,
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
+    pub new_custody_authority:       AccountInfo<'info>,
+    #[account(
+        init,
+        payer = payer,
+        space = voter_weight_record::VoterWeightRecord::LEN,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
+        bump)]
+    pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config: Box<Account<'info, global_config::GlobalConfig>>,
+
+    // Pyth token mint:
+    #[account(address = config.pyth_token_mint)]
+    pub mint:           Box<Account<'info, Mint>>,
+    // Primitive accounts :
+    pub rent:           Sysvar<'info, Rent>,
+    pub token_program:  Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
+{
+    fn from(accounts: &AcceptSplit<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from:      accounts.source_stake_account_custody.to_account_info(),
+            to:        accounts.new_stake_account_custody.to_account_info(),
+            authority: accounts.source_custody_authority.to_account_info(),
+        };
+        let cpi_program = accounts.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed

@@ -324,7 +324,8 @@ export async function initConfig(
 
 export function makeDefaultConfig(
   pythMint: PublicKey,
-  governanceProgram: PublicKey = PublicKey.unique()
+  governanceProgram: PublicKey = PublicKey.unique(),
+  pdaAuthority: PublicKey = PublicKey.unique()
 ): GlobalConfig {
   return {
     governanceAuthority: null,
@@ -337,7 +338,7 @@ export function makeDefaultConfig(
     bump: 0,
     pythTokenListTime: null,
     governanceProgram,
-    pdaAuthority: PublicKey.unique(),
+    pdaAuthority,
   };
 }
 

@@ -1,6 +1,7 @@
 pub mod global_config;
 pub mod max_voter_weight_record;
 pub mod positions;
+pub mod split_request;
 pub mod stake_account;
 pub mod target;
 pub mod vesting;
