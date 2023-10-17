@@ -537,8 +537,9 @@ pub mod staking {
 
     /**
      * Any user of the staking program can request to split their account and
-     * give a part of it to another user. This is mostly useful to transfer unvested
-     * tokens.
+     * give a part of it to another user.
+     * This is mostly useful to transfer unvested tokens. Each user can only have one active
+     * request at a time.
      * In the first step, the user requests a split by specifying the `amount` of tokens
      * they want to give to the other user and the `recipient`'s pubkey.
      */
