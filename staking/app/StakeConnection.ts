@@ -838,7 +838,7 @@ export class StakeConnection {
     await this.program.methods
       .acceptSplit()
       .accounts({
-        currentStakeAccountPositions: stakeAccount.address,
+        sourceStakeAccountPositions: stakeAccount.address,
         newStakeAccountPositions: newStakeAccountKeypair.publicKey,
         mint: this.config.pythTokenMint,
       })
