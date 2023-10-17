@@ -13,6 +13,7 @@ import { StakeConnection, PythBalance, VestingAccountState } from "../app";
 import { BN, Wallet } from "@project-serum/anchor";
 import { assertBalanceMatches } from "./utils/api_utils";
 import assert from "assert";
+import { blob } from "stream/consumers";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
@@ -134,11 +135,44 @@ describe("split vesting account", async () => {
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     await samConnection.requestSplit(
       stakeAccount,
-      PythBalance.fromString("50"),
+      PythBalance.fromString("33"),
       alice.publicKey
     );
 
     await pdaConnection.acceptSplit(stakeAccount);
+
+    let sourceStakeAccount = await samConnection.getMainAccount(sam.publicKey);
+    let newStakeAccount = await samConnection.getMainAccount(alice.publicKey);
+
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        sourceStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      sam.publicKey,
+      {
+        unvested: {
+          locking: PythBalance.fromString("67"),
+        },
+      },
+      await samConnection.getTime()
+    );
+
+    assert(
+      VestingAccountState.UnvestedTokensFullyLocked ==
+        newStakeAccount.getVestingAccountState(await samConnection.getTime())
+    );
+    await assertBalanceMatches(
+      samConnection,
+      alice.publicKey,
+      {
+        unvested: {
+          locking: PythBalance.fromString("33"),
+        },
+      },
+      await samConnection.getTime()
+    );
   });
 
   after(async () => {

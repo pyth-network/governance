@@ -574,7 +574,7 @@ pub mod staking {
             *ctx.bumps.get("new_custody_authority").unwrap(),
             *ctx.bumps.get("new_voter_record").unwrap(),
             &split_request.recipient,
-            None,
+            Some(current_epoch),
         );
 
         let new_stake_account_positions =
