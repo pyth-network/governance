@@ -235,6 +235,73 @@ impl VestingSchedule {
             amount,
         }))
     }
+
+    pub fn split_vesting_schedule(
+        &self,
+        remaining_amount: u64,
+        transferred_amount: u64,
+        total_amount: u64,
+    ) -> Result<(VestingSchedule, VestingSchedule)> {
+        require!(
+            transferred_amount
+                .checked_add(remaining_amount)
+                .ok_or(ErrorCode::Other)?
+                == total_amount,
+            ErrorCode::SanityCheckFailed
+        );
+        match self {
+            VestingSchedule::FullyVested => {
+                Ok((VestingSchedule::FullyVested, VestingSchedule::FullyVested))
+            }
+            VestingSchedule::PeriodicVesting {
+                initial_balance,
+                start_date,
+                period_duration,
+                num_periods,
+            } => {
+                return Ok((
+                    VestingSchedule::PeriodicVesting {
+                        initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
+                            / (total_amount as u128))
+                            as u64,
+                        start_date:      *start_date,
+                        period_duration: *period_duration,
+                        num_periods:     *num_periods,
+                    },
+                    VestingSchedule::PeriodicVesting {
+                        initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
+                            / (total_amount as u128))
+                            as u64,
+                        start_date:      *start_date,
+                        period_duration: *period_duration,
+                        num_periods:     *num_periods,
+                    },
+                ));
+            }
+            VestingSchedule::PeriodicVestingAfterListing {
+                initial_balance,
+                period_duration,
+                num_periods,
+            } => {
+                return Ok((
+                    VestingSchedule::PeriodicVestingAfterListing {
+                        initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
+                            / (total_amount as u128))
+                            as u64,
+                        period_duration: *period_duration,
+                        num_periods:     *num_periods,
+                    },
+                    VestingSchedule::PeriodicVestingAfterListing {
+                        initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
+                            / (total_amount as u128))
+                            as u64,
+                        period_duration: *period_duration,
+                        num_periods:     *num_periods,
+                    },
+                ));
+            }
+        }
+    }
 }
 
 #[cfg(test)]

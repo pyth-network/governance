@@ -53,6 +53,10 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use {
+        crate::state::stake_account,
+        state::split_request,
+    };
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
@@ -113,25 +117,24 @@ pub mod staking {
         let config = &ctx.accounts.config;
         config.check_frozen()?;
 
-        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
-        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
-        stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
-        stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
-        stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
-        stake_account_metadata.owner = owner;
-        stake_account_metadata.next_index = 0;
-
-        stake_account_metadata.lock = lock;
-        stake_account_metadata.transfer_epoch = None;
+        let stake_account_metadata: &mut Box<
+            Account<'_, state::stake_account::StakeAccountMetadataV2>,
+        > = &mut ctx.accounts.stake_account_metadata;
+        stake_account_metadata.initialize(
+            *ctx.bumps.get("stake_account_metadata").unwrap(),
+            *ctx.bumps.get("stake_account_custody").unwrap(),
+            *ctx.bumps.get("custody_authority").unwrap(),
+            *ctx.bumps.get("voter_record").unwrap(),
+            &owner,
+            None,
+        );
+        stake_account_metadata.set_lock(lock);
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.owner = owner;
+        stake_account_positions.initialize(&owner);
 
         let voter_record = &mut ctx.accounts.voter_record;
-
-        voter_record.realm = config.pyth_governance_realm;
-        voter_record.governing_token_mint = config.pyth_token_mint;
-        voter_record.governing_token_owner = owner;
+        voter_record.initialize(config, &owner);
 
         Ok(())
     }
@@ -557,15 +560,84 @@ pub mod staking {
      * The recipient of a transfer can't vote during the epoch of the transfer.
      */
     pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
-        // TODO : Split vesting schedule between both accounts
+        let config = &ctx.accounts.config;
+        config.check_frozen()?;
 
-        // TODO : Transfer stake positions to the new account if need
+        let current_epoch = get_current_epoch(config)?;
 
-        // TODO Check both accounts are valid after the transfer
+        let split_request = &ctx.accounts.source_stake_account_split_request;
 
-        // Transfer tokens
+        // Initialize new accounts
+        let new_stake_account_metadata: &mut Box<
+            Account<'_, state::stake_account::StakeAccountMetadataV2>,
+        > = &mut ctx.accounts.new_stake_account_metadata;
+        new_stake_account_metadata.initialize(
+            *ctx.bumps.get("stake_account_metadata").unwrap(),
+            *ctx.bumps.get("stake_account_custody").unwrap(),
+            *ctx.bumps.get("custody_authority").unwrap(),
+            *ctx.bumps.get("voter_record").unwrap(),
+            &split_request.recipient,
+            None,
+        );
+
+        let new_stake_account_positions =
+            &mut ctx.accounts.new_stake_account_positions.load_init()?;
+        new_stake_account_positions.initialize(&split_request.recipient);
+
+        let new_voter_record = &mut ctx.accounts.new_voter_record;
+        new_voter_record.initialize(config, &split_request.recipient);
+
+        // Split off source account
+        let source_stake_account_custody = &ctx.accounts.source_stake_account_custody;
+        let source_stake_account_metadata = &mut ctx.accounts.source_stake_account_metadata;
+        let source_stake_account_positions =
+            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
+
+        // Pre-check
+        utils::risk::validate(
+            &source_stake_account_positions,
+            source_stake_account_custody.amount,
+            source_stake_account_metadata.lock.get_unvested_balance(
+                utils::clock::get_current_time(config),
+                config.pyth_token_list_time,
+            )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
+        require!(
+            split_request.amount < source_stake_account_custody.amount,
+            ErrorCode::SplitTooManyTokens
+        );
+        let remaining_amount = source_stake_account_custody
+            .amount
+            .saturating_sub(split_request.amount);
+
+        // Split vesting account
+        let (source_vesting_account, new_vesting_account) =
+            source_stake_account_metadata.lock.split_vesting_schedule(
+                remaining_amount,
+                split_request.amount,
+                source_stake_account_custody.amount,
+            )?;
+        source_stake_account_metadata.set_lock(source_vesting_account);
+        new_stake_account_metadata.set_lock(new_vesting_account);
+
+        // Split positions
+        source_stake_account_positions.split(
+            new_stake_account_positions,
+            &mut new_stake_account_metadata.next_index,
+            &mut source_stake_account_metadata.next_index,
+            remaining_amount,
+            split_request.amount,
+            source_stake_account_custody.amount,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+
         {
-            let split_request = &ctx.accounts.source_stake_account_split_request;
             transfer(
                 CpiContext::from(&*ctx.accounts).with_signer(&[&[
                     AUTHORITY_SEED.as_bytes(),
@@ -576,10 +648,42 @@ pub mod staking {
             )?;
         }
 
+        ctx.accounts.source_stake_account_custody.reload()?;
+        ctx.accounts.new_stake_account_custody.reload()?;
+
+
+        // Post-check
+        utils::risk::validate(
+            &source_stake_account_positions,
+            ctx.accounts.source_stake_account_custody.amount,
+            ctx.accounts
+                .source_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        utils::risk::validate(
+            &new_stake_account_positions,
+            ctx.accounts.new_stake_account_custody.amount,
+            ctx.accounts
+                .new_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
         // Delete current request
-        {
-            ctx.accounts.source_stake_account_split_request.amount = 0;
-        }
+        ctx.accounts.source_stake_account_split_request.amount = 0;
+
         err!(ErrorCode::NotImplemented)
     }
 }

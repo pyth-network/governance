@@ -20,7 +20,6 @@ use {
     },
 };
 
-
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
 /// If it passes the risk check, it returns the max amount of vested balance

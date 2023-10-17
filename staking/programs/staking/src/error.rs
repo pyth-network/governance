@@ -61,6 +61,12 @@ pub enum ErrorCode {
     PositionOutOfBounds,
     #[msg("Can't vote during an account's transfer epoch")] //6028
     VoteDuringTransferEpoch,
-    #[msg("Other")] //6029
+    #[msg("Can't split 0 tokens from an account")] // 6029
+    SplitZeroTokens,
+    #[msg("Can't split more tokens than are in the account")] // 6030
+    SplitTooManyTokens,
+    #[msg("Sanity check failed")] // 6031
+    SanityCheckFailed,
+    #[msg("Other")] //6032
     Other,
 }

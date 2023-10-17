@@ -136,10 +136,7 @@ describe("split vesting account", async () => {
       alice.publicKey
     );
 
-    try {
-      await pdaConnection.acceptSplit(stakeAccount);
-      throw Error("This should've failed");
-    } catch {}
+    await pdaConnection.acceptSplit(stakeAccount);
   });
 
   after(async () => {
