@@ -169,11 +169,10 @@ impl VestingSchedule {
                 // therefore the unwrap can't fail.
                 // We round the unvested amount down, this makes the arithmetic for splitting accounts simpler.
                 let remaning_periods = num_periods.saturating_sub(periods_passed);
-                let unvested = (((remaning_periods as u128) * (initial_balance as u128))
-                    / (num_periods as u128))
+
+                (((remaning_periods as u128) * (initial_balance as u128)) / (num_periods as u128))
                     .try_into()
-                    .unwrap();
-                unvested
+                    .unwrap()
             }
         }
     }
