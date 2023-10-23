@@ -1,5 +1,8 @@
 use {
-    crate::state::*,
+    crate::{
+        error::ErrorCode,
+        state::*,
+    },
     anchor_lang::prelude::*,
     anchor_spl::token::{
         Mint,
@@ -380,7 +383,7 @@ pub struct JoinDaoLlc<'info> {
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, constraint = config.agreement_hash == agreement_hash)]
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, constraint = config.agreement_hash == agreement_hash @ ErrorCode::InvalidLlcAgreement)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
 }
 

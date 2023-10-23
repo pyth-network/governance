@@ -1887,6 +1887,11 @@ export type Staking = {
     },
     {
       "code": 6030,
+      "name": "InvalidLlcAgreement",
+      "msg": "Invalid LLC agreement"
+    },
+    {
+      "code": 6031,
       "name": "Other",
       "msg": "Other"
     }
@@ -3782,6 +3787,11 @@ export const IDL: Staking = {
     },
     {
       "code": 6030,
+      "name": "InvalidLlcAgreement",
+      "msg": "Invalid LLC agreement"
+    },
+    {
+      "code": 6031,
       "name": "Other",
       "msg": "Other"
     }

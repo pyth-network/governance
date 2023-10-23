@@ -187,18 +187,50 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
-    transaction.add(
-      await program.methods
-        .joinDaoLlc(getDummyAgreementHash())
-        .accounts({
-          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        })
-        .instruction()
-    );
 
     const tx = await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });
+  });
+
+  it("stakes before accepting LLC agreement", async () => {
+    await expectFail(
+      program.methods
+        .createPosition(votingProduct, PythBalance.fromString("102").toBN())
+        .accounts({
+          targetAccount: votingProductMetadataAccount,
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
+      "You need to be an LLC member to perform this action",
+      errMap
+    );
+
+    await expectFail(
+      stakeConnection.program.methods
+        .updateVoterWeight({ castVote: {} })
+        .accounts({
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        }),
+      "You need to be an LLC member to perform this action",
+      errMap
+    );
+  });
+
+  it("accepts the LLC agreement", async () => {
+    await expectFail(
+      program.methods.joinDaoLlc(Array.from(new Uint8Array(32))).accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+      }),
+      "Invalid LLC agreement",
+      errMap
+    );
+
+    await program.methods
+      .joinDaoLlc(getDummyAgreementHash())
+      .accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+      })
+      .rpc();
   });
 
   it("withdraws tokens", async () => {
