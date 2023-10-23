@@ -123,6 +123,7 @@ pub mod staking {
 
         stake_account_metadata.lock = lock;
         stake_account_metadata.transfer_epoch = None;
+        stake_account_metadata.is_llc_member = false;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
@@ -157,6 +158,7 @@ pub mod staking {
         let target_account = &mut ctx.accounts.target_account;
 
         config.check_frozen()?;
+        ctx.accounts.stake_account_metadata.check_is_llc_member()?;
 
         let new_position = Position {
             amount,
@@ -389,6 +391,8 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let governance_target = &mut ctx.accounts.governance_target;
 
+        ctx.accounts.stake_account_metadata.check_is_llc_member()?;
+
         let current_epoch = get_current_epoch(config).unwrap();
         governance_target.update(current_epoch)?;
 
@@ -581,5 +585,14 @@ pub mod staking {
             ctx.accounts.source_stake_account_split_request.amount = 0;
         }
         err!(ErrorCode::NotImplemented)
+    }
+
+    /**
+     * Accept to join the DAO LLC
+     * This must happen before staking token and voting
+     */
+    pub fn join_dao_llc(ctx: Context<JoinDaoLlc>, _agreement_hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.stake_account_metadata.is_llc_member = true;
+        Ok(())
     }
 }

@@ -1,5 +1,8 @@
 use {
-    crate::state::vesting::VestingSchedule,
+    crate::{
+        error::ErrorCode,
+        state::vesting::VestingSchedule,
+    },
     anchor_lang::prelude::{
         borsh::BorshSchema,
         *,
@@ -21,10 +24,19 @@ pub struct StakeAccountMetadataV2 {
     pub lock:           VestingSchedule,
     pub next_index:     u8,
     pub transfer_epoch: Option<u64>, // null if the account was created, some epoch if the account received a transfer
+    pub is_llc_member:  bool,
 }
 
 impl StakeAccountMetadataV2 {
     pub const LEN: usize = 200;
+
+    pub fn check_is_llc_member(&self) -> Result<()> {
+        if self.is_llc_member {
+            Ok(())
+        } else {
+            err!(ErrorCode::NotLlcMember)
+        }
+    }
 }
 
 #[cfg(test)]

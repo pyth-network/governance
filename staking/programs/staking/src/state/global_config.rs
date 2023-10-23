@@ -21,6 +21,7 @@ pub struct GlobalConfig {
     /// Once this value is set, vesting schedules that depend on the token list date can start
     /// vesting.
     pub pyth_token_list_time: Option<i64>,
+    pub agreement_hash:       [u8; 32],
 
     #[cfg(feature = "mock-clock")]
     pub mock_clock_time: i64, /* this field needs to be greater than 0 otherwise the API
