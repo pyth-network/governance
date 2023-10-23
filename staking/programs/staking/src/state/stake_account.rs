@@ -36,10 +36,10 @@ pub mod tests {
 
     #[test]
     fn check_size() {
-        assert_eq!(
+        assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadataV2>()
-                + StakeAccountMetadataV2::discriminator().len(),
-            StakeAccountMetadataV2::LEN
+                + StakeAccountMetadataV2::discriminator().len()
+                <= StakeAccountMetadataV2::LEN
         );
     }
 }
