@@ -450,6 +450,24 @@ export class StakeConnection {
     return stakeAccountKeypair;
   }
 
+  public async isLlcMember(stakeAccount: StakeAccount) {
+    return stakeAccount.stakeAccountMetadata.isLlcMember;
+  }
+
+  public async withJoinDaoLlc(
+    instructions: TransactionInstruction[],
+    stakeAccountAddress: PublicKey
+  ) {
+    instructions.push(
+      await this.program.methods
+        .joinDaoLlc(this.config.agreementHash)
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+        })
+        .instruction()
+    );
+  }
+
   private async buildCloseInstruction(
     stakeAccountPositionsAddress: PublicKey,
     index: number,
@@ -537,6 +555,10 @@ export class StakeConnection {
       );
     }
 
+    if (!this.isLlcMember(stakeAccount)) {
+      await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
+    }
+
     transaction.instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amountBN)
@@ -605,6 +627,10 @@ export class StakeConnection {
         this.config.pythTokenMint,
         owner
       );
+    }
+
+    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
+      await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
     ixs.push(
@@ -706,6 +732,10 @@ export class StakeConnection {
         this.config.pythTokenMint,
         owner
       );
+    }
+
+    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
+      await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
     ixs.push(

@@ -65,6 +65,7 @@ pub mod staking {
         config_account.pda_authority = global_config.pda_authority;
         config_account.governance_program = global_config.governance_program;
         config_account.pyth_token_list_time = None;
+        config_account.agreement_hash = global_config.agreement_hash;
 
         #[cfg(feature = "mock-clock")]
         {

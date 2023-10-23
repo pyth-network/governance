@@ -24,6 +24,7 @@ import {
   getPortNumber,
   makeDefaultConfig,
   CustomAbortController,
+  getDummyAgreementHash,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 import { PositionAccountJs } from "../app/PositionAccountJs";
@@ -158,6 +159,7 @@ describe("staking", async () => {
         lock: { fullyVested: {} },
         nextIndex: 0,
         transferEpoch: null,
+        isLlcMember: false,
       })
     );
   });
@@ -185,6 +187,15 @@ describe("staking", async () => {
       101
     );
     transaction.add(ix);
+    transaction.add(
+      await program.methods
+        .joinDaoLlc(getDummyAgreementHash())
+        .accounts({
+          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+        })
+        .instruction()
+    );
+
     const tx = await provider.sendAndConfirm(transaction, [], {
       skipPreflight: DEBUG,
     });

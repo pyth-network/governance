@@ -66,7 +66,7 @@ describe("vesting", async () => {
     );
   });
 
-  it("create acccount with a lockup", async () => {
+  it("create account with a lockup", async () => {
     await samConnection.provider.connection.requestAirdrop(
       sam.publicKey,
       1_000_000_000_000
@@ -92,6 +92,11 @@ describe("vesting", async () => {
           numPeriods: new BN(72),
         },
       }
+    );
+
+    await samConnection.withJoinDaoLlc(
+      transaction.instructions,
+      stakeAccountKeypair.publicKey
     );
 
     transaction.instructions.push(
