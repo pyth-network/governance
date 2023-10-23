@@ -63,6 +63,7 @@ pub mod tests {
             pyth_token_list_time:                           None,
             pda_authority:                                  Pubkey::default(),
             governance_program:                             Pubkey::default(),
+            agreement_hash:                                 [0; 32],
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };
@@ -83,6 +84,7 @@ pub mod tests {
             pyth_token_list_time:                           None,
             pda_authority:                                  Pubkey::default(),
             governance_program:                             Pubkey::default(),
+            agreement_hash:                                 [0; 32],
             #[cfg(feature = "mock-clock")]
             mock_clock_time:                                0,
         };

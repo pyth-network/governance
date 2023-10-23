@@ -42,8 +42,12 @@ impl StakeAccountMetadataV2 {
 #[cfg(test)]
 pub mod tests {
     use {
-        crate::state::stake_account::StakeAccountMetadataV2,
+        crate::state::{
+            stake_account::StakeAccountMetadataV2,
+            vesting::VestingSchedule,
+        },
         anchor_lang::Discriminator,
+        solana_program::pubkey::Pubkey,
     };
 
     #[test]
@@ -53,5 +57,38 @@ pub mod tests {
                 + StakeAccountMetadataV2::discriminator().len()
                 <= StakeAccountMetadataV2::LEN
         );
+    }
+
+    #[test]
+    fn check_is_llc_member() {
+        let stake_account_metadata_llc_member = StakeAccountMetadataV2 {
+            metadata_bump:  0,
+            custody_bump:   0,
+            authority_bump: 0,
+            voter_bump:     0,
+            owner:          Pubkey::default(),
+            lock:           VestingSchedule::FullyVested,
+            next_index:     0,
+            transfer_epoch: None,
+            is_llc_member:  true,
+        };
+        assert!(stake_account_metadata_llc_member
+            .check_is_llc_member()
+            .is_ok());
+
+        let stake_account_metadata_non_llc_member = StakeAccountMetadataV2 {
+            metadata_bump:  0,
+            custody_bump:   0,
+            authority_bump: 0,
+            voter_bump:     0,
+            owner:          Pubkey::default(),
+            lock:           VestingSchedule::FullyVested,
+            next_index:     0,
+            transfer_epoch: None,
+            is_llc_member:  false,
+        };
+        assert!(stake_account_metadata_non_llc_member
+            .check_is_llc_member()
+            .is_err());
     }
 }
