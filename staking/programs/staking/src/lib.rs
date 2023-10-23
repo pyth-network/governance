@@ -589,7 +589,8 @@ pub mod staking {
 
     /**
      * Accept to join the DAO LLC
-     * This must happen before staking token and voting
+     * This must happen before create_position or update_voter_weight
+     * The user signs a hash of the agreement and the program checks that the hash matches the agreement
      */
     pub fn join_dao_llc(ctx: Context<JoinDaoLlc>, _agreement_hash: [u8; 32]) -> Result<()> {
         ctx.accounts.stake_account_metadata.is_llc_member = true;
