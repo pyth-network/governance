@@ -63,6 +63,6 @@ pub enum ErrorCode {
     VoteDuringTransferEpoch,
     #[msg("You need to be an LLC member to perform this action")] //6029
     NotLlcMember,
-    #[msg("Other")] //6029
+    #[msg("Other")] //6030
     Other,
 }
