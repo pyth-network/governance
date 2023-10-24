@@ -159,7 +159,7 @@ describe("staking", async () => {
         lock: { fullyVested: {} },
         nextIndex: 0,
         transferEpoch: null,
-        isLlcMember: false,
+        signedAgreementHash: null,
       })
     );
   });

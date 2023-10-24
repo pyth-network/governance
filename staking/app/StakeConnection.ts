@@ -451,7 +451,10 @@ export class StakeConnection {
   }
 
   public async isLlcMember(stakeAccount: StakeAccount) {
-    return stakeAccount.stakeAccountMetadata.isLlcMember;
+    return (
+      stakeAccount.stakeAccountMetadata.signedAgreementHash ==
+      this.config.agreementHash
+    );
   }
 
   public async withJoinDaoLlc(

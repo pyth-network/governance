@@ -1381,8 +1381,15 @@
             }
           },
           {
-            "name": "isLlcMember",
-            "type": "bool"
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
           }
         ]
       }

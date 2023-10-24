@@ -1381,8 +1381,15 @@ export type Staking = {
             }
           },
           {
-            "name": "isLlcMember",
-            "type": "bool"
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
           }
         ]
       }
@@ -3281,8 +3288,15 @@ export const IDL: Staking = {
             }
           },
           {
-            "name": "isLlcMember",
-            "type": "bool"
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
           }
         ]
       }
