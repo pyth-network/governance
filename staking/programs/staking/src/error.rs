@@ -61,12 +61,16 @@ pub enum ErrorCode {
     PositionOutOfBounds,
     #[msg("Can't vote during an account's transfer epoch")] //6028
     VoteDuringTransferEpoch,
-    #[msg("Can't split 0 tokens from an account")] // 6029
+    #[msg("You need to be an LLC member to perform this action")] //6029
+    NotLlcMember,
+    #[msg("Invalid LLC agreement")] // 6030
+    InvalidLlcAgreement,
+    #[msg("Can't split 0 tokens from an account")] // 6031
     SplitZeroTokens,
-    #[msg("Can't split more tokens than are in the account")] // 6030
+    #[msg("Can't split more tokens than are in the account")] // 6032
     SplitTooManyTokens,
-    #[msg("Sanity check failed")] // 6031
+    #[msg("Sanity check failed")] // 6033
     SanityCheckFailed,
-    #[msg("Other")] //6032
+    #[msg("Other")] //6031
     Other,
 }

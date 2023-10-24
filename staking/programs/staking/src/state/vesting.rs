@@ -160,19 +160,19 @@ impl VestingSchedule {
                 0
             } else {
                 // Amount that vests per period is (initial_balance / num_periods),
-                // but again, we need to do the math in 128 bit precision and make sure
-                // we round the vested balance down, so as to round the unvested balance up.
+                // but again, we need to do the math in 128 bit precision.
 
-                // Since we're in this branch, periods_passed <= num_periods, so vested <=
-                // initial_balance. Thus we know it can fit in a u64, so the unwrap
-                // can't fail.
-                let vested = (((periods_passed as u128) * (initial_balance as u128))
-                    / (num_periods as u128))
+                // Since we're in this branch, 0 <= periods_passed <= num_periods, so
+                // 0 <= remaining_periods <= num_periods.
+                // Additionally 0 <= initial_balance <= u64::MAX, so
+                // 0 <= unvested <= initial_balance <= u64::MAX
+                // therefore the unwrap can't fail.
+                // We round the unvested amount down, this makes the arithmetic for splitting accounts simpler.
+                let remaining_periods = num_periods.saturating_sub(periods_passed);
+
+                (((remaining_periods as u128) * (initial_balance as u128)) / (num_periods as u128))
                     .try_into()
-                    .unwrap();
-                // We also know then 0 <= vested <= initial_balance, so this unwrap can't fail
-                // either I still feel safer with the unwrap though
-                initial_balance.checked_sub(vested).unwrap()
+                    .unwrap()
             }
         }
     }
@@ -211,24 +211,22 @@ impl VestingSchedule {
             )
             .map_err(|_| error!(ErrorCode::GenericOverflow))?;
 
-        let current_vested: u64 = (((periods_passed as u128) * (initial_balance as u128))
-            / (num_periods as u128))
-            .try_into()
-            .map_err(|_| error!(ErrorCode::GenericOverflow))?;
+        let current_unvested: u64 = Self::periodic_vesting_helper(
+            current_time,
+            initial_balance,
+            start_date,
+            period_duration,
+            num_periods,
+        );
+        let next_period_unvested = Self::periodic_vesting_helper(
+            start_of_next_period,
+            initial_balance,
+            start_date,
+            period_duration,
+            num_periods,
+        );
 
-        let periods_passed_incremented = periods_passed
-            .checked_add(1)
-            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
-
-        let next_period_vested: u64 = (((periods_passed_incremented as u128)
-            * (initial_balance as u128))
-            / (num_periods as u128))
-            .try_into()
-            .map_err(|_| error!(ErrorCode::GenericOverflow))?;
-
-        let amount: u64 = next_period_vested
-            .checked_sub(current_vested)
-            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+        let amount: u64 = current_unvested.saturating_sub(next_period_unvested);
 
         Ok(Some(VestingEvent {
             time: start_of_next_period,
@@ -330,7 +328,7 @@ pub mod tests {
                     v.get_next_vesting(t, None).unwrap(),
                     Some(VestingEvent {
                         time:   6,
-                        amount: 3,
+                        amount: 4,
                     })
                 );
             } else if t <= 10 {
@@ -338,7 +336,7 @@ pub mod tests {
                 let locked_float = 20.0 + (t - 5) as f64 * -20.0 / 6.0;
                 assert_eq!(
                     v.get_unvested_balance(t, None).unwrap(),
-                    locked_float.ceil() as u64
+                    locked_float.floor() as u64
                 );
                 assert_eq!(
                     v.get_next_vesting(t, None).unwrap(),
@@ -401,7 +399,7 @@ pub mod tests {
             v.get_next_vesting(0, None).unwrap(),
             Some(VestingEvent {
                 time:   8,
-                amount: 2,
+                amount: 3,
             })
         );
         assert_eq!(v.get_unvested_balance(5, None).unwrap(), 20);
@@ -409,7 +407,7 @@ pub mod tests {
             v.get_next_vesting(5, None).unwrap(),
             Some(VestingEvent {
                 time:   8,
-                amount: 2,
+                amount: 3,
             })
         );
         assert_eq!(v.get_unvested_balance(5 + 7 * 3, None).unwrap(), 0);
@@ -421,7 +419,7 @@ pub mod tests {
             let locked_for_period = v.get_unvested_balance(t, None).unwrap();
             // Linearly interpolate from (0, 20) to (7, 0)
             let locked_float = f64::max(20.0 * (1.0 - period as f64 / 7.0), 0.0);
-            assert_eq!(locked_for_period, locked_float.ceil() as u64);
+            assert_eq!(locked_for_period, locked_float.floor() as u64);
             for _t_in_period in 0..3 {
                 assert_eq!(v.get_unvested_balance(t, None).unwrap(), locked_for_period);
                 if period < 7 {
@@ -453,12 +451,12 @@ pub mod tests {
         assert_eq!(v.get_unvested_balance(5 + 7 * 3, None).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(4, Some(5)).unwrap(), 20);
         assert_eq!(v.get_unvested_balance(5 + 7 * 3, Some(5)).unwrap(), 0);
-        assert_eq!(v.get_unvested_balance(5 + 7 * 3, Some(6)).unwrap(), 3);
+        assert_eq!(v.get_unvested_balance(5 + 7 * 3, Some(6)).unwrap(), 2);
         assert_eq!(
             v.get_next_vesting(4 + 7 * 3, Some(5)).unwrap(),
             Some(VestingEvent {
                 time:   26,
-                amount: 3,
+                amount: 2,
             })
         );
         assert_eq!(v.get_next_vesting(4 + 7 * 3, None).unwrap(), None);
@@ -470,7 +468,7 @@ pub mod tests {
             let locked_for_period = v.get_unvested_balance(t, Some(5)).unwrap();
             // Linearly interpolate from (0, 20) to (7, 0)
             let locked_float = f64::max(20.0 * (1.0 - period as f64 / 7.0), 0.0);
-            assert_eq!(locked_for_period, locked_float.ceil() as u64);
+            assert_eq!(locked_for_period, locked_float.floor() as u64);
             for _t_in_period in 0..3 {
                 assert_eq!(
                     v.get_unvested_balance(t, Some(5)).unwrap(),
@@ -520,7 +518,7 @@ pub mod tests {
             v.get_next_vesting(1 << 60, None).unwrap(),
             Some(VestingEvent {
                 time:   (1 << 60) + 1,
-                amount: 0,
+                amount: 1,
             })
         )
     }
@@ -535,15 +533,13 @@ pub mod tests {
             num_periods:     72,
         };
 
-        let tokens_per_period = 1_000 / 72;
-
         let value = v.get_unvested_balance(1, None).unwrap();
         assert_eq!(value, 1000);
         assert_eq!(
             v.get_next_vesting(1, None).unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
-                amount: 13,
+                amount: 14,
             })
         );
 
@@ -556,14 +552,14 @@ pub mod tests {
                 .unwrap(),
             Some(VestingEvent {
                 time:   one_month.try_into().unwrap(),
-                amount: 13,
+                amount: 14,
             })
         );
 
         let value = v
             .get_unvested_balance(one_month.try_into().unwrap(), None)
             .unwrap();
-        assert_eq!(value, 1000 - tokens_per_period);
+        assert_eq!(value, 986);
         assert_eq!(
             v.get_next_vesting(one_month.try_into().unwrap(), None)
                 .unwrap(),
@@ -576,7 +572,7 @@ pub mod tests {
         let value = v
             .get_unvested_balance((one_month * 2 - 1).try_into().unwrap(), None)
             .unwrap();
-        assert_eq!(value, 1000 - tokens_per_period);
+        assert_eq!(value, 986);
         assert_eq!(
             v.get_next_vesting((one_month * 2 - 1).try_into().unwrap(), None)
                 .unwrap(),
@@ -589,7 +585,7 @@ pub mod tests {
         let value = v
             .get_unvested_balance((one_month * 2).try_into().unwrap(), None)
             .unwrap();
-        assert_eq!(value, 973);
+        assert_eq!(value, 972);
         assert_eq!(
             v.get_next_vesting((one_month * 2).try_into().unwrap(), None)
                 .unwrap(),
@@ -602,14 +598,14 @@ pub mod tests {
         let value = v
             .get_unvested_balance((one_month * 72 - 1).try_into().unwrap(), None)
             .unwrap();
-        assert_eq!(value, 14);
+        assert_eq!(value, 13);
 
         assert_eq!(
             v.get_next_vesting((one_month * 72 - 1).try_into().unwrap(), None)
                 .unwrap(),
             Some(VestingEvent {
                 time:   (one_month * 72).try_into().unwrap(),
-                amount: 14,
+                amount: 13,
             })
         );
 

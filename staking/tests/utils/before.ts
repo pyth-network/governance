@@ -71,6 +71,10 @@ export function readAnchorConfig(pathToAnchorToml: string): AnchorConfig {
   return config;
 }
 
+export function getDummyAgreementHash(): number[] {
+  return Array.from({ length: 32 }, (_, i) => i);
+}
+
 /**
  * Deterministically determines the port for deploying the validator basing of the index of the testfile in the sorted
  * list of all testsfiles.
@@ -339,6 +343,7 @@ export function makeDefaultConfig(
     pythTokenListTime: null,
     governanceProgram,
     pdaAuthority,
+    agreementHash: getDummyAgreementHash(),
   };
 }
 

@@ -11,6 +11,7 @@ import {
   getPortNumber,
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
+  getDummyAgreementHash,
 } from "./utils/before";
 import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
@@ -86,6 +87,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
       })
       .rpc({
@@ -125,6 +127,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
       })
     );
@@ -150,6 +153,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(15),
       })
     );
@@ -173,6 +177,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
       })
     );
@@ -200,6 +205,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: new BN(5),
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
       })
     );
@@ -223,6 +229,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
       })
     );
@@ -248,6 +255,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
       })
     );
@@ -297,6 +305,7 @@ describe("config", async () => {
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
       })
     );

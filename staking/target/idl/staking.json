@@ -1092,6 +1092,68 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "joinDaoLlc",
+      "docs": [
+        "* Accept to join the DAO LLC\n     * This must happen before create_position or update_voter_weight\n     * The user signs a hash of the agreement and the program checks that the hash matches the agreement"
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agreementHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1145,6 +1207,15 @@
             ],
             "type": {
               "option": "i64"
+            }
+          },
+          {
+            "name": "agreementHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           },
           {
@@ -1307,6 +1378,17 @@
             "name": "transferEpoch",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
             }
           }
         ]
@@ -1807,21 +1889,31 @@
     },
     {
       "code": 6029,
+      "name": "NotLlcMember",
+      "msg": "You need to be an LLC member to perform this action"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidLlcAgreement",
+      "msg": "Invalid LLC agreement"
+    },
+    {
+      "code": 6031,
       "name": "SplitZeroTokens",
       "msg": "Can't split 0 tokens from an account"
     },
     {
-      "code": 6030,
+      "code": 6032,
       "name": "SplitTooManyTokens",
       "msg": "Can't split more tokens than are in the account"
     },
     {
-      "code": 6031,
+      "code": 6033,
       "name": "SanityCheckFailed",
       "msg": "Sanity check failed"
     },
     {
-      "code": 6032,
+      "code": 6034,
       "name": "Other",
       "msg": "Other"
     }
