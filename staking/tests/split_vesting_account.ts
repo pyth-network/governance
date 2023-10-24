@@ -94,6 +94,11 @@ describe("split vesting account", async () => {
       }
     );
 
+    await samConnection.withJoinDaoLlc(
+      transaction.instructions,
+      stakeAccountKeypair.publicKey
+    );
+
     transaction.instructions.push(
       await samConnection.buildTransferInstruction(
         stakeAccountKeypair.publicKey,
