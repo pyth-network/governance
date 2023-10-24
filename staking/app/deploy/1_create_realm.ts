@@ -7,10 +7,10 @@ import {
 import { Transaction, Connection } from "@solana/web3.js";
 import { BN } from "bn.js";
 
-import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./devnet";
+import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./mainnet_beta";
 import { STAKING_ADDRESS, GOVERNANCE_ADDRESS } from "../constants";
 // Actual transaction hash :
-// mainnet-beta : 3es1jwFLTwMBSSyVyRJ6kcJK9MmYgoJxBqBLVv6D8iKYJ1Jj2jQ9UA24ZDnJ1jqU3BVvLGMifgaGdhnhsturdtTF
+// mainnet-beta (24/10/23): 2jsDyim2R1p7V1yhbfmL92USyVvTGrzS3u2Pqa6581dUpcZGgxuhu6EYVfRj4gtjsPyhquj3M7MCcECDPcZ84A1U
 // devnet (10/12/23): ZoyuaKQbahuWcUkbvY4R5Cn8do8Ra1sjdKKHNQ3oVeorcn5xU7fz5uGKDAHAazD792LNytkeJz4cUu7eun8hrHr
 
 async function main() {
