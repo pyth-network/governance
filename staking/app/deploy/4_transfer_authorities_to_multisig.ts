@@ -1,5 +1,5 @@
 import {
-  PROGRAM_VERSION_V2,
+  PROGRAM_VERSION,
   withSetRealmAuthority,
   SetRealmAuthorityAction,
 } from "@solana/spl-governance";
@@ -31,7 +31,7 @@ async function main() {
   withSetRealmAuthority(
     tx.instructions,
     GOVERNANCE_ADDRESS(),
-    PROGRAM_VERSION_V2,
+    PROGRAM_VERSION,
     REALM_ID,
     AUTHORITY_KEYPAIR.publicKey,
     MULTISIG_AUTHORITY,
