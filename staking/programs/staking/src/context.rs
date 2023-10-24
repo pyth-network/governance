@@ -1,5 +1,8 @@
 use {
-    crate::state::*,
+    crate::{
+        error::ErrorCode,
+        state::*,
+    },
     anchor_lang::prelude::*,
     anchor_spl::token::{
         Mint,
@@ -368,6 +371,20 @@ impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
         let cpi_program = accounts.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
     }
+}
+
+#[derive(Accounts)]
+#[instruction(agreement_hash : [u8; 32])]
+pub struct JoinDaoLlc<'info> {
+    // Native payer:
+    #[account(mut, address = stake_account_metadata.owner)]
+    pub payer:                   Signer<'info>,
+    // Stake program accounts:
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, constraint = config.agreement_hash == agreement_hash @ ErrorCode::InvalidLlcAgreement)]
+    pub config:                  Account<'info, global_config::GlobalConfig>,
 }
 
 // Anchor's parser doesn't understand cfg(feature), so the IDL gets messed

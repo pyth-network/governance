@@ -65,6 +65,7 @@ pub mod staking {
         config_account.pda_authority = global_config.pda_authority;
         config_account.governance_program = global_config.governance_program;
         config_account.pyth_token_list_time = None;
+        config_account.agreement_hash = global_config.agreement_hash;
 
         #[cfg(feature = "mock-clock")]
         {
@@ -123,6 +124,7 @@ pub mod staking {
 
         stake_account_metadata.lock = lock;
         stake_account_metadata.transfer_epoch = None;
+        stake_account_metadata.signed_agreement_hash = None;
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.owner = owner;
@@ -157,6 +159,9 @@ pub mod staking {
         let target_account = &mut ctx.accounts.target_account;
 
         config.check_frozen()?;
+        ctx.accounts
+            .stake_account_metadata
+            .check_is_llc_member(&config.agreement_hash)?;
 
         let new_position = Position {
             amount,
@@ -389,6 +394,10 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let governance_target = &mut ctx.accounts.governance_target;
 
+        ctx.accounts
+            .stake_account_metadata
+            .check_is_llc_member(&config.agreement_hash)?;
+
         let current_epoch = get_current_epoch(config).unwrap();
         governance_target.update(current_epoch)?;
 
@@ -581,5 +590,16 @@ pub mod staking {
             ctx.accounts.source_stake_account_split_request.amount = 0;
         }
         err!(ErrorCode::NotImplemented)
+    }
+
+    /**
+     * Accept to join the DAO LLC
+     * This must happen before create_position or update_voter_weight
+     * The user signs a hash of the agreement and the program checks that the hash matches the agreement
+     */
+    pub fn join_dao_llc(ctx: Context<JoinDaoLlc>, _agreement_hash: [u8; 32]) -> Result<()> {
+        ctx.accounts.stake_account_metadata.signed_agreement_hash =
+            Some(ctx.accounts.config.agreement_hash);
+        Ok(())
     }
 }

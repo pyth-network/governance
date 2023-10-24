@@ -1092,6 +1092,68 @@ export type Staking = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "joinDaoLlc",
+      "docs": [
+        "* Accept to join the DAO LLC\n     * This must happen before create_position or update_voter_weight\n     * The user signs a hash of the agreement and the program checks that the hash matches the agreement"
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agreementHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1145,6 +1207,15 @@ export type Staking = {
             ],
             "type": {
               "option": "i64"
+            }
+          },
+          {
+            "name": "agreementHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           },
           {
@@ -1307,6 +1378,17 @@ export type Staking = {
             "name": "transferEpoch",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
             }
           }
         ]
@@ -1807,6 +1889,16 @@ export type Staking = {
     },
     {
       "code": 6029,
+      "name": "NotLlcMember",
+      "msg": "You need to be an LLC member to perform this action"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidLlcAgreement",
+      "msg": "Invalid LLC agreement"
+    },
+    {
+      "code": 6031,
       "name": "Other",
       "msg": "Other"
     }
@@ -2907,6 +2999,68 @@ export const IDL: Staking = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "joinDaoLlc",
+      "docs": [
+        "* Accept to join the DAO LLC\n     * This must happen before create_position or update_voter_weight\n     * The user signs a hash of the agreement and the program checks that the hash matches the agreement"
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agreementHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -2960,6 +3114,15 @@ export const IDL: Staking = {
             ],
             "type": {
               "option": "i64"
+            }
+          },
+          {
+            "name": "agreementHash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
             }
           },
           {
@@ -3122,6 +3285,17 @@ export const IDL: Staking = {
             "name": "transferEpoch",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "signedAgreementHash",
+            "type": {
+              "option": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
             }
           }
         ]
@@ -3622,6 +3796,16 @@ export const IDL: Staking = {
     },
     {
       "code": 6029,
+      "name": "NotLlcMember",
+      "msg": "You need to be an LLC member to perform this action"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidLlcAgreement",
+      "msg": "Invalid LLC agreement"
+    },
+    {
+      "code": 6031,
       "name": "Other",
       "msg": "Other"
     }

@@ -61,6 +61,10 @@ pub enum ErrorCode {
     PositionOutOfBounds,
     #[msg("Can't vote during an account's transfer epoch")] //6028
     VoteDuringTransferEpoch,
-    #[msg("Other")] //6029
+    #[msg("You need to be an LLC member to perform this action")] //6029
+    NotLlcMember,
+    #[msg("Invalid LLC agreement")] // 6030
+    InvalidLlcAgreement,
+    #[msg("Other")] //6031
     Other,
 }

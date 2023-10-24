@@ -1,12 +1,13 @@
 import * as anchor from "@project-serum/anchor";
 import BN from "bn.js";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   readAnchorConfig,
   standardSetup,
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
   CustomAbortController,
+  getDummyAgreementHash,
 } from "../../tests/utils/before";
 import { StakeConnection, PythBalance } from "..";
 import { loadKeypair } from "../../tests/utils/keys";
@@ -38,7 +39,10 @@ async function main() {
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
       freeze: false,
+      pdaAuthority: new PublicKey(0),
+      governanceProgram: new PublicKey(0),
       pythTokenListTime: null,
+      agreementHash: getDummyAgreementHash(),
     }
   ));
 
