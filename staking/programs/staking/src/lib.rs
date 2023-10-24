@@ -116,9 +116,7 @@ pub mod staking {
         let config = &ctx.accounts.config;
         config.check_frozen()?;
 
-        let stake_account_metadata: &mut Box<
-            Account<'_, state::stake_account::StakeAccountMetadataV2>,
-        > = &mut ctx.accounts.stake_account_metadata;
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.initialize(
             *ctx.bumps.get("stake_account_metadata").unwrap(),
             *ctx.bumps.get("stake_account_custody").unwrap(),
@@ -574,9 +572,7 @@ pub mod staking {
         let split_request = &ctx.accounts.source_stake_account_split_request;
 
         // Initialize new accounts
-        let new_stake_account_metadata: &mut Box<
-            Account<'_, state::stake_account::StakeAccountMetadataV2>,
-        > = &mut ctx.accounts.new_stake_account_metadata;
+        let new_stake_account_metadata = &mut ctx.accounts.new_stake_account_metadata;
         new_stake_account_metadata.initialize(
             *ctx.bumps.get("new_stake_account_metadata").unwrap(),
             *ctx.bumps.get("new_stake_account_custody").unwrap(),
