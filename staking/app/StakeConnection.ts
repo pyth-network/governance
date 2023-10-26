@@ -583,9 +583,13 @@ export class StakeConnection {
     const transaction: Transaction = new Transaction();
 
     //Forgive me, I didn't find a better way to check the enum variant
-    assert(vestingSchedule.periodicVesting);
-    assert(vestingSchedule.periodicVesting.initialBalance);
-    assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
+    assert(vestingSchedule.periodicVestingAfterListing);
+    assert(vestingSchedule.periodicVestingAfterListing.initialBalance);
+    assert(
+      vestingSchedule.periodicVestingAfterListing.initialBalance.lte(
+        amount.toBN()
+      )
+    );
 
     const stakeAccountKeypair = await this.withCreateAccount(
       transaction.instructions,

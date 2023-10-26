@@ -1,38 +1,32 @@
-import { Wallet, AnchorProvider } from "@project-serum/anchor";
+import { Wallet } from "@project-serum/anchor";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { AUTHORITY_KEYPAIR, STAKING_PROGRAM, RPC_NODE } from "./devnet";
+import { AUTHORITY_KEYPAIR, RPC_NODE } from "./devnet";
+import { STAKING_ADDRESS } from "../constants";
 import { BN } from "bn.js";
 import { PythBalance, StakeConnection } from "..";
 
+const SIX_MONTHS = 1800 * 24 * 365;
+const OWNER_PUBKEY = new PublicKey(0);
+
 async function main() {
   const client = new Connection(RPC_NODE);
-  const provider = new AnchorProvider(
-    client,
-    new Wallet(AUTHORITY_KEYPAIR),
-    {}
-  );
-  const recipient = new PublicKey(
-    "BZutixDWD7TNwfvmWt3Zmqzh18wCic8HjcUW26QmiXSd"
-  );
-
   const stakeConnection = await StakeConnection.createStakeConnection(
     client,
     new Wallet(AUTHORITY_KEYPAIR),
-    STAKING_PROGRAM
+    STAKING_ADDRESS
   );
 
   const vestingSchedule = {
-    periodicVesting: {
-      initialBalance: PythBalance.fromString("100").toBN(),
-      startDate: await stakeConnection.getTime(),
-      periodDuration: new BN(3600),
-      numPeriods: new BN(1000),
+    periodicVestingAfterListing: {
+      initialBalance: PythBalance.fromString("1").toBN(),
+      periodDuration: new BN(SIX_MONTHS),
+      numPeriods: new BN(4),
     },
   };
 
   await stakeConnection.setupVestingAccount(
-    PythBalance.fromString("100"),
-    recipient,
+    PythBalance.fromString("1"),
+    OWNER_PUBKEY,
     vestingSchedule
   );
 }
