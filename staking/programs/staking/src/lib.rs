@@ -87,6 +87,15 @@ pub mod staking {
         Ok(())
     }
 
+    pub fn update_pda_authority(
+        ctx: Context<UpdatePdaAuthority>,
+        new_authority: Pubkey,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.pda_authority = new_authority;
+        Ok(())
+    }
+
     pub fn update_freeze(ctx: Context<UpdateFreeze>, freeze: bool) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.freeze = freeze;
