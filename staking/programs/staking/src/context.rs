@@ -68,6 +68,16 @@ pub struct UpdateGovernanceAuthority<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(new_authority : Pubkey)]
+pub struct UpdatePdaAuthority<'info> {
+    #[account(address = config.pda_authority)]
+    pub governance_signer: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:            Account<'info, global_config::GlobalConfig>,
+}
+
+
+#[derive(Accounts)]
 #[instruction(freeze : bool)]
 pub struct UpdateFreeze<'info> {
     #[account(address = config.governance_authority)]
