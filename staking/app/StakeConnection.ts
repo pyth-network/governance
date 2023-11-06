@@ -1,5 +1,4 @@
 import {
-  Provider,
   Program,
   Wallet,
   utils,
@@ -27,6 +26,7 @@ import {
 import BN from "bn.js";
 import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
+import IDL from "../target/idl/staking.json";
 import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
 import {
@@ -36,7 +36,7 @@ import {
 } from "@solana/spl-governance";
 import { GOVERNANCE_ADDRESS } from "./constants";
 import assert from "assert";
-import { PositionAccountJs, Position } from "./PositionAccountJs";
+import { PositionAccountJs } from "./PositionAccountJs";
 let wasm = wasm2;
 export { wasm };
 
@@ -83,9 +83,8 @@ export class StakeConnection {
     stakingProgramAddress: PublicKey
   ): Promise<StakeConnection> {
     const provider = new AnchorProvider(connection, wallet, {});
-    const idl = (await Program.fetchIdl(stakingProgramAddress, provider))!;
     const program = new Program(
-      idl,
+      IDL as Idl,
       stakingProgramAddress,
       provider
     ) as unknown as Program<Staking>;
