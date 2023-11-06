@@ -31,8 +31,9 @@ describe("config", async () => {
   const pythMintAuthority = new Keypair();
   const zeroPubkey = new PublicKey(0);
 
+  const pdaAuthorityKeypair = new Keypair();
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-  const pdaAuthority = PublicKey.unique();
+  const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
 
   let errMap: Map<number, string>;
@@ -414,6 +415,76 @@ describe("config", async () => {
       samConnection.program.methods.updateTokenListTime(new BN(7)),
       "An address constraint was violated",
       errMap
+    );
+  });
+
+  it("updates pda authority", async () => {
+    await expectFail(
+      program.methods.updatePdaAuthority(program.provider.wallet.publicKey),
+      "An address constraint was violated",
+      errMap
+    );
+
+    const pdaConnection = await StakeConnection.createStakeConnection(
+      program.provider.connection,
+      new Wallet(pdaAuthorityKeypair),
+      program.programId
+    );
+
+    await pdaConnection.program.provider.connection.requestAirdrop(
+      pdaAuthorityKeypair.publicKey,
+      1_000_000_000_000
+    );
+
+    // Airdrops are not instant unfortunately, wait
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    await pdaConnection.program.methods
+      .updatePdaAuthority(program.provider.wallet.publicKey)
+      .rpc();
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        pdaAuthority: program.provider.wallet.publicKey,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+      })
+    );
+
+    await program.methods.updatePdaAuthority(pdaAuthority).rpc();
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+      })
     );
   });
 });

@@ -75,6 +75,36 @@ export type Staking = {
       ]
     },
     {
+      "name": "updatePdaAuthority",
+      "accounts": [
+        {
+          "name": "governanceSigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
       "name": "updateFreeze",
       "accounts": [
         {
@@ -1953,6 +1983,36 @@ export const IDL: Staking = {
     },
     {
       "name": "updateGovernanceAuthority",
+      "accounts": [
+        {
+          "name": "governanceSigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updatePdaAuthority",
       "accounts": [
         {
           "name": "governanceSigner",
