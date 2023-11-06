@@ -5,8 +5,9 @@ import { STAKING_ADDRESS } from "../constants";
 import { BN } from "bn.js";
 import { PythBalance, StakeConnection } from "..";
 
-const SIX_MONTHS = 1800 * 24 * 365;
-const OWNER_PUBKEY = new PublicKey(0);
+const TWELVE_MONTHS = 3600 * 24 * 365;
+const OWNER_PUBKEY = new PublicKey(0); // Populate with the beneficiary's public key
+const AMOUNT: PythBalance = PythBalance.fromString("1"); // Populate with the right amount
 
 async function main() {
   const client = new Connection(RPC_NODE);
@@ -18,14 +19,14 @@ async function main() {
 
   const vestingSchedule = {
     periodicVestingAfterListing: {
-      initialBalance: PythBalance.fromString("1").toBN(),
-      periodDuration: new BN(SIX_MONTHS),
+      initialBalance: AMOUNT.toBN(),
+      periodDuration: new BN(TWELVE_MONTHS),
       numPeriods: new BN(4),
     },
   };
 
   await stakeConnection.setupVestingAccount(
-    PythBalance.fromString("1"),
+    AMOUNT,
     OWNER_PUBKEY,
     vestingSchedule
   );
