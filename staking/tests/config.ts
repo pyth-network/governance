@@ -419,6 +419,7 @@ describe("config", async () => {
   });
 
   it("updates pda authority", async () => {
+    // governance authority can't update pda authority
     await expectFail(
       program.methods.updatePdaAuthority(program.provider.wallet.publicKey),
       "An address constraint was violated",
@@ -439,6 +440,7 @@ describe("config", async () => {
     // Airdrops are not instant unfortunately, wait
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
+    // pda_authority updates pda_authority to the holder of governance_authority
     await pdaConnection.program.methods
       .updatePdaAuthority(program.provider.wallet.publicKey)
       .rpc();
@@ -465,6 +467,7 @@ describe("config", async () => {
       })
     );
 
+    // the authority gets returned to the original pda_authority
     await program.methods.updatePdaAuthority(pdaAuthority).rpc();
 
     configAccountData = await program.account.globalConfig.fetch(configAccount);
