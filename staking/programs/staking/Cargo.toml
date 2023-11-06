@@ -19,8 +19,8 @@ default = []
 
 [dependencies]
 borsh = {version = "0.9.3", features = ["const-generics"]}
-anchor-lang = {version ="0.24.1", features = ["init-if-needed"]}
-anchor-spl = "0.24.1"
+anchor-lang = {version ="0.24.2", features = ["init-if-needed"]}
+anchor-spl = "0.24.2"
 wasm-bindgen = "0.2.79"
 spl-governance = {version = "2.2.4", features = ["no-entrypoint"]}
 js-sys = { version = "0.3.56", optional = true }
