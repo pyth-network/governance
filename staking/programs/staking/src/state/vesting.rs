@@ -260,24 +260,22 @@ impl VestingSchedule {
                 start_date,
                 period_duration,
                 num_periods,
-            } => {
-                Ok((
-                    VestingSchedule::PeriodicVesting {
-                        initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128)) as u64,
-                        start_date: *start_date,
-                        period_duration: *period_duration,
-                        num_periods: *num_periods,
-                    },
-                    VestingSchedule::PeriodicVesting {
-                        initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
-                            / (total_amount as u128)) as u64,
-                        start_date: *start_date,
-                        period_duration: *period_duration,
-                        num_periods: *num_periods,
-                    },
-                ))
-            },
+            } => Ok((
+                VestingSchedule::PeriodicVesting {
+                    initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    start_date:      *start_date,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+                VestingSchedule::PeriodicVesting {
+                    initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
+                        / (total_amount as u128)) as u64,
+                    start_date:      *start_date,
+                    period_duration: *period_duration,
+                    num_periods:     *num_periods,
+                },
+            )),
             VestingSchedule::PeriodicVestingAfterListing {
                 initial_balance,
                 period_duration,
@@ -302,16 +300,19 @@ impl VestingSchedule {
 
 #[cfg(test)]
 pub mod tests {
-    use quickcheck::TestResult;
-    use quickcheck_macros::quickcheck;
     use {
         crate::state::vesting::{
             VestingEvent,
-            VestingSchedule,
+            VestingSchedule::{
+                self,
+                PeriodicVesting,
+                PeriodicVestingAfterListing,
+            },
         },
+        quickcheck::TestResult,
+        quickcheck_macros::quickcheck,
         std::convert::TryInto,
     };
-    use crate::state::vesting::VestingSchedule::{PeriodicVesting, PeriodicVestingAfterListing};
 
     #[test]
     fn test_novesting() {
@@ -646,7 +647,9 @@ pub mod tests {
         }
 
         let schedule = VestingSchedule::FullyVested;
-        let (remaining_schedule, transferred_schedule) = schedule.split_vesting_schedule(total - transferred, transferred, total).unwrap();
+        let (remaining_schedule, transferred_schedule) = schedule
+            .split_vesting_schedule(total - transferred, transferred, total)
+            .unwrap();
 
         assert_eq!(remaining_schedule, VestingSchedule::FullyVested);
         assert_eq!(transferred_schedule, VestingSchedule::FullyVested);
@@ -656,15 +659,24 @@ pub mod tests {
             // all of these fields should be preserved in the result
             start_date: 203,
             period_duration: 100,
-            num_periods: 12
+            num_periods: 12,
         };
-        let (remaining_schedule, transferred_schedule) = schedule.split_vesting_schedule(total - transferred, transferred, total).unwrap();
+        let (remaining_schedule, transferred_schedule) = schedule
+            .split_vesting_schedule(total - transferred, transferred, total)
+            .unwrap();
 
         match (remaining_schedule, transferred_schedule) {
-            (PeriodicVesting { initial_balance: r, .. }, PeriodicVesting {initial_balance: t, .. }) => {
+            (
+                PeriodicVesting {
+                    initial_balance: r, ..
+                },
+                PeriodicVesting {
+                    initial_balance: t, ..
+                },
+            ) => {
                 let sum = r + t;
                 assert!(initial_balance.saturating_sub(2) <= sum && sum <= initial_balance);
-            },
+            }
             _ => {
                 panic!("Test failed");
             }
@@ -674,15 +686,24 @@ pub mod tests {
             initial_balance,
             // all of these fields should be preserved in the result
             period_duration: 100,
-            num_periods: 12
+            num_periods: 12,
         };
-        let (remaining_schedule, transferred_schedule) = schedule.split_vesting_schedule(total - transferred, transferred, total).unwrap();
+        let (remaining_schedule, transferred_schedule) = schedule
+            .split_vesting_schedule(total - transferred, transferred, total)
+            .unwrap();
 
         match (remaining_schedule, transferred_schedule) {
-            (PeriodicVestingAfterListing { initial_balance: r, .. }, PeriodicVestingAfterListing {initial_balance: t, .. }) => {
+            (
+                PeriodicVestingAfterListing {
+                    initial_balance: r, ..
+                },
+                PeriodicVestingAfterListing {
+                    initial_balance: t, ..
+                },
+            ) => {
                 let sum = r + t;
                 assert!(initial_balance.saturating_sub(2) <= sum && sum <= initial_balance);
-            },
+            }
             _ => {
                 panic!("Test failed");
             }
@@ -691,33 +712,62 @@ pub mod tests {
         TestResult::passed()
     }
 
-    fn test_split_helper(transferred: u64, total: u64, initial_balance: u64, expected_remaining: u64, expected_transferred: u64) {
+    fn test_split_helper(
+        transferred: u64,
+        total: u64,
+        initial_balance: u64,
+        expected_remaining: u64,
+        expected_transferred: u64,
+    ) {
         let schedule = PeriodicVesting {
             initial_balance,
             // all of these fields should be preserved in the result
             start_date: 203,
             period_duration: 100,
-            num_periods: 12
+            num_periods: 12,
         };
-        let (remaining_schedule, transferred_schedule) = schedule.split_vesting_schedule(total - transferred, transferred, total).unwrap();
+        let (remaining_schedule, transferred_schedule) = schedule
+            .split_vesting_schedule(total - transferred, transferred, total)
+            .unwrap();
 
         let t = PeriodicVesting {
             initial_balance: expected_transferred,
-            start_date: 203,
+            start_date:      203,
             period_duration: 100,
-            num_periods: 12
+            num_periods:     12,
         };
         let r = PeriodicVesting {
             initial_balance: expected_remaining,
-            start_date: 203,
+            start_date:      203,
             period_duration: 100,
-            num_periods: 12
+            num_periods:     12,
         };
 
         assert_eq!(remaining_schedule, r);
         assert_eq!(transferred_schedule, t);
 
-        // TODO: with the PeriodicVestingAfterListing
+        let schedule = PeriodicVestingAfterListing {
+            initial_balance,
+            period_duration: 100,
+            num_periods: 12,
+        };
+        let (remaining_schedule, transferred_schedule) = schedule
+            .split_vesting_schedule(total - transferred, transferred, total)
+            .unwrap();
+
+        let t = PeriodicVestingAfterListing {
+            initial_balance: expected_transferred,
+            period_duration: 100,
+            num_periods:     12,
+        };
+        let r = PeriodicVestingAfterListing {
+            initial_balance: expected_remaining,
+            period_duration: 100,
+            num_periods:     12,
+        };
+
+        assert_eq!(remaining_schedule, r);
+        assert_eq!(transferred_schedule, t);
     }
 
     #[test]

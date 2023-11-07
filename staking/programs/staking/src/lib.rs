@@ -610,7 +610,10 @@ pub mod staking {
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
         // This check allows us to create an empty positions account on behalf of the recipient and
         // not worry about moving positions from the source account to the new account.
-        require!(source_stake_account_positions.num_positions()? == 0, ErrorCode::SplitWithStake);
+        require!(
+            source_stake_account_positions.num_positions()? == 0,
+            ErrorCode::SplitWithStake
+        );
 
         require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
         require!(

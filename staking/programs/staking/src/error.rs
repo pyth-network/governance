@@ -73,6 +73,7 @@ pub enum ErrorCode {
     SanityCheckFailed,
     #[msg("Other")] //6034
     Other,
-    #[msg("Can't split a token account with staking positions. Unstake your tokens first.")] // 6035
+    #[msg("Can't split a token account with staking positions. Unstake your tokens first.")]
+    // 6035
     SplitWithStake,
 }
