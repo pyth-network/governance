@@ -1916,6 +1916,11 @@ export type Staking = {
       "code": 6034,
       "name": "Other",
       "msg": "Other"
+    },
+    {
+      "code": 6035,
+      "name": "SplitWithStake",
+      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
     }
   ]
 };
@@ -3838,6 +3843,11 @@ export const IDL: Staking = {
       "code": 6034,
       "name": "Other",
       "msg": "Other"
+    },
+    {
+      "code": 6035,
+      "name": "SplitWithStake",
+      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
     }
   ]
 };

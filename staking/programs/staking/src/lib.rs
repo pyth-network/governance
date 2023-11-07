@@ -607,6 +607,11 @@ pub mod staking {
             config.unlocking_duration,
         )?;
 
+        // Check that there aren't any positions (i.e., staked tokens) in the source account.
+        // This check allows us to create an empty positions account on behalf of the recipient and
+        // not worry about moving positions from the source account to the new account.
+        require!(source_stake_account_positions.num_positions()? == 0, ErrorCode::SplitWithStake);
+
         require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
         require!(
             split_request.amount < source_stake_account_custody.amount,
@@ -625,18 +630,6 @@ pub mod staking {
             )?;
         source_stake_account_metadata.set_lock(source_vesting_account);
         new_stake_account_metadata.set_lock(new_vesting_account);
-
-        // Split positions
-        source_stake_account_positions.split(
-            new_stake_account_positions,
-            &mut source_stake_account_metadata.next_index,
-            &mut new_stake_account_metadata.next_index,
-            remaining_amount,
-            split_request.amount,
-            source_stake_account_custody.amount,
-            current_epoch,
-            config.unlocking_duration,
-        )?;
 
 
         {

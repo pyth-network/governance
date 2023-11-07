@@ -115,92 +115,14 @@ impl PositionData {
         Ok(exposure)
     }
 
-    pub fn split(
-        &mut self,
-        dest_position_data: &mut PositionData,
-        src_next_index: &mut u8,
-        dest_next_index: &mut u8,
-        remaining_amount: u64,
-        transferred_amount: u64,
-        total_amount: u64,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<()> {
-        require!(
-            transferred_amount
-                .checked_add(remaining_amount)
-                .ok_or(ErrorCode::Other)?
-                == total_amount,
-            ErrorCode::SanityCheckFailed
-        );
-        let governance_exposure =
-            self.get_target_exposure(&Target::VOTING, current_epoch, unlocking_duration)?;
-        require!(
-            governance_exposure <= total_amount,
-            ErrorCode::SanityCheckFailed
-        );
-
-        if remaining_amount < governance_exposure {
-            // We need to transfer some positions over to the new account
-            let mut excess_governance_exposure =
-                governance_exposure.saturating_sub(remaining_amount);
-
-            while excess_governance_exposure > 0 && *src_next_index > 0 {
-                let index = TryInto::<usize>::try_into(*src_next_index - 1)
-                    .map_err(|_| ErrorCode::GenericOverflow)?;
-                match self.read_position(index)? {
-                    Some(position) => {
-                        match position.get_current_position(current_epoch, unlocking_duration)? {
-                            PositionState::UNLOCKED => self.make_none(index, src_next_index)?,
-                            PositionState::LOCKING
-                            | PositionState::LOCKED
-                            | PositionState::PREUNLOCKING
-                            | PositionState::UNLOCKING => {
-                                if excess_governance_exposure < position.amount {
-                                    // We need to split the position
-                                    self.write_position(
-                                        index,
-                                        &Position {
-                                            amount: position
-                                                .amount
-                                                .saturating_sub(excess_governance_exposure),
-                                            ..position
-                                        },
-                                    )?;
-
-                                    let new_position = Position {
-                                        amount: excess_governance_exposure,
-                                        ..position
-                                    };
-
-                                    let new_index =
-                                        dest_position_data.reserve_new_index(dest_next_index)?;
-                                    dest_position_data.write_position(new_index, &new_position)?;
-
-                                    excess_governance_exposure = 0;
-                                } else {
-                                    // We need to transfer the whole position
-                                    let new_index =
-                                        dest_position_data.reserve_new_index(dest_next_index)?;
-                                    dest_position_data.write_position(new_index, &position)?;
-
-                                    self.make_none(index, src_next_index)?;
-                                    excess_governance_exposure =
-                                        excess_governance_exposure.saturating_sub(position.amount);
-                                }
-                            }
-                        }
-                    }
-                    None => {
-                        // This should never happen
-                        return Err(error!(ErrorCode::SanityCheckFailed));
-                    }
-                }
+    pub fn num_positions(&self) -> Result<usize> {
+        let mut count: usize = 0;
+        for i in 0..MAX_POSITIONS {
+            if let Some(_p) = self.read_position(i)? {
+                count += 1;
             }
         }
-
-
-        Ok(())
+        Ok(count)
     }
 }
 

@@ -71,6 +71,8 @@ pub enum ErrorCode {
     SplitTooManyTokens,
     #[msg("Sanity check failed")] // 6033
     SanityCheckFailed,
-    #[msg("Other")] //6031
+    #[msg("Other")] //6034
     Other,
+    #[msg("Can't split a token account with staking positions. Unstake your tokens first.")] // 6035
+    SplitWithStake,
 }
