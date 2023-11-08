@@ -72,8 +72,8 @@ pub enum ErrorCode {
     #[msg("Can't split a token account with staking positions. Unstake your tokens first.")]
     // 6033
     SplitWithStake,
-    #[msg("Sanity check failed")] // 6034
-    SanityCheckFailed,
+    #[msg("The approval arguments do not match the split request.")] // 6034
+    InvalidApproval,
     #[msg("Other")] //6035
     Other,
 }

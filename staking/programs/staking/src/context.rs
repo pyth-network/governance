@@ -301,6 +301,7 @@ pub struct RequestSplit<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(amount: u64, recipient: Pubkey)]
 pub struct AcceptSplit<'info> {
     // Native payer:
     #[account(mut, address = config.pda_authority)]

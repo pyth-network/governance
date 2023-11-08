@@ -236,17 +236,13 @@ impl VestingSchedule {
 
     pub fn split_vesting_schedule(
         &self,
-        remaining_amount: u64,
         transferred_amount: u64,
         total_amount: u64,
     ) -> Result<(VestingSchedule, VestingSchedule)> {
-        require!(
-            transferred_amount
-                .checked_add(remaining_amount)
-                .ok_or(ErrorCode::Other)?
-                == total_amount,
-            ErrorCode::SanityCheckFailed
-        );
+        let remaining_amount = total_amount
+            .checked_sub(transferred_amount)
+            .ok_or(ErrorCode::GenericOverflow)?;
+
         // Note that the arithmetic below may lose precision. The calculations round down
         // the number of vesting tokens for both of the new accounts, which means that splitting
         // may vest some dust (1 of the smallest decimal point) of PYTH for both the source and
@@ -652,9 +648,8 @@ pub mod tests {
         let received = total - transferred;
 
         let schedule = VestingSchedule::FullyVested;
-        let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(received, transferred, total)
-            .unwrap();
+        let (remaining_schedule, transferred_schedule) =
+            schedule.split_vesting_schedule(transferred, total).unwrap();
 
         assert_eq!(remaining_schedule, VestingSchedule::FullyVested);
         assert_eq!(transferred_schedule, VestingSchedule::FullyVested);
@@ -666,9 +661,8 @@ pub mod tests {
             period_duration: PERIOD_DURATION,
             num_periods: NUM_PERIODS,
         };
-        let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(received, transferred, total)
-            .unwrap();
+        let (remaining_schedule, transferred_schedule) =
+            schedule.split_vesting_schedule(transferred, total).unwrap();
 
         match (remaining_schedule, transferred_schedule) {
             (
@@ -693,9 +687,8 @@ pub mod tests {
             period_duration: PERIOD_DURATION,
             num_periods: NUM_PERIODS,
         };
-        let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(received, transferred, total)
-            .unwrap();
+        let (remaining_schedule, transferred_schedule) =
+            schedule.split_vesting_schedule(transferred, total).unwrap();
 
         match (remaining_schedule, transferred_schedule) {
             (
@@ -753,9 +746,8 @@ pub mod tests {
             period_duration: 100,
             num_periods: 12,
         };
-        let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(total - transferred, transferred, total)
-            .unwrap();
+        let (remaining_schedule, transferred_schedule) =
+            schedule.split_vesting_schedule(transferred, total).unwrap();
 
         let t = PeriodicVesting {
             initial_balance: expected_transferred,
@@ -778,9 +770,8 @@ pub mod tests {
             period_duration: 100,
             num_periods: 12,
         };
-        let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(total - transferred, transferred, total)
-            .unwrap();
+        let (remaining_schedule, transferred_schedule) =
+            schedule.split_vesting_schedule(transferred, total).unwrap();
 
         let t = PeriodicVestingAfterListing {
             initial_balance: expected_transferred,

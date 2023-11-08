@@ -562,14 +562,21 @@ pub mod staking {
      * the config account. If accepted, `amount` tokens are transferred to a new stake account
      * owned by the `recipient` and the split request is reset (by setting `amount` to 0).
      * The recipient of a transfer can't vote during the epoch of the transfer.
+     *
+     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and
+     * these parameters must match the request (in the `split_request` account).
      */
-    pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
+    pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
         config.check_frozen()?;
 
         let current_epoch = get_current_epoch(config)?;
 
         let split_request = &ctx.accounts.source_stake_account_split_request;
+        require!(
+            split_request.amount == amount && split_request.recipient == recipient,
+            ErrorCode::InvalidApproval
+        );
 
         // Initialize new accounts
         let new_stake_account_metadata = &mut ctx.accounts.new_stake_account_metadata;
@@ -616,21 +623,15 @@ pub mod staking {
         );
 
         require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
-        require!(
-            split_request.amount < source_stake_account_custody.amount,
-            ErrorCode::SplitTooManyTokens
-        );
         let remaining_amount = source_stake_account_custody
             .amount
-            .saturating_sub(split_request.amount);
+            .checked_sub(split_request.amount)
+            .ok_or(ErrorCode::SplitTooManyTokens)?;
 
         // Split vesting account
-        let (source_vesting_account, new_vesting_account) =
-            source_stake_account_metadata.lock.split_vesting_schedule(
-                remaining_amount,
-                split_request.amount,
-                source_stake_account_custody.amount,
-            )?;
+        let (source_vesting_account, new_vesting_account) = source_stake_account_metadata
+            .lock
+            .split_vesting_schedule(split_request.amount, source_stake_account_custody.amount)?;
         source_stake_account_metadata.set_lock(source_vesting_account);
         new_stake_account_metadata.set_lock(new_vesting_account);
 
