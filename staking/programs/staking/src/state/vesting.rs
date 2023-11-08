@@ -640,15 +640,20 @@ pub mod tests {
         );
     }
 
+    const START_TIMESTAMP: i64 = 10;
+    const PERIOD_DURATION: u64 = 5;
+    const NUM_PERIODS: u64 = 4;
+
     #[quickcheck]
-    fn test_split_with_args(transferred: u64, total: u64, initial_balance: u64) -> TestResult {
+    fn test_split_props(transferred: u64, total: u64, initial_balance: u64) -> TestResult {
         if transferred > total || total == 0 {
             return TestResult::discard();
         }
+        let received = total - transferred;
 
         let schedule = VestingSchedule::FullyVested;
         let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(total - transferred, transferred, total)
+            .split_vesting_schedule(received, transferred, total)
             .unwrap();
 
         assert_eq!(remaining_schedule, VestingSchedule::FullyVested);
@@ -657,12 +662,12 @@ pub mod tests {
         let schedule = PeriodicVesting {
             initial_balance,
             // all of these fields should be preserved in the result
-            start_date: 203,
-            period_duration: 100,
-            num_periods: 12,
+            start_date: START_TIMESTAMP,
+            period_duration: PERIOD_DURATION,
+            num_periods: NUM_PERIODS,
         };
         let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(total - transferred, transferred, total)
+            .split_vesting_schedule(received, transferred, total)
             .unwrap();
 
         match (remaining_schedule, transferred_schedule) {
@@ -685,11 +690,11 @@ pub mod tests {
         let schedule = PeriodicVestingAfterListing {
             initial_balance,
             // all of these fields should be preserved in the result
-            period_duration: 100,
-            num_periods: 12,
+            period_duration: PERIOD_DURATION,
+            num_periods: NUM_PERIODS,
         };
         let (remaining_schedule, transferred_schedule) = schedule
-            .split_vesting_schedule(total - transferred, transferred, total)
+            .split_vesting_schedule(received, transferred, total)
             .unwrap();
 
         match (remaining_schedule, transferred_schedule) {
@@ -706,6 +711,28 @@ pub mod tests {
             }
             _ => {
                 panic!("Test failed");
+            }
+        }
+
+        for timestamp in 0..(START_TIMESTAMP + (PERIOD_DURATION * NUM_PERIODS + 1) as i64) {
+            let initial_unvested = schedule
+                .get_unvested_balance(timestamp, Some(START_TIMESTAMP))
+                .unwrap();
+            let remaining_unvested = remaining_schedule
+                .get_unvested_balance(timestamp, Some(START_TIMESTAMP))
+                .unwrap();
+            let transferred_unvested = transferred_schedule
+                .get_unvested_balance(timestamp, Some(START_TIMESTAMP))
+                .unwrap();
+
+            assert!(
+                initial_unvested.saturating_sub(2) <= (remaining_unvested + transferred_unvested)
+                    && (remaining_unvested + transferred_unvested) <= initial_unvested
+            );
+
+            if initial_unvested <= total {
+                assert!(transferred_unvested <= transferred);
+                assert!(remaining_unvested <= received);
             }
         }
 

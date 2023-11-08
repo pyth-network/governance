@@ -69,11 +69,11 @@ pub enum ErrorCode {
     SplitZeroTokens,
     #[msg("Can't split more tokens than are in the account")] // 6032
     SplitTooManyTokens,
-    #[msg("Sanity check failed")] // 6033
-    SanityCheckFailed,
-    #[msg("Other")] //6034
-    Other,
     #[msg("Can't split a token account with staking positions. Unstake your tokens first.")]
-    // 6035
+    // 6033
     SplitWithStake,
+    #[msg("Sanity check failed")] // 6034
+    SanityCheckFailed,
+    #[msg("Other")] //6035
+    Other,
 }

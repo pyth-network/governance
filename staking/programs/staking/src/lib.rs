@@ -611,7 +611,7 @@ pub mod staking {
         // This check allows us to create an empty positions account on behalf of the recipient and
         // not worry about moving positions from the source account to the new account.
         require!(
-            source_stake_account_positions.num_positions()? == 0,
+            source_stake_account_metadata.next_index == 0,
             ErrorCode::SplitWithStake
         );
 

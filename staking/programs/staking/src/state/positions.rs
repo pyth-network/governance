@@ -114,16 +114,6 @@ impl PositionData {
         }
         Ok(exposure)
     }
-
-    pub fn num_positions(&self) -> Result<usize> {
-        let mut count: usize = 0;
-        for i in 0..MAX_POSITIONS {
-            if let Some(_p) = self.read_position(i)? {
-                count += 1;
-            }
-        }
-        Ok(count)
-    }
 }
 
 pub trait TryBorsh {
@@ -447,7 +437,6 @@ pub mod tests {
             return res;
         }
     }
-
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
