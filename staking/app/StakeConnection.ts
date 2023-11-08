@@ -857,7 +857,11 @@ export class StakeConnection {
       .rpc();
   }
 
-  public async acceptSplit(stakeAccount: StakeAccount) {
+  public async acceptSplit(
+    stakeAccount: StakeAccount,
+    amount: PythBalance,
+    recipient: PublicKey
+  ) {
     const newStakeAccountKeypair = new Keypair();
 
     const instructions = [];
@@ -869,7 +873,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .acceptSplit()
+      .acceptSplit(amount.toBN(), recipient)
       .accounts({
         sourceStakeAccountPositions: stakeAccount.address,
         newStakeAccountPositions: newStakeAccountKeypair.publicKey,

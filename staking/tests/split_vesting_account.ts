@@ -144,7 +144,11 @@ describe("split vesting account", async () => {
       alice.publicKey
     );
 
-    await pdaConnection.acceptSplit(stakeAccount);
+    await pdaConnection.acceptSplit(
+      stakeAccount,
+      PythBalance.fromString("33"),
+      alice.publicKey
+    );
 
     let sourceStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     let newStakeAccount = await samConnection.getMainAccount(alice.publicKey);
