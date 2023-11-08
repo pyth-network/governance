@@ -10,12 +10,9 @@ use {
             wasm_bindgen,
         },
     },
-    std::{
-        convert::TryInto,
-        fmt::{
-            self,
-            Debug,
-        },
+    std::fmt::{
+        self,
+        Debug,
     },
 };
 

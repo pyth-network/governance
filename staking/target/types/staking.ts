@@ -880,7 +880,7 @@ export type Staking = {
     {
       "name": "acceptSplit",
       "docs": [
-        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
+        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
       ],
       "accounts": [
         {
@@ -1091,7 +1091,16 @@ export type Staking = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey"
+        }
+      ]
     },
     {
       "name": "joinDaoLlc",
@@ -1909,18 +1918,18 @@ export type Staking = {
     },
     {
       "code": 6033,
-      "name": "SanityCheckFailed",
-      "msg": "Sanity check failed"
+      "name": "SplitWithStake",
+      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
     },
     {
       "code": 6034,
-      "name": "Other",
-      "msg": "Other"
+      "name": "InvalidApproval",
+      "msg": "The approval arguments do not match the split request."
     },
     {
       "code": 6035,
-      "name": "SplitWithStake",
-      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
+      "name": "Other",
+      "msg": "Other"
     }
   ]
 };
@@ -2807,7 +2816,7 @@ export const IDL: Staking = {
     {
       "name": "acceptSplit",
       "docs": [
-        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer."
+        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
       ],
       "accounts": [
         {
@@ -3018,7 +3027,16 @@ export const IDL: Staking = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "recipient",
+          "type": "publicKey"
+        }
+      ]
     },
     {
       "name": "joinDaoLlc",
@@ -3836,18 +3854,18 @@ export const IDL: Staking = {
     },
     {
       "code": 6033,
-      "name": "SanityCheckFailed",
-      "msg": "Sanity check failed"
+      "name": "SplitWithStake",
+      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
     },
     {
       "code": 6034,
-      "name": "Other",
-      "msg": "Other"
+      "name": "InvalidApproval",
+      "msg": "The approval arguments do not match the split request."
     },
     {
       "code": 6035,
-      "name": "SplitWithStake",
-      "msg": "Can't split a token account with staking positions. Unstake your tokens first."
+      "name": "Other",
+      "msg": "Other"
     }
   ]
 };
