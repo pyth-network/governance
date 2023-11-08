@@ -579,8 +579,7 @@ pub mod staking {
         );
 
         // Initialize new accounts
-        let new_stake_account_metadata = &mut ctx.accounts.new_stake_account_metadata;
-        new_stake_account_metadata.initialize(
+        ctx.accounts.new_stake_account_metadata.initialize(
             *ctx.bumps.get("new_stake_account_metadata").unwrap(),
             *ctx.bumps.get("new_stake_account_custody").unwrap(),
             *ctx.bumps.get("new_custody_authority").unwrap(),
@@ -597,19 +596,22 @@ pub mod staking {
         new_voter_record.initialize(config, &split_request.recipient);
 
         // Split off source account
-        let source_stake_account_custody = &ctx.accounts.source_stake_account_custody;
-        let source_stake_account_metadata = &mut ctx.accounts.source_stake_account_metadata;
+        // let source_stake_account_custody = &ctx.accounts.source_stake_account_custody;
+        // let source_stake_account_metadata = &mut ctx.accounts.source_stake_account_metadata;
         let source_stake_account_positions =
             &mut ctx.accounts.source_stake_account_positions.load_mut()?;
 
         // Pre-check
         utils::risk::validate(
             source_stake_account_positions,
-            source_stake_account_custody.amount,
-            source_stake_account_metadata.lock.get_unvested_balance(
-                utils::clock::get_current_time(config),
-                config.pyth_token_list_time,
-            )?,
+            ctx.accounts.source_stake_account_custody.amount,
+            ctx.accounts
+                .source_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
             current_epoch,
             config.unlocking_duration,
         )?;
@@ -618,22 +620,27 @@ pub mod staking {
         // This check allows us to create an empty positions account on behalf of the recipient and
         // not worry about moving positions from the source account to the new account.
         require!(
-            source_stake_account_metadata.next_index == 0,
+            ctx.accounts.source_stake_account_metadata.next_index == 0,
             ErrorCode::SplitWithStake
         );
 
         require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
-        let remaining_amount = source_stake_account_custody
-            .amount
-            .checked_sub(split_request.amount)
-            .ok_or(ErrorCode::SplitTooManyTokens)?;
 
         // Split vesting account
-        let (source_vesting_account, new_vesting_account) = source_stake_account_metadata
+        let (source_vesting_account, new_vesting_account) = ctx
+            .accounts
+            .source_stake_account_metadata
             .lock
-            .split_vesting_schedule(split_request.amount, source_stake_account_custody.amount)?;
-        source_stake_account_metadata.set_lock(source_vesting_account);
-        new_stake_account_metadata.set_lock(new_vesting_account);
+            .split_vesting_schedule(
+                split_request.amount,
+                ctx.accounts.source_stake_account_custody.amount,
+            )?;
+        ctx.accounts
+            .source_stake_account_metadata
+            .set_lock(source_vesting_account);
+        ctx.accounts
+            .new_stake_account_metadata
+            .set_lock(new_vesting_account);
 
 
         {
