@@ -16,8 +16,7 @@ import {
   OptionalBalanceSummary,
 } from "./utils/api_utils";
 import assert from "assert";
-import { blob } from "stream/consumers";
-import { Key } from "@metaplex-foundation/mpl-token-metadata";
+import { expectFailWithCode } from "./utils/utils";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
@@ -25,12 +24,9 @@ const portNumber = getPortNumber(path.basename(__filename));
 describe("split vesting account", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-  let EPOCH_DURATION: BN;
 
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let owner: PublicKey;
 
   let pdaAuthority = new Keypair();
   let pdaConnection: StakeConnection;
@@ -48,9 +44,6 @@ describe("split vesting account", async () => {
         pdaAuthority.publicKey
       )
     ));
-
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.provider.wallet.publicKey;
 
     pdaConnection = await connect(pdaAuthority);
   });
@@ -172,26 +165,6 @@ describe("split vesting account", async () => {
     );
   }
 
-  async function assertFailsWithErrorCode(
-    thunk: () => Promise<void>,
-    errorCode: string
-  ) {
-    let actualErrorCode: string | undefined = undefined;
-    try {
-      await thunk();
-    } catch (err) {
-      if (err instanceof AnchorError) {
-        actualErrorCode = err.error.errorCode.code;
-      }
-    }
-
-    assert.equal(
-      actualErrorCode,
-      errorCode,
-      `Call did not fail with the expected error code.`
-    );
-  }
-
   it("split/accept flow success", async () => {
     let [samConnection, aliceConnection] = await setupSplit("100", "100", "0");
 
@@ -244,13 +217,12 @@ describe("split vesting account", async () => {
       aliceConnection.userPublicKey()
     );
 
-    await assertFailsWithErrorCode(
-      () =>
-        pdaConnection.acceptSplit(
-          stakeAccount,
-          PythBalance.fromString("33"),
-          aliceConnection.userPublicKey()
-        ),
+    await expectFailWithCode(
+      pdaConnection.acceptSplit(
+        stakeAccount,
+        PythBalance.fromString("33"),
+        aliceConnection.userPublicKey()
+      ),
       "SplitWithStake"
     );
 
@@ -280,36 +252,40 @@ describe("split vesting account", async () => {
     );
 
     // wrong balance
-    await assertFailsWithErrorCode(
-      () =>
-        pdaConnection.acceptSplit(
-          stakeAccount,
-          PythBalance.fromString("34"),
-          aliceConnection.userPublicKey()
-        ),
+    await expectFailWithCode(
+      pdaConnection.acceptSplit(
+        stakeAccount,
+        PythBalance.fromString("34"),
+        aliceConnection.userPublicKey()
+      ),
       "InvalidApproval"
     );
 
     // wrong recipient
-    await assertFailsWithErrorCode(
-      () =>
-        pdaConnection.acceptSplit(
-          stakeAccount,
-          PythBalance.fromString("33"),
-          samConnection.userPublicKey()
-        ),
+    await expectFailWithCode(
+      pdaConnection.acceptSplit(
+        stakeAccount,
+        PythBalance.fromString("33"),
+        samConnection.userPublicKey()
+      ),
       "InvalidApproval"
     );
 
     // wrong signer
-    await assertFailsWithErrorCode(
-      () =>
-        aliceConnection.acceptSplit(
-          stakeAccount,
-          PythBalance.fromString("33"),
-          aliceConnection.userPublicKey()
-        ),
+    await expectFailWithCode(
+      aliceConnection.acceptSplit(
+        stakeAccount,
+        PythBalance.fromString("33"),
+        aliceConnection.userPublicKey()
+      ),
       "ConstraintAddress"
+    );
+
+    // Passing the correct arguments should succeed
+    await pdaConnection.acceptSplit(
+      stakeAccount,
+      PythBalance.fromString("33"),
+      aliceConnection.userPublicKey()
     );
   });
 

@@ -112,3 +112,28 @@ export async function expectFailApi(promise: Promise<any>, error: string) {
     assert.equal(err.message, error);
   }
 }
+
+/**
+ * Awaits the api request and checks whether the error message matches the provided string
+ * @param promise : api promise
+ * @param errorCode : expected string
+ */
+export async function expectFailWithCode(
+  promise: Promise<any>,
+  errorCode: string
+) {
+  let actualErrorCode: string | undefined = undefined;
+  try {
+    await promise;
+    assert(false, "Operation should fail");
+  } catch (err) {
+    if (err instanceof AnchorError) {
+      actualErrorCode = err.error.errorCode.code;
+    }
+  }
+  assert.equal(
+    actualErrorCode,
+    errorCode,
+    `Call did not fail with the expected error code.`
+  );
+}

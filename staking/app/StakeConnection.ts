@@ -535,15 +535,6 @@ export class StakeConnection {
    * Locks all unvested tokens in governance
    */
   public async lockAllUnvested(stakeAccount: StakeAccount) {
-    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
-
-    await this.lockTokens(stakeAccount, balanceSummary.unvested.unlocked);
-  }
-
-  /**
-   * Locks the specified amount of tokens in governance.
-   */
-  public async lockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );
@@ -554,6 +545,15 @@ export class StakeConnection {
     ) {
       throw Error(`Unexpected account state ${vestingAccountState}`);
     }
+
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+    await this.lockTokens(stakeAccount, balanceSummary.unvested.unlocked);
+  }
+
+  /**
+   * Locks the specified amount of tokens in governance.
+   */
+  public async lockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const amountBN = amount.toBN();
 

@@ -585,7 +585,7 @@ pub mod staking {
             *ctx.bumps.get("new_custody_authority").unwrap(),
             *ctx.bumps.get("new_voter_record").unwrap(),
             &split_request.recipient,
-            Some(current_epoch),
+            None,
         );
 
         let new_stake_account_positions =
@@ -599,7 +599,10 @@ pub mod staking {
         let source_stake_account_positions =
             &mut ctx.accounts.source_stake_account_positions.load_mut()?;
 
-        // Pre-check
+        // Pre-check invariants
+        // Note that the accept operation requires the positions account to be empty, which should trivially
+        // pass this invariant check. However, we explicitly check invariants everywhere else, so may
+        // as well check in this operation also.
         utils::risk::validate(
             source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
@@ -625,7 +628,7 @@ pub mod staking {
         require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
 
         // Split vesting account
-        let (source_vesting_account, new_vesting_account) = ctx
+        let (source_vesting_schedule, new_vesting_schedule) = ctx
             .accounts
             .source_stake_account_metadata
             .lock
@@ -635,22 +638,20 @@ pub mod staking {
             )?;
         ctx.accounts
             .source_stake_account_metadata
-            .set_lock(source_vesting_account);
+            .set_lock(source_vesting_schedule);
         ctx.accounts
             .new_stake_account_metadata
-            .set_lock(new_vesting_account);
+            .set_lock(new_vesting_schedule);
 
 
-        {
-            transfer(
-                CpiContext::from(&*ctx.accounts).with_signer(&[&[
-                    AUTHORITY_SEED.as_bytes(),
-                    ctx.accounts.source_stake_account_positions.key().as_ref(),
-                    &[ctx.accounts.source_stake_account_metadata.authority_bump],
-                ]]),
-                split_request.amount,
-            )?;
-        }
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.source_stake_account_positions.key().as_ref(),
+                &[ctx.accounts.source_stake_account_metadata.authority_bump],
+            ]]),
+            split_request.amount,
+        )?;
 
         ctx.accounts.source_stake_account_custody.reload()?;
         ctx.accounts.new_stake_account_custody.reload()?;
