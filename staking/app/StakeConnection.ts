@@ -123,6 +123,11 @@ export class StakeConnection {
     );
   }
 
+  /** The public key of the user of the staking program. This connection sends transactions as this user. */
+  public userPublicKey(): PublicKey {
+    return this.provider.wallet.publicKey;
+  }
+
   public async getAllStakeAccountAddresses(): Promise<PublicKey[]> {
     // Use the raw web3.js connection so that anchor doesn't try to borsh deserialize the zero-copy serialized account
     const allAccts = await this.provider.connection.getProgramAccounts(
@@ -530,6 +535,19 @@ export class StakeConnection {
    * Locks all unvested tokens in governance
    */
   public async lockAllUnvested(stakeAccount: StakeAccount) {
+    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
+
+    await this.lockTokens(stakeAccount, balanceSummary.unvested.unlocked);
+  }
+
+  /**
+   * Locks all unvested tokens in governance
+   */
+  public async lockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
+    if (amount.isZero()) {
+      return;
+    }
+
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );
@@ -541,8 +559,7 @@ export class StakeConnection {
       throw Error(`Unexpected account state ${vestingAccountState}`);
     }
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
-    const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
-    const amountBN = balanceSummary.unvested.unlocked.toBN();
+    const amountBN = amount.toBN();
 
     const transaction: Transaction = new Transaction();
 
