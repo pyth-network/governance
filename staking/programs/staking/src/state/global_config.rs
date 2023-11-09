@@ -1,5 +1,4 @@
 use {
-    crate::error::ErrorCode,
     anchor_lang::prelude::*,
     borsh::BorshSchema,
 };
