@@ -141,10 +141,11 @@ describe("split vesting account", async () => {
       await samConnection.getTime()
     );
 
-    await samConnection.lockTokens(
-      stakeAccount,
-      PythBalance.fromString(lockedBalance)
-    );
+    let lockedPythBalance = PythBalance.fromString(lockedBalance);
+    if (lockedPythBalance.gt(PythBalance.zero())) {
+      // locking 0 tokens is an error
+      await samConnection.lockTokens(stakeAccount, lockedPythBalance);
+    }
 
     let aliceConnection = await connect(new Keypair());
     return [samConnection, aliceConnection];
@@ -190,73 +191,6 @@ describe("split vesting account", async () => {
       `Call did not fail with the expected error code.`
     );
   }
-
-  /*
-  it("create a vesting account", async () => {
-    await samConnection.provider.connection.requestAirdrop(
-      sam.publicKey,
-      1_000_000_000_000
-    );
-    await requestPythAirdrop(
-      sam.publicKey,
-      pythMintAccount.publicKey,
-      pythMintAuthority,
-      PythBalance.fromString("200"),
-      samConnection.provider.connection
-    );
-
-    const transaction = new Transaction();
-
-    const stakeAccountKeypair = await samConnection.withCreateAccount(
-      transaction.instructions,
-      sam.publicKey,
-      {
-        periodicVesting: {
-          initialBalance: PythBalance.fromString("100").toBN(),
-          startDate: await stakeConnection.getTime(),
-          periodDuration: ONE_MONTH,
-          numPeriods: new BN(72),
-        },
-      }
-    );
-
-    await samConnection.withJoinDaoLlc(
-      transaction.instructions,
-      stakeAccountKeypair.publicKey
-    );
-
-    transaction.instructions.push(
-      await samConnection.buildTransferInstruction(
-        stakeAccountKeypair.publicKey,
-        PythBalance.fromString("100").toBN()
-      )
-    );
-
-    await samConnection.provider.sendAndConfirm(
-      transaction,
-      [stakeAccountKeypair],
-      { skipPreflight: true }
-    );
-
-    let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
-    assert(
-      VestingAccountState.UnvestedTokensFullyUnlocked ==
-        stakeAccount.getVestingAccountState(await samConnection.getTime())
-    );
-    await assertBalanceMatches(
-      samConnection,
-      sam.publicKey,
-      {
-        unvested: {
-          unlocked: PythBalance.fromString("100"),
-        },
-      },
-      await samConnection.getTime()
-    );
-
-    await samConnection.lockAllUnvested(stakeAccount);
-  });
-   */
 
   it("split/accept flow success", async () => {
     let [samConnection, aliceConnection] = await setupSplit("100", "100", "0");

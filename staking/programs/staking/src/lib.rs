@@ -596,8 +596,6 @@ pub mod staking {
         new_voter_record.initialize(config, &split_request.recipient);
 
         // Split off source account
-        // let source_stake_account_custody = &ctx.accounts.source_stake_account_custody;
-        // let source_stake_account_metadata = &mut ctx.accounts.source_stake_account_metadata;
         let source_stake_account_positions =
             &mut ctx.accounts.source_stake_account_positions.load_mut()?;
 

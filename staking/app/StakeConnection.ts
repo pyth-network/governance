@@ -541,13 +541,9 @@ export class StakeConnection {
   }
 
   /**
-   * Locks all unvested tokens in governance
+   * Locks the specified amount of tokens in governance.
    */
   public async lockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
-    if (amount.isZero()) {
-      return;
-    }
-
     const vestingAccountState = stakeAccount.getVestingAccountState(
       await this.getTime()
     );

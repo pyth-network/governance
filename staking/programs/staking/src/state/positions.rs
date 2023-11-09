@@ -83,34 +83,6 @@ impl PositionData {
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
     }
-
-    pub fn get_target_exposure(
-        &self,
-        target: &Target,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<u64> {
-        let mut exposure: u64 = 0;
-
-        for i in 0..MAX_POSITIONS {
-            if let Some(position) = self.read_position(i)? {
-                match position.get_current_position(current_epoch, unlocking_duration)? {
-                    PositionState::LOCKED
-                    | PositionState::PREUNLOCKING
-                    | PositionState::UNLOCKING
-                    | PositionState::LOCKING => {
-                        if position.target_with_parameters.get_target() == *target {
-                            exposure = exposure
-                                .checked_add(position.amount)
-                                .ok_or(error!(ErrorCode::GenericOverflow))?
-                        };
-                    }
-                    _ => {}
-                }
-            }
-        }
-        Ok(exposure)
-    }
 }
 
 pub trait TryBorsh {
