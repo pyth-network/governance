@@ -33,10 +33,7 @@ impl GlobalConfig {
 
 #[cfg(test)]
 pub mod tests {
-    use {
-        crate::state::global_config::GlobalConfig,
-        anchor_lang::prelude::*,
-    };
+    use crate::state::global_config::GlobalConfig;
 
     #[test]
     fn check_size() {
