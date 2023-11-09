@@ -97,12 +97,6 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn update_freeze(ctx: Context<UpdateFreeze>, freeze: bool) -> Result<()> {
-        let config = &mut ctx.accounts.config;
-        config.freeze = freeze;
-        Ok(())
-    }
-
     pub fn update_token_list_time(
         ctx: Context<UpdateTokenListTime>,
         token_list_time: Option<i64>,
@@ -131,7 +125,7 @@ pub mod staking {
         lock: VestingSchedule,
     ) -> Result<()> {
         let config = &ctx.accounts.config;
-        config.check_frozen()?;
+
 
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.initialize(
@@ -172,7 +166,7 @@ pub mod staking {
         let current_epoch = get_current_epoch(config)?;
         let target_account = &mut ctx.accounts.target_account;
 
-        config.check_frozen()?;
+
         ctx.accounts
             .stake_account_metadata
             .check_is_llc_member(&config.agreement_hash)?;
@@ -228,7 +222,6 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
-        config.check_frozen()?;
 
         let mut current_position: Position = stake_account_positions
             .read_position(i)?
@@ -339,7 +332,6 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config).unwrap();
 
-        config.check_frozen()?;
 
         let unvested_balance = ctx
             .accounts

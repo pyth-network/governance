@@ -32,17 +32,6 @@ impl GlobalConfig {
     pub const LEN: usize = 10240;
 }
 
-impl GlobalConfig {
-    // Checks freeze flag and raises error
-    pub fn check_frozen(&self) -> Result<()> {
-        if self.freeze {
-            Err(error!(ErrorCode::Frozen))
-        } else {
-            Ok(())
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use {

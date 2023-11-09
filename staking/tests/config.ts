@@ -85,7 +85,7 @@ describe("config", async () => {
         pythTokenMint: pythMintAccount.publicKey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
@@ -125,7 +125,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
@@ -151,7 +151,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
@@ -175,7 +175,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
@@ -203,7 +203,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: new BN(5),
@@ -227,7 +227,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram: governanceProgram,
         pythTokenListTime: null,
@@ -237,59 +237,7 @@ describe("config", async () => {
     );
   });
 
-  it("freeze", async () => {
-    await program.methods.updateFreeze(true).rpc({ skipPreflight: DEBUG });
-
-    const configAccountData = await program.account.globalConfig.fetch(
-      configAccount
-    );
-
-    assert.equal(
-      JSON.stringify(configAccountData),
-      JSON.stringify({
-        bump,
-        governanceAuthority: program.provider.wallet.publicKey,
-        pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
-        unlockingDuration: 2,
-        epochDuration: new BN(3600),
-        freeze: true,
-        pdaAuthority: pdaAuthority,
-        governanceProgram: governanceProgram,
-        pythTokenListTime: null,
-        agreementHash: getDummyAgreementHash(),
-        mockClockTime: new BN(30),
-      })
-    );
-
-    const owner = program.provider.wallet.publicKey;
-    const stakeAccountKeypair = new Keypair();
-    const instructions: TransactionInstruction[] = [];
-
-    instructions.push(
-      await program.account.positionData.createInstruction(
-        stakeAccountKeypair,
-        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-      )
-    );
-
-    await expectFail(
-      program.methods
-        .createStakeAccount(owner, { fullyVested: {} })
-        .preInstructions(instructions)
-        .accounts({
-          stakeAccountPositions: stakeAccountKeypair.publicKey,
-          mint: pythMintAccount.publicKey,
-        })
-        .signers([stakeAccountKeypair]),
-      "Protocol is frozen",
-      errMap
-    );
-  });
-
-  it("unfreeze, create account", async () => {
-    await program.methods.updateFreeze(false).rpc({ skipPreflight: DEBUG });
-
+  it("create account", async () => {
     const configAccountData = await program.account.globalConfig.fetch(
       configAccount
     );
@@ -336,56 +284,6 @@ describe("config", async () => {
     stakeAccountAddress = stakeAccountKeypair.publicKey;
   });
 
-  it("freeze again try other instructions", async () => {
-    await program.methods.updateFreeze(true).rpc({ skipPreflight: DEBUG });
-
-    const configAccountData = await program.account.globalConfig.fetch(
-      configAccount
-    );
-
-    assert(configAccountData.freeze);
-
-    await expectFail(
-      program.methods
-        .createPosition(votingProduct, new BN(1))
-        .accounts({
-          stakeAccountPositions: stakeAccountAddress,
-          targetAccount: votingProductMetadataAccount,
-        })
-        .signers([]),
-      "Protocol is frozen",
-      errMap
-    );
-
-    await expectFail(
-      program.methods
-        .closePosition(0, new BN(1), votingProduct)
-        .accounts({
-          stakeAccountPositions: stakeAccountAddress,
-          targetAccount: votingProductMetadataAccount,
-        })
-        .signers([]),
-      "Protocol is frozen",
-      errMap
-    );
-
-    const toAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
-    );
-
-    await expectFail(
-      program.methods.withdrawStake(new BN(0)).accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        destination: toAccount,
-      }),
-      "Protocol is frozen",
-      errMap
-    );
-  });
-
   it("someone else tries to access admin methods", async () => {
     const sam = new Keypair();
     const samConnection = await StakeConnection.createStakeConnection(
@@ -402,11 +300,6 @@ describe("config", async () => {
     // Airdrops are not instant unfortunately, wait
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    await expectFail(
-      samConnection.program.methods.updateFreeze(true),
-      "An address constraint was violated",
-      errMap
-    );
     await expectFail(
       samConnection.program.methods.updateGovernanceAuthority(new PublicKey(0)),
       "An address constraint was violated",
@@ -467,7 +360,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: program.provider.wallet.publicKey,
         governanceProgram,
         pythTokenListTime: null,
@@ -490,7 +383,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram,
         pythTokenListTime: null,
