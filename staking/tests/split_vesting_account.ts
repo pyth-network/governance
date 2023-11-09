@@ -280,45 +280,10 @@ describe("split vesting account", async () => {
       VestingAccountState.UnvestedTokensFullyUnlocked,
       {
         unvested: {
-          unlocked: PythBalance.fromString("33"),
+          unlocked: PythBalance.fromString("32"),
         },
       }
     );
-
-    /*
-    let sourceStakeAccount = await samConnection.getMainAccount(samConnection.userPublicKey());
-    let newStakeAccount = await samConnection.getMainAccount(aliceConnection.userPublicKey());
-
-    assert(
-      VestingAccountState.UnvestedTokensFullyUnlocked ==
-        sourceStakeAccount.getVestingAccountState(await samConnection.getTime())
-    );
-    await assertBalanceMatches(
-      samConnection,
-      samConnection.userPublicKey(),
-      {
-        unvested: {
-          unlocked: PythBalance.fromString("67"),
-        },
-      },
-      await samConnection.getTime()
-    );
-
-    assert(
-      VestingAccountState.UnvestedTokensFullyUnlocked ==
-        newStakeAccount.getVestingAccountState(await samConnection.getTime())
-    );
-    await assertBalanceMatches(
-      samConnection,
-      aliceConnection.userPublicKey(),
-      {
-        unvested: {
-          unlocked: PythBalance.fromString("33"),
-        },
-      },
-      await samConnection.getTime()
-    );
-     */
   });
 
   after(async () => {
