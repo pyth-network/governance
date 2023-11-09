@@ -10,7 +10,7 @@ import {
 import path from "path";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { StakeConnection, PythBalance, VestingAccountState } from "../app";
-import { BN, Wallet } from "@project-serum/anchor";
+import { ErrorCode, BN, Wallet, AnchorError } from "@project-serum/anchor";
 import {
   assertBalanceMatches,
   OptionalBalanceSummary,
@@ -117,7 +117,6 @@ describe("split vesting account", async () => {
       )
     );
 
-    console.log("Create stake account");
     await samConnection.provider.sendAndConfirm(
       transaction,
       [stakeAccountKeypair],
@@ -142,7 +141,6 @@ describe("split vesting account", async () => {
       await samConnection.getTime()
     );
 
-    console.log("lockTokens");
     await samConnection.lockTokens(
       stakeAccount,
       PythBalance.fromString(lockedBalance)
@@ -170,6 +168,26 @@ describe("split vesting account", async () => {
       samConnection.userPublicKey(),
       expectedBalance,
       await samConnection.getTime()
+    );
+  }
+
+  async function assertFailsWithErrorCode(
+    thunk: () => Promise<void>,
+    errorCode: string
+  ) {
+    let actualErrorCode: string | undefined = undefined;
+    try {
+      await thunk();
+    } catch (err) {
+      if (err instanceof AnchorError) {
+        actualErrorCode = err.error.errorCode.code;
+      }
+    }
+
+    assert.equal(
+      actualErrorCode,
+      errorCode,
+      `Call did not fail with the expected error code.`
     );
   }
 
@@ -240,11 +258,8 @@ describe("split vesting account", async () => {
   });
    */
 
-  it("request split", async () => {
-    console.log("setup split");
+  it("split/accept flow success", async () => {
     let [samConnection, aliceConnection] = await setupSplit("100", "100", "0");
-
-    console.log("requestSplit");
 
     let stakeAccount = await samConnection.getMainAccount(
       samConnection.userPublicKey()
@@ -256,15 +271,11 @@ describe("split vesting account", async () => {
       aliceConnection.userPublicKey()
     );
 
-    console.log("acceptSplit");
-
     await pdaConnection.acceptSplit(
       stakeAccount,
       PythBalance.fromString("33"),
       aliceConnection.userPublicKey()
     );
-
-    console.log("testing");
 
     await assertMainAccountBalance(
       samConnection,
@@ -280,9 +291,91 @@ describe("split vesting account", async () => {
       VestingAccountState.UnvestedTokensFullyUnlocked,
       {
         unvested: {
-          unlocked: PythBalance.fromString("32"),
+          unlocked: PythBalance.fromString("33"),
         },
       }
+    );
+  });
+
+  it("split/accept flow fails if account has locked tokens", async () => {
+    let [samConnection, aliceConnection] = await setupSplit("100", "100", "1");
+
+    let stakeAccount = await samConnection.getMainAccount(
+      samConnection.userPublicKey()
+    );
+
+    await samConnection.requestSplit(
+      stakeAccount,
+      PythBalance.fromString("33"),
+      aliceConnection.userPublicKey()
+    );
+
+    await assertFailsWithErrorCode(
+      () =>
+        pdaConnection.acceptSplit(
+          stakeAccount,
+          PythBalance.fromString("33"),
+          aliceConnection.userPublicKey()
+        ),
+      "SplitWithStake"
+    );
+
+    await assertMainAccountBalance(
+      samConnection,
+      VestingAccountState.UnvestedTokensPartiallyLocked,
+      {
+        unvested: {
+          unlocked: PythBalance.fromString("99"),
+          locking: PythBalance.fromString("1"),
+        },
+      }
+    );
+  });
+
+  it("split/accept flow fails if accept has mismatched args", async () => {
+    let [samConnection, aliceConnection] = await setupSplit("100", "100", "0");
+
+    let stakeAccount = await samConnection.getMainAccount(
+      samConnection.userPublicKey()
+    );
+
+    await samConnection.requestSplit(
+      stakeAccount,
+      PythBalance.fromString("33"),
+      aliceConnection.userPublicKey()
+    );
+
+    // wrong balance
+    await assertFailsWithErrorCode(
+      () =>
+        pdaConnection.acceptSplit(
+          stakeAccount,
+          PythBalance.fromString("34"),
+          aliceConnection.userPublicKey()
+        ),
+      "InvalidApproval"
+    );
+
+    // wrong recipient
+    await assertFailsWithErrorCode(
+      () =>
+        pdaConnection.acceptSplit(
+          stakeAccount,
+          PythBalance.fromString("33"),
+          samConnection.userPublicKey()
+        ),
+      "InvalidApproval"
+    );
+
+    // wrong signer
+    await assertFailsWithErrorCode(
+      () =>
+        aliceConnection.acceptSplit(
+          stakeAccount,
+          PythBalance.fromString("33"),
+          aliceConnection.userPublicKey()
+        ),
+      "ConstraintAddress"
     );
   });
 
