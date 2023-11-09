@@ -50,7 +50,6 @@ pub mod wasm;
 declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
 #[program]
 pub mod staking {
-
     /// Creates a global config for the program
     use super::*;
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -108,6 +107,15 @@ pub mod staking {
     ) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.pyth_token_list_time = token_list_time;
+        Ok(())
+    }
+
+    pub fn update_agreement_hash(
+        ctx: Context<UpdateAgreementHash>,
+        agreement_hash: [u8; 32],
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.agreement_hash = agreement_hash;
         Ok(())
     }
 
