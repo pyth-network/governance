@@ -4,6 +4,13 @@ import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
 import { Wallet } from '@project-serum/anchor'
 import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+  STAKING_ADDRESS,
+  VestingAccountState,
+} from '@pythnetwork/staking'
+import {
   useAnchorWallet,
   useConnection,
   useWallet,
@@ -11,13 +18,6 @@ import {
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import BN from 'bn.js'
 import type { NextPage } from 'next'
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-  STAKING_ADDRESS,
-  VestingAccountState,
-} from 'pyth-staking-api'
 import { ChangeEvent, Fragment, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
