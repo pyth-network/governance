@@ -576,7 +576,6 @@ pub mod staking {
      */
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
-        config.check_frozen()?;
 
         let current_epoch = get_current_epoch(config)?;
 
