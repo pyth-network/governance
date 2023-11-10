@@ -1,0 +1,21 @@
+name: Publish Pyth Staking SDK
+
+on:
+  push:
+    tags:
+      - pyth-staking-v*
+jobs:
+  publish-js:
+    name: Publish Javascript Packages to NPM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm ci
+      - run: npx lerna run build --no-private
+      - run: npx lerna publish from-package --no-private --no-git-tag-version --yes --scope @pythnetwork/staking
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
