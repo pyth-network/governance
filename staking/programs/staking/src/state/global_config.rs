@@ -1,5 +1,4 @@
 use {
-    crate::error::ErrorCode,
     anchor_lang::prelude::*,
     borsh::BorshSchema,
 };
@@ -32,65 +31,9 @@ impl GlobalConfig {
     pub const LEN: usize = 10240;
 }
 
-impl GlobalConfig {
-    // Checks freeze flag and raises error
-    pub fn check_frozen(&self) -> Result<()> {
-        if self.freeze {
-            Err(error!(ErrorCode::Frozen))
-        } else {
-            Ok(())
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
-    use {
-        crate::state::global_config::GlobalConfig,
-        anchor_lang::prelude::*,
-    };
-
-    #[test]
-    fn test_unfrozen() {
-        let c = GlobalConfig {
-            bump:                                           0,
-            governance_authority:                           Pubkey::default(),
-            pyth_token_mint:                                Pubkey::default(),
-            pyth_governance_realm:                          Pubkey::default(),
-            unlocking_duration:                             1,
-            epoch_duration:                                 1, // epoch duration in seconds
-            freeze:                                         false,
-            pyth_token_list_time:                           None,
-            pda_authority:                                  Pubkey::default(),
-            governance_program:                             Pubkey::default(),
-            agreement_hash:                                 [0; 32],
-            #[cfg(feature = "mock-clock")]
-            mock_clock_time:                                0,
-        };
-
-        assert!(c.check_frozen().is_ok())
-    }
-
-    #[test]
-    fn test_frozen() {
-        let c = GlobalConfig {
-            bump:                                           0,
-            governance_authority:                           Pubkey::default(),
-            pyth_token_mint:                                Pubkey::default(),
-            pyth_governance_realm:                          Pubkey::default(),
-            unlocking_duration:                             1,
-            epoch_duration:                                 1, // epoch duration in seconds
-            freeze:                                         true,
-            pyth_token_list_time:                           None,
-            pda_authority:                                  Pubkey::default(),
-            governance_program:                             Pubkey::default(),
-            agreement_hash:                                 [0; 32],
-            #[cfg(feature = "mock-clock")]
-            mock_clock_time:                                0,
-        };
-
-        assert!(c.check_frozen().is_err())
-    }
+    use crate::state::global_config::GlobalConfig;
 
     #[test]
     fn check_size() {
