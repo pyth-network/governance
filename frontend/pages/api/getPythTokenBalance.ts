@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js'
-import { PythBalance } from 'pyth-staking-api'
+import { PythBalance } from '@pythnetwork/staking'
 import { BN } from 'bn.js'
 
 export const getPythTokenBalance = async (
