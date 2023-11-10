@@ -593,14 +593,12 @@ pub mod staking {
         let new_voter_record = &mut ctx.accounts.new_voter_record;
         new_voter_record.initialize(config, &split_request.recipient);
 
-        // Split off source account
-        let source_stake_account_positions =
-            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
-
         // Pre-check invariants
         // Note that the accept operation requires the positions account to be empty, which should trivially
         // pass this invariant check. However, we explicitly check invariants everywhere else, so may
         // as well check in this operation also.
+        let source_stake_account_positions =
+            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
         utils::risk::validate(
             source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
