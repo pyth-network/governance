@@ -1,6 +1,4 @@
 import {
-  PROGRAM_VERSION_V2,
-  withCreateGovernance,
   GovernanceConfig,
   VoteTipping,
   VoteThreshold,
@@ -11,7 +9,7 @@ import {
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
 import { BN } from "bn.js";
 import { Constants } from "pyth-staking-wasm";
-import { AUTHORITY_KEYPAIR, RPC_NODE } from "./mainnet_beta";
+import { AUTHORITY_KEYPAIR, RPC_NODE } from "./devnet";
 
 import {
   GOVERNANCE_ADDRESS,
@@ -24,6 +22,7 @@ import {
 // devnet : 3gKKKPGAfV15yV1Ce6Tn9vmwbeRnMHcyrvDxDpPhHAEr6L8VAe4N3rkNizhLGa7cM19xQaJykt6rxjx651fFRqXM
 
 async function main() {
+  console.log(AUTHORITY_KEYPAIR.publicKey.toBase58());
   const tx = new Transaction();
 
   let governanceConfig = new GovernanceConfig({
@@ -62,7 +61,7 @@ async function main() {
     STAKING_ADDRESS, // Address of the staking program
     governanceConfig, // Governance config
     false, // Transfer upgrade authority
-    new PublicKey(0), // Program authority
+    AUTHORITY_KEYPAIR.publicKey, // Program authority
     new PublicKey(0), // The realm authority is creating it, so this doesn't need to be defined
     AUTHORITY_KEYPAIR.publicKey, // Payer address
     AUTHORITY_KEYPAIR.publicKey // Realm authority
