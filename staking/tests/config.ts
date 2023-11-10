@@ -413,7 +413,7 @@ describe("config", async () => {
         pythGovernanceRealm: zeroPubkey,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
-        freeze: true,
+        freeze: false,
         pdaAuthority: pdaAuthority,
         governanceProgram,
         pythTokenListTime: null,
