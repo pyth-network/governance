@@ -1,6 +1,7 @@
 import {
   ANCHOR_CONFIG_PATH,
   CustomAbortController,
+  getDummyAgreementHash,
   getPortNumber,
   makeDefaultConfig,
   readAnchorConfig,
@@ -202,6 +203,55 @@ describe("split vesting account", async () => {
         },
       }
     );
+  });
+
+  it("split/accept flow full amount", async () => {
+    let [samConnection, aliceConnection] = await setupSplit("100", "100", "0");
+
+    let stakeAccount = await samConnection.getMainAccount(
+      samConnection.userPublicKey()
+    );
+
+    await samConnection.requestSplit(
+      stakeAccount,
+      PythBalance.fromString("100"),
+      aliceConnection.userPublicKey()
+    );
+
+    await pdaConnection.acceptSplit(
+      stakeAccount,
+      PythBalance.fromString("100"),
+      aliceConnection.userPublicKey()
+    );
+
+    await assertMainAccountBalance(
+      samConnection,
+      VestingAccountState.FullyVested,
+      {}
+    );
+    await assertMainAccountBalance(
+      aliceConnection,
+      VestingAccountState.UnvestedTokensFullyUnlocked,
+      {
+        unvested: {
+          unlocked: PythBalance.fromString("100"),
+        },
+      }
+    );
+
+    const aliceStakeAccount = await aliceConnection.getMainAccount(
+      aliceConnection.userPublicKey()
+    );
+    await aliceConnection.program.methods
+      .joinDaoLlc(getDummyAgreementHash())
+      .accounts({ stakeAccountPositions: aliceStakeAccount.address })
+      .rpc();
+    await aliceConnection.program.methods
+      .updateVoterWeight({ createGovernance: {} })
+      .accounts({
+        stakeAccountPositions: aliceStakeAccount.address,
+      })
+      .rpc();
   });
 
   it("split/accept flow fails if account has locked tokens", async () => {
