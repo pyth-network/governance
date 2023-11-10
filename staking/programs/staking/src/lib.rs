@@ -123,7 +123,6 @@ pub mod staking {
             *ctx.bumps.get("custody_authority").unwrap(),
             *ctx.bumps.get("voter_record").unwrap(),
             &owner,
-            None,
         );
         stake_account_metadata.set_lock(lock);
 
@@ -585,7 +584,6 @@ pub mod staking {
             *ctx.bumps.get("new_custody_authority").unwrap(),
             *ctx.bumps.get("new_voter_record").unwrap(),
             &split_request.recipient,
-            None,
         );
 
         let new_stake_account_positions =
