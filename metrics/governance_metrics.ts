@@ -1,19 +1,18 @@
 import { Wallet } from "@project-serum/anchor";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Counter, Gauge } from "prom-client";
+import BN from "bn.js";
 import {
   DEVNET_ENDPOINT,
-  DEVNET_PYTH_MINT,
   DEVNET_STAKING_ADDRESS,
+  DEVNET_PYTH_MINT,
   GOVERNANCE_ADDRESS,
   PythBalance,
   REALM_ID,
-  StakeAccount,
-  StakeConnection,
-} from "@pythnetwork/staking";
-import { tryGetRealmConfig } from "@solana/spl-governance";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
-import { Counter, Gauge } from "prom-client";
+} from "pyth-staking-api";
 import * as wasm from "pyth-staking-wasm";
+import { StakeAccount, StakeConnection } from "pyth-staking-api";
+import { tryGetRealmConfig } from "@solana/spl-governance";
 
 export class Metrics {
   globalError = new Counter({
