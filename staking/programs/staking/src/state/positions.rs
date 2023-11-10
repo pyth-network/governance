@@ -47,6 +47,10 @@ impl Default for PositionData {
     }
 }
 impl PositionData {
+    pub fn initialize(&mut self, owner: &Pubkey) {
+        self.owner = *owner;
+    }
+
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
         let res = *next_index as usize;
@@ -402,7 +406,6 @@ pub mod tests {
             return res;
         }
     }
-
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {

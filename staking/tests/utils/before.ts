@@ -133,12 +133,23 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
   );
   const controller = new CustomAbortController(internalController);
 
+  let numRetries = 0;
   while (true) {
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await connection.getEpochInfo();
+      await connection.getSlot();
       break;
-    } catch (e) {}
+    } catch (e) {
+      // Bound the number of retries so the tests don't hang if there's some problem blocking
+      // the connection to the validator.
+      if (numRetries == 10) {
+        console.log(
+          `Failed to start validator or connect to running validator. Caught exception: ${e}`
+        );
+        throw e;
+      }
+      numRetries += 1;
+    }
   }
   return { controller, connection };
 }
@@ -193,7 +204,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
 
 export function getConnection(portNumber: number): Connection {
   return new Connection(
-    `http://localhost:${portNumber}`,
+    `http://127.0.0.1:${portNumber}`,
     AnchorProvider.defaultOptions().commitment
   );
 }
@@ -482,7 +493,7 @@ export async function standardSetup(
     .rpc();
 
   const connection = new Connection(
-    `http://localhost:${portNumber}`,
+    `http://127.0.0.1:${portNumber}`,
     AnchorProvider.defaultOptions().commitment
   );
 

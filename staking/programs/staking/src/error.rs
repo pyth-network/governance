@@ -65,6 +65,15 @@ pub enum ErrorCode {
     NotLlcMember,
     #[msg("Invalid LLC agreement")] // 6030
     InvalidLlcAgreement,
-    #[msg("Other")] //6031
+    #[msg("Can't split 0 tokens from an account")] // 6031
+    SplitZeroTokens,
+    #[msg("Can't split more tokens than are in the account")] // 6032
+    SplitTooManyTokens,
+    #[msg("Can't split a token account with staking positions. Unstake your tokens first.")]
+    // 6033
+    SplitWithStake,
+    #[msg("The approval arguments do not match the split request.")] // 6034
+    InvalidApproval,
+    #[msg("Other")] //6035
     Other,
 }

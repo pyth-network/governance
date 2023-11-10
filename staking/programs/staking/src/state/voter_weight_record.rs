@@ -1,6 +1,9 @@
-use anchor_lang::prelude::{
-    borsh::BorshSchema,
-    *,
+use {
+    super::global_config::GlobalConfig,
+    anchor_lang::prelude::{
+        borsh::BorshSchema,
+        *,
+    },
 };
 
 /// Copied this struct from https://github.com/solana-labs/solana-program-library/blob/master/governance/addin-api/src/voter_weight.rs
@@ -62,6 +65,12 @@ pub struct VoterWeightRecord {
 
 impl VoterWeightRecord {
     pub const LEN: usize = 8 + 32 + 32 + 32 + 8 + 9 + 2 + 33 + 8;
+
+    pub fn initialize(&mut self, config: &GlobalConfig, owner: &Pubkey) {
+        self.realm = config.pyth_governance_realm;
+        self.governing_token_mint = config.pyth_token_mint;
+        self.governing_token_owner = *owner;
+    }
 }
 /// The governance action VoterWeight is evaluated for
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]

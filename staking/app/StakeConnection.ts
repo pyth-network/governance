@@ -122,6 +122,11 @@ export class StakeConnection {
     );
   }
 
+  /** The public key of the user of the staking program. This connection sends transactions as this user. */
+  public userPublicKey(): PublicKey {
+    return this.provider.wallet.publicKey;
+  }
+
   public async getAllStakeAccountAddresses(): Promise<PublicKey[]> {
     // Use the raw web3.js connection so that anchor doesn't try to borsh deserialize the zero-copy serialized account
     const allAccts = await this.provider.connection.getProgramAccounts(
@@ -539,9 +544,17 @@ export class StakeConnection {
     ) {
       throw Error(`Unexpected account state ${vestingAccountState}`);
     }
-    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+
     const balanceSummary = stakeAccount.getBalanceSummary(await this.getTime());
-    const amountBN = balanceSummary.unvested.unlocked.toBN();
+    await this.lockTokens(stakeAccount, balanceSummary.unvested.unlocked);
+  }
+
+  /**
+   * Locks the specified amount of tokens in governance.
+   */
+  public async lockTokens(stakeAccount: StakeAccount, amount: PythBalance) {
+    const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
+    const amountBN = amount.toBN();
 
     const transaction: Transaction = new Transaction();
 
@@ -860,7 +873,11 @@ export class StakeConnection {
       .rpc();
   }
 
-  public async acceptSplit(stakeAccount: StakeAccount) {
+  public async acceptSplit(
+    stakeAccount: StakeAccount,
+    amount: PythBalance,
+    recipient: PublicKey
+  ) {
     const newStakeAccountKeypair = new Keypair();
 
     const instructions = [];
@@ -872,7 +889,7 @@ export class StakeConnection {
     );
 
     await this.program.methods
-      .acceptSplit()
+      .acceptSplit(amount.toBN(), recipient)
       .accounts({
         sourceStakeAccountPositions: stakeAccount.address,
         newStakeAccountPositions: newStakeAccountKeypair.publicKey,

@@ -41,6 +41,30 @@ impl StakeAccountMetadataV2 {
     }
 }
 
+impl StakeAccountMetadataV2 {
+    pub fn initialize(
+        &mut self,
+        metadata_bump: u8,
+        custody_bump: u8,
+        authority_bump: u8,
+        voter_bump: u8,
+        owner: &Pubkey,
+    ) {
+        self.metadata_bump = metadata_bump;
+        self.custody_bump = custody_bump;
+        self.authority_bump = authority_bump;
+        self.voter_bump = voter_bump;
+        self.owner = *owner;
+        self.next_index = 0;
+        self.transfer_epoch = None;
+        self.signed_agreement_hash = None;
+    }
+
+    pub fn set_lock(&mut self, lock: VestingSchedule) {
+        self.lock = lock;
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use {

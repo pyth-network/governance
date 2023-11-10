@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]
 #![allow(clippy::result_large_err)]
+#![allow(clippy::too_many_arguments)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
@@ -53,6 +54,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = *ctx.bumps.get("config_account").unwrap();
@@ -124,25 +126,20 @@ pub mod staking {
         config.check_frozen()?;
 
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
-        stake_account_metadata.metadata_bump = *ctx.bumps.get("stake_account_metadata").unwrap();
-        stake_account_metadata.custody_bump = *ctx.bumps.get("stake_account_custody").unwrap();
-        stake_account_metadata.authority_bump = *ctx.bumps.get("custody_authority").unwrap();
-        stake_account_metadata.voter_bump = *ctx.bumps.get("voter_record").unwrap();
-        stake_account_metadata.owner = owner;
-        stake_account_metadata.next_index = 0;
-
-        stake_account_metadata.lock = lock;
-        stake_account_metadata.transfer_epoch = None;
-        stake_account_metadata.signed_agreement_hash = None;
+        stake_account_metadata.initialize(
+            *ctx.bumps.get("stake_account_metadata").unwrap(),
+            *ctx.bumps.get("stake_account_custody").unwrap(),
+            *ctx.bumps.get("custody_authority").unwrap(),
+            *ctx.bumps.get("voter_record").unwrap(),
+            &owner,
+        );
+        stake_account_metadata.set_lock(lock);
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.owner = owner;
+        stake_account_positions.initialize(&owner);
 
         let voter_record = &mut ctx.accounts.voter_record;
-
-        voter_record.realm = config.pyth_governance_realm;
-        voter_record.governing_token_mint = config.pyth_token_mint;
-        voter_record.governing_token_owner = owner;
+        voter_record.initialize(config, &owner);
 
         Ok(())
     }
@@ -573,32 +570,131 @@ pub mod staking {
      * the config account. If accepted, `amount` tokens are transferred to a new stake account
      * owned by the `recipient` and the split request is reset (by setting `amount` to 0).
      * The recipient of a transfer can't vote during the epoch of the transfer.
+     *
+     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and
+     * these parameters must match the request (in the `split_request` account).
      */
-    pub fn accept_split(ctx: Context<AcceptSplit>) -> Result<()> {
-        // TODO : Split vesting schedule between both accounts
+    pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
+        let config = &ctx.accounts.config;
+        config.check_frozen()?;
 
-        // TODO : Transfer stake positions to the new account if need
+        let current_epoch = get_current_epoch(config)?;
 
-        // TODO Check both accounts are valid after the transfer
+        let split_request = &ctx.accounts.source_stake_account_split_request;
+        require!(
+            split_request.amount == amount && split_request.recipient == recipient,
+            ErrorCode::InvalidApproval
+        );
 
-        // Transfer tokens
-        {
-            let split_request = &ctx.accounts.source_stake_account_split_request;
-            transfer(
-                CpiContext::from(&*ctx.accounts).with_signer(&[&[
-                    AUTHORITY_SEED.as_bytes(),
-                    ctx.accounts.source_stake_account_positions.key().as_ref(),
-                    &[ctx.accounts.source_stake_account_metadata.authority_bump],
-                ]]),
+        // Initialize new accounts
+        ctx.accounts.new_stake_account_metadata.initialize(
+            *ctx.bumps.get("new_stake_account_metadata").unwrap(),
+            *ctx.bumps.get("new_stake_account_custody").unwrap(),
+            *ctx.bumps.get("new_custody_authority").unwrap(),
+            *ctx.bumps.get("new_voter_record").unwrap(),
+            &split_request.recipient,
+        );
+
+        let new_stake_account_positions =
+            &mut ctx.accounts.new_stake_account_positions.load_init()?;
+        new_stake_account_positions.initialize(&split_request.recipient);
+
+        let new_voter_record = &mut ctx.accounts.new_voter_record;
+        new_voter_record.initialize(config, &split_request.recipient);
+
+        // Pre-check invariants
+        // Note that the accept operation requires the positions account to be empty, which should trivially
+        // pass this invariant check. However, we explicitly check invariants everywhere else, so may
+        // as well check in this operation also.
+        let source_stake_account_positions =
+            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
+        utils::risk::validate(
+            source_stake_account_positions,
+            ctx.accounts.source_stake_account_custody.amount,
+            ctx.accounts
+                .source_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        // Check that there aren't any positions (i.e., staked tokens) in the source account.
+        // This check allows us to create an empty positions account on behalf of the recipient and
+        // not worry about moving positions from the source account to the new account.
+        require!(
+            ctx.accounts.source_stake_account_metadata.next_index == 0,
+            ErrorCode::SplitWithStake
+        );
+
+        require!(split_request.amount > 0, ErrorCode::SplitZeroTokens);
+
+        // Split vesting account
+        let (source_vesting_schedule, new_vesting_schedule) = ctx
+            .accounts
+            .source_stake_account_metadata
+            .lock
+            .split_vesting_schedule(
                 split_request.amount,
+                ctx.accounts.source_stake_account_custody.amount,
             )?;
-        }
+        ctx.accounts
+            .source_stake_account_metadata
+            .set_lock(source_vesting_schedule);
+        ctx.accounts
+            .new_stake_account_metadata
+            .set_lock(new_vesting_schedule);
+
+
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.source_stake_account_positions.key().as_ref(),
+                &[ctx.accounts.source_stake_account_metadata.authority_bump],
+            ]]),
+            split_request.amount,
+        )?;
+
+        ctx.accounts.source_stake_account_custody.reload()?;
+        ctx.accounts.new_stake_account_custody.reload()?;
+
+
+        // Post-check
+        utils::risk::validate(
+            source_stake_account_positions,
+            ctx.accounts.source_stake_account_custody.amount,
+            ctx.accounts
+                .source_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
+
+        utils::risk::validate(
+            new_stake_account_positions,
+            ctx.accounts.new_stake_account_custody.amount,
+            ctx.accounts
+                .new_stake_account_metadata
+                .lock
+                .get_unvested_balance(
+                    utils::clock::get_current_time(config),
+                    config.pyth_token_list_time,
+                )?,
+            current_epoch,
+            config.unlocking_duration,
+        )?;
 
         // Delete current request
-        {
-            ctx.accounts.source_stake_account_split_request.amount = 0;
-        }
-        err!(ErrorCode::NotImplemented)
+        ctx.accounts.source_stake_account_split_request.amount = 0;
+
+        Ok(())
     }
 
     /**
