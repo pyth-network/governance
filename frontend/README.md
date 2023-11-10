@@ -16,7 +16,7 @@ From the root directory :
 
 ```bash
 npm install
-npx lerna run build --scope=pyth-staking-api
+npx lerna run build --scope=@pythnetwork/staking
 ```
 
 ### 2. Start the test validator
