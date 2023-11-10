@@ -12,6 +12,7 @@ import {
   ANCHOR_CONFIG_PATH,
   requestPythAirdrop,
   getDummyAgreementHash,
+  getDummyAgreementHash2,
 } from "./utils/before";
 import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
@@ -416,6 +417,14 @@ describe("config", async () => {
       "An address constraint was violated",
       errMap
     );
+
+    await expectFail(
+      samConnection.program.methods.updateAgreementHash(
+        Array.from(Buffer.alloc(32))
+      ),
+      "An address constraint was violated",
+      errMap
+    );
   });
 
   it("updates pda authority", async () => {
@@ -486,6 +495,36 @@ describe("config", async () => {
         governanceProgram,
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+      })
+    );
+  });
+
+  it("updates agreement hash", async () => {
+    assert.notEqual(
+      JSON.stringify(getDummyAgreementHash()),
+      JSON.stringify(getDummyAgreementHash2())
+    );
+
+    await program.methods.updateAgreementHash(getDummyAgreementHash2()).rpc();
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.wallet.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: zeroPubkey,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: true,
+        pdaAuthority: pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash2(),
         mockClockTime: new BN(30),
       })
     );

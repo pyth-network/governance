@@ -167,6 +167,41 @@ export type Staking = {
       ]
     },
     {
+      "name": "updateAgreementHash",
+      "accounts": [
+        {
+          "name": "governanceSigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agreementHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "createStakeAccount",
       "docs": [
         "Trustless instruction that creates a stake account for a user",
@@ -2128,6 +2163,41 @@ export const IDL: Staking = {
           "name": "tokenListTime",
           "type": {
             "option": "i64"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateAgreementHash",
+      "accounts": [
+        {
+          "name": "governanceSigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "agreementHash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
           }
         }
       ]

@@ -75,6 +75,10 @@ export function getDummyAgreementHash(): number[] {
   return Array.from({ length: 32 }, (_, i) => i);
 }
 
+export function getDummyAgreementHash2(): number[] {
+  return Array.from({ length: 32 }, (_, i) => 2);
+}
+
 /**
  * Deterministically determines the port for deploying the validator basing of the index of the testfile in the sorted
  * list of all testsfiles.
