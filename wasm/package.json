@@ -11,9 +11,10 @@
     "node/staking.js",
     "node/staking.d.ts"
   ],
+  "repository": "https://github.com/pyth-network/governance/tree/main/wasm",
   "main": "./node/staking.js",
   "browser": "./bundle/staking.js",
   "module": "./bundle/staking.js",
   "types": "./node/staking.d.ts",
-  "gitHead": "70c42a642ac053bc40ba62419dcff134279d03c0"
+  "gitHead": "6e52463956c6324b29961aad18cadb0978797ff4"
 }

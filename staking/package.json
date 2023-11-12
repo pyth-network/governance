@@ -44,5 +44,5 @@
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
     "dump_governance": "./clone_programs.sh"
   },
-  "gitHead": "70c42a642ac053bc40ba62419dcff134279d03c0"
+  "gitHead": "6e52463956c6324b29961aad18cadb0978797ff4"
 }
