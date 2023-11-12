@@ -15,6 +15,5 @@
   "main": "./node/staking.js",
   "browser": "./bundle/staking.js",
   "module": "./bundle/staking.js",
-  "types": "./node/staking.d.ts",
-  "gitHead": "6e52463956c6324b29961aad18cadb0978797ff4"
+  "types": "./node/staking.d.ts"
 }

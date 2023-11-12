@@ -43,6 +43,5 @@
     "build_wasm": "./scripts/build_wasm.sh",
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
     "dump_governance": "./clone_programs.sh"
-  },
-  "gitHead": "6e52463956c6324b29961aad18cadb0978797ff4"
+  }
 }
