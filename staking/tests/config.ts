@@ -18,7 +18,7 @@ import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
-import * as wasm from "pyth-staking-wasm";
+import * as wasm from "@pyth-network/staking-wasm";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
 
 // When DEBUG is turned on, we turn preflight transaction checking off

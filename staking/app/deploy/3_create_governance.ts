@@ -8,8 +8,8 @@ import {
 } from "@solana/spl-governance";
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
 import { BN } from "bn.js";
-import { Constants } from "pyth-staking-wasm";
-import { AUTHORITY_KEYPAIR, RPC_NODE } from "./mainnet_beta";
+import { Constants } from "@pyth-network/staking-wasm";
+import { AUTHORITY_KEYPAIR, RPC_NODE } from "./devnet";
 
 import { GOVERNANCE_ADDRESS, REALM_ID, EPOCH_DURATION } from "../constants";
 // Actual transaction hash :

@@ -19,7 +19,7 @@ import {
   makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
-import { Constants } from "pyth-staking-wasm";
+import { Constants } from "@pyth-network/staking-wasm";
 
 // When DEBUG is turned on, we turn preflight transaction checking off
 // That way failed transactions show up in the explorer, which makes them

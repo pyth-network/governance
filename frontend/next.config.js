@@ -27,7 +27,7 @@ module.exports = {
     // Import the browser version of wasm instead of the node version
     config.resolve.alias = {
       ...config.resolve.alias,
-      'pyth-staking-wasm$': path.resolve(__dirname, '../wasm/bundle'),
+      '@pyth-network/staking-wasm$': path.resolve(__dirname, '../wasm/bundle'),
     }
     return config
   },

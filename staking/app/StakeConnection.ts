@@ -16,7 +16,7 @@ import {
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
 } from "@solana/web3.js";
-import * as wasm2 from "pyth-staking-wasm";
+import * as wasm2 from "@pyth-network/staking-wasm";
 import {
   Token,
   TOKEN_PROGRAM_ID,
