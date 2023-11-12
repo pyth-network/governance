@@ -1,5 +1,5 @@
 {
-  "name": "@pyth-network/staking-wasm",
+  "name": "@pythnetwork/staking-wasm",
   "description": "Web Assembly files for Pyth Network Staking SDK",
   "version": "0.3.4",
   "files": [
@@ -14,5 +14,6 @@
   "main": "./node/staking.js",
   "browser": "./bundle/staking.js",
   "module": "./bundle/staking.js",
-  "types": "./node/staking.d.ts"
+  "types": "./node/staking.d.ts",
+  "gitHead": "70c42a642ac053bc40ba62419dcff134279d03c0"
 }

@@ -13,15 +13,17 @@
   "repository": "https://github.com/pyth-network/governance/tree/main/staking",
   "dependencies": {
     "@project-serum/anchor": "0.24.2",
+    "@pythnetwork/staking-wasm": "*",
     "@solana/spl-governance": "0.3.26",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.36.0",
     "encoding": "^0.1.13",
-    "@pyth-network/staking-wasm": "*",
     "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },
   "devDependencies": {
+    "@ledgerhq/hw-transport": "^6.27.2",
+    "@ledgerhq/hw-transport-node-hid": "^6.27.21",
     "@metaplex-foundation/js": "^0.17.5",
     "@metaplex-foundation/mpl-token-metadata": "^2.5.1",
     "@types/bn.js": "^5.1.0",
@@ -33,9 +35,7 @@
     "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
-    "wasm-pack": "^0.10.2",
-    "@ledgerhq/hw-transport-node-hid": "^6.27.21",
-    "@ledgerhq/hw-transport": "^6.27.2"
+    "wasm-pack": "^0.10.2"
   },
   "scripts": {
     "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
@@ -43,5 +43,6 @@
     "build_wasm": "./scripts/build_wasm.sh",
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
     "dump_governance": "./clone_programs.sh"
-  }
+  },
+  "gitHead": "70c42a642ac053bc40ba62419dcff134279d03c0"
 }

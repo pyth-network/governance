@@ -9,7 +9,7 @@ import {
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Wallet, utils, AnchorProvider } from "@project-serum/anchor";
-import * as wasm from "@pyth-network/staking-wasm";
+import * as wasm from "@pythnetwork/staking-wasm";
 import {
   TOKEN_PROGRAM_ID,
   Token,
