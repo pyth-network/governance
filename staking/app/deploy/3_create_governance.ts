@@ -19,16 +19,15 @@ import {
 } from "../constants";
 // Actual transaction hash :
 // mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
-// devnet : 3gKKKPGAfV15yV1Ce6Tn9vmwbeRnMHcyrvDxDpPhHAEr6L8VAe4N3rkNizhLGa7cM19xQaJykt6rxjx651fFRqXM
+// devnet (12/11/23): 2N1w4WGrLGsbcTre7yfpNw6FbD2X3uDpmCd3DVPyNv95jLwjt1vDFqdpcEGM9PMXj7RQgW7fJovWd7RHaouFYbmL
 
 async function main() {
-  console.log(AUTHORITY_KEYPAIR.publicKey.toBase58());
   const tx = new Transaction();
 
   let governanceConfig = new GovernanceConfig({
     communityVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.YesVotePercentage,
-      value: 10,
+      value: 10, // 10%
     }),
     minCommunityTokensToCreateProposal: new BN(
       Constants.MAX_VOTER_WEIGHT().toString()
@@ -36,19 +35,19 @@ async function main() {
     minInstructionHoldUpTime: 0, // 0 seconds
     baseVotingTime: EPOCH_DURATION, // Is equal to 1 Pyth epoch
     communityVoteTipping: VoteTipping.Strict,
-    minCouncilTokensToCreateProposal: new BN(1), // Should never be used because we don't have a council mint
+    minCouncilTokensToCreateProposal: new BN(1), // Not used since we don't have a council
 
     // V3
     councilVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.Disabled,
-    }), // Maps into `proposal_cool_off_time`, needs to be 0 in PROGRAM_VERSION_V2
+    }),
     councilVetoVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.Disabled,
-    }), // Maps into `proposal_cool_off_time`, needs to be 0 in PROGRAM_VERSION_V2
+    }),
     communityVetoVoteThreshold: new VoteThreshold({
       type: VoteThresholdType.Disabled,
-    }), // Not used in PROGRAM_VERSION_V2
-    councilVoteTipping: VoteTipping.Strict, // Not used in PROGRAM_VERSION_V2
+    }),
+    councilVoteTipping: VoteTipping.Strict, // Not used since we don't have a council
     votingCoolOffTime: 0,
     depositExemptProposalCount: 100,
   });
@@ -56,8 +55,8 @@ async function main() {
   await withCreateProgramGovernance(
     tx.instructions,
     GOVERNANCE_ADDRESS(), // Address of our instance of the governance program
-    PROGRAM_VERSION, // Version of the onchain program
-    REALM_ID, // Address of the Pyth realms
+    PROGRAM_VERSION, // Version of the on-chain program
+    REALM_ID, // Address of the Pyth realm
     STAKING_ADDRESS, // Address of the staking program
     governanceConfig, // Governance config
     false, // Transfer upgrade authority
