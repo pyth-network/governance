@@ -878,7 +878,7 @@ export class StakeConnection {
   ): Promise<{ balance: PythBalance; recipient: PublicKey } | undefined> {
     const splitRequestAccount = PublicKey.findProgramAddressSync(
       [
-        utils.bytes.utf8.encode("split_request"),
+        utils.bytes.utf8.encode(wasm.Constants.SPLIT_REQUEST()),
         stakeAccount.address.toBuffer(),
       ],
       this.program.programId

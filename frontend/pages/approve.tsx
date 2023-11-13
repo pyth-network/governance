@@ -8,6 +8,7 @@ import {
 } from '@solana/wallet-adapter-react'
 import {
   PythBalance,
+  StakeAccount,
   StakeConnection,
   STAKING_ADDRESS,
 } from '@pythnetwork/staking'
@@ -16,7 +17,6 @@ import { utils, Wallet } from '@project-serum/anchor'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from '../utils/capitalizeFirstLetter'
 import { PublicKey } from '@solana/web3.js'
-import { wasm } from '@pythnetwork/staking/app/StakeConnection'
 import { useRouter } from 'next/router'
 
 const ApproveSplit: NextPage = () => {
@@ -26,7 +26,7 @@ const ApproveSplit: NextPage = () => {
 
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
 
-  const [splitAccountOwner, setSplitAccountOwner] = useState<PublicKey>()
+  const [stakeAccount, setStakeAccount] = useState<StakeAccount>()
   const [amount, setAmount] = useState<PythBalance>()
   const [recipient, setRecipient] = useState<PublicKey>()
 
@@ -61,42 +61,29 @@ const ApproveSplit: NextPage = () => {
           splitAccountOwner
         ))!
 
-        const splitRequestAccount = PublicKey.findProgramAddressSync(
-          [
-            utils.bytes.utf8.encode('split_request'),
-            stakeAccount.address.toBuffer(),
-          ],
-          stakeConnection!.program.programId
-        )[0]
-        const splitRequest =
-          await stakeConnection!.program.account.splitRequest.fetch(
-            splitRequestAccount
-          )
+        const { balance, recipient } = await stakeConnection.getSplitRequest(
+          stakeAccount
+        )
 
-        setSplitAccountOwner(splitAccountOwner)
-        setAmount(new PythBalance(splitRequest.amount))
-        setRecipient(splitRequest.recipient)
+        setStakeAccount(stakeAccount)
+        setAmount(balance)
+        setRecipient(recipient)
       }
     }
     helper()
   }, [stakeConnection])
 
   const approveSplit = async () => {
-    console.log(amount)
-    console.log(recipient)
-    const stakeAccount = (await stakeConnection!.getMainAccount(
-      splitAccountOwner!
-    ))!
-    await stakeConnection!.acceptSplit(stakeAccount, amount!, recipient!)
+    await stakeConnection!.acceptSplit(stakeAccount!, amount!, recipient!)
   }
 
   return (
     <Layout>
       <SEO title={'Approve Split'} />
-      <p className=" text-sm ">Approve a split to {key}</p>
+      <p className=" text-sm ">Approve a split request from {key}</p>
       <p>
-        {splitAccountOwner != undefined
-          ? `account owner: ${splitAccountOwner}`
+        {stakeAccount != undefined
+          ? `stake account address: ${stakeAccount.address}`
           : 'no owner'}
       </p>
       <p>{amount != undefined ? `amount: ${amount}` : 'no amount'}</p>
@@ -107,7 +94,7 @@ const ApproveSplit: NextPage = () => {
         className="rounded-full p-2 hover:bg-hoverGray"
         onClick={() => approveSplit()}
       >
-        this is a button
+        Click to approve
       </button>
     </Layout>
   )
