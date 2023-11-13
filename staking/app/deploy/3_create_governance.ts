@@ -18,7 +18,7 @@ import {
   STAKING_ADDRESS,
 } from "../constants";
 // Actual transaction hash :
-// mainnet-beta : vjUE28suh1yt42aRtsj8mwYpz4zM17WQo4ujfXCDGQ5WK1z5G2JATYvEduh1vdMt2pT9auVLJnoCQMtiyEP3aYC
+// mainnet-beta (13/11/23): 5He9Nrw12ERNmRFZzGqWQRbpAJ1vqXay5xupFoLYEjDzb5269hFQLetKEDn6LSg61BUZZ3pkcREjff8Um3LVhtRK
 // devnet (12/11/23): 2N1w4WGrLGsbcTre7yfpNw6FbD2X3uDpmCd3DVPyNv95jLwjt1vDFqdpcEGM9PMXj7RQgW7fJovWd7RHaouFYbmL
 
 async function main() {
