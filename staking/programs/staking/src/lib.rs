@@ -463,7 +463,13 @@ pub mod staking {
                     &config.pyth_governance_realm,
                 )?;
 
-                if config.epoch_duration < governance_data.config.max_voting_time.into() {
+                if config.epoch_duration
+                    < (governance_data
+                        .config
+                        .voting_base_time
+                        .saturating_add(governance_data.config.voting_cool_off_time))
+                    .into()
+                {
                     return Err(error!(ErrorCode::ProposalTooLong));
                 }
 
