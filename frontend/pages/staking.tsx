@@ -537,14 +537,14 @@ const Staking: NextPage = () => {
           <>
             <button
               type="button"
-              className="primary-btn  py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+              className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
               onClick={handlePreliminaryUnstakeVestingAccount}
             >
               Preliminary unlock
             </button>
             <button
               type="button"
-              className="primary-btn  py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+              className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
               onClick={handleUnlockAllVestingAccount}
             >
               Unlock all
@@ -558,7 +558,7 @@ const Staking: NextPage = () => {
           <>
             <button
               type="button"
-              className="primary-btn min-w-[145px] py-3 px-8 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+              className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
               onClick={handleUnvestedModalLockAllButton}
               disabled={
                 currentVestingAccountState ==
@@ -583,7 +583,7 @@ const Staking: NextPage = () => {
             </button>
             <button
               type="button"
-              className="primary-btn min-w-[145px] py-3 px-8 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+              className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
               onClick={handleUnlockAllVestingAccount}
               disabled={
                 currentVestingAccountState ==
@@ -724,7 +724,7 @@ const Staking: NextPage = () => {
                   <div className="mt-4">
                     <button
                       type="button"
-                      className="primary-btn py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+                      className="primary-btn px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
                       onClick={handleMultipleStakeAccountsConnectButton}
                     >
                       Connect
@@ -896,8 +896,8 @@ const Staking: NextPage = () => {
                     </Dialog.Title>
                     <p className="mb-4">
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
-                      unvested tokens.{' '}
-                      {!unvestedTotalPythBalance.isZero()
+                      unvested tokens.
+                      {nextVestingDate && !unvestedTotalPythBalance.isZero()
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
@@ -926,7 +926,7 @@ const Staking: NextPage = () => {
                   onClick={openLockedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <LockedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -953,7 +953,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <LockedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
@@ -968,7 +968,7 @@ const Staking: NextPage = () => {
                   onClick={openUnlockedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <UnlockedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -995,7 +995,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <UnlockedIcon />
                   </div>
 
@@ -1011,7 +1011,7 @@ const Staking: NextPage = () => {
                   onClick={openUnvestedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <UnvestedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -1028,7 +1028,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <UnvestedIcon />
                   </div>
 
@@ -1111,7 +1111,7 @@ const Staking: NextPage = () => {
                             autoComplete="amount"
                             value={amount}
                             onChange={handleAmountChange}
-                            className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
+                            className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
                           />
 
                           <div className="flex items-center justify-center ">
