@@ -949,7 +949,7 @@
         },
         {
           "name": "sourceStakeAccountSplitRequest",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "pda": {
             "seeds": [

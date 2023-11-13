@@ -949,7 +949,7 @@ export type Staking = {
         },
         {
           "name": "sourceStakeAccountSplitRequest",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "pda": {
             "seeds": [
@@ -2920,7 +2920,7 @@ export const IDL: Staking = {
         },
         {
           "name": "sourceStakeAccountSplitRequest",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "pda": {
             "seeds": [

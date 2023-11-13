@@ -179,10 +179,28 @@ describe("split vesting account", async () => {
       aliceConnection.userPublicKey()
     );
 
+    let request = await samConnection.getSplitRequest(stakeAccount);
+    assert.equal(
+      JSON.stringify(request),
+      JSON.stringify({
+        balance: PythBalance.fromString("33"),
+        recipient: aliceConnection.userPublicKey(),
+      })
+    );
+
     await pdaConnection.acceptSplit(
       stakeAccount,
       PythBalance.fromString("33"),
       aliceConnection.userPublicKey()
+    );
+
+    request = await samConnection.getSplitRequest(stakeAccount);
+    assert.equal(
+      JSON.stringify(request),
+      JSON.stringify({
+        balance: PythBalance.fromString("0"),
+        recipient: aliceConnection.userPublicKey(),
+      })
     );
 
     await assertMainAccountBalance(

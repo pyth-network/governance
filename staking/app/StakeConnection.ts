@@ -873,6 +873,26 @@ export class StakeConnection {
       .rpc();
   }
 
+  public async getSplitRequest(
+    stakeAccount: StakeAccount
+  ): Promise<{ balance: PythBalance; recipient: PublicKey } | undefined> {
+    const splitRequestAccount = PublicKey.findProgramAddressSync(
+      [
+        utils.bytes.utf8.encode("split_request"),
+        stakeAccount.address.toBuffer(),
+      ],
+      this.program.programId
+    )[0];
+    const splitRequest = await this.program.account.splitRequest.fetch(
+      splitRequestAccount
+    );
+
+    return {
+      balance: new PythBalance(splitRequest.amount),
+      recipient: splitRequest.recipient,
+    };
+  }
+
   public async acceptSplit(
     stakeAccount: StakeAccount,
     amount: PythBalance,
