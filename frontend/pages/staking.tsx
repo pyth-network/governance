@@ -897,7 +897,7 @@ const Staking: NextPage = () => {
                     <p className="mb-4">
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
                       unvested tokens.{' '}
-                      {!unvestedTotalPythBalance.isZero()
+                      {nextVestingDate && !unvestedTotalPythBalance.isZero()
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
