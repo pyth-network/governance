@@ -20,7 +20,7 @@ default = []
 [dependencies]
 borsh = {version = "0.9.3", features = ["const-generics"]}
 anchor-lang = {version ="0.26.0", features = ["init-if-needed"]}
-anchor-spl = {version ="0.26.0",  default-features = false, features = ["mint", "token", "associated_token"]}
+anchor-spl = "0.26.0"
 wasm-bindgen = "0.2.79"
 spl-governance = {version = "3.1.1", features = ["no-entrypoint"]}
 js-sys = { version = "0.3.56", optional = true }
