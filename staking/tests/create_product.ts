@@ -10,7 +10,7 @@ import path from "path";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { StakeConnection } from "../app";
 import { BN, Program, utils } from "@project-serum/anchor";
-import * as wasm from "pyth-staking-wasm";
+import * as wasm from "@pythnetwork/staking-wasm";
 import assert from "assert";
 import { Staking } from "../target/types/staking";
 

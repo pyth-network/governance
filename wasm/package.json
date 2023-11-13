@@ -1,7 +1,7 @@
 {
-  "name": "pyth-staking-wasm",
-  "description": "Web Assembly files for Pyth staking",
-  "version": "0.3.3",
+  "name": "@pythnetwork/staking-wasm",
+  "description": "Web Assembly files for Pyth Network Staking SDK",
+  "version": "0.3.4",
   "files": [
     "bundle/staking_bg.wasm",
     "bundle/staking.js",
@@ -11,6 +11,7 @@
     "node/staking.js",
     "node/staking.d.ts"
   ],
+  "repository": "https://github.com/pyth-network/governance/tree/main/wasm",
   "main": "./node/staking.js",
   "browser": "./bundle/staking.js",
   "module": "./bundle/staking.js",
