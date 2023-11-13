@@ -26,14 +26,14 @@ require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
 const walletConnectConfig: WalletConnectWalletAdapterConfig = {
-  network: WalletAdapterNetwork.Devnet,
+  network: WalletAdapterNetwork.Mainnet,
   options: {
     relayUrl: 'wss://relay.walletconnect.com',
     projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
     metadata: {
       name: 'Pyth Staking',
       description: 'Stake your PYTH tokens to participate in governance',
-      url: 'https://pyth.network/',
+      url: 'https://staking.pyth.network/',
       icons: ['https://pyth.network/token.svg'],
     },
   },
