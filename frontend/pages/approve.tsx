@@ -61,9 +61,9 @@ const ApproveSplit: NextPage = () => {
           splitAccountOwner
         ))!
 
-        const { balance, recipient } = await stakeConnection.getSplitRequest(
+        const { balance, recipient } = (await stakeConnection.getSplitRequest(
           stakeAccount
-        )
+        ))!
 
         setStakeAccount(stakeAccount)
         setAmount(balance)
