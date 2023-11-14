@@ -1,25 +1,37 @@
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { PythBalance } from '@pythnetwork/staking'
 import { BN } from 'bn.js'
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  Token,
+} from '@solana/spl-token'
 
 export const getPythTokenBalance = async (
   connection: Connection,
   publicKey: PublicKey,
   pythTokenMint: PublicKey
 ) => {
-  let balance = new BN(0)
+  const mint = new Token(
+    connection,
+    pythTokenMint,
+    TOKEN_PROGRAM_ID,
+    new Keypair()
+  )
+
+  const pythAtaAddress = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    pythTokenMint,
+    publicKey
+  )
+
   try {
-    const tokenAccounts = await connection.getTokenAccountsByOwner(publicKey, {
-      mint: pythTokenMint,
-    })
-    for (const account of tokenAccounts.value) {
-      const test = await connection.getTokenAccountBalance(account.pubkey)
-      balance.iadd(
-        new BN(test.value.amount) ? new BN(test.value.amount) : new BN(0)
-      )
-    }
+    const pythAtaAccountInfo = await mint.getAccountInfo(pythAtaAddress)
+    return new PythBalance(pythAtaAccountInfo.amount)
   } catch (e) {
     console.error(e)
   }
-  return new PythBalance(balance)
+
+  return new PythBalance(new BN(0))
 }
