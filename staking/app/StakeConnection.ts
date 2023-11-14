@@ -568,7 +568,7 @@ export class StakeConnection {
       );
     }
 
-    if (!this.isLlcMember(stakeAccount)) {
+    if (!(await this.isLlcMember(stakeAccount))) {
       await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
     }
 
@@ -650,7 +650,7 @@ export class StakeConnection {
       );
     }
 
-    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
+    if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
       await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
@@ -755,7 +755,7 @@ export class StakeConnection {
       );
     }
 
-    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
+    if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
       await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
