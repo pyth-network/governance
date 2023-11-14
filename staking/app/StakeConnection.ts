@@ -278,9 +278,7 @@ export class StakeConnection {
 
   // Gets the current unix time, as would be perceived by the on-chain program
   public async getTime(): Promise<BN> {
-    // The Idl contains mockClockTime even when we build it with mock-clock feature disabled.
-    // Therefore if the field doesn't exist it gets parsed as 0.
-    // Thus, if mockClockTime is 0 we need to use real time.
+    // This is a hack, we are using this deprecated flag to flag whether we are using the mock clock or not
     if (this.config.freeze) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(
