@@ -53,7 +53,7 @@ describe("clock_api", async () => {
 
   it("gets real time", async () => {
     // Delete the property, which will make the API think it's not using mock clock anymore
-    delete stakeConnection.config.mockClockTime;
+    stakeConnection.config.freeze = false;
     let sysTime = Date.now() / 1000;
     let solanaTime = (await stakeConnection.getTime()).toNumber();
     assert.ok(Math.abs(sysTime - solanaTime) < CLOCK_TOLERANCE_SECONDS);

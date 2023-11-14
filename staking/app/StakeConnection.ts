@@ -281,7 +281,7 @@ export class StakeConnection {
     // The Idl contains mockClockTime even when we build it with mock-clock feature disabled.
     // Therefore if the field doesn't exist it gets parsed as 0.
     // Thus, if mockClockTime is 0 we need to use real time.
-    if ("mockClockTime" in this.config && this.config.mockClockTime.gtn(0)) {
+    if (this.config.freeze) {
       // On chain program using mock clock, so get that time
       const updatedConfig = await this.program.account.globalConfig.fetch(
         this.configAddress

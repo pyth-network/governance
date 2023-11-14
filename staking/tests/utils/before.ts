@@ -352,7 +352,7 @@ export function makeDefaultConfig(
     pythTokenMint: pythMint,
     unlockingDuration: 1,
     epochDuration: new BN(3600),
-    freeze: false,
+    freeze: true,
     mockClockTime: new BN(10),
     bump: 0,
     pythTokenListTime: null,
