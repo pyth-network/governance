@@ -590,7 +590,8 @@ export class StakeConnection {
   public async setupVestingAccount(
     amount: PythBalance,
     owner: PublicKey,
-    vestingSchedule
+    vestingSchedule,
+    transfer: boolean = true
   ) {
     const transaction: Transaction = new Transaction();
 
@@ -608,12 +609,15 @@ export class StakeConnection {
       owner,
       vestingSchedule
     );
-    transaction.instructions.push(
-      await this.buildTransferInstruction(
-        stakeAccountKeypair.publicKey,
-        amount.toBN()
-      )
-    );
+
+    if (transfer) {
+      transaction.instructions.push(
+        await this.buildTransferInstruction(
+          stakeAccountKeypair.publicKey,
+          amount.toBN()
+        )
+      );
+    }
 
     await this.provider.sendAndConfirm(transaction, [stakeAccountKeypair]);
   }
