@@ -28,7 +28,8 @@ async function main() {
   await stakeConnection.setupVestingAccount(
     AMOUNT,
     OWNER_PUBKEY,
-    vestingSchedule
+    vestingSchedule,
+    false
   );
 }
 
