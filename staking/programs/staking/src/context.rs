@@ -320,7 +320,7 @@ pub struct AcceptSplit<'info> {
     pub source_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.metadata_bump)]
     pub source_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
-    #[account(seeds = [SPLIT_REQUEST.as_bytes(), source_stake_account_positions.key().as_ref()], bump)]
+    #[account(mut, seeds = [SPLIT_REQUEST.as_bytes(), source_stake_account_positions.key().as_ref()], bump)]
     pub source_stake_account_split_request: Box<Account<'info, split_request::SplitRequest>>,
     #[account(
         mut,
