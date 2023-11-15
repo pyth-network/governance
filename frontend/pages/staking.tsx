@@ -30,6 +30,8 @@ import { useDepositMutation } from 'hooks/useDepositMutation'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useBalance } from 'hooks/useBalance'
+import { useVestingAccountState } from 'hooks/useVestingAccountState'
+import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 
 enum TabEnum {
   Lock,
@@ -121,17 +123,12 @@ const Staking: NextPage = () => {
 
   const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
-  const [nextVestingAmount, setNextVestingAmount] = useState<PythBalance>(
-    PythBalance.zero()
-  )
-  const [nextVestingDate, setNextVestingDate] = useState<Date>()
-  const [currentVestingAccountState, setCurrentVestingAccountState] =
-    useState<VestingAccountState>()
 
-  // check if vesting account without governance exists and refresh balances after getting stake accounts
-  useEffect(() => {
-    refreshVestingAccountState()
-  }, [stakeConnection, mainStakeAccount])
+  const { data: nextVestingEvent } = useNextVestingEvent(mainStakeAccount)
+  const { nextVestingDate, nextVestingAmount } = nextVestingEvent ?? {}
+
+  const { data: currentVestingAccountState } =
+    useVestingAccountState(mainStakeAccount)
 
   useEffect(() => {
     if (amount && balance) {
@@ -144,22 +141,6 @@ const Staking: NextPage = () => {
       setIsSufficientBalance(true)
     }
   }, [amount])
-
-  useEffect(() => {
-    const getVestingInfo = async () => {
-      if (stakeConnection && mainStakeAccount) {
-        const currentTime = await stakeConnection.getTime()
-        const nextVestingEvent = mainStakeAccount.getNextVesting(currentTime)
-        if (nextVestingEvent) {
-          setNextVestingAmount(
-            new PythBalance(new BN(nextVestingEvent.amount.toString()))
-          )
-          setNextVestingDate(new Date(Number(nextVestingEvent.time) * 1000))
-        }
-      }
-    }
-    getVestingInfo()
-  }, [unvestedTotalPythBalance])
 
   // set ui balance amount whenever current tab changes
   useEffect(() => {
@@ -185,19 +166,6 @@ const Staking: NextPage = () => {
     lockedPythBalance,
     unlockedPythBalance,
   ])
-
-  const refreshVestingAccountState = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      const currentTime = await stakeConnection.getTime()
-      const vestingAccountState =
-        mainStakeAccount.getVestingAccountState(currentTime)
-      setCurrentVestingAccountState(vestingAccountState)
-      setIsLockButtonDisabled(
-        vestingAccountState != VestingAccountState.FullyVested &&
-          vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
-      )
-    }
-  }
 
   // set amount when input changes
   const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -267,7 +235,7 @@ const Staking: NextPage = () => {
         await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
         toast.success(
           `${nextVestingAmount
-            .add(lockedPythBalance ?? PythBalance.zero())
+            ?.add(lockedPythBalance ?? PythBalance.zero())
             .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
       } catch (e) {
@@ -310,7 +278,7 @@ const Staking: NextPage = () => {
             unvested tokens are in cooldown period.
             <br />
             <br />
-            Your {nextVestingAmount.toString()} tokens scheduled to vest on{' '}
+            Your {nextVestingAmount?.toString()} tokens scheduled to vest on{' '}
             {nextVestingDate?.toLocaleString()} will be withdrawable on vest.
             <br />
             <br />
@@ -340,7 +308,7 @@ const Staking: NextPage = () => {
             <br />
             If you would like to withdraw them immediately on vest, you may
             choose to preliminary unlock them now. This action will cause your{' '}
-            {nextVestingAmount.toString()} tokens scheduled to vest on{' '}
+            {nextVestingAmount?.toString()} tokens scheduled to vest on{' '}
             {nextVestingDate?.toLocaleString()} to become withdrawable on vest.
             <br />
             <br />
@@ -629,7 +597,7 @@ const Staking: NextPage = () => {
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
                       unvested tokens.{' '}
                       {nextVestingDate && !unvestedTotalPythBalance?.isZero()
-                        ? `${nextVestingAmount.toString()} tokens
+                        ? `${nextVestingAmount?.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
                       <br />
