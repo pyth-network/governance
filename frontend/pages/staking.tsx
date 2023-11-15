@@ -36,6 +36,7 @@ import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useDepositMutation } from 'hooks/useDepositMutation'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
+import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 
 enum TabEnum {
   Lock,
@@ -252,33 +253,7 @@ const Staking: NextPage = () => {
   }
 
   // withdraw unlocked PYTH tokens to wallet
-  const handleWithdraw = async () => {
-    if (!amount) {
-      toast.error('Please enter a valid amount!')
-      return
-    }
-    const withdrawAmount = PythBalance.fromString(amount)
-    if (withdrawAmount.gt(PythBalance.zero())) {
-      if (mainStakeAccount) {
-        setIsActionLoading(true)
-        try {
-          await stakeConnection?.withdrawTokens(
-            mainStakeAccount,
-            withdrawAmount
-          )
-          toast.success('Withdraw successful!')
-        } catch (e) {
-          toast.error(capitalizeFirstLetter(e.message))
-        }
-        setIsActionLoading(false)
-        await refreshStakeAccount()
-      } else {
-        toast.error('Stake account is undefined.')
-      }
-    } else {
-      toast.error('Amount must be greater than 0.')
-    }
-  }
+  const withdrawMutation = useWithdrawMutation()
 
   // refresh balances each time balances change
   const refreshBalance = async () => {
@@ -999,12 +974,18 @@ const Staking: NextPage = () => {
                             ) : (
                               <button
                                 className="action-btn font-base"
-                                onClick={handleWithdraw}
+                                onClick={() =>
+                                  withdrawMutation.mutate({
+                                    amount,
+                                    mainStakeAccount,
+                                  })
+                                }
                                 disabled={
-                                  !isSufficientBalance || isActionLoading
+                                  !isSufficientBalance ||
+                                  withdrawMutation.isLoading
                                 }
                               >
-                                {isActionLoading ? (
+                                {withdrawMutation.isLoading ? (
                                   <Spinner />
                                 ) : isSufficientBalance ? (
                                   'Withdraw'
