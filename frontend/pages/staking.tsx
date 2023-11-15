@@ -34,6 +34,7 @@ import { LockedModal } from '@components/modals/LockedModal'
 import { UnlockedModal } from '@components/modals/UnlockedModal'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { useDepositMutation } from 'hooks/useDepositMutation'
 
 enum TabEnum {
   Lock,
@@ -235,29 +236,7 @@ const Staking: NextPage = () => {
   }
 
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
-  const handleDeposit = async () => {
-    if (!amount) {
-      toast.error('Please enter a valid amount!')
-      return
-    }
-    const depositAmount = PythBalance.fromString(amount)
-    if (depositAmount.gt(PythBalance.zero())) {
-      setIsActionLoading(true)
-      try {
-        await stakeConnection?.depositAndLockTokens(
-          mainStakeAccount,
-          depositAmount
-        )
-        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-      setIsActionLoading(false)
-      await refreshStakeAccount()
-    } else {
-      toast.error('Amount must be greater than 0.')
-    }
-  }
+  const depositMutation = useDepositMutation()
 
   const handleCloseMultipleStakeAccountsModal = () => {
     setIsMultipleStakeAccountsModalOpen(false)
@@ -988,14 +967,19 @@ const Staking: NextPage = () => {
                             ) : currentTab === TabEnum.Lock ? (
                               <button
                                 className="action-btn text-base "
-                                onClick={handleDeposit}
+                                onClick={() =>
+                                  depositMutation.mutate({
+                                    amount,
+                                    mainStakeAccount,
+                                  })
+                                }
                                 disabled={
                                   isLockButtonDisabled ||
                                   !isSufficientBalance ||
-                                  isActionLoading
+                                  depositMutation.isLoading
                                 }
                               >
-                                {isActionLoading ? (
+                                {depositMutation.isLoading ? (
                                   <Spinner />
                                 ) : isLockButtonDisabled ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
