@@ -30,6 +30,8 @@ import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
 import UnvestedIcon from '@components/icons/UnvestedIcon'
 import Spinner from '@components/Spinner'
+import { LockedModal } from '@components/modals/LockedModal'
+import { UnlockedModal } from '@components/modals/UnlockedModal'
 
 enum TabEnum {
   Lock,
@@ -390,16 +392,8 @@ const Staking: NextPage = () => {
     setIsLockedModalOpen(true)
   }
 
-  const closeLockedModal = () => {
-    setIsLockedModalOpen(false)
-  }
-
   const openUnlockedModal = () => {
     setIsUnlockedModalOpen(true)
-  }
-
-  const closeUnlockedModal = () => {
-    setIsUnlockedModalOpen(false)
   }
 
   const openUnvestedModal = () => {
@@ -537,14 +531,14 @@ const Staking: NextPage = () => {
           <>
             <button
               type="button"
-              className="primary-btn  py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+              className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
               onClick={handlePreliminaryUnstakeVestingAccount}
             >
               Preliminary unlock
             </button>
             <button
               type="button"
-              className="primary-btn  py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+              className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
               onClick={handleUnlockAllVestingAccount}
             >
               Unlock all
@@ -558,7 +552,7 @@ const Staking: NextPage = () => {
           <>
             <button
               type="button"
-              className="primary-btn min-w-[145px] py-3 px-8 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+              className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
               onClick={handleUnvestedModalLockAllButton}
               disabled={
                 currentVestingAccountState ==
@@ -583,7 +577,7 @@ const Staking: NextPage = () => {
             </button>
             <button
               type="button"
-              className="primary-btn min-w-[145px] py-3 px-8 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+              className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
               onClick={handleUnlockAllVestingAccount}
               disabled={
                 currentVestingAccountState ==
@@ -724,7 +718,7 @@ const Staking: NextPage = () => {
                   <div className="mt-4">
                     <button
                       type="button"
-                      className="primary-btn py-3 px-8 text-base font-semibold  hover:bg-blueGemHover"
+                      className="primary-btn px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
                       onClick={handleMultipleStakeAccountsConnectButton}
                     >
                       Connect
@@ -737,126 +731,19 @@ const Staking: NextPage = () => {
         </Dialog>
       </Transition>
 
-      <Transition appear show={isLockedModalOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          onClose={() => setIsLockedModalOpen(false)}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-50" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="diaglogPanel ">
-                  <button className="diaglogClose" onClick={closeLockedModal}>
-                    <span className="mr-3">close</span> <CloseIcon />
-                  </button>
-                  <div className="max-w-md">
-                    <Dialog.Title as="h3" className="diaglogTitle">
-                      Locked tokens
-                    </Dialog.Title>
-                    <p className="mb-8 leading-6 ">
-                      Locked tokens enables you to participate in Pyth Network
-                      governance. Newly-locked tokens become eligible to vote in
-                      governance at the beginning of the next epoch.
-                    </p>
-                    <p className="leading-6 ">
-                      You currently have {lockedPythBalance?.toString()} locked
-                      tokens.
-                    </p>
-                    {lockingPythBalance && !lockingPythBalance.isZero() ? (
-                      <p className="mt-4 leading-6 ">
-                        {lockingPythBalance.toString()} tokens will be locked
-                        from the beginning of the next epoch.
-                      </p>
-                    ) : null}
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+      <LockedModal
+        setIsLockedModalOpen={setIsLockedModalOpen}
+        isLockedModalOpen={isLockedModalOpen}
+        lockedPythBalance={lockedPythBalance}
+        lockingPythBalance={lockingPythBalance}
+      />
 
-      <Transition appear show={isUnlockedModalOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-10"
-          onClose={() => setIsUnlockedModalOpen(false)}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black bg-opacity-50" />
-          </Transition.Child>
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="diaglogPanel">
-                  <button className="diaglogClose" onClick={closeUnlockedModal}>
-                    <span className="mr-3">close</span> <CloseIcon />
-                  </button>
-
-                  <div className="max-w-md">
-                    <Dialog.Title as="h3" className="diaglogTitle">
-                      Unlocked tokens
-                    </Dialog.Title>
-                    <p className="mb-6 leading-6">
-                      Unlocking tokens enables you to withdraw them from the
-                      program after a cooldown period of two epochs of which
-                      they become unlocked tokens. Unlocked tokens cannot
-                      participate in governance.
-                    </p>
-                    <p className="leading-6">
-                      You currently have {unlockedPythBalance?.toString()}{' '}
-                      unlocked tokens.
-                    </p>
-                    {unlockingPythBalance && !unlockingPythBalance.isZero() ? (
-                      <p className="mt-4 leading-6">
-                        {unlockingPythBalance.toString()} tokens have to go
-                        through a cool-down period for 2 epochs before they can
-                        be withdrawn.
-                      </p>
-                    ) : null}
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
+      <UnlockedModal
+        isUnlockedModalOpen={isUnlockedModalOpen}
+        setIsUnlockedModalOpen={setIsUnlockedModalOpen}
+        unlockedPythBalance={unlockedPythBalance}
+        unlockingPythBalance={unlockingPythBalance}
+      />
 
       <Transition appear show={isUnvestedModalOpen} as={Fragment}>
         <Dialog
@@ -926,7 +813,7 @@ const Staking: NextPage = () => {
                   onClick={openLockedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <LockedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -953,7 +840,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <LockedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
@@ -968,7 +855,7 @@ const Staking: NextPage = () => {
                   onClick={openUnlockedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <UnlockedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -995,7 +882,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <UnlockedIcon />
                   </div>
 
@@ -1011,7 +898,7 @@ const Staking: NextPage = () => {
                   onClick={openUnvestedModal}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mr-6 md:mb-0">
+                    <div className="mb-2  md:mb-0 md:mr-6">
                       <UnvestedIcon />
                     </div>
                     <div className="flex flex-col justify-between py-2 text-sm">
@@ -1028,7 +915,7 @@ const Staking: NextPage = () => {
                 </button>
               ) : (
                 <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
-                  <div className="mb-2  md:mr-6 md:mb-0">
+                  <div className="mb-2  md:mb-0 md:mr-6">
                     <UnvestedIcon />
                   </div>
 
@@ -1111,7 +998,7 @@ const Staking: NextPage = () => {
                             autoComplete="amount"
                             value={amount}
                             onChange={handleAmountChange}
-                            className="input-no-spin mt-1 mb-8 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
+                            className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
                           />
 
                           <div className="flex items-center justify-center ">
