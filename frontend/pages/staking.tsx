@@ -32,6 +32,8 @@ import UnvestedIcon from '@components/icons/UnvestedIcon'
 import Spinner from '@components/Spinner'
 import { LockedModal } from '@components/modals/LockedModal'
 import { UnlockedModal } from '@components/modals/UnlockedModal'
+import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
 
 enum TabEnum {
   Lock,
@@ -65,11 +67,44 @@ const Staking: NextPage = () => {
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
-  const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
+  // const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
   const [isSufficientBalance, setIsSufficientBalance] = useState<boolean>(true)
-  const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
-  const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>([])
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const {
+    data: stakeAccounts,
+    isLoading: isStakeAccountsLoading,
+    refetch: refreshStakeAccount,
+  } = useStakeAccounts()
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
+  const isBalanceLoading = isStakeAccountsLoading || isStakeConnectionLoading
+
+  // set main stake account
+  useEffect(() => {
+    if (stakeAccounts !== undefined) {
+      if (stakeAccounts.length === 1) setMainStakeAccount(stakeAccounts[0])
+      else {
+        // user has selected the stake account previously
+        if (mainStakeAccount !== undefined) {
+          // select the previous main stake account
+          for (const acc of stakeAccounts) {
+            if (
+              acc.address.toBase58() === mainStakeAccount?.address.toBase58()
+            ) {
+              setMainStakeAccount(acc)
+            }
+          }
+        } else {
+          setIsMultipleStakeAccountsModalOpen(true)
+          setMultipleStakeAccountsModalOption(stakeAccounts[0])
+        }
+      }
+    } else {
+      setMainStakeAccount(undefined)
+      setMultipleStakeAccountsModalOption(undefined)
+    }
+  }, [stakeAccounts])
+
   const [balance, setBalance] = useState<PythBalance>()
   const [pythBalance, setPythBalance] = useState<PythBalance>(
     PythBalance.zero()
@@ -103,42 +138,6 @@ const Staking: NextPage = () => {
   const [nextVestingDate, setNextVestingDate] = useState<Date>()
   const [currentVestingAccountState, setCurrentVestingAccountState] =
     useState<VestingAccountState>()
-
-  // create stake connection and get stake accounts when wallet is connected
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        setIsBalanceLoading(true)
-        const stakeConnection = await StakeConnection.createStakeConnection(
-          connection,
-          anchorWallet as Wallet,
-          STAKING_ADDRESS
-        )
-        setStakeConnection(stakeConnection)
-        const stakeAccounts = await stakeConnection.getStakeAccounts(
-          (anchorWallet as Wallet).publicKey
-        )
-        setStakeAccounts(stakeAccounts)
-        if (stakeAccounts.length === 1) {
-          setMainStakeAccount(stakeAccounts[0])
-        } else if (stakeAccounts.length > 1) {
-          setIsMultipleStakeAccountsModalOpen(true)
-          setMultipleStakeAccountsModalOption(stakeAccounts[0])
-        } else {
-          setIsBalanceLoading(false)
-        }
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-    }
-    if (!connected) {
-      setStakeConnection(undefined)
-      setMainStakeAccount(undefined)
-      resetBalance()
-    } else {
-      initialize()
-    }
-  }, [connected])
 
   // check if vesting account without governance exists and refresh balances after getting stake accounts
   useEffect(() => {
@@ -348,24 +347,6 @@ const Staking: NextPage = () => {
       setUnvestedUnlockingPythBalance(unvested.unlocking)
       setUnvestedUnlockedPythBalance(unvested.unlocked)
       setUnlockedPythBalance(withdrawable)
-      setIsBalanceLoading(false)
-    }
-  }
-
-  const refreshStakeAccount = async () => {
-    if (stakeConnection && publicKey) {
-      setIsBalanceLoading(true)
-      const stakeAccounts = await stakeConnection.getStakeAccounts(publicKey)
-      if (stakeAccounts.length === 0) {
-        setIsBalanceLoading(false)
-      } else if (stakeAccounts.length === 1) {
-        setMainStakeAccount(stakeAccounts[0])
-      }
-      for (const acc of stakeAccounts) {
-        if (acc.address.toBase58() === mainStakeAccount?.address.toBase58()) {
-          setMainStakeAccount(acc)
-        }
-      }
     }
   }
 
@@ -678,7 +659,7 @@ const Staking: NextPage = () => {
                         leaveTo="opacity-0"
                       >
                         <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-cherryPie py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                          {stakeAccounts.map((acc, idx) => (
+                          {stakeAccounts?.map((acc, idx) => (
                             <Listbox.Option
                               key={idx}
                               className={({ active }) =>

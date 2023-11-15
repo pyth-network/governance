@@ -18,6 +18,7 @@ import {
 } from '@solana/wallet-adapter-wallets'
 import type { AppProps } from 'next/app'
 import { FC, useMemo } from 'react'
+import { QueryClient, QueryClientProvider } from 'react-query'
 
 import { Toaster } from 'react-hot-toast'
 
@@ -38,6 +39,8 @@ const walletConnectConfig: WalletConnectWalletAdapterConfig = {
     },
   },
 }
+
+const queryClient = new QueryClient()
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
@@ -66,22 +69,24 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   )
 
   return (
-    <ConnectionProvider endpoint={endpoint || 'http://localhost:8899'}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          <Component {...pageProps} />
-          <Toaster
-            position="bottom-left"
-            toastOptions={{
-              style: {
-                wordBreak: 'break-word',
-              },
-            }}
-            reverseOrder={false}
-          />
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <QueryClientProvider client={queryClient}>
+      <ConnectionProvider endpoint={endpoint || 'http://localhost:8899'}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>
+            <Component {...pageProps} />
+            <Toaster
+              position="bottom-left"
+              toastOptions={{
+                style: {
+                  wordBreak: 'break-word',
+                },
+              }}
+              reverseOrder={false}
+            />
+          </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
+    </QueryClientProvider>
   )
 }
 
