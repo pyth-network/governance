@@ -301,18 +301,6 @@ const Staking: NextPage = () => {
     }
   }
 
-  const openLockedModal = () => {
-    setIsLockedModalOpen(true)
-  }
-
-  const openUnlockedModal = () => {
-    setIsUnlockedModalOpen(true)
-  }
-
-  const openUnvestedModal = () => {
-    setIsUnvestedModalOpen(true)
-  }
-
   const closeUnvestedModal = () => {
     setIsUnvestedModalOpen(false)
   }
@@ -723,7 +711,7 @@ const Staking: NextPage = () => {
               {connected ? (
                 <button
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={openLockedModal}
+                  onClick={() => setIsLockedModalOpen(true)}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                     <div className="mb-2  md:mb-0 md:mr-6">
@@ -765,7 +753,7 @@ const Staking: NextPage = () => {
               {connected ? (
                 <button
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={openUnlockedModal}
+                  onClick={() => setIsUnlockedModalOpen(true)}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                     <div className="mb-2  md:mb-0 md:mr-6">
@@ -808,7 +796,7 @@ const Staking: NextPage = () => {
               {connected ? (
                 <button
                   className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={openUnvestedModal}
+                  onClick={() => setIsUnvestedModalOpen(true)}
                 >
                   <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                     <div className="mb-2  md:mb-0 md:mr-6">
