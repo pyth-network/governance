@@ -1,34 +1,43 @@
-import { PythBalance, VestingAccountState } from '@pythnetwork/staking'
+import {
+  PythBalance,
+  StakeAccount,
+  VestingAccountState,
+} from '@pythnetwork/staking'
 import { BaseModal } from './BaseModal'
 import Tooltip from '@components/Tooltip'
+import { useUnvestedLockAllMutation } from 'hooks/useUnvestedLockAllMutation'
+import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMutation'
+import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation'
+import { useBalance } from 'hooks/useBalance'
+import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 
 export type UnvestedModalProps = {
   isUnvestedModalOpen: boolean
   setIsUnvestedModalOpen: (open: boolean) => void
-  unvestedTotalPythBalance: PythBalance
-  nextVestingDate: Date | undefined
-  nextVestingAmount: PythBalance
-
   currentVestingAccountState: VestingAccountState | undefined
-  unvestedLockedPythBalance: PythBalance
-  unvestedLockingPythBalance: PythBalance
-  unvestedUnlockedPythBalance: PythBalance
-  unvestedPreUnlockingPythBalance: PythBalance
-  unvestedUnlockingPythBalance: PythBalance
+  mainStakeAccount: StakeAccount | undefined
 }
 export function UnvestedModal({
   isUnvestedModalOpen,
   setIsUnvestedModalOpen,
-  nextVestingDate,
-  unvestedTotalPythBalance,
-  nextVestingAmount,
   currentVestingAccountState,
-  unvestedLockedPythBalance,
-  unvestedLockingPythBalance,
-  unvestedUnlockedPythBalance,
-  unvestedPreUnlockingPythBalance,
-  unvestedUnlockingPythBalance,
+  mainStakeAccount,
 }: UnvestedModalProps) {
+  const { data: balanceData, isLoading: _isBalanceLoading } =
+    useBalance(mainStakeAccount)
+
+  const {
+    unvestedTotalPythBalance,
+    unvestedLockingPythBalance,
+    unvestedLockedPythBalance,
+    unvestedPreUnlockingPythBalance,
+    unvestedUnlockingPythBalance,
+    unvestedUnlockedPythBalance,
+  } = balanceData ?? {}
+
+  const { data: nextVestingEvent } = useNextVestingEvent(mainStakeAccount)
+  const { nextVestingDate, nextVestingAmount } = nextVestingEvent ?? {}
+
   return (
     <BaseModal
       title="Unvested tokens"
@@ -38,25 +47,38 @@ export function UnvestedModal({
       <p className="mb-4">
         You currently have {unvestedTotalPythBalance?.toString()} unvested
         tokens.{' '}
-        {nextVestingDate && !unvestedTotalPythBalance.isZero()
-          ? `${nextVestingAmount.toString()} tokens
+        {nextVestingDate && !unvestedTotalPythBalance?.isZero()
+          ? `${nextVestingAmount?.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
           : null}
         <br />
         <br />
         <UnvestedModalCurrentState
           currentVestingAccountState={currentVestingAccountState}
-          unvestedLockedPythBalance={unvestedLockedPythBalance}
-          unvestedLockingPythBalance={unvestedLockingPythBalance}
-          unvestedUnlockedPythBalance={unvestedUnlockedPythBalance}
-          unvestedPreUnlockingPythBalance={unvestedPreUnlockingPythBalance}
-          unvestedUnlockingPythBalance={unvestedUnlockingPythBalance}
-          nextVestingAmount={nextVestingAmount}
+          unvestedLockedPythBalance={
+            unvestedLockedPythBalance ?? PythBalance.zero()
+          }
+          unvestedLockingPythBalance={
+            unvestedLockingPythBalance ?? PythBalance.zero()
+          }
+          unvestedUnlockedPythBalance={
+            unvestedUnlockedPythBalance ?? PythBalance.zero()
+          }
+          unvestedPreUnlockingPythBalance={
+            unvestedPreUnlockingPythBalance ?? PythBalance.zero()
+          }
+          unvestedUnlockingPythBalance={
+            unvestedUnlockingPythBalance ?? PythBalance.zero()
+          }
+          nextVestingAmount={nextVestingAmount ?? PythBalance.zero()}
           nextVestingDate={nextVestingDate}
         />
       </p>
       <div className="flex flex-col items-center  space-y-4 text-center md:block md:space-x-10">
-        {unvestedModalButton()}
+        <UnvestedModalButton
+          currentVestingAccountState={currentVestingAccountState}
+          mainStakeAccount={mainStakeAccount}
+        />
       </div>
     </BaseModal>
   )
@@ -152,33 +174,15 @@ function UnvestedModalCurrentState({
 
 type UnvestedModalButtonProps = {
   currentVestingAccountState: VestingAccountState | undefined
-  unvestedLockedPythBalance: PythBalance
-  unvestedLockingPythBalance: PythBalance
-  unvestedUnlockedPythBalance: PythBalance
-  unvestedPreUnlockingPythBalance: PythBalance
-  unvestedUnlockingPythBalance: PythBalance
-  nextVestingAmount: PythBalance
-  nextVestingDate: Date | undefined
+  mainStakeAccount?: StakeAccount
 }
 function UnvestedModalButton({
   currentVestingAccountState,
+  mainStakeAccount,
 }: UnvestedModalButtonProps) {
-  const handlePreliminaryUnstakeVestingAccount = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      try {
-        await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
-        toast.success(
-          `${nextVestingAmount
-            .add(lockedPythBalance)
-            .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
-        )
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-      closeUnvestedModal()
-      await refreshStakeAccount()
-    }
-  }
+  const unvestedLockAll = useUnvestedLockAllMutation()
+  const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
+  const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
   switch (currentVestingAccountState) {
     case VestingAccountState.UnvestedTokensFullyLocked:
@@ -187,14 +191,14 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-            onClick={handlePreliminaryUnstakeVestingAccount}
+            onClick={() => unvestedPreUnlockAll.mutate(mainStakeAccount)}
           >
             Preliminary unlock
           </button>
           <button
             type="button"
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-            onClick={handleUnlockAllVestingAccount}
+            onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
           >
             Unlock all
           </button>
@@ -208,7 +212,7 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-            onClick={handleUnvestedModalLockAllButton}
+            onClick={() => unvestedLockAll.mutate(mainStakeAccount)}
             disabled={
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
@@ -233,7 +237,7 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-            onClick={handleUnlockAllVestingAccount}
+            onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
             disabled={
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlocked ||

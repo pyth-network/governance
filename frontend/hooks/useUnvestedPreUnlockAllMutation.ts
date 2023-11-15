@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
 import toast from 'react-hot-toast'
 import { StakeAccountQueryPrefix } from './useStakeAccounts'
+import { VestingAccountStateQueryPrefix } from './useVestingAccountState'
 
 export function useUnvestedPreUnlockAllMutation() {
   const { data: stakeConnection } = useStakeConnection()
@@ -14,6 +15,7 @@ export function useUnvestedPreUnlockAllMutation() {
       if (mainStakeAccount === undefined || stakeConnection === undefined)
         return
       await stakeConnection?.unlockBeforeVestingEvent(mainStakeAccount)
+      // TODO:
       //   toast.success(
       //     `${nextVestingAmount
       //       ?.add(lockedPythBalance ?? PythBalance.zero())
@@ -23,6 +25,7 @@ export function useUnvestedPreUnlockAllMutation() {
     {
       onSuccess() {
         queryClient.invalidateQueries(StakeAccountQueryPrefix)
+        queryClient.invalidateQueries(VestingAccountStateQueryPrefix)
       },
       onError(error: Error) {
         toast.error(error.message)

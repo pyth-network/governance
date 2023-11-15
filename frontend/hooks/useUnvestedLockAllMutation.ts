@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
 import toast from 'react-hot-toast'
 import { StakeAccountQueryPrefix } from './useStakeAccounts'
+import { VestingAccountStateQueryPrefix } from './useVestingAccountState'
 
 export function useUnvestedLockAllMutation() {
   const { data: stakeConnection } = useStakeConnection()
@@ -19,6 +20,7 @@ export function useUnvestedLockAllMutation() {
     {
       onSuccess() {
         queryClient.invalidateQueries(StakeAccountQueryPrefix)
+        queryClient.invalidateQueries(VestingAccountStateQueryPrefix)
       },
       onError(error: Error) {
         toast.error(error.message)
