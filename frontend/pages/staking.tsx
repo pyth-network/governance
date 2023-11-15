@@ -35,6 +35,7 @@ import { UnlockedModal } from '@components/modals/UnlockedModal'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useDepositMutation } from 'hooks/useDepositMutation'
+import { useUnlockMutation } from 'hooks/useUnlockMutation'
 
 enum TabEnum {
   Lock,
@@ -243,30 +244,7 @@ const Staking: NextPage = () => {
   }
 
   // call unlock api when unlock button is clicked
-  const handleUnlock = async () => {
-    if (!amount) {
-      toast.error('Please enter a valid amount!')
-      return
-    }
-    const unlockAmount = PythBalance.fromString(amount)
-    if (unlockAmount.gt(PythBalance.zero())) {
-      if (mainStakeAccount) {
-        setIsActionLoading(true)
-        try {
-          await stakeConnection?.unlockTokens(mainStakeAccount, unlockAmount)
-          toast.success('Unlock successful!')
-        } catch (e) {
-          toast.error(capitalizeFirstLetter(e.message))
-        }
-        setIsActionLoading(false)
-        await refreshStakeAccount()
-      } else {
-        toast.error('Stake account is undefined.')
-      }
-    } else {
-      toast.error('Amount must be greater than 0.')
-    }
-  }
+  const unlockMutation = useUnlockMutation()
 
   const handleMultipleStakeAccountsConnectButton = () => {
     setMainStakeAccount(multipleStakeAccountsModalOption)
@@ -994,14 +972,19 @@ const Staking: NextPage = () => {
                             ) : currentTab === TabEnum.Unlock ? (
                               <button
                                 className="action-btn font-base"
-                                onClick={handleUnlock}
+                                onClick={() =>
+                                  unlockMutation.mutate({
+                                    amount,
+                                    mainStakeAccount,
+                                  })
+                                }
                                 disabled={
                                   isLockButtonDisabled ||
                                   !isSufficientBalance ||
-                                  isActionLoading
+                                  unlockMutation.isLoading
                                 }
                               >
-                                {isActionLoading ? (
+                                {unlockMutation.isLoading ? (
                                   <Spinner />
                                 ) : isLockButtonDisabled ? (
                                   <Tooltip content="You are currently not enrolled in governance.">
