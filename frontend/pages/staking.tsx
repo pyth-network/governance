@@ -32,6 +32,9 @@ import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
+import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation'
+import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMutation'
+import { useUnvestedLockAllMutation } from 'hooks/useUnvestedLockAllMutation'
 
 enum TabEnum {
   Lock,
@@ -216,50 +219,9 @@ const Staking: NextPage = () => {
     setIsUnvestedModalOpen(false)
   }
 
-  const handleUnvestedModalLockAllButton = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      try {
-        await stakeConnection.lockAllUnvested(mainStakeAccount)
-        toast.success('Successfully opted into governance!')
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-    }
-    closeUnvestedModal()
-    await refreshStakeAccount()
-  }
-
-  const handlePreliminaryUnstakeVestingAccount = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      try {
-        await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
-        toast.success(
-          `${nextVestingAmount
-            ?.add(lockedPythBalance ?? PythBalance.zero())
-            .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
-        )
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-      closeUnvestedModal()
-      await refreshStakeAccount()
-    }
-  }
-
-  const handleUnlockAllVestingAccount = async () => {
-    if (stakeConnection && mainStakeAccount) {
-      try {
-        await stakeConnection.unlockAll(mainStakeAccount)
-        toast.success(
-          `All unvested tokens have been unlocked. Please relock them to participate in governance.`
-        )
-      } catch (e) {
-        toast.error(capitalizeFirstLetter(e.message))
-      }
-      closeUnvestedModal()
-      await refreshStakeAccount()
-    }
-  }
+  const unvestedLockAll = useUnvestedLockAllMutation()
+  const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
+  const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
   const unvestedModalText = () => {
     switch (currentVestingAccountState) {
@@ -344,14 +306,14 @@ const Staking: NextPage = () => {
             <button
               type="button"
               className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-              onClick={handlePreliminaryUnstakeVestingAccount}
+              onClick={() => unvestedPreUnlockAll.mutate(mainStakeAccount)}
             >
               Preliminary unlock
             </button>
             <button
               type="button"
               className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-              onClick={handleUnlockAllVestingAccount}
+              onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
             >
               Unlock all
             </button>
@@ -365,7 +327,7 @@ const Staking: NextPage = () => {
             <button
               type="button"
               className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-              onClick={handleUnvestedModalLockAllButton}
+              onClick={() => unvestedLockAll.mutate(mainStakeAccount)}
               disabled={
                 currentVestingAccountState ==
                   VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
@@ -390,7 +352,7 @@ const Staking: NextPage = () => {
             <button
               type="button"
               className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-              onClick={handleUnlockAllVestingAccount}
+              onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
               disabled={
                 currentVestingAccountState ==
                   VestingAccountState.UnvestedTokensFullyUnlocked ||
