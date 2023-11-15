@@ -4,7 +4,7 @@ import { BaseModal } from './BaseModal'
 type LockedModalProps = {
   isLockedModalOpen: boolean
   setIsLockedModalOpen: (open: boolean) => void
-  lockedPythBalance: PythBalance
+  lockedPythBalance?: PythBalance
   lockingPythBalance?: PythBalance
 }
 export function LockedModal({

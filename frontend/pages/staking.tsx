@@ -2,19 +2,12 @@ import CloseIcon from '@components/icons/CloseIcon'
 import Tooltip from '@components/Tooltip'
 import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
-import { Wallet } from '@project-serum/anchor'
 import {
   PythBalance,
   StakeAccount,
-  StakeConnection,
-  STAKING_ADDRESS,
   VestingAccountState,
 } from '@pythnetwork/staking'
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from '@solana/wallet-adapter-react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import BN from 'bn.js'
 import type { NextPage } from 'next'
@@ -24,7 +17,6 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { classNames } from 'utils/classNames'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { getPythTokenBalance } from './api/getPythTokenBalance'
 
 import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
@@ -37,6 +29,7 @@ import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useDepositMutation } from 'hooks/useDepositMutation'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
+import { useBalance } from 'hooks/useBalance'
 
 enum TabEnum {
   Lock,
@@ -53,8 +46,7 @@ const tabDescriptions = {
 }
 
 const Staking: NextPage = () => {
-  const { connection } = useConnection()
-  const { publicKey, connected } = useWallet()
+  const { connected } = useWallet()
   const [
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
@@ -68,7 +60,6 @@ const Staking: NextPage = () => {
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
-  // const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(false)
   const [isSufficientBalance, setIsSufficientBalance] = useState<boolean>(true)
   const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
     useStakeConnection()
@@ -78,7 +69,6 @@ const Staking: NextPage = () => {
     refetch: refreshStakeAccount,
   } = useStakeAccounts()
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
-  const isBalanceLoading = isStakeAccountsLoading || isStakeConnectionLoading
 
   // set main stake account
   useEffect(() => {
@@ -107,30 +97,28 @@ const Staking: NextPage = () => {
   }, [stakeAccounts])
 
   const [balance, setBalance] = useState<PythBalance>()
-  const [pythBalance, setPythBalance] = useState<PythBalance>(
-    PythBalance.zero()
-  )
-  const [lockedPythBalance, setLockedPythBalance] = useState<PythBalance>(
-    PythBalance.zero()
-  )
-  const [unlockedPythBalance, setUnlockedPythBalance] = useState<PythBalance>(
-    PythBalance.zero()
-  )
-  const [unvestedTotalPythBalance, setUnvestedTotalPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [unvestedLockingPythBalance, setUnvestedLockingPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [unvestedLockedPythBalance, setUnvestedLockedPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [unvestedPreUnlockingPythBalance, setUnvestedPreUnlockingPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [unvestedUnlockingPythBalance, setUnvestedUnlockingPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [unvestedUnlockedPythBalance, setUnvestedUnlockedPythBalance] =
-    useState<PythBalance>(PythBalance.zero())
-  const [lockingPythBalance, setLockingPythBalance] = useState<PythBalance>()
-  const [unlockingPythBalance, setUnlockingPythBalance] =
-    useState<PythBalance>()
+
+  const { data: balanceData, isLoading: _isBalanceLoading } =
+    useBalance(mainStakeAccount)
+  const {
+    pythBalance,
+
+    lockingPythBalance,
+    lockedPythBalance,
+
+    unlockingPythBalance,
+    unlockedPythBalance,
+
+    unvestedTotalPythBalance,
+    unvestedLockingPythBalance,
+    unvestedLockedPythBalance,
+    unvestedPreUnlockingPythBalance,
+    unvestedUnlockingPythBalance,
+    unvestedUnlockedPythBalance,
+  } = balanceData ?? {}
+  const isBalanceLoading =
+    isStakeAccountsLoading || isStakeConnectionLoading || _isBalanceLoading
+
   const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
   const [nextVestingAmount, setNextVestingAmount] = useState<PythBalance>(
@@ -143,7 +131,6 @@ const Staking: NextPage = () => {
   // check if vesting account without governance exists and refresh balances after getting stake accounts
   useEffect(() => {
     refreshVestingAccountState()
-    refreshBalance()
   }, [stakeConnection, mainStakeAccount])
 
   useEffect(() => {
@@ -199,21 +186,6 @@ const Staking: NextPage = () => {
     unlockedPythBalance,
   ])
 
-  const resetBalance = () => {
-    setPythBalance(PythBalance.zero())
-    setLockingPythBalance(PythBalance.zero())
-    setLockedPythBalance(PythBalance.zero())
-    setUnlockingPythBalance(PythBalance.zero())
-    setUnvestedTotalPythBalance(PythBalance.zero())
-    setUnvestedLockingPythBalance(PythBalance.zero())
-    setUnvestedLockedPythBalance(PythBalance.zero())
-    setUnvestedPreUnlockingPythBalance(PythBalance.zero())
-    setUnvestedUnlockingPythBalance(PythBalance.zero())
-    setUnvestedUnlockedPythBalance(PythBalance.zero())
-    setUnlockedPythBalance(PythBalance.zero())
-    setNextVestingAmount(PythBalance.zero())
-  }
-
   const refreshVestingAccountState = async () => {
     if (stakeConnection && mainStakeAccount) {
       const currentTime = await stakeConnection.getTime()
@@ -252,33 +224,6 @@ const Staking: NextPage = () => {
 
   // withdraw unlocked PYTH tokens to wallet
   const withdrawMutation = useWithdrawMutation()
-
-  // refresh balances each time balances change
-  const refreshBalance = async () => {
-    if (stakeConnection && publicKey) {
-      setPythBalance(
-        await getPythTokenBalance(
-          connection,
-          publicKey,
-          stakeConnection.config.pythTokenMint
-        )
-      )
-    }
-    if (stakeConnection && publicKey && mainStakeAccount) {
-      const { withdrawable, locked, unvested } =
-        mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
-      setLockingPythBalance(locked.locking)
-      setLockedPythBalance(locked.locked)
-      setUnlockingPythBalance(locked.unlocking.add(locked.preunlocking))
-      setUnvestedTotalPythBalance(unvested.total)
-      setUnvestedLockingPythBalance(unvested.locking)
-      setUnvestedLockedPythBalance(unvested.locked)
-      setUnvestedPreUnlockingPythBalance(unvested.preunlocking)
-      setUnvestedUnlockingPythBalance(unvested.unlocking)
-      setUnvestedUnlockedPythBalance(unvested.unlocked)
-      setUnlockedPythBalance(withdrawable)
-    }
-  }
 
   // set current tab value when tab is clicked
   const handleChangeTab = (index: number) => {
@@ -322,7 +267,7 @@ const Staking: NextPage = () => {
         await stakeConnection.unlockBeforeVestingEvent(mainStakeAccount)
         toast.success(
           `${nextVestingAmount
-            .add(lockedPythBalance)
+            .add(lockedPythBalance ?? PythBalance.zero())
             .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
         )
       } catch (e) {
@@ -354,13 +299,13 @@ const Staking: NextPage = () => {
         return (
           <>
             {unvestedLockedPythBalance
-              .add(unvestedLockingPythBalance)
+              ?.add(unvestedLockingPythBalance ?? PythBalance.zero())
               .toString()}{' '}
             unvested tokens are locked in governance. <br />
-            {unvestedUnlockedPythBalance.toString()} unvested tokens are
+            {unvestedUnlockedPythBalance?.toString()} unvested tokens are
             unlocked. <br />
             {unvestedPreUnlockingPythBalance
-              .add(unvestedUnlockingPythBalance)
+              ?.add(unvestedUnlockingPythBalance ?? PythBalance.zero())
               .toString()}{' '}
             unvested tokens are in cooldown period.
             <br />
@@ -376,11 +321,11 @@ const Staking: NextPage = () => {
         return (
           <>
             {unvestedLockedPythBalance
-              .add(unvestedLockingPythBalance)
+              ?.add(unvestedLockingPythBalance ?? PythBalance.zero())
               .toString()}{' '}
             tokens are locked in governance. <br />
             {unvestedPreUnlockingPythBalance
-              .add(unvestedUnlockingPythBalance)
+              ?.add(unvestedUnlockingPythBalance ?? PythBalance.zero())
               .toString()}{' '}
             tokens are in cooldown period.
           </>
@@ -683,7 +628,7 @@ const Staking: NextPage = () => {
                     <p className="mb-4">
                       You currently have {unvestedTotalPythBalance?.toString()}{' '}
                       unvested tokens.{' '}
-                      {nextVestingDate && !unvestedTotalPythBalance.isZero()
+                      {nextVestingDate && !unvestedTotalPythBalance?.isZero()
                         ? `${nextVestingAmount.toString()} tokens
                       will vest on ${nextVestingDate?.toLocaleString()}.`
                         : null}
