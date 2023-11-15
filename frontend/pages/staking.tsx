@@ -54,13 +54,11 @@ const tabDescriptions = {
 
 const Staking: NextPage = () => {
   const { connection } = useConnection()
-  const anchorWallet = useAnchorWallet()
   const { publicKey, connected } = useWallet()
   const [
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
   ] = useState<boolean>(false)
-  const [isActionLoading, setIsActionLoading] = useState<boolean>(false)
   const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
   const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
   const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
