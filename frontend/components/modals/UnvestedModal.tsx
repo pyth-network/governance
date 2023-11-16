@@ -10,6 +10,7 @@ import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMu
 import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
+import { useStakeConnection } from 'hooks/useStakeConnection'
 
 export type UnvestedModalProps = {
   isUnvestedModalOpen: boolean
@@ -180,6 +181,8 @@ function UnvestedModalButton({
   currentVestingAccountState,
   mainStakeAccount,
 }: UnvestedModalButtonProps) {
+  const { data: stakeConnection } = useStakeConnection()
+
   const unvestedLockAll = useUnvestedLockAllMutation()
   const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
   const unvestedUnlockAll = useUnvestedUnlockAllMutation()
@@ -191,14 +194,30 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-            onClick={() => unvestedPreUnlockAll.mutate(mainStakeAccount)}
+            onClick={() =>
+              unvestedPreUnlockAll.mutate({
+                mainStakeAccount: mainStakeAccount!,
+                stakeConnection: stakeConnection!,
+              })
+            }
+            disabled={
+              mainStakeAccount === undefined || stakeConnection === undefined
+            }
           >
             Preliminary unlock
           </button>
           <button
             type="button"
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
-            onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
+            onClick={() =>
+              unvestedUnlockAll.mutate({
+                mainStakeAccount: mainStakeAccount!,
+                stakeConnection: stakeConnection!,
+              })
+            }
+            disabled={
+              mainStakeAccount === undefined || stakeConnection === undefined
+            }
           >
             Unlock all
           </button>
@@ -212,12 +231,19 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-            onClick={() => unvestedLockAll.mutate(mainStakeAccount)}
+            onClick={() =>
+              unvestedLockAll.mutate({
+                mainStakeAccount: mainStakeAccount!,
+                stakeConnection: stakeConnection!,
+              })
+            }
             disabled={
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
               currentVestingAccountState ==
-                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
+              mainStakeAccount === undefined ||
+              stakeConnection === undefined
             }
           >
             {currentVestingAccountState ==
@@ -237,12 +263,19 @@ function UnvestedModalButton({
           <button
             type="button"
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-            onClick={() => unvestedUnlockAll.mutate(mainStakeAccount)}
+            onClick={() =>
+              unvestedUnlockAll.mutate({
+                mainStakeAccount: mainStakeAccount!,
+                stakeConnection: stakeConnection!,
+              })
+            }
             disabled={
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlocked ||
               currentVestingAccountState ==
-                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown
+                VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
+              mainStakeAccount === undefined ||
+              stakeConnection === undefined
             }
           >
             {currentVestingAccountState ==
