@@ -25,6 +25,9 @@ import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { UnvestedModal } from '@components/modals/UnvestedModal'
+import { LockPanel } from '@components/panels/LockPanel'
+import { UnlockPanel } from '@components/panels/UnlockPanel'
+import { WithdrawPanel } from '@components/panels/WithdrawPanel'
 
 enum TabEnum {
   Lock,
@@ -32,7 +35,7 @@ enum TabEnum {
   Withdraw,
 }
 
-const tabDescriptions = {
+export const tabDescriptions = {
   Lock: 'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
   Unlock:
     'Unlock PYTH. Unlocking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unlocked tokens cannot participate in governance.',
@@ -483,136 +486,13 @@ const Staking: NextPage = () => {
                     .slice(3)
                     .map((v, idx) => (
                       <Tab.Panel key={idx}>
-                        <div className="mx-auto max-w-xl text-center leading-6">
-                          <div className="mb-4 h-36  sm:mb-12 sm:h-16">
-                            {tabDescriptions[v as keyof typeof TabEnum]}
-                          </div>
-
-                          <div className="mb-4 flex items-end justify-between md:items-center ">
-                            <label htmlFor="amount" className="block ">
-                              Amount (PYTH)
-                            </label>
-                            <div className="ml-auto mr-0 flex flex-col-reverse items-end space-x-2 md:flex-row md:items-center">
-                              {isBalanceLoading ? (
-                                <div className="h-5 w-14  animate-pulse rounded-lg bg-darkGray4" />
-                              ) : (
-                                <p className="mt-2 md:mt-0">
-                                  {currentTab === TabEnum.Lock
-                                    ? 'Balance'
-                                    : currentTab === TabEnum.Unlock
-                                    ? 'Locked Tokens'
-                                    : 'Withdrawable'}
-                                  : {connected ? balance?.toString() : '-'}
-                                </p>
-                              )}
-                              <div className="mb-2  flex space-x-2 md:mb-0">
-                                <button
-                                  className="outlined-btn hover:bg-darkGray4"
-                                  onClick={handleHalfBalanceClick}
-                                >
-                                  Half
-                                </button>
-                                <button
-                                  className="outlined-btn hover:bg-darkGray4"
-                                  onClick={handleMaxBalanceClick}
-                                >
-                                  Max
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                          <input
-                            type="text"
-                            name="amount"
-                            id="amount"
-                            autoComplete="amount"
-                            value={amount}
-                            onChange={handleAmountChange}
-                            className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
-                          />
-
-                          <div className="flex items-center justify-center ">
-                            {!connected ? (
-                              <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
-                            ) : currentTab === TabEnum.Lock ? (
-                              <button
-                                className="action-btn text-base "
-                                onClick={() =>
-                                  depositMutation.mutate({
-                                    amount,
-                                    mainStakeAccount,
-                                  })
-                                }
-                                disabled={
-                                  isLockButtonDisabled ||
-                                  !isSufficientBalance ||
-                                  depositMutation.isLoading
-                                }
-                              >
-                                {depositMutation.isLoading ? (
-                                  <Spinner />
-                                ) : isLockButtonDisabled ? (
-                                  <Tooltip content="You are currently not enrolled in governance.">
-                                    Lock
-                                  </Tooltip>
-                                ) : isSufficientBalance ? (
-                                  'Lock'
-                                ) : (
-                                  'Insufficient Balance'
-                                )}
-                              </button>
-                            ) : currentTab === TabEnum.Unlock ? (
-                              <button
-                                className="action-btn font-base"
-                                onClick={() =>
-                                  unlockMutation.mutate({
-                                    amount,
-                                    mainStakeAccount,
-                                  })
-                                }
-                                disabled={
-                                  isLockButtonDisabled ||
-                                  !isSufficientBalance ||
-                                  unlockMutation.isLoading
-                                }
-                              >
-                                {unlockMutation.isLoading ? (
-                                  <Spinner />
-                                ) : isLockButtonDisabled ? (
-                                  <Tooltip content="You are currently not enrolled in governance.">
-                                    Unlock
-                                  </Tooltip>
-                                ) : isSufficientBalance ? (
-                                  'Unlock'
-                                ) : (
-                                  'Insufficient Balance'
-                                )}
-                              </button>
-                            ) : (
-                              <button
-                                className="action-btn font-base"
-                                onClick={() =>
-                                  withdrawMutation.mutate({
-                                    amount,
-                                    mainStakeAccount,
-                                  })
-                                }
-                                disabled={
-                                  !isSufficientBalance ||
-                                  withdrawMutation.isLoading
-                                }
-                              >
-                                {withdrawMutation.isLoading ? (
-                                  <Spinner />
-                                ) : isSufficientBalance ? (
-                                  'Withdraw'
-                                ) : (
-                                  'Insufficient Balance'
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </div>
+                        {currentTab === TabEnum.Lock ? (
+                          <LockPanel mainStakeAccount={mainStakeAccount} />
+                        ) : currentTab === TabEnum.Unlock ? (
+                          <UnlockPanel mainStakeAccount={mainStakeAccount} />
+                        ) : (
+                          <WithdrawPanel mainStakeAccount={mainStakeAccount} />
+                        )}
                       </Tab.Panel>
                     ))}
                 </Tab.Panels>
