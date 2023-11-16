@@ -8,10 +8,12 @@ export function useNextVestingEvent(
 ) {
   const { data: stakeConnection } = useStakeConnection()
 
-  return useQuery(['next-vesting-event', mainStakeAccount], async () => {
-    if (stakeConnection && mainStakeAccount) {
-      const currentTime = await stakeConnection.getTime()
-      const nextVestingEvent = mainStakeAccount.getNextVesting(currentTime)
+  return useQuery(
+    ['next-vesting-event', mainStakeAccount?.address.toString()],
+    // enabled only when stakeConnection and mainStakeAccount is defined
+    async () => {
+      const currentTime = await stakeConnection!.getTime()
+      const nextVestingEvent = mainStakeAccount!.getNextVesting(currentTime)
       if (nextVestingEvent) {
         return {
           nextVestingAmount: new PythBalance(
@@ -20,8 +22,11 @@ export function useNextVestingEvent(
           nextVestingDate: new Date(Number(nextVestingEvent.time) * 1000),
         }
       }
-    }
 
-    return undefined
-  })
+      return undefined
+    },
+    {
+      enabled: stakeConnection !== undefined && mainStakeAccount !== undefined,
+    }
+  )
 }
