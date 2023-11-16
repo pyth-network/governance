@@ -82,8 +82,6 @@ const Staking: NextPage = () => {
   const { data: balanceData, isLoading: _isBalanceLoading } =
     useBalance(mainStakeAccount)
   const {
-    pythBalance,
-
     lockingPythBalance,
     lockedPythBalance,
 
@@ -92,6 +90,7 @@ const Staking: NextPage = () => {
 
     unvestedTotalPythBalance,
   } = balanceData ?? {}
+
   const isBalanceLoading = isStakeAccountsLoading || _isBalanceLoading
 
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)

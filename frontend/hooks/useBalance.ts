@@ -1,5 +1,3 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
-import { getPythTokenBalance } from 'pages/api/getPythTokenBalance'
 import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
 import { PythBalance, StakeAccount } from '@pythnetwork/staking'
@@ -9,8 +7,6 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 export const BalanceQueryKeyPrefix = 'balance'
 
 type BalanceSummary = {
-  pythBalance: PythBalance
-
   lockingPythBalance: PythBalance
   lockedPythBalance: PythBalance
 
@@ -25,63 +21,36 @@ type BalanceSummary = {
   unvestedUnlockedPythBalance: PythBalance
 }
 export function useBalance(mainStakeAccount?: StakeAccount) {
-  const { connection } = useConnection()
-  const { publicKey } = useWallet()
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
-    [BalanceQueryKeyPrefix, publicKey, mainStakeAccount],
+    [BalanceQueryKeyPrefix, mainStakeAccount?.address.toString()],
+    // see the enabled option: mainStakeAccount, stakeConnection will not be undefined
     async (): Promise<BalanceSummary | undefined> => {
-      if (publicKey === null || stakeConnection === undefined) return undefined
-      const pythBalance = await getPythTokenBalance(
-        connection,
-        publicKey,
-        stakeConnection.config.pythTokenMint
-      )
-
-      if (mainStakeAccount !== undefined) {
-        const { withdrawable, locked, unvested } =
-          mainStakeAccount.getBalanceSummary(await stakeConnection.getTime())
-
-        return {
-          pythBalance,
-
-          lockingPythBalance: locked.locking,
-          lockedPythBalance: locked.locked,
-
-          unlockingPythBalance: locked.unlocking.add(locked.preunlocking),
-          unlockedPythBalance: withdrawable,
-
-          unvestedTotalPythBalance: unvested.total,
-          unvestedLockingPythBalance: unvested.locking,
-          unvestedLockedPythBalance: unvested.locked,
-          unvestedPreUnlockingPythBalance: unvested.preunlocking,
-          unvestedUnlockingPythBalance: unvested.unlocking,
-          unvestedUnlockedPythBalance: unvested.unlocking,
-        }
-      }
+      const { withdrawable, locked, unvested } =
+        mainStakeAccount!.getBalanceSummary(await stakeConnection!.getTime())
 
       return {
-        pythBalance,
+        lockingPythBalance: locked.locking,
+        lockedPythBalance: locked.locked,
 
-        lockingPythBalance: PythBalance.zero(),
-        lockedPythBalance: PythBalance.zero(),
+        unlockingPythBalance: locked.unlocking.add(locked.preunlocking),
+        unlockedPythBalance: withdrawable,
 
-        unlockingPythBalance: PythBalance.zero(),
-        unlockedPythBalance: PythBalance.zero(),
-
-        unvestedTotalPythBalance: PythBalance.zero(),
-        unvestedLockingPythBalance: PythBalance.zero(),
-        unvestedLockedPythBalance: PythBalance.zero(),
-        unvestedPreUnlockingPythBalance: PythBalance.zero(),
-        unvestedUnlockingPythBalance: PythBalance.zero(),
-        unvestedUnlockedPythBalance: PythBalance.zero(),
+        unvestedTotalPythBalance: unvested.total,
+        unvestedLockingPythBalance: unvested.locking,
+        unvestedLockedPythBalance: unvested.locked,
+        unvestedPreUnlockingPythBalance: unvested.preunlocking,
+        unvestedUnlockingPythBalance: unvested.unlocking,
+        unvestedUnlockedPythBalance: unvested.unlocking,
       }
     },
     {
       onError(err: Error) {
         toast.error(capitalizeFirstLetter(err.message))
       },
+
+      enabled: stakeConnection !== undefined && mainStakeAccount !== undefined,
     }
   )
 }
