@@ -49,7 +49,10 @@ const Header = () => {
         </div>
         <div className="flex items-center justify-end space-x-2">
           <div className="flex w-[200px] justify-end">
-            <WalletMultiButtonDynamic className="primary-btn pt-0.5" />
+            <WalletMultiButtonDynamic
+              className="primary-btn pt-0.5"
+              style={{ padding: '0 12px' }}
+            />
           </div>
           <div className="flex-shrink-0 md:hidden">
             <button
