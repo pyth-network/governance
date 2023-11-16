@@ -12,10 +12,9 @@ export function useStakeConnection() {
   return useQuery(
     ['create-stake-connection', anchorWallet?.publicKey.toString()],
     async () => {
-      if (anchorWallet === undefined) return undefined
-
       return await StakeConnection.createStakeConnection(
         connection,
+        // anchor wallet is defined, as we have used enabled below
         anchorWallet as Wallet,
         STAKING_ADDRESS
       )
@@ -24,6 +23,8 @@ export function useStakeConnection() {
       onError(err: Error) {
         toast.error(capitalizeFirstLetter(err.message))
       },
+      // we should only fetch when anchor wallet is defined
+      enabled: anchorWallet !== undefined,
     }
   )
 }
