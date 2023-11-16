@@ -4,15 +4,15 @@ import { useRouter } from 'next/router'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 
+const WalletMultiButtonDynamic = dynamic(
+  async () =>
+    (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+  { ssr: false }
+)
+
 const Header = () => {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const WalletMultiButtonDynamic = dynamic(
-    async () =>
-      (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
-    { ssr: false }
-  )
 
   return (
     <div className="before:gradient-border relative -bottom-[1px]  mb-3">
@@ -48,7 +48,9 @@ const Header = () => {
           </Link>
         </div>
         <div className="flex items-center justify-end space-x-2">
-          <WalletMultiButtonDynamic className="primary-btn pt-0.5" />
+          <div className="flex w-[200px] justify-end">
+            <WalletMultiButtonDynamic className="primary-btn pt-0.5" />
+          </div>
           <div className="flex-shrink-0 md:hidden">
             <button
               className="rounded-full p-2 hover:bg-hoverGray"
@@ -67,7 +69,7 @@ const Header = () => {
       <Dialog open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
         <div className="flex min-h-screen justify-center">
           <Dialog.Overlay className="fixed inset-0 bg-dark" />
-          <div className="height-screen fixed  top-0 mx-auto w-full rounded py-6 px-8">
+          <div className="height-screen fixed  top-0 mx-auto w-full rounded px-8 py-6">
             <div className="flex items-center justify-between space-x-2 pt-[7px]">
               <Link href="/staking">
                 <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
