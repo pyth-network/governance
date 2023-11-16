@@ -24,7 +24,7 @@ export function useBalance(mainStakeAccount?: StakeAccount) {
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
-    [BalanceQueryKeyPrefix, mainStakeAccount?.address.toString()],
+    [BalanceQueryKeyPrefix, mainStakeAccount],
     // see the enabled option: mainStakeAccount, stakeConnection will not be undefined
     async (): Promise<BalanceSummary | undefined> => {
       const { withdrawable, locked, unvested } =

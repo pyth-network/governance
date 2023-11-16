@@ -9,7 +9,7 @@ export function useNextVestingEvent(
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
-    ['next-vesting-event', mainStakeAccount?.address.toString()],
+    ['next-vesting-event', mainStakeAccount],
     // enabled only when stakeConnection and mainStakeAccount is defined
     async () => {
       const currentTime = await stakeConnection!.getTime()
