@@ -1,4 +1,4 @@
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react'
 import { getPythTokenBalance } from 'pages/api/getPythTokenBalance'
 import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
@@ -10,16 +10,17 @@ export const PythBalanceQueryKeyPrefix = 'pyth-balance'
 
 export function usePythBalance() {
   const { connection } = useConnection()
-  const { publicKey } = useWallet()
+  const anchorWallet = useAnchorWallet()
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
-    [PythBalanceQueryKeyPrefix, publicKey],
+    [PythBalanceQueryKeyPrefix, anchorWallet?.publicKey.toString()],
     async (): Promise<PythBalance | undefined> => {
-      if (publicKey === null || stakeConnection === undefined) return undefined
+      if (anchorWallet === undefined || stakeConnection === undefined)
+        return undefined
       return await getPythTokenBalance(
         connection,
-        publicKey,
+        anchorWallet.publicKey,
         stakeConnection.config.pythTokenMint
       )
     },
@@ -27,7 +28,7 @@ export function usePythBalance() {
       onError(err: Error) {
         toast.error(capitalizeFirstLetter(err.message))
       },
-      enabled: publicKey !== null && stakeConnection !== undefined,
+      enabled: anchorWallet !== undefined && stakeConnection !== undefined,
     }
   )
 }
