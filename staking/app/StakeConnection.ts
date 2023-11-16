@@ -37,7 +37,6 @@ import {
 import { GOVERNANCE_ADDRESS, STAKING_ADDRESS } from "./constants";
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
-import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 let wasm = wasm2;
 export { wasm };
 
@@ -84,15 +83,6 @@ export class StakeConnection {
       connection,
       wallet,
       STAKING_ADDRESS
-    );
-  }
-
-  public static async connectReadOnly(
-    connection: Connection
-  ): Promise<StakeConnection> {
-    return await StakeConnection.connect(
-      connection,
-      new NodeWallet(new Keypair())
     );
   }
 

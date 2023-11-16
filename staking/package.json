@@ -1,6 +1,6 @@
 {
   "name": "@pythnetwork/staking",
-  "version": "1.3.6",
+  "version": "2.0.0",
   "description": "Pyth Network Staking SDK",
   "main": "lib/app/index.js",
   "types": "lib/app/index.d.ts",
