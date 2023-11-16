@@ -10,25 +10,21 @@ export const StakeAccountQueryPrefix = 'get-stake-accounts'
 // if stake connection is undefined, it will return an empty array
 // else it will return the fetched accounts
 export function useStakeAccounts() {
-  const { data: stakeConnection } = useStakeConnection()
+  const state = useStakeConnection()
   const anchorWallet = useAnchorWallet()
 
   return useQuery(
-    [
-      StakeAccountQueryPrefix,
-      anchorWallet?.publicKey.toString(),
-      stakeConnection !== undefined,
-    ],
+    [StakeAccountQueryPrefix, anchorWallet?.publicKey.toString()],
     () => {
-      if (anchorWallet === undefined) return undefined
-      return stakeConnection?.getStakeAccounts(
-        (anchorWallet as Wallet).publicKey
-      )
+      // stakeConnection and anchorWallet are defined, as we have used enabled below
+      return state.data!.getStakeAccounts((anchorWallet as Wallet).publicKey)
     },
     {
       onError(err: Error) {
         toast.error(capitalizeFirstLetter(err.message))
       },
+
+      enabled: state.data !== undefined && anchorWallet !== undefined,
     }
   )
 }
