@@ -1,29 +1,33 @@
-import { StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount, StakeConnection } from '@pythnetwork/staking'
 import { useMutation, useQueryClient } from 'react-query'
-import { useStakeConnection } from './useStakeConnection'
+import { StakeConnectionQueryKey } from './useStakeConnection'
 import toast from 'react-hot-toast'
-import { StakeAccountQueryPrefix } from './useStakeAccounts'
-import { VestingAccountStateQueryPrefix } from './useVestingAccountState'
+import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 export function useUnvestedLockAllMutation() {
-  const { data: stakeConnection } = useStakeConnection()
   const queryClient = useQueryClient()
 
   return useMutation(
-    ['lock-all-unvested', stakeConnection],
-    async (mainStakeAccount?: StakeAccount) => {
-      if (mainStakeAccount === undefined || stakeConnection === undefined)
-        return
-      await stakeConnection?.lockAllUnvested(mainStakeAccount)
+    ['lock-all-unvested-mutation'],
+    async ({
+      stakeConnection,
+      mainStakeAccount,
+    }: {
+      stakeConnection: StakeConnection
+      mainStakeAccount: StakeAccount
+    }) => {
+      await stakeConnection.lockAllUnvested(mainStakeAccount)
       toast.success('Successfully opted into governance!')
     },
     {
       onSuccess() {
-        queryClient.invalidateQueries(StakeAccountQueryPrefix)
-        queryClient.invalidateQueries(VestingAccountStateQueryPrefix)
+        // invalidate all except stake connection
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== StakeConnectionQueryKey,
+        })
       },
       onError(error: Error) {
-        toast.error(error.message)
+        toast.error(capitalizeFirstLetter(error.message))
       },
     }
   )

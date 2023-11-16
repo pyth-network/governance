@@ -1,42 +1,37 @@
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
-import toast from 'react-hot-toast'
 import {
-  StakeConnectionQueryKey,
-  useStakeConnection,
-} from './useStakeConnection'
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
+import toast from 'react-hot-toast'
+import { StakeConnectionQueryKey } from './useStakeConnection'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
-import { StakeAccountQueryPrefix } from './useStakeAccounts'
 
 export function useDepositMutation() {
-  const { data: stakeConnection } = useStakeConnection()
   const queryClient = useQueryClient()
 
-  const depositMutation = useMutation(
-    ['deposit-callback'],
+  return useMutation(
+    ['deposit-mutation'],
     async ({
       amount,
+      stakeConnection,
       mainStakeAccount,
     }: {
       amount: string
-      mainStakeAccount?: StakeAccount
+      stakeConnection: StakeConnection
+      mainStakeAccount: StakeAccount
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')
       }
       const depositAmount = PythBalance.fromString(amount)
       if (depositAmount.gt(PythBalance.zero())) {
-        try {
-          if (stakeConnection) {
-            await stakeConnection?.depositAndLockTokens(
-              mainStakeAccount,
-              depositAmount
-            )
-            toast.success(`Deposit and locked ${amount} PYTH tokens!`)
-          }
-        } catch (e) {
-          throw new Error(capitalizeFirstLetter(e.message))
-        }
+        await stakeConnection?.depositAndLockTokens(
+          mainStakeAccount,
+          depositAmount
+        )
+        toast.success(`Deposit and locked ${amount} PYTH tokens!`)
       } else {
         throw new Error('Amount must be greater than 0.')
       }
@@ -53,6 +48,4 @@ export function useDepositMutation() {
       },
     }
   )
-
-  return depositMutation
 }

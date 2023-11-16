@@ -1,20 +1,23 @@
-import { StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount, StakeConnection } from '@pythnetwork/staking'
 import { useMutation, useQueryClient } from 'react-query'
-import { useStakeConnection } from './useStakeConnection'
+import { StakeConnectionQueryKey } from './useStakeConnection'
 import toast from 'react-hot-toast'
-import { StakeAccountQueryPrefix } from './useStakeAccounts'
-import { VestingAccountStateQueryPrefix } from './useVestingAccountState'
+import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 export function useUnvestedPreUnlockAllMutation() {
-  const { data: stakeConnection } = useStakeConnection()
   const queryClient = useQueryClient()
 
   return useMutation(
-    ['unlock-pre-all-unvested', stakeConnection],
-    async (mainStakeAccount?: StakeAccount) => {
-      if (mainStakeAccount === undefined || stakeConnection === undefined)
-        return
+    ['unlock-pre-all-unvested-mutation'],
+    async ({
+      mainStakeAccount,
+      stakeConnection,
+    }: {
+      mainStakeAccount: StakeAccount
+      stakeConnection: StakeConnection
+    }) => {
       await stakeConnection?.unlockBeforeVestingEvent(mainStakeAccount)
+      toast.success('Tokens have started unlocking.')
       // TODO:
       //   toast.success(
       //     `${nextVestingAmount
@@ -24,11 +27,13 @@ export function useUnvestedPreUnlockAllMutation() {
     },
     {
       onSuccess() {
-        queryClient.invalidateQueries(StakeAccountQueryPrefix)
-        queryClient.invalidateQueries(VestingAccountStateQueryPrefix)
+        // invalidate all except stake connection
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== StakeConnectionQueryKey,
+        })
       },
       onError(error: Error) {
-        toast.error(error.message)
+        toast.error(capitalizeFirstLetter(error.message))
       },
     }
   )

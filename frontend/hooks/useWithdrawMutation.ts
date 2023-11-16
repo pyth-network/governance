@@ -1,54 +1,48 @@
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
+import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
-import { useStakeConnection } from './useStakeConnection'
+import { StakeConnectionQueryKey } from './useStakeConnection'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
-import { StakeAccountQueryPrefix } from './useStakeAccounts'
 
 export function useWithdrawMutation() {
-  const { data: stakeConnection } = useStakeConnection()
   const queryClient = useQueryClient()
 
-  const depositMutation = useMutation(
-    ['withdraw-callback'],
+  return useMutation(
+    ['withdraw-mutation'],
     async ({
       amount,
+      stakeConnection,
       mainStakeAccount,
     }: {
       amount: string
-      mainStakeAccount?: StakeAccount
+      stakeConnection: StakeConnection
+      mainStakeAccount: StakeAccount
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')
       }
       const withdrawAmount = PythBalance.fromString(amount)
       if (withdrawAmount.gt(PythBalance.zero())) {
-        if (mainStakeAccount) {
-          try {
-            await stakeConnection?.withdrawTokens(
-              mainStakeAccount,
-              withdrawAmount
-            )
-            toast.success('Withdraw successful!')
-          } catch (e) {
-            toast.error(capitalizeFirstLetter(e.message))
-          }
-        } else {
-          toast.error('Stake account is undefined.')
-        }
+        await stakeConnection?.withdrawTokens(mainStakeAccount, withdrawAmount)
+        toast.success('Withdraw successful!')
       } else {
-        toast.error('Amount must be greater than 0.')
+        throw new Error('Amount must be greater than 0.')
       }
     },
     {
       onSuccess() {
-        queryClient.invalidateQueries(StakeAccountQueryPrefix)
+        // invalidate all except stake connection
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== StakeConnectionQueryKey,
+        })
       },
       onError(error: Error) {
-        toast.error(error.message)
+        toast.error(capitalizeFirstLetter(error.message))
       },
     }
   )
-
-  return depositMutation
 }

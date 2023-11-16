@@ -1,42 +1,36 @@
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
-import toast from 'react-hot-toast'
 import {
-  StakeConnectionQueryKey,
-  useStakeConnection,
-} from './useStakeConnection'
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
+import toast from 'react-hot-toast'
+import { StakeConnectionQueryKey } from './useStakeConnection'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
 
 export function useUnlockMutation() {
-  const { data: stakeConnection } = useStakeConnection()
   const queryClient = useQueryClient()
 
-  const depositMutation = useMutation(
-    ['unlock-callback'],
+  return useMutation(
+    ['unlock-mutation'],
     async ({
       amount,
+      stakeConnection,
       mainStakeAccount,
     }: {
       amount: string
-      mainStakeAccount?: StakeAccount
+      stakeConnection: StakeConnection
+      mainStakeAccount: StakeAccount
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')
       }
       const unlockAmount = PythBalance.fromString(amount)
       if (unlockAmount.gt(PythBalance.zero())) {
-        if (mainStakeAccount) {
-          try {
-            await stakeConnection?.unlockTokens(mainStakeAccount, unlockAmount)
-            toast.success('Unlock successful!')
-          } catch (e) {
-            toast.error(capitalizeFirstLetter(e.message))
-          }
-        } else {
-          toast.error('Stake account is undefined.')
-        }
+        await stakeConnection.unlockTokens(mainStakeAccount, unlockAmount)
+        toast.success('Unlock successful!')
       } else {
-        toast.error('Amount must be greater than 0.')
+        throw new Error('Amount must be greater than 0.')
       }
     },
     {
@@ -47,10 +41,8 @@ export function useUnlockMutation() {
         })
       },
       onError(error: Error) {
-        toast.error(error.message)
+        toast.error(capitalizeFirstLetter(error.message))
       },
     }
   )
-
-  return depositMutation
 }
