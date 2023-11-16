@@ -37,7 +37,6 @@ export const tabDescriptions = {
 }
 
 const Staking: NextPage = () => {
-  const { connected } = useWallet()
   const [
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
@@ -56,7 +55,7 @@ const Staking: NextPage = () => {
   useEffect(() => {
     if (stakeAccounts !== undefined) {
       if (stakeAccounts.length === 1) setMainStakeAccount(stakeAccounts[0])
-      else {
+      else if (stakeAccounts.length > 1) {
         // user has selected the stake account previously
         if (mainStakeAccount !== undefined) {
           // select the previous main stake account
@@ -71,6 +70,9 @@ const Staking: NextPage = () => {
           setIsMultipleStakeAccountsModalOpen(true)
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
         }
+      } else {
+        setMainStakeAccount(undefined)
+        setMultipleStakeAccountsModalOption(undefined)
       }
     } else {
       setMainStakeAccount(undefined)
