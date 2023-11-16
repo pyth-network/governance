@@ -49,8 +49,7 @@ const Staking: NextPage = () => {
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
-  const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
-    useStakeAccounts()
+  const { data: stakeAccounts } = useStakeAccounts()
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
 
   // set main stake account
@@ -79,8 +78,11 @@ const Staking: NextPage = () => {
     }
   }, [stakeAccounts])
 
-  const { data: balanceData, isLoading: _isBalanceLoading } =
-    useBalance(mainStakeAccount)
+  const {
+    data: balanceData,
+    isLoading: isBalanceLoading,
+    isIdle: isBalanceIdle,
+  } = useBalance(mainStakeAccount)
   const {
     lockingPythBalance,
     lockedPythBalance,
@@ -90,8 +92,6 @@ const Staking: NextPage = () => {
 
     unvestedTotalPythBalance,
   } = balanceData ?? {}
-
-  const isBalanceLoading = isStakeAccountsLoading || _isBalanceLoading
 
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
@@ -258,124 +258,93 @@ const Staking: NextPage = () => {
         <div className="mx-auto mt-2 w-full max-w-[796px]">
           <div className=" sm:mt-12 ">
             <div className="grid grid-cols-3 gap-2.5">
-              {connected ? (
-                <button
-                  className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={() => setIsLockedModalOpen(true)}
-                >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mb-0 md:mr-6">
-                      <LockedIcon />
-                    </div>
-                    <div className="flex flex-col justify-between py-2 text-sm">
-                      <div className="mb-1 font-bold ">Locked </div>
-                      {isBalanceLoading ? (
-                        <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                      ) : (
-                        <div className="">
-                          {lockedPythBalance?.toString()}{' '}
-                          {lockingPythBalance &&
-                          !lockingPythBalance.isZero() ? (
-                            <div>
-                              <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
-                                <div className="">
-                                  (+{lockingPythBalance.toString()})
-                                </div>
-                              </Tooltip>
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+              <button
+                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                onClick={() => setIsLockedModalOpen(true)}
+              >
+                <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
                     <LockedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
-                    <div className="mb-1 font-bold">Locked</div>
-                    <div>-</div>
+                    <div className="mb-1 font-bold ">Locked </div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
+                    ) : isBalanceIdle ? (
+                      <div>-</div>
+                    ) : (
+                      <div className="">
+                        {lockedPythBalance?.toString()}{' '}
+                        {lockingPythBalance && !lockingPythBalance.isZero() ? (
+                          <div>
+                            <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                              <div className="">
+                                (+{lockingPythBalance.toString()})
+                              </div>
+                            </Tooltip>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-              {connected ? (
-                <button
-                  className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={() => setIsUnlockedModalOpen(true)}
-                >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mb-0 md:mr-6">
-                      <UnlockedIcon />
-                    </div>
-                    <div className="flex flex-col justify-between py-2 text-sm">
-                      <div className="mb-1 font-bold">Unlocked </div>
-                      {isBalanceLoading ? (
-                        <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                      ) : (
-                        <div className="">
-                          {unlockedPythBalance?.toString()}{' '}
-                          {unlockingPythBalance &&
-                          !unlockingPythBalance.isZero() ? (
-                            <div>
-                              <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
-                                <div className="">
-                                  (+{unlockingPythBalance.toString()})
-                                </div>
-                              </Tooltip>
-                            </div>
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+              </button>
+
+              <button
+                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                onClick={() => setIsUnlockedModalOpen(true)}
+              >
+                <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
                     <UnlockedIcon />
                   </div>
-
                   <div className="flex flex-col justify-between py-2 text-sm">
-                    <div className="mb-1 font-bold">Unlocked</div>
-                    <div>-</div>
+                    <div className="mb-1 font-bold">Unlocked </div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
+                    ) : isBalanceIdle ? (
+                      <div>-</div>
+                    ) : (
+                      <div className="">
+                        {unlockedPythBalance?.toString()}{' '}
+                        {unlockingPythBalance &&
+                        !unlockingPythBalance.isZero() ? (
+                          <div>
+                            <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
+                              <div className="">
+                                (+{unlockingPythBalance.toString()})
+                              </div>
+                            </Tooltip>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-              {connected ? (
-                <button
-                  className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                  onClick={() => setIsUnvestedModalOpen(true)}
-                >
-                  <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
-                    <div className="mb-2  md:mb-0 md:mr-6">
-                      <UnvestedIcon />
-                    </div>
-                    <div className="flex flex-col justify-between py-2 text-sm">
-                      <div className="mb-1 font-bold">Unvested</div>
-                      {isBalanceLoading ? (
-                        <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                      ) : (
-                        <div className="">
-                          {unvestedTotalPythBalance?.toString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ) : (
-                <div className="flex flex-col items-center bg-darkGray py-6 text-center sm:px-6 md:flex-row md:items-start md:text-left">
+              </button>
+
+              <button
+                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                onClick={() => setIsUnvestedModalOpen(true)}
+              >
+                <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
                     <UnvestedIcon />
                   </div>
-
                   <div className="flex flex-col justify-between py-2 text-sm">
                     <div className="mb-1 font-bold">Unvested</div>
-                    <div>-</div>
+                    {isBalanceLoading ? (
+                      <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
+                    ) : isBalanceIdle ? (
+                      <div>-</div>
+                    ) : (
+                      <div className="">
+                        {unvestedTotalPythBalance?.toString()}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              </button>
             </div>
           </div>
           <div className="mt-2 bg-darkGray px-4 sm:px-14 md:px-5">
