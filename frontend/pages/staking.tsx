@@ -1,13 +1,10 @@
-import CloseIcon from '@components/icons/CloseIcon'
 import Tooltip from '@components/Tooltip'
 import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount } from '@pythnetwork/staking'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
-import BN from 'bn.js'
 import type { NextPage } from 'next'
-import { ChangeEvent, Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { classNames } from 'utils/classNames'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
@@ -15,13 +12,9 @@ import SEO from '../components/SEO'
 import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
 import UnvestedIcon from '@components/icons/UnvestedIcon'
-import Spinner from '@components/Spinner'
 import { LockedModal } from '@components/modals/LockedModal'
 import { UnlockedModal } from '@components/modals/UnlockedModal'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
-import { useDepositMutation } from 'hooks/useDepositMutation'
-import { useUnlockMutation } from 'hooks/useUnlockMutation'
-import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { UnvestedModal } from '@components/modals/UnvestedModal'
@@ -52,13 +45,10 @@ const Staking: NextPage = () => {
   const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
   const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
   const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
-  const [isLockButtonDisabled, setIsLockButtonDisabled] =
-    useState<boolean>(false)
   const [
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
-  const [isSufficientBalance, setIsSufficientBalance] = useState<boolean>(true)
   const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
     useStakeAccounts()
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
@@ -89,8 +79,6 @@ const Staking: NextPage = () => {
     }
   }, [stakeAccounts])
 
-  const [balance, setBalance] = useState<PythBalance>()
-
   const { data: balanceData, isLoading: _isBalanceLoading } =
     useBalance(mainStakeAccount)
   const {
@@ -106,92 +94,23 @@ const Staking: NextPage = () => {
   } = balanceData ?? {}
   const isBalanceLoading = isStakeAccountsLoading || _isBalanceLoading
 
-  const [amount, setAmount] = useState<string>('')
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
 
   const { data: currentVestingAccountState } =
     useVestingAccountState(mainStakeAccount)
 
-  useEffect(() => {
-    if (amount && balance) {
-      if (PythBalance.fromString(amount).gt(balance)) {
-        setIsSufficientBalance(false)
-      } else {
-        setIsSufficientBalance(true)
-      }
-    } else {
-      setIsSufficientBalance(true)
-    }
-  }, [amount])
-
-  // set ui balance amount whenever current tab changes
-  useEffect(() => {
-    if (connected) {
-      switch (currentTab) {
-        case TabEnum.Lock:
-          setBalance(pythBalance)
-          break
-        case TabEnum.Unlock:
-          setBalance(lockedPythBalance)
-          break
-        case TabEnum.Withdraw:
-          setBalance(unlockedPythBalance)
-          break
-      }
-    } else {
-      setBalance(undefined)
-    }
-  }, [
-    currentTab,
-    connected,
-    pythBalance,
-    lockedPythBalance,
-    unlockedPythBalance,
-  ])
-
-  // set amount when input changes
-  const handleAmountChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const re = /^(\d*\.)?\d{0,6}$/
-    if (re.test(event.target.value)) {
-      setAmount(event.target.value)
-    }
-  }
-
-  // call deposit and lock api when deposit button is clicked (create stake account if not already created)
-  const depositMutation = useDepositMutation()
-
   const handleCloseMultipleStakeAccountsModal = () => {
     setIsMultipleStakeAccountsModalOpen(false)
   }
-
-  // call unlock api when unlock button is clicked
-  const unlockMutation = useUnlockMutation()
 
   const handleMultipleStakeAccountsConnectButton = () => {
     setMainStakeAccount(multipleStakeAccountsModalOption)
     handleCloseMultipleStakeAccountsModal()
   }
 
-  // withdraw unlocked PYTH tokens to wallet
-  const withdrawMutation = useWithdrawMutation()
-
   // set current tab value when tab is clicked
   const handleChangeTab = (index: number) => {
     setCurrentTab(index as TabEnum)
-  }
-
-  // set input amount to half of pyth balance in wallet
-  const handleHalfBalanceClick = () => {
-    if (balance) {
-      setAmount(new PythBalance(balance.toBN().div(new BN(2))).toString())
-    }
-  }
-
-  // set input amount to max of pyth balance in wallet
-  const handleMaxBalanceClick = () => {
-    if (balance) {
-      setAmount(balance.toString())
-    }
   }
 
   return (

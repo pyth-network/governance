@@ -12,8 +12,6 @@ export function LockPanel({ mainStakeAccount }: LockPanelProps) {
   const depositMutation = useDepositMutation()
   const { data: pythBalance, isLoading } = usePythBalance()
 
-  console.log(isLoading, pythBalance)
-
   return (
     <BasePanel
       description={tabDescriptions.Lock}
