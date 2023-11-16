@@ -8,18 +8,19 @@ export function useVestingAccountState(
   mainStakeAccount: StakeAccount | undefined
 ) {
   const { data: stakeConnection } = useStakeConnection()
+
   return useQuery(
     [VestingAccountStateQueryPrefix, mainStakeAccount],
     async () => {
-      if (stakeConnection && mainStakeAccount) {
-        const currentTime = await stakeConnection.getTime()
-        const vestingAccountState =
-          mainStakeAccount.getVestingAccountState(currentTime)
+      // only enabled when stakeConnection and mainStakeAccount is defined
+      const currentTime = await stakeConnection!.getTime()
+      const vestingAccountState =
+        mainStakeAccount!.getVestingAccountState(currentTime)
 
-        return vestingAccountState
-      }
-
-      return undefined
+      return vestingAccountState
+    },
+    {
+      enabled: stakeConnection !== undefined && mainStakeAccount !== undefined,
     }
   )
 }
