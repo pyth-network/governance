@@ -34,9 +34,10 @@ import {
   PROGRAM_VERSION_V2,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
-import { GOVERNANCE_ADDRESS } from "./constants";
+import { GOVERNANCE_ADDRESS, STAKING_ADDRESS } from "./constants";
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
+import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 let wasm = wasm2;
 export { wasm };
 
@@ -73,6 +74,26 @@ export class StakeConnection {
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress = GOVERNANCE_ADDRESS();
+  }
+
+  public static async connect(
+    connection: Connection,
+    wallet: Wallet
+  ): Promise<StakeConnection> {
+    return await StakeConnection.createStakeConnection(
+      connection,
+      wallet,
+      STAKING_ADDRESS
+    );
+  }
+
+  public static async connectReadOnly(
+    connection: Connection
+  ): Promise<StakeConnection> {
+    return await StakeConnection.connect(
+      connection,
+      new NodeWallet(new Keypair())
+    );
   }
 
   // creates a program connection and loads the staking config
