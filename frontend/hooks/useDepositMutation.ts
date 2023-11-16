@@ -1,6 +1,9 @@
 import { PythBalance, StakeAccount } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
-import { useStakeConnection } from './useStakeConnection'
+import {
+  StakeConnectionQueryKey,
+  useStakeConnection,
+} from './useStakeConnection'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
 import { StakeAccountQueryPrefix } from './useStakeAccounts'
@@ -24,11 +27,13 @@ export function useDepositMutation() {
       const depositAmount = PythBalance.fromString(amount)
       if (depositAmount.gt(PythBalance.zero())) {
         try {
-          await stakeConnection?.depositAndLockTokens(
-            mainStakeAccount,
-            depositAmount
-          )
-          toast.success(`Deposit and locked ${amount} PYTH tokens!`)
+          if (stakeConnection) {
+            await stakeConnection?.depositAndLockTokens(
+              mainStakeAccount,
+              depositAmount
+            )
+            toast.success(`Deposit and locked ${amount} PYTH tokens!`)
+          }
         } catch (e) {
           throw new Error(capitalizeFirstLetter(e.message))
         }
@@ -38,7 +43,10 @@ export function useDepositMutation() {
     },
     {
       onSuccess() {
-        queryClient.invalidateQueries(StakeAccountQueryPrefix)
+        // invalidate all except stake connection
+        queryClient.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== StakeConnectionQueryKey,
+        })
       },
       onError(error: Error) {
         toast.error(error.message)
