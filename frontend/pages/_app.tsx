@@ -40,7 +40,15 @@ const walletConnectConfig: WalletConnectWalletAdapterConfig = {
   },
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 60 * 1000, // won't stale for an hour
+      cacheTime: 2 * 60 * 60 * 1000, // cache won't be cleared for 2 hours
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
   // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
