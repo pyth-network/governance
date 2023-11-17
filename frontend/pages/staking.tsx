@@ -230,15 +230,15 @@ const Staking: NextPage = () => {
       <StakedModal
         setIsStakedModalOpen={setIsStakedModalOpen}
         isStakedModalOpen={isStakedModalOpen}
-        lockedPythBalance={lockedPythBalance}
-        lockingPythBalance={lockingPythBalance}
+        stakedPythBalance={lockedPythBalance}
+        stakingPythBalance={lockingPythBalance}
       />
 
       <UnstakedModal
         isUnstakedModalOpen={isUnstakedModalOpen}
         setIsUnstakedModalOpen={setIsUnstakedModalOpen}
-        unlockedPythBalance={unlockedPythBalance}
-        unlockingPythBalance={unlockingPythBalance}
+        unstakedPythBalance={unlockedPythBalance}
+        unstakingPythBalance={unlockingPythBalance}
       />
 
       <LockedModal

@@ -4,14 +4,14 @@ import { BaseModal } from './BaseModal'
 export type UnstakedModalProps = {
   isUnstakedModalOpen: boolean
   setIsUnstakedModalOpen: (open: boolean) => void
-  unlockedPythBalance?: PythBalance
-  unlockingPythBalance?: PythBalance
+  unstakedPythBalance?: PythBalance
+  unstakingPythBalance?: PythBalance
 }
 export function UnstakedModal({
   isUnstakedModalOpen,
   setIsUnstakedModalOpen,
-  unlockedPythBalance,
-  unlockingPythBalance,
+  unstakedPythBalance,
+  unstakingPythBalance,
 }: UnstakedModalProps) {
   return (
     <BaseModal
@@ -25,11 +25,11 @@ export function UnstakedModal({
         Unstaked tokens cannot participate in governance.
       </p>
       <p className="leading-6">
-        You currently have {unlockedPythBalance?.toString()} unstaked tokens.
+        You currently have {unstakedPythBalance?.toString()} unstaked tokens.
       </p>
-      {unlockingPythBalance && !unlockingPythBalance.isZero() ? (
+      {unstakingPythBalance && !unstakingPythBalance.isZero() ? (
         <p className="mt-4 leading-6">
-          {unlockingPythBalance.toString()} tokens have to go through a
+          {unstakingPythBalance.toString()} tokens have to go through a
           cool-down period for 2 epochs before they can be withdrawn.
         </p>
       ) : null}

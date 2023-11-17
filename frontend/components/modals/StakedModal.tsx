@@ -4,14 +4,14 @@ import { BaseModal } from './BaseModal'
 type StakedModalProps = {
   isStakedModalOpen: boolean
   setIsStakedModalOpen: (open: boolean) => void
-  lockedPythBalance?: PythBalance
-  lockingPythBalance?: PythBalance
+  stakedPythBalance?: PythBalance
+  stakingPythBalance?: PythBalance
 }
 export function StakedModal({
   isStakedModalOpen,
   setIsStakedModalOpen,
-  lockedPythBalance,
-  lockingPythBalance,
+  stakedPythBalance,
+  stakingPythBalance,
 }: StakedModalProps) {
   return (
     <>
@@ -26,11 +26,11 @@ export function StakedModal({
           beginning of the next epoch.
         </p>
         <p className="leading-6 ">
-          You currently have {lockedPythBalance?.toString()} staked tokens.
+          You currently have {stakedPythBalance?.toString()} staked tokens.
         </p>
-        {lockingPythBalance && !lockingPythBalance.isZero() ? (
+        {stakingPythBalance && !stakingPythBalance.isZero() ? (
           <p className="mt-4 leading-6 ">
-            {lockingPythBalance.toString()} tokens will be staked from the
+            {stakingPythBalance.toString()} tokens will be staked from the
             beginning of the next epoch.
           </p>
         ) : null}
