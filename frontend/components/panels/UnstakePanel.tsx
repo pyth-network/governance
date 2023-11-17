@@ -1,35 +1,38 @@
-import { tabDescriptions } from 'pages/staking'
 import { BasePanel } from './BasePanel'
-import { useDepositMutation } from 'hooks/useDepositMutation'
 import { StakeAccount } from '@pythnetwork/staking'
-import { usePythBalance } from 'hooks/usePythBalance'
+import { useUnlockMutation } from 'hooks/useUnlockMutation'
+import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
-type LockPanelProps = {
+type UnstakePanelProps = {
   mainStakeAccount: StakeAccount | undefined
 }
-export function LockPanel({ mainStakeAccount }: LockPanelProps) {
+const Description =
+  'Unstake PYTH. Unstaking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unstaked tokens cannot participate in governance.'
+
+export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
-  const depositMutation = useDepositMutation()
+  const unlockMutation = useUnlockMutation()
   const { data: stakeConnection } = useStakeConnection()
-  const { data: pythBalance, isLoading } = usePythBalance()
+  const { data: balanceData, isLoading } = useBalance(mainStakeAccount)
+  const { lockedPythBalance } = balanceData ?? {}
 
   return (
     <BasePanel
-      description={tabDescriptions.Lock}
+      description={Description}
       tokensLabel={'Balance'}
       onAction={(amount) =>
-        depositMutation.mutate({
+        unlockMutation.mutate({
           amount,
           // action is disabled below if these is undefined
           mainStakeAccount: mainStakeAccount!,
           stakeConnection: stakeConnection!,
         })
       }
-      actionLabel={'Lock'}
-      isActionLoading={depositMutation.isLoading}
+      actionLabel={'Unstake'}
+      isActionLoading={unlockMutation.isLoading}
       isBalanceLoading={isLoading}
-      balance={pythBalance}
+      balance={lockedPythBalance}
       isActionDisabled={
         mainStakeAccount === undefined || stakeConnection === undefined
       }

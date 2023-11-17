@@ -18,22 +18,14 @@ import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useBalance } from 'hooks/useBalance'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { UnvestedModal } from '@components/modals/UnvestedModal'
-import { LockPanel } from '@components/panels/LockPanel'
-import { UnlockPanel } from '@components/panels/UnlockPanel'
+import { StakePanel } from '@components/panels/StakePanel'
+import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
 
 enum TabEnum {
-  Lock,
-  Unlock,
+  Stake,
+  Unstake,
   Withdraw,
-}
-
-export const tabDescriptions = {
-  Lock: 'Deposit and lock PYTH. Locking tokens enables you to participate in Pyth Network governance. Newly-locked tokens become eligible to vote in governance at the beginning of the next epoch.',
-  Unlock:
-    'Unlock PYTH. Unlocking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unlocked tokens cannot participate in governance.',
-  Withdraw:
-    'Withdraw PYTH. Transfer any unlocked tokens from the program to your wallet.',
 }
 
 const Staking: NextPage = () => {
@@ -95,7 +87,7 @@ const Staking: NextPage = () => {
     unvestedTotalPythBalance,
   } = balanceData ?? {}
 
-  const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Lock)
+  const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Stake)
 
   const { data: currentVestingAccountState } =
     useVestingAccountState(mainStakeAccount)
@@ -269,7 +261,7 @@ const Staking: NextPage = () => {
                     <LockedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
-                    <div className="mb-1 font-bold ">Locked </div>
+                    <div className="mb-1 font-bold ">Staked </div>
                     {isBalanceLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
                     ) : isBalanceIdle ? (
@@ -301,7 +293,7 @@ const Staking: NextPage = () => {
                     <UnlockedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
-                    <div className="mb-1 font-bold">Unlocked </div>
+                    <div className="mb-1 font-bold">Unstaked </div>
                     {isBalanceLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
                     ) : isBalanceIdle ? (
@@ -334,7 +326,7 @@ const Staking: NextPage = () => {
                     <UnvestedIcon />
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
-                    <div className="mb-1 font-bold">Unvested</div>
+                    <div className="mb-1 font-bold">Locked</div>
                     {isBalanceLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
                     ) : isBalanceIdle ? (
@@ -375,10 +367,10 @@ const Staking: NextPage = () => {
                     .slice(3)
                     .map((v, idx) => (
                       <Tab.Panel key={idx}>
-                        {currentTab === TabEnum.Lock ? (
-                          <LockPanel mainStakeAccount={mainStakeAccount} />
-                        ) : currentTab === TabEnum.Unlock ? (
-                          <UnlockPanel mainStakeAccount={mainStakeAccount} />
+                        {currentTab === TabEnum.Stake ? (
+                          <StakePanel mainStakeAccount={mainStakeAccount} />
+                        ) : currentTab === TabEnum.Unstake ? (
+                          <UnstakePanel mainStakeAccount={mainStakeAccount} />
                         ) : (
                           <WithdrawPanel mainStakeAccount={mainStakeAccount} />
                         )}
