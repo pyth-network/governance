@@ -9,7 +9,7 @@ type WithdrawPanelProps = {
 }
 
 const Description =
-  'Withdraw PYTH. Transfer withdrawable tokens from the program to your wallet.'
+  'Withdraw PYTH. Transfer tokens from the program to your wallet.'
 
 export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
