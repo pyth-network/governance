@@ -21,7 +21,7 @@ export function StakedModal({
         title={'Staked tokens'}
       >
         <p className="mb-8 leading-6 ">
-          Staked tokens enables you to participate in Pyth Network governance.
+          Staked tokens enable you to participate in Pyth Network governance.
           Newly-staked tokens become eligible to vote in governance at the
           beginning of the next epoch.
         </p>
