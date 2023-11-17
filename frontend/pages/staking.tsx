@@ -12,12 +12,12 @@ import SEO from '../components/SEO'
 import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
 import UnvestedIcon from '@components/icons/UnvestedIcon'
-import { LockedModal } from '@components/modals/LockedModal'
-import { UnlockedModal } from '@components/modals/UnlockedModal'
+import { StakedModal } from '@components/modals/StakedModal'
+import { UnstakedModal } from '@components/modals/UnstakedModal'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useBalance } from 'hooks/useBalance'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
-import { UnvestedModal } from '@components/modals/UnvestedModal'
+import { LockedModal } from '@components/modals/LockedModal'
 import { StakePanel } from '@components/panels/StakePanel'
 import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
@@ -33,9 +33,9 @@ const Staking: NextPage = () => {
     isMultipleStakeAccountsModalOpen,
     setIsMultipleStakeAccountsModalOpen,
   ] = useState<boolean>(false)
+  const [isStakedModalOpen, setIsStakedModalOpen] = useState<boolean>(false)
+  const [isUnstakedModalOpen, setIsUnstakedModalOpen] = useState<boolean>(false)
   const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
-  const [isUnlockedModalOpen, setIsUnlockedModalOpen] = useState<boolean>(false)
-  const [isUnvestedModalOpen, setIsUnvestedModalOpen] = useState<boolean>(false)
   const [
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
@@ -227,23 +227,23 @@ const Staking: NextPage = () => {
         </Dialog>
       </Transition>
 
-      <LockedModal
-        setIsLockedModalOpen={setIsLockedModalOpen}
-        isLockedModalOpen={isLockedModalOpen}
+      <StakedModal
+        setIsStakedModalOpen={setIsStakedModalOpen}
+        isStakedModalOpen={isStakedModalOpen}
         lockedPythBalance={lockedPythBalance}
         lockingPythBalance={lockingPythBalance}
       />
 
-      <UnlockedModal
-        isUnlockedModalOpen={isUnlockedModalOpen}
-        setIsUnlockedModalOpen={setIsUnlockedModalOpen}
+      <UnstakedModal
+        isUnstakedModalOpen={isUnstakedModalOpen}
+        setIsUnstakedModalOpen={setIsUnstakedModalOpen}
         unlockedPythBalance={unlockedPythBalance}
         unlockingPythBalance={unlockingPythBalance}
       />
 
-      <UnvestedModal
-        isUnvestedModalOpen={isUnvestedModalOpen}
-        setIsUnvestedModalOpen={setIsUnvestedModalOpen}
+      <LockedModal
+        isLockedModalOpen={isLockedModalOpen}
+        setIsLockedModalOpen={setIsLockedModalOpen}
         mainStakeAccount={mainStakeAccount}
         currentVestingAccountState={currentVestingAccountState}
       />
@@ -254,7 +254,7 @@ const Staking: NextPage = () => {
             <div className="grid grid-cols-3 gap-2.5">
               <button
                 className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                onClick={() => setIsLockedModalOpen(true)}
+                onClick={() => setIsStakedModalOpen(true)}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -286,7 +286,7 @@ const Staking: NextPage = () => {
 
               <button
                 className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                onClick={() => setIsUnlockedModalOpen(true)}
+                onClick={() => setIsUnstakedModalOpen(true)}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -319,7 +319,7 @@ const Staking: NextPage = () => {
 
               <button
                 className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
-                onClick={() => setIsUnvestedModalOpen(true)}
+                onClick={() => setIsLockedModalOpen(true)}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
