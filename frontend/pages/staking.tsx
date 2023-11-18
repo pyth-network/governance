@@ -2,7 +2,7 @@ import Tooltip from '@components/Tooltip'
 import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
 import { StakeAccount } from '@pythnetwork/staking'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAnchorWallet } from '@solana/wallet-adapter-react'
 import type { NextPage } from 'next'
 import { Fragment, useEffect, useState } from 'react'
 import { classNames } from 'utils/classNames'
@@ -28,6 +28,11 @@ enum TabEnum {
   Withdraw,
 }
 
+// TODO: remove comments
+// state -> no wallet connection
+// connect wallet -> wallet connection
+//
+
 const Staking: NextPage = () => {
   const [
     isMultipleStakeAccountsModalOpen,
@@ -42,6 +47,9 @@ const Staking: NextPage = () => {
   ] = useState<StakeAccount>()
   const { data: stakeAccounts } = useStakeAccounts()
   const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
+
+  const wallet = useAnchorWallet()
+  const isWalletConnected = wallet !== undefined
 
   // set main stake account
   useEffect(() => {
@@ -253,8 +261,12 @@ const Staking: NextPage = () => {
           <div className=" sm:mt-12 ">
             <div className="grid grid-cols-3 gap-2.5">
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsStakedModalOpen(true)}
+                disabled={!isWalletConnected}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -285,8 +297,12 @@ const Staking: NextPage = () => {
               </button>
 
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsUnstakedModalOpen(true)}
+                disabled={!isWalletConnected}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -318,8 +334,12 @@ const Staking: NextPage = () => {
               </button>
 
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsLockedModalOpen(true)}
+                disabled={!isWalletConnected}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
