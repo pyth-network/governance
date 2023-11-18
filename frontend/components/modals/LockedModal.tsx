@@ -186,6 +186,8 @@ function LockedModalButton({
   const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
   const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
+  if (mainStakeAccount === null) return <></>
+
   switch (currentVestingAccountState) {
     case VestingAccountState.UnvestedTokensFullyLocked:
       return (
