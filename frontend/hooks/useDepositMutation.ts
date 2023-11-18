@@ -5,7 +5,6 @@ import {
 } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { StakeConnectionQueryKey } from './useStakeConnection'
-import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
 
 export function useDepositMutation() {
@@ -20,7 +19,7 @@ export function useDepositMutation() {
     }: {
       amount: string
       stakeConnection: StakeConnection
-      mainStakeAccount: StakeAccount
+      mainStakeAccount: StakeAccount | undefined
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')

@@ -24,8 +24,8 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       onAction={(amount) =>
         depositMutation.mutate({
           amount,
+          mainStakeAccount: mainStakeAccount,
           // action is disabled below if these is undefined
-          mainStakeAccount: mainStakeAccount!,
           stakeConnection: stakeConnection!,
         })
       }
@@ -33,9 +33,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       isActionLoading={depositMutation.isLoading}
       isBalanceLoading={isLoading}
       balance={pythBalance}
-      isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
-      }
+      isActionDisabled={stakeConnection === undefined}
     />
   )
 }
