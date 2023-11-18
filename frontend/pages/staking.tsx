@@ -29,18 +29,6 @@ enum TabEnum {
   Withdraw,
 }
 
-// TODO: remove comments
-// state -> no wallet connection
-// connect wallet -> wallet connection
-//
-
-// connected wallet
-// stakeConnection
-// stakeAccounts -> side effect -> mainStakeAccount
-// Balance
-// if there is a main stake account, we will get balance (can be zero) we are handling that
-// if there is no main stake account, let's handle it similar to zero balance
-
 const Staking: NextPage = () => {
   const [
     isMultipleStakeAccountsModalOpen,
