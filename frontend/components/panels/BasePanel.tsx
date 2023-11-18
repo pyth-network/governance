@@ -113,7 +113,18 @@ export function BasePanel({
 
       <div className="flex items-center justify-center ">
         {!connected ? (
-          <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
+          <WalletModalButton
+            style={{
+              padding: '0 18px',
+              border: 'solid',
+              borderWidth: '1px',
+              borderColor: 'rgb(113 66 207)',
+              borderRadius: '9999px',
+              whiteSpace: 'nowrap',
+              background: 'rgb(113 66 207)',
+              height: '45px',
+            }}
+          />
         ) : (
           <button
             className="action-btn text-base "

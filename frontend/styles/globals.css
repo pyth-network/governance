@@ -81,3 +81,17 @@
 .wallet-adapter-button.secondary-btn:hover {
   @apply hover:bg-pythPurple;
 }
+
+html {
+  overflow-y: scroll;
+}
+html::-webkit-scrollbar {
+  width: 3px;
+}
+html::-webkit-scrollbar-track {
+  background-color: #110f23;
+}
+html::-webkit-scrollbar-thumb {
+  background-color: #e6dafe;
+  border-radius: 3px;
+}
