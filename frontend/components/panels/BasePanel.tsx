@@ -115,7 +115,7 @@ export function BasePanel({
         {!connected ? (
           <WalletModalButton
             style={{
-              padding: '0 18px',
+              padding: '0 64px',
               border: 'solid',
               borderWidth: '1px',
               borderColor: 'rgb(113 66 207)',
