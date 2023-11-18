@@ -146,7 +146,7 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
     } catch (e) {
       // Bound the number of retries so the tests don't hang if there's some problem blocking
       // the connection to the validator.
-      if (numRetries == 10) {
+      if (numRetries == 30) {
         console.log(
           `Failed to start validator or connect to running validator. Caught exception: ${e}`
         );
