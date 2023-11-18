@@ -285,7 +285,7 @@ const Staking: NextPage = () => {
                         {balance.lockingPythBalance &&
                         !balance.lockingPythBalance.isZero() ? (
                           <div>
-                            <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                            <Tooltip content="These tokens will be staked from the beginning of the next epoch.">
                               <div className="">
                                 (+{balance.lockingPythBalance.toString()})
                               </div>
