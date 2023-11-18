@@ -96,17 +96,17 @@ describe("pyth balance tests", async () => {
 
   it("Tests on 60969.430243", async () => {
     let amount = PythBalance.fromString("60969.430243");
-    assert.equal(amount.toString(), "60969.430243");
+    assert.equal(amount.toString(), "60,969.430243");
     assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
     assert(!amount.isZero());
 
     amount = PythBalance.fromString("060969.430243");
-    assert.equal(amount.toString(), "60969.430243");
+    assert.equal(amount.toString(), "60,969.430243");
     assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
     assert(!amount.isZero());
 
     amount = new PythBalance(new BN(60_969_430_243));
-    assert.equal(amount.toString(), "60969.430243");
+    assert.equal(amount.toString(), "60,969.430243");
     assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
     assert(amount.toBN().eq(new BN(60_969_430_243)));
     assert(!amount.isZero());
