@@ -5,7 +5,7 @@ import { StakeAccount } from '@pythnetwork/staking'
 export const VestingAccountStateQueryPrefix = 'vesting-account-state'
 
 export function useVestingAccountState(
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 ) {
   const { data: stakeConnection } = useStakeConnection()
 
@@ -20,7 +20,10 @@ export function useVestingAccountState(
       return vestingAccountState
     },
     {
-      enabled: stakeConnection !== undefined && mainStakeAccount !== undefined,
+      enabled:
+        stakeConnection !== undefined &&
+        mainStakeAccount !== undefined &&
+        mainStakeAccount !== null,
     }
   )
 }

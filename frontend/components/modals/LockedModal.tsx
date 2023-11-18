@@ -16,7 +16,7 @@ export type LockedModalProps = {
   isLockedModalOpen: boolean
   setIsLockedModalOpen: (open: boolean) => void
   currentVestingAccountState: VestingAccountState | undefined
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 }
 export function LockedModal({
   isLockedModalOpen,
@@ -174,7 +174,7 @@ function LockedModalCurrentState({
 
 type LockedModalButtonProps = {
   currentVestingAccountState: VestingAccountState | undefined
-  mainStakeAccount?: StakeAccount
+  mainStakeAccount: StakeAccount | undefined | null
 }
 function LockedModalButton({
   currentVestingAccountState,
@@ -199,9 +199,7 @@ function LockedModalButton({
                 stakeConnection: stakeConnection!,
               })
             }
-            disabled={
-              mainStakeAccount === undefined || stakeConnection === undefined
-            }
+            disabled={!mainStakeAccount || stakeConnection === undefined}
           >
             Preliminary unstake
           </button>
@@ -214,9 +212,7 @@ function LockedModalButton({
                 stakeConnection: stakeConnection!,
               })
             }
-            disabled={
-              mainStakeAccount === undefined || stakeConnection === undefined
-            }
+            disabled={!mainStakeAccount || stakeConnection === undefined}
           >
             Unstake all
           </button>
@@ -241,7 +237,7 @@ function LockedModalButton({
                 VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
-              mainStakeAccount === undefined ||
+              !mainStakeAccount ||
               stakeConnection === undefined
             }
           >
@@ -273,7 +269,7 @@ function LockedModalButton({
                 VestingAccountState.UnvestedTokensFullyUnlocked ||
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
-              mainStakeAccount === undefined ||
+              !mainStakeAccount ||
               stakeConnection === undefined
             }
           >

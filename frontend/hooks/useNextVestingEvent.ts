@@ -4,7 +4,7 @@ import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
 
 export function useNextVestingEvent(
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 ) {
   const { data: stakeConnection } = useStakeConnection()
 
@@ -26,7 +26,10 @@ export function useNextVestingEvent(
       return undefined
     },
     {
-      enabled: stakeConnection !== undefined && mainStakeAccount !== undefined,
+      enabled:
+        stakeConnection !== undefined &&
+        mainStakeAccount !== undefined &&
+        mainStakeAccount !== null,
     }
   )
 }

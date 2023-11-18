@@ -20,13 +20,32 @@ type BalanceSummary = {
   unvestedUnlockingPythBalance: PythBalance
   unvestedUnlockedPythBalance: PythBalance
 }
-export function useBalance(mainStakeAccount?: StakeAccount) {
+
+// It assumes that when mainStakeAccount is null the user has no previous
+// stake account. It will return 0 balance in that scenario
+export function useBalance(mainStakeAccount: StakeAccount | undefined | null) {
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
     [BalanceQueryKeyPrefix, mainStakeAccount],
     // see the enabled option: mainStakeAccount, stakeConnection will not be undefined
     async (): Promise<BalanceSummary | undefined> => {
+      if (mainStakeAccount === null)
+        return {
+          lockingPythBalance: PythBalance.zero(),
+          lockedPythBalance: PythBalance.zero(),
+
+          unlockingPythBalance: PythBalance.zero(),
+          unlockedPythBalance: PythBalance.zero(),
+
+          unvestedTotalPythBalance: PythBalance.zero(),
+          unvestedLockingPythBalance: PythBalance.zero(),
+          unvestedLockedPythBalance: PythBalance.zero(),
+          unvestedPreUnlockingPythBalance: PythBalance.zero(),
+          unvestedUnlockingPythBalance: PythBalance.zero(),
+          unvestedUnlockedPythBalance: PythBalance.zero(),
+        }
+
       const { withdrawable, locked, unvested } =
         mainStakeAccount!.getBalanceSummary(await stakeConnection!.getTime())
 

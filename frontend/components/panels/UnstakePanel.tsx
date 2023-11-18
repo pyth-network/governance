@@ -5,7 +5,7 @@ import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
 type UnstakePanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 }
 const Description =
   'Unstake PYTH. Unstaking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unstaked tokens cannot participate in governance.'
@@ -33,9 +33,7 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
       isActionLoading={unlockMutation.isLoading}
       isBalanceLoading={isLoading}
       balance={lockedPythBalance}
-      isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
-      }
+      isActionDisabled={!mainStakeAccount || stakeConnection === undefined}
     />
   )
 }

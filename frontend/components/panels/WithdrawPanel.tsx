@@ -5,7 +5,7 @@ import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
 type WithdrawPanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 }
 
 const Description =
@@ -36,9 +36,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
       isBalanceLoading={isLoading}
       balance={unlockedPythBalance}
       // TODO: when to disabled action not sure
-      isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
-      }
+      isActionDisabled={!mainStakeAccount || stakeConnection === undefined}
     />
   )
 }

@@ -5,7 +5,7 @@ import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
 type StakePanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: StakeAccount | undefined | null
 }
 
 const Description =
