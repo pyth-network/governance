@@ -14,8 +14,10 @@ const Description =
 export function StakePanel({ mainStakeAccount }: StakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const depositMutation = useDepositMutation()
-  const { data: stakeConnection } = useStakeConnection()
-  const { data: pythBalance, isLoading } = usePythBalance()
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { data: pythBalance, isLoading: isPythBalanceLoading } =
+    usePythBalance()
 
   return (
     <BasePanel
@@ -31,7 +33,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       }
       actionLabel={'Stake'}
       isActionLoading={depositMutation.isLoading}
-      isBalanceLoading={isLoading}
+      isBalanceLoading={isStakeConnectionLoading || isPythBalanceLoading}
       balance={pythBalance}
       isActionDisabled={stakeConnection === undefined}
     />

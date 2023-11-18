@@ -3,6 +3,7 @@ import { StakeAccount } from '@pythnetwork/staking'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
 
 type UnstakePanelProps = {
   mainStakeAccount: StakeAccount | undefined | null
@@ -13,8 +14,11 @@ const Description =
 export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const unlockMutation = useUnlockMutation()
-  const { data: stakeConnection } = useStakeConnection()
-  const { data: balanceData, isLoading } = useBalance(mainStakeAccount)
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { isLoading: isAccountsLoading } = useStakeAccounts()
+  const { data: balanceData, isLoading: isBalanceLoading } =
+    useBalance(mainStakeAccount)
   const { lockedPythBalance } = balanceData ?? {}
 
   return (
@@ -31,7 +35,9 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
       }
       actionLabel={'Unstake'}
       isActionLoading={unlockMutation.isLoading}
-      isBalanceLoading={isLoading}
+      isBalanceLoading={
+        isStakeConnectionLoading || isAccountsLoading || isBalanceLoading
+      }
       balance={lockedPythBalance}
       isActionDisabled={!mainStakeAccount || stakeConnection === undefined}
     />
