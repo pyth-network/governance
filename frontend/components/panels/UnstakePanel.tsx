@@ -25,10 +25,9 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   const { data: vestingAccountState } = useVestingAccountState(mainStakeAccount)
 
   const accountWithLockedTokens =
-    vestingAccountState === undefined
-      ? false
-      : vestingAccountState != VestingAccountState.FullyVested &&
-        vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
+    vestingAccountState !== undefined &&
+    vestingAccountState != VestingAccountState.FullyVested &&
+    vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
 
   return (
     <BasePanel
