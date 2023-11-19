@@ -1,9 +1,10 @@
 import { BasePanel } from './BasePanel'
-import { StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { useVestingAccountState } from 'hooks/useVestingAccountState'
 
 type UnstakePanelProps = {
   mainStakeAccount: StakeAccount | undefined | null
@@ -20,6 +21,14 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   const { data: balanceData, isLoading: isBalanceLoading } =
     useBalance(mainStakeAccount)
   const { lockedPythBalance } = balanceData ?? {}
+
+  const { data: vestingAccountState } = useVestingAccountState(mainStakeAccount)
+
+  const accountWithLockedTokens =
+    vestingAccountState === undefined
+      ? false
+      : vestingAccountState != VestingAccountState.FullyVested &&
+        vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
 
   return (
     <BasePanel
@@ -39,7 +48,16 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
         isStakeConnectionLoading || isAccountsLoading || isBalanceLoading
       }
       balance={lockedPythBalance}
-      isActionDisabled={!mainStakeAccount || stakeConnection === undefined}
+      isActionDisabled={
+        !mainStakeAccount ||
+        stakeConnection === undefined ||
+        accountWithLockedTokens
+      }
+      tooltipContentOnDisabled={
+        accountWithLockedTokens
+          ? 'You are currently not enrolled in governance.'
+          : undefined
+      }
     />
   )
 }

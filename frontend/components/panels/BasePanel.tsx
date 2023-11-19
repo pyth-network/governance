@@ -16,6 +16,7 @@ export type BasePanelProps = {
   isActionLoading: boolean | undefined
   isActionDisabled: boolean | undefined
   actionLabel: string
+  tooltipContentOnDisabled?: string
 }
 export function BasePanel({
   description,
@@ -26,6 +27,7 @@ export function BasePanel({
   isActionLoading,
   isActionDisabled,
   actionLabel,
+  tooltipContentOnDisabled,
 }: BasePanelProps) {
   const { connected } = useWallet()
   const [amount, setAmount] = useState<string>('')
@@ -136,7 +138,7 @@ export function BasePanel({
             {isActionLoading ? (
               <Spinner />
             ) : isActionDisabled ? (
-              <Tooltip content="You are currently not enrolled in governance.">
+              <Tooltip content={tooltipContentOnDisabled}>
                 {actionLabel}
               </Tooltip>
             ) : isSufficientBalance ? (
