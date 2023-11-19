@@ -49,8 +49,9 @@ export class PythBalance {
     const padded = this.toBN()
       .toString()
       .padStart(PYTH_DECIMALS + 1, "0");
+
     return (
-      padded.slice(0, padded.length - PYTH_DECIMALS) +
+      addCommas(padded.slice(0, padded.length - PYTH_DECIMALS)) +
       ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
         TRAILING_ZEROS,
         ""
@@ -90,3 +91,7 @@ export class PythBalance {
     return this.eq(PythBalance.zero());
   }
 }
+
+const addCommas = (x: string) => {
+  return x.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
