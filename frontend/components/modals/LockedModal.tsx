@@ -187,7 +187,7 @@ function LockedModalButton({
   const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
   const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
-  if (mainStakeAccount === null) return <></>
+  if (mainStakeAccount === 'NA') return <></>
 
   switch (currentVestingAccountState) {
     case VestingAccountState.UnvestedTokensFullyLocked:
@@ -203,9 +203,7 @@ function LockedModalButton({
               })
             }
             disabled={
-              mainStakeAccount === undefined ||
-              mainStakeAccount === 'NA' ||
-              stakeConnection === undefined
+              mainStakeAccount === undefined || stakeConnection === undefined
             }
           >
             Preliminary unstake
@@ -220,9 +218,7 @@ function LockedModalButton({
               })
             }
             disabled={
-              mainStakeAccount === undefined ||
-              mainStakeAccount === 'NA' ||
-              stakeConnection === undefined
+              mainStakeAccount === undefined || stakeConnection === undefined
             }
           >
             Unstake all
@@ -249,7 +245,6 @@ function LockedModalButton({
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
               mainStakeAccount === undefined ||
-              mainStakeAccount === 'NA' ||
               stakeConnection === undefined
             }
           >
@@ -282,7 +277,6 @@ function LockedModalButton({
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
               mainStakeAccount === undefined ||
-              mainStakeAccount === 'NA' ||
               stakeConnection === undefined
             }
           >
