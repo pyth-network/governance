@@ -4,9 +4,10 @@ import { useBalance } from 'hooks/useBalance'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { MainStakeAccount } from 'pages/staking'
 
 type WithdrawPanelProps = {
-  mainStakeAccount: StakeAccount | undefined | null
+  mainStakeAccount: MainStakeAccount
 }
 
 const Description =
@@ -31,7 +32,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
         withdrawMutation.mutate({
           // action enabled only when below two props are defined
           amount,
-          mainStakeAccount: mainStakeAccount!,
+          mainStakeAccount: mainStakeAccount as StakeAccount,
           stakeConnection: stakeConnection!,
         })
       }
@@ -41,7 +42,11 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
         isStakeConnectionLoading || isAccountsLoading || isBalanceLoading
       }
       balance={unlockedPythBalance}
-      isActionDisabled={!mainStakeAccount || stakeConnection === undefined}
+      isActionDisabled={
+        mainStakeAccount === undefined ||
+        mainStakeAccount === 'NA' ||
+        stakeConnection === undefined
+      }
     />
   )
 }

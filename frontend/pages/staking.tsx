@@ -29,6 +29,11 @@ enum TabEnum {
   Withdraw,
 }
 
+// if things are loading, mainStakeAccount is undefined
+// else if there are no previous stakeAccount, mainStakeAccount is 'NA'
+// else mainStakeAccount is defined
+export type MainStakeAccount = StakeAccount | undefined | 'NA'
+
 const Staking: NextPage = () => {
   const [
     isMultipleStakeAccountsModalOpen,
@@ -49,12 +54,7 @@ const Staking: NextPage = () => {
   const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
     useStakeAccounts()
 
-  // if things are loading, mainStakeAccount is undefined
-  // else if there are no previous stakeAccount, mainStakeAccount is null
-  // else mainStakeAccount is defined
-  const [mainStakeAccount, setMainStakeAccount] = useState<
-    StakeAccount | undefined | null
-  >()
+  const [mainStakeAccount, setMainStakeAccount] = useState<MainStakeAccount>()
 
   // set main stake account
   useEffect(() => {
@@ -62,7 +62,7 @@ const Staking: NextPage = () => {
       if (stakeAccounts.length === 1) setMainStakeAccount(stakeAccounts[0])
       else if (stakeAccounts.length > 1) {
         // user has selected the stake account previously
-        if (mainStakeAccount !== undefined && mainStakeAccount !== null) {
+        if (mainStakeAccount !== undefined && mainStakeAccount !== 'NA') {
           // select the previous main stake account
           for (const acc of stakeAccounts) {
             if (
@@ -76,7 +76,7 @@ const Staking: NextPage = () => {
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
         }
       } else {
-        setMainStakeAccount(null)
+        setMainStakeAccount('NA')
         setMultipleStakeAccountsModalOption(undefined)
       }
     } else {

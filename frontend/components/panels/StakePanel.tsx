@@ -1,12 +1,13 @@
 import { BasePanel } from './BasePanel'
 import { useDepositMutation } from 'hooks/useDepositMutation'
-import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
+import { VestingAccountState } from '@pythnetwork/staking'
 import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
+import { MainStakeAccount } from 'pages/staking'
 
 type StakePanelProps = {
-  mainStakeAccount: StakeAccount | undefined | null
+  mainStakeAccount: MainStakeAccount
 }
 
 const Description =

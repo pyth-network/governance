@@ -11,12 +11,13 @@ import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation
 import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { MainStakeAccount } from 'pages/staking'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
   setIsLockedModalOpen: (open: boolean) => void
   currentVestingAccountState: VestingAccountState | undefined
-  mainStakeAccount: StakeAccount | undefined | null
+  mainStakeAccount: MainStakeAccount
 }
 export function LockedModal({
   isLockedModalOpen,
@@ -174,7 +175,7 @@ function LockedModalCurrentState({
 
 type LockedModalButtonProps = {
   currentVestingAccountState: VestingAccountState | undefined
-  mainStakeAccount: StakeAccount | undefined | null
+  mainStakeAccount: MainStakeAccount
 }
 function LockedModalButton({
   currentVestingAccountState,
@@ -197,11 +198,15 @@ function LockedModalButton({
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
             onClick={() =>
               unvestedPreUnlockAll.mutate({
-                mainStakeAccount: mainStakeAccount!,
+                mainStakeAccount: mainStakeAccount as StakeAccount,
                 stakeConnection: stakeConnection!,
               })
             }
-            disabled={!mainStakeAccount || stakeConnection === undefined}
+            disabled={
+              mainStakeAccount === undefined ||
+              mainStakeAccount === 'NA' ||
+              stakeConnection === undefined
+            }
           >
             Preliminary unstake
           </button>
@@ -210,11 +215,15 @@ function LockedModalButton({
             className="primary-btn  px-8 py-3 text-base font-semibold  hover:bg-blueGemHover"
             onClick={() =>
               unvestedUnlockAll.mutate({
-                mainStakeAccount: mainStakeAccount!,
+                mainStakeAccount: mainStakeAccount as StakeAccount,
                 stakeConnection: stakeConnection!,
               })
             }
-            disabled={!mainStakeAccount || stakeConnection === undefined}
+            disabled={
+              mainStakeAccount === undefined ||
+              mainStakeAccount === 'NA' ||
+              stakeConnection === undefined
+            }
           >
             Unstake all
           </button>
@@ -230,7 +239,7 @@ function LockedModalButton({
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
             onClick={() =>
               unvestedLockAll.mutate({
-                mainStakeAccount: mainStakeAccount!,
+                mainStakeAccount: mainStakeAccount as StakeAccount,
                 stakeConnection: stakeConnection!,
               })
             }
@@ -239,7 +248,8 @@ function LockedModalButton({
                 VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
-              !mainStakeAccount ||
+              mainStakeAccount === undefined ||
+              mainStakeAccount === 'NA' ||
               stakeConnection === undefined
             }
           >
@@ -262,7 +272,7 @@ function LockedModalButton({
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
             onClick={() =>
               unvestedUnlockAll.mutate({
-                mainStakeAccount: mainStakeAccount!,
+                mainStakeAccount: mainStakeAccount as StakeAccount,
                 stakeConnection: stakeConnection!,
               })
             }
@@ -271,7 +281,8 @@ function LockedModalButton({
                 VestingAccountState.UnvestedTokensFullyUnlocked ||
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ||
-              !mainStakeAccount ||
+              mainStakeAccount === undefined ||
+              mainStakeAccount === 'NA' ||
               stakeConnection === undefined
             }
           >
