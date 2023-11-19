@@ -2,7 +2,7 @@ import Tooltip from '@components/Tooltip'
 import { Dialog, Listbox, Tab, Transition } from '@headlessui/react'
 import { CheckIcon, SelectorIcon } from '@heroicons/react/solid'
 import { StakeAccount } from '@pythnetwork/staking'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useAnchorWallet } from '@solana/wallet-adapter-react'
 import type { NextPage } from 'next'
 import { Fragment, useEffect, useState } from 'react'
 import { classNames } from 'utils/classNames'
@@ -21,12 +21,18 @@ import { LockedModal } from '@components/modals/LockedModal'
 import { StakePanel } from '@components/panels/StakePanel'
 import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
+import { useStakeConnection } from 'hooks/useStakeConnection'
 
 enum TabEnum {
   Stake,
   Unstake,
   Withdraw,
 }
+
+// if things are loading, mainStakeAccount is undefined
+// else if there are no previous stakeAccount, mainStakeAccount is 'NA'
+// else mainStakeAccount is defined
+export type MainStakeAccount = StakeAccount | undefined | 'NA'
 
 const Staking: NextPage = () => {
   const [
@@ -40,8 +46,15 @@ const Staking: NextPage = () => {
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
   ] = useState<StakeAccount>()
-  const { data: stakeAccounts } = useStakeAccounts()
-  const [mainStakeAccount, setMainStakeAccount] = useState<StakeAccount>()
+
+  const wallet = useAnchorWallet()
+  const isWalletConnected = wallet !== undefined
+
+  const { isLoading: isStakeConnectionLoading } = useStakeConnection()
+  const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
+    useStakeAccounts()
+
+  const [mainStakeAccount, setMainStakeAccount] = useState<MainStakeAccount>()
 
   // set main stake account
   useEffect(() => {
@@ -49,11 +62,11 @@ const Staking: NextPage = () => {
       if (stakeAccounts.length === 1) setMainStakeAccount(stakeAccounts[0])
       else if (stakeAccounts.length > 1) {
         // user has selected the stake account previously
-        if (mainStakeAccount !== undefined) {
+        if (mainStakeAccount !== undefined && mainStakeAccount !== 'NA') {
           // select the previous main stake account
           for (const acc of stakeAccounts) {
             if (
-              acc.address.toBase58() === mainStakeAccount?.address.toBase58()
+              acc.address.toBase58() === mainStakeAccount.address.toBase58()
             ) {
               setMainStakeAccount(acc)
             }
@@ -63,7 +76,7 @@ const Staking: NextPage = () => {
           setMultipleStakeAccountsModalOption(stakeAccounts[0])
         }
       } else {
-        setMainStakeAccount(undefined)
+        setMainStakeAccount('NA')
         setMultipleStakeAccountsModalOption(undefined)
       }
     } else {
@@ -72,25 +85,21 @@ const Staking: NextPage = () => {
     }
   }, [stakeAccounts])
 
-  const {
-    data: balanceData,
-    isLoading: isBalanceLoading,
-    isIdle: isBalanceIdle,
-  } = useBalance(mainStakeAccount)
-  const {
-    lockingPythBalance,
-    lockedPythBalance,
-
-    unlockingPythBalance,
-    unlockedPythBalance,
-
-    unvestedTotalPythBalance,
-  } = balanceData ?? {}
+  const { data: balance, isLoading: isBalanceLoading } =
+    useBalance(mainStakeAccount)
 
   const [currentTab, setCurrentTab] = useState<TabEnum>(TabEnum.Stake)
 
   const { data: currentVestingAccountState } =
     useVestingAccountState(mainStakeAccount)
+
+  // First stake connection will load, then stake accounts, and
+  // then if a main stake account exists, the balance will load
+  // else the balance won't load, it will be undefined
+
+  // hence this will be false when all the loading is completed
+  const isLoading =
+    isStakeConnectionLoading || isStakeAccountsLoading || isBalanceLoading
 
   const handleCloseMultipleStakeAccountsModal = () => {
     setIsMultipleStakeAccountsModalOpen(false)
@@ -230,15 +239,15 @@ const Staking: NextPage = () => {
       <StakedModal
         setIsStakedModalOpen={setIsStakedModalOpen}
         isStakedModalOpen={isStakedModalOpen}
-        stakedPythBalance={lockedPythBalance}
-        stakingPythBalance={lockingPythBalance}
+        stakedPythBalance={balance?.lockedPythBalance}
+        stakingPythBalance={balance?.lockingPythBalance}
       />
 
       <UnstakedModal
         isUnstakedModalOpen={isUnstakedModalOpen}
         setIsUnstakedModalOpen={setIsUnstakedModalOpen}
-        unstakedPythBalance={unlockedPythBalance}
-        unstakingPythBalance={unlockingPythBalance}
+        unstakedPythBalance={balance?.unlockedPythBalance}
+        unstakingPythBalance={balance?.unlockingPythBalance}
       />
 
       <LockedModal
@@ -253,8 +262,12 @@ const Staking: NextPage = () => {
           <div className=" sm:mt-12 ">
             <div className="grid grid-cols-3 gap-2.5">
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected && balance ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsStakedModalOpen(true)}
+                disabled={!isWalletConnected || !balance}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -262,18 +275,19 @@ const Staking: NextPage = () => {
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
                     <div className="mb-1 font-bold ">Staked </div>
-                    {isBalanceLoading ? (
+                    {isLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                    ) : isBalanceIdle ? (
+                    ) : balance === undefined ? (
                       <div>-</div>
                     ) : (
                       <div className="">
-                        {lockedPythBalance?.toString()}{' '}
-                        {lockingPythBalance && !lockingPythBalance.isZero() ? (
+                        {balance.lockedPythBalance?.toString()}{' '}
+                        {balance.lockingPythBalance &&
+                        !balance.lockingPythBalance.isZero() ? (
                           <div>
-                            <Tooltip content="These tokens will be locked from the beginning of the next epoch.">
+                            <Tooltip content="These tokens will be staked from the beginning of the next epoch.">
                               <div className="">
-                                (+{lockingPythBalance.toString()})
+                                (+{balance.lockingPythBalance.toString()})
                               </div>
                             </Tooltip>
                           </div>
@@ -285,8 +299,12 @@ const Staking: NextPage = () => {
               </button>
 
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected && balance ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsUnstakedModalOpen(true)}
+                disabled={!isWalletConnected || !balance}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -294,19 +312,19 @@ const Staking: NextPage = () => {
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
                     <div className="mb-1 font-bold">Unstaked </div>
-                    {isBalanceLoading ? (
+                    {isLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                    ) : isBalanceIdle ? (
+                    ) : balance === undefined ? (
                       <div>-</div>
                     ) : (
                       <div className="">
-                        {unlockedPythBalance?.toString()}{' '}
-                        {unlockingPythBalance &&
-                        !unlockingPythBalance.isZero() ? (
+                        {balance.unlockedPythBalance?.toString()}{' '}
+                        {balance.unlockingPythBalance &&
+                        !balance.unlockingPythBalance.isZero() ? (
                           <div>
                             <Tooltip content="These tokens have to go through a cool-down period for 2 epochs before they can be withdrawn.">
                               <div className="">
-                                (+{unlockingPythBalance.toString()})
+                                (+{balance.unlockingPythBalance.toString()})
                               </div>
                             </Tooltip>
                           </div>
@@ -318,8 +336,12 @@ const Staking: NextPage = () => {
               </button>
 
               <button
-                className="bg-darkGray text-center transition-colors hover:bg-darkGray2 md:text-left"
+                className={classNames(
+                  'bg-darkGray text-center transition-colors  md:text-left',
+                  isWalletConnected && balance ? 'hover:bg-darkGray2' : ''
+                )}
                 onClick={() => setIsLockedModalOpen(true)}
+                disabled={!isWalletConnected || !balance}
               >
                 <div className="flex flex-col items-center py-6 sm:px-6 md:flex-row md:items-start">
                   <div className="mb-2  md:mb-0 md:mr-6">
@@ -327,13 +349,13 @@ const Staking: NextPage = () => {
                   </div>
                   <div className="flex flex-col justify-between py-2 text-sm">
                     <div className="mb-1 font-bold">Locked</div>
-                    {isBalanceLoading ? (
+                    {isLoading ? (
                       <div className="mx-auto h-5 w-14 animate-pulse rounded-lg bg-darkGray4 md:m-0" />
-                    ) : isBalanceIdle ? (
+                    ) : balance === undefined ? (
                       <div>-</div>
                     ) : (
                       <div className="">
-                        {unvestedTotalPythBalance?.toString()}
+                        {balance.unvestedTotalPythBalance?.toString()}
                       </div>
                     )}
                   </div>

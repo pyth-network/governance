@@ -1,12 +1,8 @@
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-} from '@pythnetwork/staking'
+import { PythBalance, StakeConnection } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { StakeConnectionQueryKey } from './useStakeConnection'
-import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useMutation, useQueryClient } from 'react-query'
+import { MainStakeAccount } from 'pages/staking'
 
 export function useDepositMutation() {
   const queryClient = useQueryClient()
@@ -20,7 +16,7 @@ export function useDepositMutation() {
     }: {
       amount: string
       stakeConnection: StakeConnection
-      mainStakeAccount: StakeAccount
+      mainStakeAccount: MainStakeAccount
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')
@@ -28,7 +24,12 @@ export function useDepositMutation() {
       const depositAmount = PythBalance.fromString(amount)
       if (depositAmount.gt(PythBalance.zero())) {
         await stakeConnection?.depositAndLockTokens(
-          mainStakeAccount,
+          // Throughout the website we have used mainStakeAccount is 'NA' if there is no
+          // prev mainStakeAccount. It is undefined if things are loading.
+          // It is defined if there is one
+          // But this library method doesn't make that distinction.
+          // We are handling this disparity here only where the two codebase meet.
+          mainStakeAccount === 'NA' ? undefined : mainStakeAccount,
           depositAmount
         )
         toast.success(`Deposit and locked ${amount} PYTH tokens!`)

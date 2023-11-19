@@ -16,6 +16,7 @@ export type BasePanelProps = {
   isActionLoading: boolean | undefined
   isActionDisabled: boolean | undefined
   actionLabel: string
+  tooltipContentOnDisabled?: string
 }
 export function BasePanel({
   description,
@@ -26,6 +27,7 @@ export function BasePanel({
   isActionLoading,
   isActionDisabled,
   actionLabel,
+  tooltipContentOnDisabled,
 }: BasePanelProps) {
   const { connected } = useWallet()
   const [amount, setAmount] = useState<string>('')
@@ -69,47 +71,62 @@ export function BasePanel({
     <div className="mx-auto max-w-xl text-center leading-6">
       <div className="mb-4 h-36  sm:mb-12 sm:h-16">{description}</div>
 
-      <div className="mb-4 flex items-end justify-between md:items-center ">
-        <label htmlFor="amount" className="block ">
-          Amount (PYTH)
-        </label>
-        <div className="ml-auto mr-0 flex flex-col-reverse items-end space-x-2 md:flex-row md:items-center">
-          {isBalanceLoading ? (
-            <div className="h-5 w-14  animate-pulse rounded-lg bg-darkGray4" />
-          ) : (
-            <p className="mt-2 md:mt-0">
-              {tokensLabel}: {connected ? balance?.toString() : '-'}
-            </p>
-          )}
-          <div className="mb-2  flex space-x-2 md:mb-0">
-            <button
-              className="outlined-btn hover:bg-darkGray4"
-              onClick={handleHalfBalanceClick}
-            >
-              Half
-            </button>
-            <button
-              className="outlined-btn hover:bg-darkGray4"
-              onClick={handleMaxBalanceClick}
-            >
-              Max
-            </button>
+      {connected && (
+        <>
+          <div className="mb-4 flex items-end justify-between md:items-center ">
+            <label htmlFor="amount" className="block ">
+              Amount (PYTH)
+            </label>
+            <div className="ml-auto mr-0 flex flex-col-reverse items-end space-x-2 md:flex-row md:items-center">
+              {isBalanceLoading ? (
+                <div className="h-5 w-14  animate-pulse rounded-lg bg-darkGray4" />
+              ) : (
+                <p className="mt-2 md:mt-0">
+                  {tokensLabel}: {connected ? balance?.toString() : '-'}
+                </p>
+              )}
+              <div className="mb-2  flex space-x-2 md:mb-0">
+                <button
+                  className="outlined-btn hover:bg-darkGray4"
+                  onClick={handleHalfBalanceClick}
+                >
+                  Half
+                </button>
+                <button
+                  className="outlined-btn hover:bg-darkGray4"
+                  onClick={handleMaxBalanceClick}
+                >
+                  Max
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <input
-        type="text"
-        name="amount"
-        id="amount"
-        autoComplete="amount"
-        value={amount}
-        onChange={handleAmountChange}
-        className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
-      />
+          <input
+            type="text"
+            name="amount"
+            id="amount"
+            autoComplete="amount"
+            value={amount}
+            onChange={handleAmountChange}
+            className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
+          />
+        </>
+      )}
 
       <div className="flex items-center justify-center ">
         {!connected ? (
-          <WalletModalButton className="secondary-btn pt-0.5 text-xs" />
+          <WalletModalButton
+            style={{
+              padding: '0 64px',
+              border: 'solid',
+              borderWidth: '1px',
+              borderColor: 'rgb(113 66 207)',
+              borderRadius: '9999px',
+              whiteSpace: 'nowrap',
+              background: 'rgb(113 66 207)',
+              height: '45px',
+            }}
+          />
         ) : (
           <button
             className="action-btn text-base "
@@ -121,7 +138,7 @@ export function BasePanel({
             {isActionLoading ? (
               <Spinner />
             ) : isActionDisabled ? (
-              <Tooltip content="You are currently not enrolled in governance.">
+              <Tooltip content={tooltipContentOnDisabled}>
                 {actionLabel}
               </Tooltip>
             ) : isSufficientBalance ? (

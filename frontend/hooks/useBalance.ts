@@ -1,8 +1,9 @@
 import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
+import { PythBalance } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import { MainStakeAccount } from 'pages/staking'
 
 export const BalanceQueryKeyPrefix = 'balance'
 
@@ -20,13 +21,32 @@ type BalanceSummary = {
   unvestedUnlockingPythBalance: PythBalance
   unvestedUnlockedPythBalance: PythBalance
 }
-export function useBalance(mainStakeAccount?: StakeAccount) {
+
+// It assumes that when mainStakeAccount is null the user has no previous
+// stake account. It will return 0 balance in that scenario
+export function useBalance(mainStakeAccount: MainStakeAccount) {
   const { data: stakeConnection } = useStakeConnection()
 
   return useQuery(
     [BalanceQueryKeyPrefix, mainStakeAccount],
     // see the enabled option: mainStakeAccount, stakeConnection will not be undefined
-    async (): Promise<BalanceSummary | undefined> => {
+    async (): Promise<BalanceSummary> => {
+      if (mainStakeAccount === 'NA')
+        return {
+          lockingPythBalance: PythBalance.zero(),
+          lockedPythBalance: PythBalance.zero(),
+
+          unlockingPythBalance: PythBalance.zero(),
+          unlockedPythBalance: PythBalance.zero(),
+
+          unvestedTotalPythBalance: PythBalance.zero(),
+          unvestedLockingPythBalance: PythBalance.zero(),
+          unvestedLockedPythBalance: PythBalance.zero(),
+          unvestedPreUnlockingPythBalance: PythBalance.zero(),
+          unvestedUnlockingPythBalance: PythBalance.zero(),
+          unvestedUnlockedPythBalance: PythBalance.zero(),
+        }
+
       const { withdrawable, locked, unvested } =
         mainStakeAccount!.getBalanceSummary(await stakeConnection!.getTime())
 

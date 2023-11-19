@@ -3,9 +3,11 @@ import { StakeAccount } from '@pythnetwork/staking'
 import { useBalance } from 'hooks/useBalance'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { MainStakeAccount } from 'pages/staking'
 
 type WithdrawPanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: MainStakeAccount
 }
 
 const Description =
@@ -14,9 +16,12 @@ const Description =
 export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const withdrawMutation = useWithdrawMutation()
-  const { data: stakeConnection } = useStakeConnection()
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { isLoading: isAccountsLoading } = useStakeAccounts()
+  const { data: balanceData, isLoading: isBalanceLoading } =
+    useBalance(mainStakeAccount)
 
-  const { data: balanceData, isLoading } = useBalance(mainStakeAccount)
   const { unlockedPythBalance } = balanceData ?? {}
 
   return (
@@ -27,17 +32,20 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
         withdrawMutation.mutate({
           // action enabled only when below two props are defined
           amount,
-          mainStakeAccount: mainStakeAccount!,
+          mainStakeAccount: mainStakeAccount as StakeAccount,
           stakeConnection: stakeConnection!,
         })
       }
       actionLabel={'Withdraw'}
       isActionLoading={withdrawMutation.isLoading}
-      isBalanceLoading={isLoading}
+      isBalanceLoading={
+        isStakeConnectionLoading || isAccountsLoading || isBalanceLoading
+      }
       balance={unlockedPythBalance}
-      // TODO: when to disabled action not sure
       isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
+        mainStakeAccount === undefined ||
+        mainStakeAccount === 'NA' ||
+        stakeConnection === undefined
       }
     />
   )

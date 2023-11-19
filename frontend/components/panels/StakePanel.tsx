@@ -1,11 +1,13 @@
 import { BasePanel } from './BasePanel'
 import { useDepositMutation } from 'hooks/useDepositMutation'
-import { StakeAccount } from '@pythnetwork/staking'
+import { VestingAccountState } from '@pythnetwork/staking'
 import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useVestingAccountState } from 'hooks/useVestingAccountState'
+import { MainStakeAccount } from 'pages/staking'
 
 type StakePanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: MainStakeAccount
 }
 
 const Description =
@@ -14,8 +16,17 @@ const Description =
 export function StakePanel({ mainStakeAccount }: StakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const depositMutation = useDepositMutation()
-  const { data: stakeConnection } = useStakeConnection()
-  const { data: pythBalance, isLoading } = usePythBalance()
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { data: pythBalance, isLoading: isPythBalanceLoading } =
+    usePythBalance()
+
+  const { data: vestingAccountState } = useVestingAccountState(mainStakeAccount)
+
+  const accountWithLockedTokens =
+    vestingAccountState !== undefined &&
+    vestingAccountState != VestingAccountState.FullyVested &&
+    vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
 
   return (
     <BasePanel
@@ -24,17 +35,22 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       onAction={(amount) =>
         depositMutation.mutate({
           amount,
+          mainStakeAccount: mainStakeAccount,
           // action is disabled below if these is undefined
-          mainStakeAccount: mainStakeAccount!,
           stakeConnection: stakeConnection!,
         })
       }
       actionLabel={'Stake'}
       isActionLoading={depositMutation.isLoading}
-      isBalanceLoading={isLoading}
+      isBalanceLoading={isStakeConnectionLoading || isPythBalanceLoading}
       balance={pythBalance}
       isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
+        stakeConnection === undefined || accountWithLockedTokens
+      }
+      tooltipContentOnDisabled={
+        accountWithLockedTokens
+          ? 'You are currently not enrolled in governance.'
+          : undefined
       }
     />
   )

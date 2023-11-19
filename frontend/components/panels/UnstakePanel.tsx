@@ -1,11 +1,14 @@
 import { BasePanel } from './BasePanel'
-import { StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { useVestingAccountState } from 'hooks/useVestingAccountState'
+import { MainStakeAccount } from 'pages/staking'
 
 type UnstakePanelProps = {
-  mainStakeAccount: StakeAccount | undefined
+  mainStakeAccount: MainStakeAccount
 }
 const Description =
   'Unstake PYTH. Unstaking tokens enables you to withdraw them from the program after a cooldown period of two epochs. Unstaked tokens cannot participate in governance.'
@@ -13,9 +16,19 @@ const Description =
 export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
   const unlockMutation = useUnlockMutation()
-  const { data: stakeConnection } = useStakeConnection()
-  const { data: balanceData, isLoading } = useBalance(mainStakeAccount)
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { isLoading: isAccountsLoading } = useStakeAccounts()
+  const { data: balanceData, isLoading: isBalanceLoading } =
+    useBalance(mainStakeAccount)
   const { lockedPythBalance } = balanceData ?? {}
+
+  const { data: vestingAccountState } = useVestingAccountState(mainStakeAccount)
+
+  const accountWithLockedTokens =
+    vestingAccountState !== undefined &&
+    vestingAccountState != VestingAccountState.FullyVested &&
+    vestingAccountState != VestingAccountState.UnvestedTokensFullyLocked
 
   return (
     <BasePanel
@@ -25,16 +38,26 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
         unlockMutation.mutate({
           amount,
           // action is disabled below if these is undefined
-          mainStakeAccount: mainStakeAccount!,
+          mainStakeAccount: mainStakeAccount as StakeAccount,
           stakeConnection: stakeConnection!,
         })
       }
       actionLabel={'Unstake'}
       isActionLoading={unlockMutation.isLoading}
-      isBalanceLoading={isLoading}
+      isBalanceLoading={
+        isStakeConnectionLoading || isAccountsLoading || isBalanceLoading
+      }
       balance={lockedPythBalance}
       isActionDisabled={
-        mainStakeAccount === undefined || stakeConnection === undefined
+        mainStakeAccount === undefined ||
+        mainStakeAccount === 'NA' ||
+        stakeConnection === undefined ||
+        accountWithLockedTokens
+      }
+      tooltipContentOnDisabled={
+        accountWithLockedTokens
+          ? 'You are currently not enrolled in governance.'
+          : undefined
       }
     />
   )

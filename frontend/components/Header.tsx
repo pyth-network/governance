@@ -50,8 +50,16 @@ const Header = () => {
         <div className="flex items-center justify-end space-x-2">
           <div className="flex w-[200px] justify-end">
             <WalletMultiButtonDynamic
-              className="primary-btn pt-0.5"
-              style={{ padding: '0 12px' }}
+              style={{
+                padding: '0 18px',
+                border: 'solid',
+                borderWidth: '1px',
+                borderColor: 'rgb(113 66 207)',
+                borderRadius: '9999px',
+                whiteSpace: 'nowrap',
+                background: 'rgb(113 66 207)',
+                height: '45px',
+              }}
             />
           </div>
           <div className="flex-shrink-0 md:hidden">
