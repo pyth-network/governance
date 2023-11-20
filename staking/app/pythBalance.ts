@@ -27,6 +27,8 @@ export class PythBalance {
   }
 
   static fromString(amount: string) {
+    amount = amount.replace(",", "");
+
     if (amount.match(INTEGER_REGEXP)) {
       return new PythBalance(new BN(amount).mul(new BN(10 ** PYTH_DECIMALS)));
     } else if (amount.match(DECIMAL_REGEXP)) {
