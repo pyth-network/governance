@@ -100,6 +100,11 @@ describe("pyth balance tests", async () => {
     assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
     assert(!amount.isZero());
 
+    amount = PythBalance.fromString("60,969.430243");
+    assert.equal(amount.toString(), "60,969.430243");
+    assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
+    assert(!amount.isZero());
+
     amount = PythBalance.fromString("060969.430243");
     assert.equal(amount.toString(), "60,969.430243");
     assert(amount.eq(new PythBalance(new BN(60_969_430_243))));
