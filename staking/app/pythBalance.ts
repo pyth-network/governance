@@ -27,9 +27,7 @@ export class PythBalance {
   }
 
   static fromString(amount: string) {
-    console.log(amount);
     amount = amount.split(",").join("");
-    console.log(amount);
 
     if (amount.match(INTEGER_REGEXP)) {
       return new PythBalance(new BN(amount).mul(new BN(10 ** PYTH_DECIMALS)));
