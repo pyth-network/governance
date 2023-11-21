@@ -163,8 +163,8 @@ function LockedModalCurrentState({
           <br />
           Participating in governance requires you to stake your locked tokens.
           This means that when your tokens unlock, you will have to manually
-          unstake them by interacting with the UI and wait for a one epoch
-          cooldown before being able to withdraw them.
+          unstake them by interacting with the UI and wait for a cooldown of one
+          full epoch before being able to withdraw them.
         </>
       )
     case VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown:
