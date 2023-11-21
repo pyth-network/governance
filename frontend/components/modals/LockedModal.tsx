@@ -123,7 +123,6 @@ function LockedModalCurrentState({
           {nextVestingDate?.toLocaleString()} will be withdrawable.
           <br />
           <br />
-          The rest of your locked tokens are participating in governance.
         </>
       )
     case VestingAccountState.UnvestedTokensFullyLockedExceptCooldown:
@@ -141,8 +140,8 @@ function LockedModalCurrentState({
       return (
         <>
           Your locked tokens are staked in the contract to participate in
-          governance. On vest, they will become staked tokens, which require a 2
-          epoch cooldown to withdraw.
+          governance. On vest, they will become staked tokens, which require a
+          full epoch cooldown to be unstaked.
           <br />
           <br />
           If you would like to withdraw them immediately on unlock, you may
