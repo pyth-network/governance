@@ -11,7 +11,7 @@ type StakePanelProps = {
 }
 
 const Description =
-  'Deposit and stake PYTH. Staking tokens enables you to participate in Pyth Network governance. Newly-staked tokens become eligible to vote in governance at the beginning of the next epoch.'
+  'Deposit and stake PYTH. Staking tokens enables you to participate in Pyth Network governance. Newly-staked tokens become eligible to vote in governance at the beginning of the next epoch. (Epochs start every Thursday at 00:00 UTC)'
 
 export function StakePanel({ mainStakeAccount }: StakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
