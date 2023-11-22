@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
-import { STAKING_ADDRESS } from '@pythnetwork/staking'
+import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
