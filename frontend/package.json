@@ -8,9 +8,10 @@
     "start": "next start"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@coral-xyz/spl-token": "^0.29.0",
     "@headlessui/react": "^1.6.0",
     "@heroicons/react": "^1.0.6",
-    "@coral-xyz/anchor": "^0.29.0",
     "@pythnetwork/staking": "*",
     "@solana/spl-token": "^0.1.8",
     "@solana/wallet-adapter-base": "^0.9.22",
