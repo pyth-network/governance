@@ -831,17 +831,17 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: PythBalance) {
-    // if (
-    //   amount
-    //     .toBN()
-    //     .gt(
-    //       stakeAccount
-    //         .getBalanceSummary(await this.getTime())
-    //         .withdrawable.toBN()
-    //     )
-    // ) {
-    //   throw new Error("Amount exceeds withdrawable.");
-    // }
+    if (
+      amount
+        .toBN()
+        .gt(
+          stakeAccount
+            .getBalanceSummary(await this.getTime())
+            .withdrawable.toBN()
+        )
+    ) {
+      throw new Error("Amount exceeds withdrawable.");
+    }
 
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -871,7 +871,7 @@ export class StakeConnection {
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
       })
-      .rpc({ skipPreflight: true });
+      .rpc();
   }
 
   public async requestSplit(
@@ -1211,7 +1211,6 @@ export class StakeAccount {
 
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
-    console.log(nextVestingEvent);
     if (!nextVestingEvent) {
       return new BN(0);
     }
