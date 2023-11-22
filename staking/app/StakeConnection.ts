@@ -57,7 +57,7 @@ export class StakeConnection {
   config: GlobalConfig;
   configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
-  votingProduct = { voting: {} };
+  votingProduct = { vOTING: {} };
   governanceAddress: PublicKey;
 
   private constructor(
