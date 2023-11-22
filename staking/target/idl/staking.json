@@ -1619,10 +1619,10 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",
@@ -1639,10 +1639,10 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",

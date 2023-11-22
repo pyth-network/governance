@@ -135,15 +135,15 @@ pub struct Position {
     Eq,
 )]
 pub enum Target {
-    VOTING,
-    STAKING { product: Pubkey },
+    Voting,
+    Staking { product: Pubkey },
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
 #[cfg_attr(test, derive(Hash))]
 pub enum TargetWithParameters {
-    VOTING,
-    STAKING {
+    Voting,
+    Staking {
         product:   Pubkey,
         publisher: Publisher,
     },
@@ -159,11 +159,11 @@ pub enum Publisher {
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
         match *self {
-            TargetWithParameters::VOTING => Target::VOTING,
-            TargetWithParameters::STAKING {
+            TargetWithParameters::Voting => Target::Voting,
+            TargetWithParameters::Staking {
                 product,
                 publisher: _,
-            } => Target::STAKING { product },
+            } => Target::Staking { product },
         }
     }
 }
@@ -203,7 +203,7 @@ impl Position {
     }
 
     pub fn is_voting(&self) -> bool {
-        matches!(self.target_with_parameters, TargetWithParameters::VOTING)
+        matches!(self.target_with_parameters, TargetWithParameters::Voting)
     }
 }
 
@@ -255,7 +255,7 @@ pub mod tests {
         let p = Position {
             activation_epoch:       8,
             unlocking_start:        Some(12),
-            target_with_parameters: TargetWithParameters::VOTING,
+            target_with_parameters: TargetWithParameters::Voting,
             amount:                 10,
         };
         assert_eq!(
@@ -289,7 +289,7 @@ pub mod tests {
         let p = Position {
             activation_epoch:       8,
             unlocking_start:        None,
-            target_with_parameters: TargetWithParameters::VOTING,
+            target_with_parameters: TargetWithParameters::Voting,
             amount:                 10,
         };
         assert_eq!(
@@ -345,7 +345,7 @@ pub mod tests {
             return Position {
                 activation_epoch:       u64::arbitrary(g),
                 unlocking_start:        Option::<u64>::arbitrary(g),
-                target_with_parameters: TargetWithParameters::VOTING,
+                target_with_parameters: TargetWithParameters::Voting,
                 amount:                 u64::arbitrary(g),
             };
         }
@@ -353,14 +353,14 @@ pub mod tests {
     impl Arbitrary for TargetWithParameters {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
-                TargetWithParameters::STAKING {
+                TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
                     },
                 }
             } else {
-                TargetWithParameters::VOTING
+                TargetWithParameters::Voting
             }
         }
     }

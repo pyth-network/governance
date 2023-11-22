@@ -1619,10 +1619,10 @@ export type Staking = {
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",
@@ -1639,10 +1639,10 @@ export type Staking = {
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",
@@ -3590,10 +3590,10 @@ export const IDL: Staking = {
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",
@@ -3610,10 +3610,10 @@ export const IDL: Staking = {
         "kind": "enum",
         "variants": [
           {
-            "name": "VOTING"
+            "name": "Voting"
           },
           {
-            "name": "STAKING",
+            "name": "Staking",
             "fields": [
               {
                 "name": "product",
