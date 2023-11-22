@@ -148,7 +148,7 @@ export function getUnlockEvents(
       .fill(0)
       .map((_, i) => {
         return {
-          date: startData.add(periodDuration.muln(i)).toString(),
+          date: startData.add(periodDuration.muln(i + 1)).toString(),
           amount: new PythBalance(
             initialBalance.divn(numberOfPeriods.toNumber())
           ).toString(),
