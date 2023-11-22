@@ -2,11 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from '@project-serum/anchor'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet'
-import {
-  PythBalance,
-  STAKING_ADDRESS,
-  StakeConnection,
-} from '@pythnetwork/staking'
+import { PythBalance } from '@pythnetwork/staking'
 
 const connection = new Connection(process.env.ENDPOINT!)
 
@@ -21,33 +17,7 @@ export default async function handlerVestingAccounts(
       error: "Must provide the 'owner' query parameters",
     })
   } else {
-    const stakeConnection = await StakeConnection.createStakeConnection(
-      connection,
-      new NodeWallet(new Keypair()),
-      STAKING_ADDRESS
-    )
-    const stakeAccounts = await stakeConnection.getStakeAccounts(
-      new PublicKey(owner)
-    )
-    const currentTime = await stakeConnection.getTime()
-
-    res.status(200).json(
-      stakeAccounts.map((stakeAccount) => {
-        const lock = stakeAccount.stakeAccountMetadata.lock as any
-        if (lock.periodicVestingAfterListing) {
-          return {
-            custodyAddress: stakeAccount.custodyAddress,
-            amount: new PythBalance(stakeAccount.tokenBalance).toString(),
-            lockingSchedule: 'periodicVestingAfterListing',
-            nextVestingEvent: stakeAccount.getNextVesting(currentTime),
-          }
-        }
-        return {
-          custodyAddress: stakeAccount.custodyAddress,
-          amount: new PythBalance(stakeAccount.tokenBalance).toString(),
-          lockingSchedule: stakeAccount.stakeAccountMetadata.lock,
-        }
-      })
-    )
+    const balance = PythBalance.fromString('1')
+    res.status(200).json({ balance: balance.toString() })
   }
 }
