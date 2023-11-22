@@ -283,7 +283,8 @@ export class StakeConnection {
       vestingSchedule,
       votingAccountMetadataWasm,
       totalSupply,
-      this.config
+      this.config,
+      custodyAddress
     );
   }
 
@@ -830,17 +831,17 @@ export class StakeConnection {
 
   //withdraw tokens
   public async withdrawTokens(stakeAccount: StakeAccount, amount: PythBalance) {
-    if (
-      amount
-        .toBN()
-        .gt(
-          stakeAccount
-            .getBalanceSummary(await this.getTime())
-            .withdrawable.toBN()
-        )
-    ) {
-      throw new Error("Amount exceeds withdrawable.");
-    }
+    // if (
+    //   amount
+    //     .toBN()
+    //     .gt(
+    //       stakeAccount
+    //         .getBalanceSummary(await this.getTime())
+    //         .withdrawable.toBN()
+    //     )
+    // ) {
+    //   throw new Error("Amount exceeds withdrawable.");
+    // }
 
     const toAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -870,7 +871,7 @@ export class StakeConnection {
         stakeAccountPositions: stakeAccount.address,
         destination: toAccount,
       })
-      .rpc();
+      .rpc({ skipPreflight: true });
   }
 
   public async requestSplit(
@@ -972,6 +973,7 @@ export class StakeAccount {
   votingAccountMetadataWasm: any;
   totalSupply: BN;
   config: GlobalConfig;
+  custodyAddress: PublicKey;
 
   constructor(
     address: PublicKey,
@@ -983,7 +985,8 @@ export class StakeAccount {
     vestingSchedule: Buffer, // Borsh serialized
     votingAccountMetadataWasm: any,
     totalSupply: BN,
-    config: GlobalConfig
+    config: GlobalConfig,
+    custodyAddress: PublicKey
   ) {
     this.address = address;
     this.stakeAccountPositionsWasm = stakeAccountPositionsWasm;
@@ -995,6 +998,7 @@ export class StakeAccount {
     this.votingAccountMetadataWasm = votingAccountMetadataWasm;
     this.totalSupply = totalSupply;
     this.config = config;
+    this.custodyAddress = custodyAddress;
   }
 
   // Withdrawable
@@ -1207,6 +1211,7 @@ export class StakeAccount {
 
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
     const nextVestingEvent = this.getNextVesting(unixTime);
+    console.log(nextVestingEvent);
     if (!nextVestingEvent) {
       return new BN(0);
     }
