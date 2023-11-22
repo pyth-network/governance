@@ -11,7 +11,7 @@ import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
-const connection = new Connection(process.env.ENDPOINT!)
+const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
   connection,
   new NodeWallet(new Keypair()),
