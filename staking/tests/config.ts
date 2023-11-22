@@ -1,4 +1,4 @@
-import { parseIdlErrors, utils, Wallet } from "@project-serum/anchor";
+import { parseIdlErrors, utils, Wallet } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,

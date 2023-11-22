@@ -1,5 +1,5 @@
-import * as anchor from "@project-serum/anchor";
-import { IdlTypes, parseIdlErrors, Program } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { IdlTypes, parseIdlErrors, Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,

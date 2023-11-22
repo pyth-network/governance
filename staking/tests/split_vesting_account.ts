@@ -11,7 +11,7 @@ import {
 import path from "path";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { StakeConnection, PythBalance, VestingAccountState } from "../app";
-import { BN, Wallet } from "@project-serum/anchor";
+import { BN, Wallet } from "@coral-xyz/anchor";
 import {
   assertBalanceMatches,
   OptionalBalanceSummary,

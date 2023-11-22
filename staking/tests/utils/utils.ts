@@ -5,8 +5,8 @@ import {
   Transaction,
   SystemProgram,
 } from "@solana/web3.js";
-import * as anchor from "@project-serum/anchor";
-import { AnchorError, ProgramError } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { AnchorError, ProgramError } from "@coral-xyz/anchor";
 import assert from "assert";
 import * as wasm from "@pythnetwork/staking-wasm";
 import { Staking } from "../../target/types/staking";

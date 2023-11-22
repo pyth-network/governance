@@ -1,4 +1,4 @@
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
