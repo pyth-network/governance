@@ -1,4 +1,4 @@
-import { parseIdlErrors } from "@project-serum/anchor";
+import { parseIdlErrors } from "@coral-xyz/anchor";
 import {
   TOKEN_PROGRAM_ID,
   Token,

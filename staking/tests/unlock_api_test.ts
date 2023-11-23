@@ -10,7 +10,7 @@ import path from "path";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { StakeConnection, PythBalance } from "../app";
 import assert from "assert";
-import { BN } from "@project-serum/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 
 const portNumber = getPortNumber(path.basename(__filename));

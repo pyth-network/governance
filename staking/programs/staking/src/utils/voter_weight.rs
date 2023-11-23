@@ -66,7 +66,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 7,
-                target_with_parameters: TargetWithParameters::VOTING {},
+                target_with_parameters: TargetWithParameters::Voting {},
                 unlocking_start:        Some(3),
             },
         )
@@ -77,7 +77,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       3,
                 amount:                 3,
-                target_with_parameters: TargetWithParameters::VOTING {},
+                target_with_parameters: TargetWithParameters::Voting {},
                 unlocking_start:        None,
             },
         )
@@ -88,7 +88,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       2,
                 amount:                 5,
-                target_with_parameters: TargetWithParameters::VOTING {},
+                target_with_parameters: TargetWithParameters::Voting {},
                 unlocking_start:        Some(4),
             },
         )
@@ -98,7 +98,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       0,
                 amount:                 10,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::DEFAULT,
                 },
@@ -132,7 +132,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 u64::MAX / 2,
-                target_with_parameters: TargetWithParameters::VOTING {},
+                target_with_parameters: TargetWithParameters::Voting {},
                 unlocking_start:        Some(3),
             },
         )
@@ -151,7 +151,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 u64::MAX / 2,
-                target_with_parameters: TargetWithParameters::VOTING {},
+                target_with_parameters: TargetWithParameters::Voting {},
                 unlocking_start:        Some(3),
             },
         )

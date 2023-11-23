@@ -1,4 +1,4 @@
-import { Wallet } from "@project-serum/anchor/dist/cjs/provider";
+import { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
 import Transport, {
   StatusCodes,
   TransportStatusError,

@@ -1,4 +1,4 @@
-import { Provider } from "@project-serum/anchor";
+import { Provider } from "@coral-xyz/anchor";
 import { TransactionInstruction, Transaction } from "@solana/web3.js";
 
 const MAX_INSTRUCTIONS_PER_TRANSACTION = 10;

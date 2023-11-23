@@ -79,12 +79,12 @@ pub fn validate(
     let mut total_exposure: u64 = 0;
     for (target, exposure) in &current_exposures {
         match target {
-            Target::VOTING => {
+            Target::Voting => {
                 // This is the special voting position that ignores vesting
                 // If there are multiple voting positions, they've been aggregated at this point
                 governance_exposure = *exposure;
             }
-            Target::STAKING { .. } => {
+            Target::Staking { .. } => {
                 // A normal position
                 max_target_exposure = cmp::max(max_target_exposure, *exposure);
                 total_exposure = total_exposure
@@ -149,7 +149,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 7,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
@@ -164,7 +164,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 3,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
@@ -205,7 +205,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 7,
-                target_with_parameters: TargetWithParameters::VOTING,
+                target_with_parameters: TargetWithParameters::Voting,
                 unlocking_start:        None,
             },
         )
@@ -215,7 +215,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 3,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
@@ -243,7 +243,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 7,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product,
                     publisher: Publisher::DEFAULT,
                 },
@@ -256,7 +256,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 3,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product,
                     publisher: Publisher::DEFAULT,
                 },
@@ -280,7 +280,7 @@ pub mod tests {
                 &Position {
                     activation_epoch:       1,
                     amount:                 10,
-                    target_with_parameters: TargetWithParameters::STAKING {
+                    target_with_parameters: TargetWithParameters::Staking {
                         product:   Pubkey::new_unique(),
                         publisher: Publisher::SOME {
                             address: Pubkey::new_unique(),
@@ -299,7 +299,7 @@ pub mod tests {
             &Position {
                 activation_epoch:       1,
                 amount:                 10,
-                target_with_parameters: TargetWithParameters::STAKING {
+                target_with_parameters: TargetWithParameters::Staking {
                     product:   Pubkey::new_unique(),
                     publisher: Publisher::SOME {
                         address: Pubkey::new_unique(),
@@ -323,7 +323,7 @@ pub mod tests {
                 &Position {
                     activation_epoch:       1,
                     amount:                 10,
-                    target_with_parameters: TargetWithParameters::VOTING,
+                    target_with_parameters: TargetWithParameters::Voting,
                     unlocking_start:        None,
                 },
             )
@@ -346,7 +346,7 @@ pub mod tests {
                 &Position {
                     activation_epoch:       1,
                     amount:                 u64::MAX / 3,
-                    target_with_parameters: TargetWithParameters::VOTING,
+                    target_with_parameters: TargetWithParameters::Voting,
                     unlocking_start:        None,
                 },
             )
@@ -367,7 +367,7 @@ pub mod tests {
                 &Position {
                     activation_epoch:       1,
                     amount:                 u64::MAX / 3,
-                    target_with_parameters: TargetWithParameters::STAKING {
+                    target_with_parameters: TargetWithParameters::Staking {
                         product,
                         publisher: Publisher::SOME {
                             address: Pubkey::new_unique(),

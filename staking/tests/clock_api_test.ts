@@ -11,7 +11,7 @@ import path from "path";
 import { Keypair } from "@solana/web3.js";
 import { StakeConnection } from "../app";
 import assert from "assert";
-import { BN } from "@project-serum/anchor";
+import { BN } from "@coral-xyz/anchor";
 import shell from "shelljs";
 
 const portNumber = getPortNumber(path.basename(__filename));

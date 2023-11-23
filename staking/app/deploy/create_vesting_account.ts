@@ -1,4 +1,4 @@
-import { Wallet } from "@project-serum/anchor";
+import { Wallet } from "@coral-xyz/anchor";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { AUTHORITY_KEYPAIR, RPC_NODE } from "./devnet";
 import { STAKING_ADDRESS } from "../constants";

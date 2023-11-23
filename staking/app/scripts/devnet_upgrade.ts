@@ -1,5 +1,5 @@
-import * as anchor from "@project-serum/anchor";
-import { AnchorProvider, Program, utils } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { AnchorProvider, Program, utils } from "@coral-xyz/anchor";
 import {
   Connection,
   Keypair,
@@ -16,7 +16,7 @@ import {
 import { Staking } from "../../target/types/staking";
 import { assert } from "node:console";
 import * as wasm from "../../wasm";
-import { idlAddress } from "@project-serum/anchor/dist/cjs/idl";
+import { idlAddress } from "@coral-xyz/anchor/dist/cjs/idl";
 import shell from "shelljs";
 import { StakeConnection } from "../StakeConnection";
 import { loadKeypair } from "../../tests/utils/keys";

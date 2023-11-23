@@ -519,7 +519,7 @@ pub mod staking {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 
-        if !(matches!(target, Target::VOTING)) {
+        if !(matches!(target, Target::Voting)) {
             return Err(error!(ErrorCode::NotImplemented));
         }
 

@@ -1,4 +1,4 @@
-import { Wallet, AnchorProvider, Program } from "@project-serum/anchor";
+import { Wallet, AnchorProvider, Program } from "@coral-xyz/anchor";
 import { Connection } from "@solana/web3.js";
 import { getTargetAccount } from "../../tests/utils/utils";
 import { AUTHORITY_KEYPAIR, PYTH_TOKEN, RPC_NODE } from "./mainnet_beta";

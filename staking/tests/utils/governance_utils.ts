@@ -1,4 +1,4 @@
-import * as anchor from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import {
   PublicKey,
   Transaction,
@@ -18,7 +18,7 @@ import {
   withCreateProposal,
   withSignOffProposal,
 } from "@solana/spl-governance";
-import { SuccessfulTxSimulationResponse } from "@project-serum/anchor/dist/cjs/utils/rpc";
+import { SuccessfulTxSimulationResponse } from "@coral-xyz/anchor/dist/cjs/utils/rpc";
 import assert from "assert";
 import { BinaryWriter } from "borsh";
 

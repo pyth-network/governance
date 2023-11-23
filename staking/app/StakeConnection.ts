@@ -6,7 +6,7 @@ import {
   IdlAccounts,
   IdlTypes,
   AnchorProvider,
-} from "@project-serum/anchor";
+} from "@coral-xyz/anchor";
 import {
   PublicKey,
   Connection,
@@ -24,7 +24,7 @@ import {
   u64,
 } from "@solana/spl-token";
 import BN from "bn.js";
-import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
+import * as idljs from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import IDL from "../target/idl/staking.json";
 import { batchInstructions } from "./transaction";

@@ -12,7 +12,7 @@ import {
 } from "./mainnet_beta";
 
 import { GOVERNANCE_ADDRESS, REALM_ID, STAKING_ADDRESS } from "../constants";
-import { AnchorProvider, Idl, Program, Wallet } from "@project-serum/anchor";
+import { AnchorProvider, Idl, Program, Wallet } from "@coral-xyz/anchor";
 import IDL from "../../target/idl/staking.json";
 
 // Actual transaction hash :

@@ -15,7 +15,7 @@ import {
   VestingAccountState,
   StakeAccount,
 } from "../app";
-import { BN, Wallet } from "@project-serum/anchor";
+import { BN, Wallet } from "@coral-xyz/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
 import { expectFailApi } from "./utils/utils";

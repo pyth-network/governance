@@ -1,4 +1,4 @@
-import { Wallet } from '@project-serum/anchor'
+import { Wallet } from '@coral-xyz/anchor'
 import { useAnchorWallet } from '@solana/wallet-adapter-react'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'

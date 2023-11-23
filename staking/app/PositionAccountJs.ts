@@ -1,8 +1,8 @@
-import { Idl, IdlTypes } from "@project-serum/anchor";
+import { Idl, IdlTypes } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { Staking } from "../target/types/staking";
-import * as idljs from "@project-serum/anchor/dist/cjs/coder/borsh/idl";
-import { IdlTypeDef } from "@project-serum/anchor/dist/cjs/idl";
+import * as idljs from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
+import { IdlTypeDef } from "@coral-xyz/anchor/dist/cjs/idl";
 import { wasm } from "./StakeConnection";
 
 export type Position = IdlTypes<Staking>["Position"];
