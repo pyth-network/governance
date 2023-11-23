@@ -95,7 +95,7 @@ async function geStakeAccounts(connection: Connection, owner: PublicKey) {
       {
         memcmp: {
           offset: 0,
-          bytes: bs58.encode(Buffer.from('55c3f14f7cc04f0b', 'hex')),
+          bytes: bs58.encode(Buffer.from('55c3f14f7cc04f0b', 'hex')), // Positions account discriminator
         },
       },
       {
