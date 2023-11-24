@@ -506,7 +506,8 @@ export class StakeConnection {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.provider.wallet.publicKey
+      this.provider.wallet.publicKey,
+      true
     );
 
     const toAccount = (
@@ -846,7 +847,8 @@ export class StakeConnection {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       this.config.pythTokenMint,
-      this.provider.wallet.publicKey
+      this.provider.wallet.publicKey,
+      true
     );
 
     const preIxs: TransactionInstruction[] = [];

@@ -64,7 +64,8 @@ describe("fills a stake account with positions", async () => {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      provider.wallet.publicKey
+      provider.wallet.publicKey,
+      true
     );
 
     errMap = parseIdlErrors(program.idl);

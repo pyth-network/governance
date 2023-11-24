@@ -76,7 +76,8 @@ describe("staking", async () => {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      provider.wallet.publicKey
+      provider.wallet.publicKey,
+      true
     );
 
     votingProduct = stakeConnection.votingProduct;
