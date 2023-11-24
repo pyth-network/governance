@@ -63,7 +63,8 @@ describe("position_lifecycle", async () => {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       pythMintAccount.publicKey,
-      program.provider.wallet.publicKey
+      program.provider.wallet.publicKey,
+      true
     );
 
     errMap = parseIdlErrors(program.idl);

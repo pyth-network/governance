@@ -232,7 +232,8 @@ export async function requestPythAirdrop(
     ASSOCIATED_TOKEN_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     pythMintAccount,
-    destination
+    destination,
+    true
   );
 
   if ((await connection.getAccountInfo(destinationAta)) == null) {
