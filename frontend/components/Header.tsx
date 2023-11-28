@@ -18,17 +18,15 @@ const Header = () => {
     <div className="before:gradient-border relative -bottom-[1px]  mb-3">
       <div className="col-span-12 flex h-24 items-center justify-between px-8 md:px-8 xl:col-span-10 xl:col-start-2">
         <div className="flex basis-[160px] cursor-pointer items-center">
-          <Link href="/staking">
+          <Link href="/">
             <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
           </Link>
         </div>
         <div className="hidden space-x-10 md:flex">
-          <Link href="/staking">
+          <Link href="/">
             <a
               className={
-                router.pathname == '/staking'
-                  ? 'nav-link font-bold'
-                  : 'nav-link '
+                router.pathname == '/' ? 'nav-link font-bold' : 'nav-link '
               }
             >
               Staking
@@ -82,7 +80,7 @@ const Header = () => {
           <Dialog.Overlay className="fixed inset-0 bg-dark" />
           <div className="height-screen fixed  top-0 mx-auto w-full rounded px-8 py-6">
             <div className="flex items-center justify-between space-x-2 pt-[7px]">
-              <Link href="/staking">
+              <Link href="/">
                 <img src="/pyth-logo-white.svg" className="h-30 mr-3" />
               </Link>
               <button
@@ -97,7 +95,7 @@ const Header = () => {
               </button>
             </div>
             <div className="griw-rows-2 grid space-y-5 pt-10 text-center text-base18">
-              <Link href="/staking">
+              <Link href="/">
                 <a>Staking</a>
               </Link>
               <Link
