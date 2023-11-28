@@ -5,7 +5,7 @@ import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 type UnstakePanelProps = {
   mainStakeAccount: MainStakeAccount

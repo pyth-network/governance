@@ -1,7 +1,6 @@
 import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
-import { StakeAccount } from '@pythnetwork/staking'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 export const VestingAccountStateQueryPrefix = 'vesting-account-state'
 

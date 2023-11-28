@@ -3,7 +3,7 @@ import { useStakeConnection } from './useStakeConnection'
 import { PythBalance } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 export const BalanceQueryKeyPrefix = 'balance'
 

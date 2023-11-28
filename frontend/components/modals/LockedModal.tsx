@@ -11,7 +11,7 @@ import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation
 import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean

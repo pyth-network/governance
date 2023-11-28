@@ -4,7 +4,7 @@ import { VestingAccountState } from '@pythnetwork/staking'
 import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 type StakePanelProps = {
   mainStakeAccount: MainStakeAccount
