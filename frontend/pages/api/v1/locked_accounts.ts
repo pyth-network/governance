@@ -38,7 +38,7 @@ export default async function handlerLockedAccounts(
       error: "Must provide the 'owner' query parameters",
     })
   } else {
-    const stakeAccounts = await geStakeAccounts(
+    const stakeAccounts = await getStakeAccounts(
       connection,
       new PublicKey(owner)
     )
@@ -61,10 +61,9 @@ async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
     configAccountAddress
   )
 
-  const metadataAccountAddress = PublicKey.findProgramAddressSync(
-    [Buffer.from('stake_metadata'), positionAccountAddress.toBuffer()],
-    STAKING_ADDRESS
-  )[0]
+  const metadataAccountAddress = getMetadataAccountAddress(
+    positionAccountAddress
+  )
   const metadataAccountData =
     await stakingProgram.account.stakeAccountMetadataV2.fetch(
       metadataAccountAddress
@@ -72,11 +71,7 @@ async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
 
   const lock = metadataAccountData.lock
 
-  const custodyAccountAddress = PublicKey.findProgramAddressSync(
-    [Buffer.from('custody'), positionAccountAddress.toBuffer()],
-    STAKING_ADDRESS
-  )[0]
-
+  const custodyAccountAddress = getCustodyAccountAddress(positionAccountAddress)
   const custodyAccountData = await tokenProgram.account.account.fetch(
     custodyAccountAddress
   )
@@ -88,7 +83,21 @@ async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
   }
 }
 
-async function geStakeAccounts(connection: Connection, owner: PublicKey) {
+export function getMetadataAccountAddress(positionAccountAddress: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('stake_metadata'), positionAccountAddress.toBuffer()],
+    STAKING_ADDRESS
+  )[0]
+}
+
+export function getCustodyAccountAddress(positionAccountAddress: PublicKey) {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from('custody'), positionAccountAddress.toBuffer()],
+    STAKING_ADDRESS
+  )[0]
+}
+
+async function getStakeAccounts(connection: Connection, owner: PublicKey) {
   const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
     encoding: 'base64',
     filters: [
