@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export && echo '/ /staking' > out/_redirects",
+    "build": "next build && next export",
     "serve": "serve out",
     "start": "next start"
   },

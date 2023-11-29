@@ -2,7 +2,7 @@ import { PythBalance } from '@pythnetwork/staking'
 import BN from 'bn.js'
 import { useQuery } from 'react-query'
 import { useStakeConnection } from './useStakeConnection'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 export function useNextVestingEvent(mainStakeAccount: MainStakeAccount) {
   const { data: stakeConnection } = useStakeConnection()

@@ -2,7 +2,7 @@ import { PythBalance, StakeConnection } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { StakeConnectionQueryKey } from './useStakeConnection'
 import { useMutation, useQueryClient } from 'react-query'
-import { MainStakeAccount } from 'pages/staking'
+import { MainStakeAccount } from 'pages'
 
 export function useDepositMutation() {
   const queryClient = useQueryClient()
