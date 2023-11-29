@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair } from '@solana/web3.js'
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
 import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
@@ -10,12 +10,10 @@ import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { access } from 'fs'
 import {
   getCustodyAccountAddress,
   getMetadataAccountAddress,
 } from './locked_accounts'
-import { StakeAccount } from '@pythnetwork/staking'
 
 const ONE_YEAR = new BN(3600 * 24 * 365)
 
@@ -39,10 +37,7 @@ export default async function handlerAllLockedAccounts(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const allStakeAccounts = await getAllStakeAccounts(
-    connection,
-    STAKING_ADDRESS
-  )
+  const allStakeAccounts = await getAllStakeAccounts(connection)
 
   const allMetadataAccountAddresses = allStakeAccounts.map((account) =>
     getMetadataAccountAddress(account)
@@ -65,8 +60,15 @@ export default async function handlerAllLockedAccounts(
     })
     .filter((account, index) => {
       const metadataAccountData = allMetadataAccounts[index]
-      return metadataAccountData && hasStandardLockup(metadataAccountData)
+      return (
+        metadataAccountData &&
+        account.data &&
+        hasStandardLockup(metadataAccountData)
+      )
     })
+    .sort((a, b) => {
+      return a.data!.amount.lte(b.data!.amount) ? 1 : -1
+    }) // ! is safe because of the filter above
 
   const totalLockedAmount = new PythBalance(
     lockedCustodyAccounts.reduce((total, account) => {
@@ -79,15 +81,13 @@ export default async function handlerAllLockedAccounts(
     accounts: lockedCustodyAccounts.map((account, index) => {
       return {
         custodyAccount: account.pubkey.toBase58(),
-        actualAmount: account.data
-          ? new PythBalance(account.data.amount).toString()
-          : 'failed to fetch',
+        actualAmount: new PythBalance(account.data!.amount).toString(),
       }
     }),
   })
 }
 
-async function hasStandardLockup(
+function hasStandardLockup(
   metadataAccountData: IdlAccounts<Staking>['stakeAccountMetadataV2']
 ) {
   return (
@@ -100,7 +100,7 @@ async function hasStandardLockup(
     )
   )
 }
-async function getAllStakeAccounts(connection: Connection, owner: PublicKey) {
+async function getAllStakeAccounts(connection: Connection) {
   const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
     encoding: 'base64',
     filters: [
