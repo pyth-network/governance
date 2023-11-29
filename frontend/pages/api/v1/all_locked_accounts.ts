@@ -78,10 +78,10 @@ export default async function handlerAllLockedAccounts(
 
   res.status(200).json({
     totalLockedAmount: totalLockedAmount.toString(),
-    accounts: lockedCustodyAccounts.map((account, index) => {
+    accounts: lockedCustodyAccounts.map((account) => {
       return {
         custodyAccount: account.pubkey.toBase58(),
-        actualAmount: new PythBalance(account.data!.amount).toString(),
+        actualAmount: new PythBalance(account.data!.amount).toString(), // ! is safe because of the filter above
       }
     }),
   })
