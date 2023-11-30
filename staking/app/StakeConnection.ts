@@ -1009,13 +1009,18 @@ export class StakeAccount {
   // Unvested
 
   public getBalanceSummary(unixTime: BN): BalanceSummary {
-    let unvestedBalance = wasm.getUnvestedBalance(
-      this.vestingSchedule,
-      BigInt(unixTime.toString()),
-      this.config.pythTokenListTime
-        ? BigInt(this.config.pythTokenListTime.toString())
-        : undefined
-    );
+    let unvestedBalance: BigInt;
+    try {
+      unvestedBalance = wasm.getUnvestedBalance(
+        this.vestingSchedule,
+        BigInt(unixTime.toString()),
+        this.config.pythTokenListTime
+          ? BigInt(this.config.pythTokenListTime.toString())
+          : undefined
+      );
+    } catch {
+      throw "This account has less tokens than the unlocking schedule requires. Please contact support.";
+    }
 
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
