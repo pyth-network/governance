@@ -1009,29 +1009,31 @@ export class StakeAccount {
   // Unvested
 
   public getBalanceSummary(unixTime: BN): BalanceSummary {
-    let unvestedBalance: BigInt;
-    try {
-      unvestedBalance = wasm.getUnvestedBalance(
-        this.vestingSchedule,
-        BigInt(unixTime.toString()),
-        this.config.pythTokenListTime
-          ? BigInt(this.config.pythTokenListTime.toString())
-          : undefined
-      );
-    } catch {
-      throw "This account has less tokens than the unlocking schedule requires. Please contact support.";
-    }
+    let unvestedBalance = wasm.getUnvestedBalance(
+      this.vestingSchedule,
+      BigInt(unixTime.toString()),
+      this.config.pythTokenListTime
+        ? BigInt(this.config.pythTokenListTime.toString())
+        : undefined
+    );
 
     let currentEpoch = unixTime.div(this.config.epochDuration);
     let unlockingDuration = this.config.unlockingDuration;
     let currentEpochBI = BigInt(currentEpoch.toString());
 
-    const withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
-      BigInt(this.tokenBalance.toString()),
-      unvestedBalance,
-      currentEpochBI,
-      unlockingDuration
-    );
+    let withdrawable: BigInt;
+    try {
+      withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
+        BigInt(this.tokenBalance.toString()),
+        unvestedBalance,
+        currentEpochBI,
+        unlockingDuration
+      );
+    } catch (e) {
+      throw Error(
+        "This account has less tokens than the unlocking schedule or your staking position requires. Please contact support."
+      );
+    }
 
     const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
