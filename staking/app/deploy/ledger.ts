@@ -122,7 +122,7 @@ export async function signTransaction<
   const paths = Buffer.alloc(1);
   paths.writeUInt8(1, 0);
 
-  let message = Buffer.alloc(0);
+  let message: Buffer;
   if (transaction instanceof Transaction) {
     message = transaction.serializeMessage();
   } else {
