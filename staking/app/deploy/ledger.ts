@@ -4,7 +4,7 @@ import Transport, {
   TransportStatusError,
 } from "@ledgerhq/hw-transport";
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 
 export class LedgerNodeWallet implements Wallet {
   private _derivationPath: Buffer;
@@ -35,7 +35,9 @@ export class LedgerNodeWallet implements Wallet {
     return new LedgerNodeWallet(derivationPath, transport, publicKey);
   }
 
-  async signTransaction(transaction: Transaction): Promise<Transaction> {
+  async signTransaction<T extends Transaction | VersionedTransaction>(
+    transaction: T
+  ): Promise<T> {
     console.log("Please approve the transaction on your ledger device...");
     const transport = this._transport;
     const publicKey = this.publicKey;
@@ -49,7 +51,9 @@ export class LedgerNodeWallet implements Wallet {
     return transaction;
   }
 
-  async signAllTransactions(txs: Transaction[]): Promise<Transaction[]> {
+  async signAllTransactions<T extends Transaction | VersionedTransaction>(
+    txs: T[]
+  ): Promise<T[]> {
     return await Promise.all(txs.map((tx) => this.signTransaction(tx)));
   }
 }
@@ -108,15 +112,23 @@ export async function getPublicKey(
 }
 
 /** @internal */
-export async function signTransaction(
+export async function signTransaction<
+  T extends Transaction | VersionedTransaction
+>(
   transport: Transport,
-  transaction: Transaction,
+  transaction: T,
   derivationPath: Buffer
 ): Promise<Buffer> {
   const paths = Buffer.alloc(1);
   paths.writeUInt8(1, 0);
 
-  const message = transaction.serializeMessage();
+  let message = Buffer.alloc(0);
+  if (transaction instanceof Transaction) {
+    message = transaction.serializeMessage();
+  } else {
+    message = Buffer.from(transaction.serialize());
+  }
+
   const data = Buffer.concat([paths, derivationPath, message]);
 
   return await send(transport, INS_SIGN_MESSAGE, P1_CONFIRM, data);
