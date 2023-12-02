@@ -1,8 +1,11 @@
-import { PythBalance, StakeConnection } from '@pythnetwork/staking'
+import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { StakeConnectionQueryKey } from './useStakeConnection'
 import { useMutation, useQueryClient } from 'react-query'
-import { MainStakeAccount } from 'pages'
 
 export function useDepositMutation() {
   const queryClient = useQueryClient()
@@ -16,7 +19,7 @@ export function useDepositMutation() {
     }: {
       amount: string
       stakeConnection: StakeConnection
-      mainStakeAccount: MainStakeAccount
+      mainStakeAccount: StakeAccount | 'NA'
     }) => {
       if (!amount) {
         throw new Error('Please enter a valid amount!')
