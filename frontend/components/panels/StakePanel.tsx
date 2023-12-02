@@ -4,7 +4,7 @@ import {
   AmountInputLabel,
   PanelDescription,
   PanelLayout,
-} from './BasePanel'
+} from './Components'
 import { useDepositMutation } from 'hooks/useDepositMutation'
 import {
   PythBalance,

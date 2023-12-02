@@ -4,7 +4,7 @@ import {
   AmountInputLabel,
   PanelDescription,
   PanelLayout,
-} from './BasePanel'
+} from './Components'
 import { PythBalance, StakeAccount } from '@pythnetwork/staking'
 import { useBalance } from 'hooks/useBalance'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
