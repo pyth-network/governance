@@ -142,7 +142,7 @@ function LockedModalCurrentState({
           Your locked tokens are staked in the contract to participate in
           governance. On vest, they will become staked tokens, which require a
           full epoch cooldown to be unstaked. (Epochs start every Thursday at
-          00:00 UTC)
+          00:00 UTC and last 7 days)
           <br />
           <br />
           If you would like to withdraw them immediately on unlock, you may
@@ -166,7 +166,7 @@ function LockedModalCurrentState({
           This means that when your tokens unlock, you will have to manually
           unstake them by interacting with the UI and wait for a cooldown of one
           full epoch before being able to withdraw them. (Epochs start every
-          Thursday at 00:00 UTC).
+          Thursday at 00:00 UTC and last 7 days).
         </>
       )
     case VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown:

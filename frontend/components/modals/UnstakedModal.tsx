@@ -22,8 +22,8 @@ export function UnstakedModal({
       <p className="mb-6 leading-6">
         Unstaking tokens enables you to withdraw them from the program after a
         cooldown period of one epoch once the current epoch ends. (Epochs start
-        every Thursday at 00:00 UTC). Unstaked tokens cannot participate in
-        governance.
+        every Thursday at 00:00 UTC and last 7 days). Unstaked tokens cannot
+        participate in governance.
       </p>
       <p className="leading-6">
         You currently have {unstakedPythBalance?.toString()} unstaked tokens.

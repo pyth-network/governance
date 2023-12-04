@@ -11,7 +11,7 @@ type UnstakePanelProps = {
   mainStakeAccount: MainStakeAccount
 }
 const Description =
-  'Unstake PYTH. Unstaking tokens enables you to withdraw them from the program after a cooldown period of one epoch once the current epoch ends. (Epochs start every Thursday at 00:00 UTC). Unstaked tokens cannot participate in governance.'
+  'Unstake PYTH. Unstaking tokens enables you to withdraw them from the program after a cooldown period of one epoch once the current epoch ends. (Epochs start every Thursday at 00:00 UTC and last 7 days). Unstaked tokens cannot participate in governance.'
 
 export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
   // call deposit and lock api when deposit button is clicked (create stake account if not already created)
