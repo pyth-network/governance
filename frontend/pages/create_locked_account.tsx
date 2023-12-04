@@ -71,13 +71,18 @@ const CreateLockedAccount: NextPage = () => {
 
   const createLockedAccount = async () => {
     if (stakeConnection && owner && amount)
-      await stakeConnection.setupVestingAccount(amount, owner, {
-        periodicVestingAfterListing: {
-          initialBalance: amount.toBN(),
-          periodDuration: TWELVE_MONTHS,
-          numPeriods: NUM_PERIODS,
+      await stakeConnection.setupVestingAccount(
+        amount,
+        owner,
+        {
+          periodicVestingAfterListing: {
+            initialBalance: amount.toBN(),
+            periodDuration: TWELVE_MONTHS,
+            numPeriods: NUM_PERIODS,
+          },
         },
-      })
+        false
+      )
   }
 
   return (
