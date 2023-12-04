@@ -33,7 +33,7 @@ const Header = () => {
             </a>
           </Link>
           <Link
-            href={`https://realms.pyth.network/dao/PYTH${
+            href={`https://app.realms.today/dao/PYTH${
               process.env.CLUSTER !== 'mainnet'
                 ? '?cluster=' + process.env.CLUSTER
                 : ''
@@ -99,7 +99,7 @@ const Header = () => {
                 <a>Staking</a>
               </Link>
               <Link
-                href={`https://realms.pyth.network/dao/PYTH${
+                href={`https://app.realms.today/dao/PYTH${
                   process.env.CLUSTER !== 'mainnet'
                     ? '?cluster=' + process.env.CLUSTER
                     : ''
