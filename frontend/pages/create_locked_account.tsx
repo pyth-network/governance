@@ -10,10 +10,7 @@ import {
 } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
 import { BN, Wallet } from '@coral-xyz/anchor'
-import toast from 'react-hot-toast'
-import { capitalizeFirstLetter } from '../utils/capitalizeFirstLetter'
 import { PublicKey } from '@solana/web3.js'
-import { useRouter } from 'next/router'
 
 const TWELVE_MONTHS = new BN(3600 * 24 * 365)
 const NUM_PERIODS = new BN(4)
