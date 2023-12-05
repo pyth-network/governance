@@ -16,6 +16,8 @@ import {
 } from './components'
 import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficientBalance'
 import { WalletModalButton } from '@components/WalletModalButton'
+import { LlcModal } from '@components/modals/LlcModal'
+import toast from 'react-hot-toast'
 
 type StakePanelProps = {
   mainStakeAccount: MainStakeAccount
@@ -57,6 +59,25 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
     []
   )
 
+  const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
+
+  // This only executes if deposit action is enabled
+  const onAction = useCallback(async () => {
+    if (mainStakeAccount === 'NA') setIsLlcModalOpen(true)
+    else {
+      try {
+        const isLlcMember = await stakeConnection!.isLlcMember(
+          mainStakeAccount!
+        )
+
+        if (isLlcMember === true) deposit(amount)
+        else setIsLlcModalOpen(true)
+      } catch {
+        toast.error('Error: depositing')
+      }
+    }
+  }, [deposit, amount, stakeConnection, mainStakeAccount])
+
   const isSufficientBalance = isSufficientBalanceFn(amount, pythBalance)
 
   // set amount when input changes
@@ -92,7 +113,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
           ) : (
             <ActionButton
               actionLabel={'Stake'}
-              onAction={() => deposit(amount)}
+              onAction={onAction}
               isActionDisabled={
                 !isSufficientBalance ||
                 // if mainStakeAccount is undefined, the action should be disabled
@@ -111,6 +132,17 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
             />
           )}
         </div>
+        <LlcModal
+          isLlcModalOpen={isLlcModalOpen}
+          setIsLlcModalOpen={setIsLlcModalOpen}
+          onSignLlc={() => {
+            // Once the user clicks sign llc
+            // Sign and deposit will happen in the same transaction
+            // We are handling the loading in the panel itself.
+            deposit(amount)
+            setIsLlcModalOpen(false)
+          }}
+        />
       </Layout>
     </>
   )
