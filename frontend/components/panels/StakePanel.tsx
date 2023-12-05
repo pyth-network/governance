@@ -1,6 +1,6 @@
 import { BasePanel } from './BasePanel'
 import { useDepositMutation } from 'hooks/useDepositMutation'
-import { VestingAccountState } from '@pythnetwork/staking'
+import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
 import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
@@ -35,7 +35,11 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       onAction={(amount) =>
         depositMutation.mutate({
           amount,
-          mainStakeAccount: mainStakeAccount,
+          // If mainStakeAccount is undefined this action is disabled
+          // undefined means that the mainStakeAccount is loading.
+          // If we execute this action when mainStakeAccount is undefined,
+          // this will work. But it will create a new stake account for the user.
+          mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
           // action is disabled below if these is undefined
           stakeConnection: stakeConnection!,
         })
@@ -45,7 +49,10 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
       isBalanceLoading={isStakeConnectionLoading || isPythBalanceLoading}
       balance={pythBalance}
       isActionDisabled={
-        stakeConnection === undefined || accountWithLockedTokens
+        // if mainStakeAccount is undefined, the action should be disabled
+        mainStakeAccount === undefined ||
+        stakeConnection === undefined ||
+        accountWithLockedTokens
       }
       tooltipContentOnDisabled={
         accountWithLockedTokens
