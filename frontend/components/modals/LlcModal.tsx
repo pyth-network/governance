@@ -1,8 +1,6 @@
 import Spinner from '@components/Spinner'
-import { BaseModal } from './BaseModal'
 import CloseIcon from '@components/icons/CloseIcon'
 import { Transition, Dialog } from '@headlessui/react'
-import { title } from 'process'
 import { Fragment } from 'react'
 
 type LlcModalProps = {
@@ -19,6 +17,7 @@ export function LlcModal({
 }: LlcModalProps) {
   return (
     <>
+      {/* TODO: refactor base modal to follow composition approach */}
       <Transition appear show={isLlcModalOpen} as={Fragment}>
         <Dialog
           as="div"
@@ -80,9 +79,18 @@ export function LlcModal({
                       </h2>
                       <p className="pb-3">
                         The Members of the Company have entered into that
+                        {/* TODO: correct date */}
                         certain Operating Agreement, dated as of [__] (the “
                         <strong>Operating Agreement</strong>”), a copy of which
-                        is available at the following link: [___________].{' '}
+                        is available at the following link:{' '}
+                        <a
+                          href="https://cloudflare-ipfs.com/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi"
+                          className="underline md:basis-[195px]"
+                          target="_blank"
+                        >
+                          Operating Agreement
+                        </a>
+                        .{' '}
                       </p>
                       <p className="pb-3">
                         The Joining Party desires to become a Member of the
