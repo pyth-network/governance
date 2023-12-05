@@ -1,17 +1,12 @@
 import { useDepositMutation } from 'hooks/useDepositMutation'
-import {
-  PythBalance,
-  StakeAccount,
-  VestingAccountState,
-} from '@pythnetwork/staking'
+import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
 import { usePythBalance } from 'hooks/usePythBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { MainStakeAccount } from 'pages'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { validAmountChange } from 'utils/validAmountChange'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
 import {
   Layout,
   AmountInputLabel,
@@ -19,6 +14,8 @@ import {
   ActionButton,
   Description,
 } from './components'
+import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficientBalance'
+import { WalletModalButton } from '@components/WalletModalButton'
 
 type StakePanelProps = {
   mainStakeAccount: MainStakeAccount
@@ -60,17 +57,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
     []
   )
 
-  const isSufficientBalance = useMemo(() => {
-    if (amount && pythBalance) {
-      if (PythBalance.fromString(amount).gt(pythBalance)) {
-        return false
-      } else {
-        return true
-      }
-    } else {
-      return true
-    }
-  }, [amount, pythBalance])
+  const isSufficientBalance = isSufficientBalanceFn(amount, pythBalance)
 
   // set amount when input changes
   const handleAmountChange = (amount: string) => {
@@ -101,18 +88,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
 
         <div className="flex items-center justify-center ">
           {!connected ? (
-            <WalletModalButton
-              style={{
-                padding: '0 64px',
-                border: 'solid',
-                borderWidth: '1px',
-                borderColor: 'rgb(113 66 207)',
-                borderRadius: '9999px',
-                whiteSpace: 'nowrap',
-                background: 'rgb(113 66 207)',
-                height: '45px',
-              }}
-            />
+            <WalletModalButton />
           ) : (
             <ActionButton
               actionLabel={'Stake'}

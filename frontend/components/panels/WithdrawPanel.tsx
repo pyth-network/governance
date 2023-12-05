@@ -1,11 +1,11 @@
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
+import { StakeAccount } from '@pythnetwork/staking'
 import { useBalance } from 'hooks/useBalance'
 import { useWithdrawMutation } from 'hooks/useWithdrawMutation'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { MainStakeAccount } from 'pages'
-import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
-import { useCallback, useMemo, useState } from 'react'
+import { WalletModalButton } from '@components/WalletModalButton'
+import { useCallback, useState } from 'react'
 import { validAmountChange } from 'utils/validAmountChange'
 import { useWallet } from '@solana/wallet-adapter-react'
 import {
@@ -15,6 +15,7 @@ import {
   AmountInput,
   ActionButton,
 } from './components'
+import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficientBalance'
 
 type WithdrawPanelProps = {
   mainStakeAccount: MainStakeAccount
@@ -38,17 +39,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
     if (validAmountChange(amount)) setAmount(amount)
   }
 
-  const isSufficientBalance = useMemo(() => {
-    if (amount && unlockedPythBalance) {
-      if (PythBalance.fromString(amount).gt(unlockedPythBalance)) {
-        return false
-      } else {
-        return true
-      }
-    } else {
-      return true
-    }
-  }, [amount, unlockedPythBalance])
+  const isSufficientBalance = isSufficientBalanceFn(amount, unlockedPythBalance)
 
   const onAction = useCallback(() => {
     withdrawMutation.mutate({
@@ -79,18 +70,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
 
       <div className="flex items-center justify-center ">
         {!connected ? (
-          <WalletModalButton
-            style={{
-              padding: '0 64px',
-              border: 'solid',
-              borderWidth: '1px',
-              borderColor: 'rgb(113 66 207)',
-              borderRadius: '9999px',
-              whiteSpace: 'nowrap',
-              background: 'rgb(113 66 207)',
-              height: '45px',
-            }}
-          />
+          <WalletModalButton />
         ) : (
           <ActionButton
             actionLabel={'Withdraw'}

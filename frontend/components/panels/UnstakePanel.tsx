@@ -1,16 +1,12 @@
-import {
-  PythBalance,
-  StakeAccount,
-  VestingAccountState,
-} from '@pythnetwork/staking'
+import { StakeAccount, VestingAccountState } from '@pythnetwork/staking'
 import { useUnlockMutation } from 'hooks/useUnlockMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
 import { MainStakeAccount } from 'pages'
-import { WalletModalButton } from '@solana/wallet-adapter-react-ui'
-import { useMemo, useState } from 'react'
+import { WalletModalButton } from '@components/WalletModalButton'
+import { useState } from 'react'
 import { validAmountChange } from 'utils/validAmountChange'
 import { useWallet } from '@solana/wallet-adapter-react'
 import {
@@ -20,6 +16,7 @@ import {
   AmountInput,
   ActionButton,
 } from './components'
+import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficientBalance'
 
 type UnstakePanelProps = {
   mainStakeAccount: MainStakeAccount
@@ -58,17 +55,7 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
     if (validAmountChange(amount)) setAmount(amount)
   }
 
-  const isSufficientBalance = useMemo(() => {
-    if (amount && lockedPythBalance) {
-      if (PythBalance.fromString(amount).gt(lockedPythBalance)) {
-        return false
-      } else {
-        return true
-      }
-    } else {
-      return true
-    }
-  }, [amount, lockedPythBalance])
+  const isSufficientBalance = isSufficientBalanceFn(amount, lockedPythBalance)
 
   return (
     <Layout>
@@ -93,18 +80,7 @@ export function UnstakePanel({ mainStakeAccount }: UnstakePanelProps) {
 
       <div className="flex items-center justify-center ">
         {!connected ? (
-          <WalletModalButton
-            style={{
-              padding: '0 64px',
-              border: 'solid',
-              borderWidth: '1px',
-              borderColor: 'rgb(113 66 207)',
-              borderRadius: '9999px',
-              whiteSpace: 'nowrap',
-              background: 'rgb(113 66 207)',
-              height: '45px',
-            }}
-          />
+          <WalletModalButton />
         ) : (
           <ActionButton
             actionLabel={'Unstake'}
