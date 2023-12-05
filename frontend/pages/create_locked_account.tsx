@@ -11,6 +11,8 @@ import {
 import { useEffect, useState } from 'react'
 import { BN, Wallet } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
+import toast from 'react-hot-toast'
+import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 const TWELVE_MONTHS = new BN(3600 * 24 * 365)
 const NUM_PERIODS = new BN(4)
@@ -71,18 +73,23 @@ const CreateLockedAccount: NextPage = () => {
 
   const createLockedAccount = async () => {
     if (stakeConnection && owner && amount)
-      await stakeConnection.setupVestingAccount(
-        amount,
-        owner,
-        {
-          periodicVestingAfterListing: {
-            initialBalance: amount.toBN(),
-            periodDuration: TWELVE_MONTHS,
-            numPeriods: NUM_PERIODS,
+      try {
+        await stakeConnection.setupVestingAccount(
+          amount,
+          owner,
+          {
+            periodicVestingAfterListing: {
+              initialBalance: amount.toBN(),
+              periodDuration: TWELVE_MONTHS,
+              numPeriods: NUM_PERIODS,
+            },
           },
-        },
-        false
-      )
+          false
+        )
+        toast.success('Successfully created locked account')
+      } catch (err) {
+        toast.error(capitalizeFirstLetter(err.message))
+      }
   }
 
   return (

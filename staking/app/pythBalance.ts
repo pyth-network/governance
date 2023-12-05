@@ -28,6 +28,8 @@ export class PythBalance {
 
   static fromString(amount: string) {
     amount = amount.split(",").join("");
+    amount = amount.split('"').join("");
+    amount = amount.split(" ").join("");
 
     if (amount.match(INTEGER_REGEXP)) {
       return new PythBalance(new BN(amount).mul(new BN(10 ** PYTH_DECIMALS)));
