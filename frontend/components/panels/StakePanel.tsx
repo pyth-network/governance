@@ -37,8 +37,8 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
           amount,
           // If mainStakeAccount is undefined this action is disabled
           // undefined means that the mainStakeAccount is loading.
-          // If we execute this action, this will work. But it will create a
-          // new stake account for the user.
+          // If we execute this action when mainStakeAccount is undefined,
+          // this will work. But it will create a new stake account for the user.
           mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
           // action is disabled below if these is undefined
           stakeConnection: stakeConnection!,
