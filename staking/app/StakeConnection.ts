@@ -597,6 +597,15 @@ export class StakeConnection {
     await this.provider.sendAndConfirm(transaction);
   }
 
+  /**
+   * Locks the specified amount of tokens in governance.
+   */
+  public async signLlc(stakeAccount: StakeAccount) {
+    const transaction: Transaction = new Transaction();
+    await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
+    await this.provider.sendAndConfirm(transaction);
+  }
+
   public async setupVestingAccount(
     amount: PythBalance,
     owner: PublicKey,
