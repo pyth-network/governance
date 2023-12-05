@@ -12,6 +12,9 @@ import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { MainStakeAccount } from 'pages'
+import { LlcModal } from './LlcModal'
+import { useCallback, useState } from 'react'
+import toast from 'react-hot-toast'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
@@ -188,6 +191,24 @@ function LockedModalButton({
   const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
   const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
+  const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
+
+  const onStakeAll = useCallback(async () => {
+    if (mainStakeAccount === 'NA' || mainStakeAccount === undefined) return
+    try {
+      const isLlcMember = await stakeConnection!.isLlcMember(mainStakeAccount)
+
+      if (isLlcMember === true)
+        unvestedLockAll.mutate({
+          mainStakeAccount: mainStakeAccount,
+          stakeConnection: stakeConnection!,
+        })
+      else setIsLlcModalOpen(true)
+    } catch {
+      toast.error('Error: staking')
+    }
+  }, [stakeConnection, mainStakeAccount])
+
   if (mainStakeAccount === 'NA') return <></>
 
   switch (currentVestingAccountState) {
@@ -234,12 +255,7 @@ function LockedModalButton({
           <button
             type="button"
             className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-            onClick={() =>
-              unvestedLockAll.mutate({
-                mainStakeAccount: mainStakeAccount as StakeAccount,
-                stakeConnection: stakeConnection!,
-              })
-            }
+            onClick={onStakeAll}
             disabled={
               currentVestingAccountState ==
                 VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
@@ -300,6 +316,20 @@ function LockedModalButton({
               'Unstake all'
             )}
           </button>
+
+          <LlcModal
+            isLlcModalOpen={isLlcModalOpen}
+            setIsLlcModalOpen={setIsLlcModalOpen}
+            onSignLlc={() => {
+              // Once the user clicks sign llc
+              // Sign and stake will happen in the same transaction
+              unvestedLockAll.mutate({
+                mainStakeAccount: mainStakeAccount as StakeAccount,
+                stakeConnection: stakeConnection!,
+              })
+              setIsLlcModalOpen(false)
+            }}
+          />
         </>
       )
   }
