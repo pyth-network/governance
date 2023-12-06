@@ -465,8 +465,8 @@ export class StakeConnection {
 
   public async isLlcMember(stakeAccount: StakeAccount) {
     return (
-      stakeAccount.stakeAccountMetadata.signedAgreementHash ==
-      this.config.agreementHash
+      JSON.stringify(stakeAccount.stakeAccountMetadata.signedAgreementHash) ==
+      JSON.stringify(this.config.agreementHash)
     );
   }
 
