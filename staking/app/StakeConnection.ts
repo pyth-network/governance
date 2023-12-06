@@ -598,9 +598,9 @@ export class StakeConnection {
   }
 
   /**
-   * Locks the specified amount of tokens in governance.
+   * Join the DAO LLC for the give stake account.
    */
-  public async signLlc(stakeAccount: StakeAccount) {
+  public async joinDaoLlc(stakeAccount: StakeAccount) {
     const transaction: Transaction = new Transaction();
     await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
     await this.provider.sendAndConfirm(transaction);

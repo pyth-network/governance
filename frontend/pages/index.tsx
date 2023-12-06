@@ -23,7 +23,7 @@ import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { LlcModal } from '@components/modals/LlcModal'
-import { useSignLlcMutation } from 'hooks/useSignLlcMutation'
+import { useJoinDaoLlcMutation } from 'hooks/useJoinDaoLlcMutation'
 
 enum TabEnum {
   Stake,
@@ -96,7 +96,7 @@ const Staking: NextPage = () => {
   const { data: currentVestingAccountState } =
     useVestingAccountState(mainStakeAccount)
 
-  const signLlcMutation = useSignLlcMutation()
+  const joinDaoLlcMutation = useJoinDaoLlcMutation()
   const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
   useEffect(() => {
     if (
@@ -427,7 +427,7 @@ const Staking: NextPage = () => {
         setIsLlcModalOpen={setIsLlcModalOpen}
         onSignLlc={() => {
           // this modal will only be shown if there is a stakeConnection and mainStakeAccount
-          signLlcMutation.mutate(
+          joinDaoLlcMutation.mutate(
             {
               stakeConnection: stakeConnection!,
               mainStakeAccount: mainStakeAccount as StakeAccount,
@@ -439,7 +439,7 @@ const Staking: NextPage = () => {
             }
           )
         }}
-        isSigning={signLlcMutation.isLoading}
+        isSigning={joinDaoLlcMutation.isLoading}
       />
     </Layout>
   )

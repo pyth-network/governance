@@ -1,12 +1,8 @@
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-} from '@pythnetwork/staking'
+import { StakeAccount, StakeConnection } from '@pythnetwork/staking'
 import toast from 'react-hot-toast'
 import { useMutation } from 'react-query'
 
-export function useSignLlcMutation() {
+export function useJoinDaoLlcMutation() {
   return useMutation(
     ['sign-llc-mutation'],
     async ({
@@ -16,7 +12,7 @@ export function useSignLlcMutation() {
       stakeConnection: StakeConnection
       mainStakeAccount: StakeAccount
     }) => {
-      await stakeConnection.signLlc(mainStakeAccount)
+      await stakeConnection.joinDaoLlc(mainStakeAccount)
       toast.success(`Successfully signed LLC!`)
     },
     {
