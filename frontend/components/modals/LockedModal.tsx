@@ -205,7 +205,7 @@ function LockedModalButton({
         })
       else setIsLlcModalOpen(true)
     } catch {
-      toast.error('Error: staking')
+      toast.error('Connection error')
     }
   }, [stakeConnection, mainStakeAccount])
 

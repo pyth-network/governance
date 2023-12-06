@@ -73,7 +73,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
         if (isLlcMember === true) deposit(amount)
         else setIsLlcModalOpen(true)
       } catch {
-        toast.error('Error: depositing')
+        toast.error('Connection error')
       }
     }
   }, [deposit, amount, stakeConnection, mainStakeAccount])
