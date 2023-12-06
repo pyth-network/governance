@@ -79,7 +79,7 @@ export function LlcModal({
                       </h2>
                       <p className="pb-3">
                         The Members of the Company have entered into that
-                        {/* TODO: correct date */}
+                        {/* TODO: put the right date here */}
                         certain Operating Agreement, dated as of [__] (the “
                         <strong>Operating Agreement</strong>”), a copy of which
                         is available at the following link:{' '}
@@ -180,7 +180,7 @@ export function LlcModal({
                       onClick={onSignLlc}
                       disabled={isSigning}
                     >
-                      {isSigning ? <Spinner /> : 'Sign LLC'}
+                      {isSigning ? <Spinner /> : 'Sign LLC agreement'}
                     </button>
                   </div>
                 </Dialog.Panel>

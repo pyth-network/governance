@@ -136,7 +136,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
           isLlcModalOpen={isLlcModalOpen}
           setIsLlcModalOpen={setIsLlcModalOpen}
           onSignLlc={() => {
-            // Once the user clicks sign llc
+            // Once the user clicks sign llc agreement
             // Sign and deposit will happen in the same transaction
             // We are handling the loading in the panel itself.
             deposit(amount)

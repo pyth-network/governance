@@ -13,7 +13,7 @@ export function useJoinDaoLlcMutation() {
       mainStakeAccount: StakeAccount
     }) => {
       await stakeConnection.joinDaoLlc(mainStakeAccount)
-      toast.success(`Successfully signed LLC!`)
+      toast.success(`Successfully signed LLC agreement!`)
     },
     {
       onError(error: Error) {
