@@ -48,7 +48,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
       mainStakeAccount: mainStakeAccount as StakeAccount,
       stakeConnection: stakeConnection!,
     })
-  }, [])
+  }, [amount, mainStakeAccount, stakeConnection])
 
   return (
     <Layout>

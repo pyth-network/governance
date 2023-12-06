@@ -56,7 +56,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
         // action is disabled below if these is undefined
         stakeConnection: stakeConnection!,
       }),
-    []
+    [depositMutation.mutate, mainStakeAccount, stakeConnection]
   )
 
   const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
