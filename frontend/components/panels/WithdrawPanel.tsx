@@ -36,10 +36,7 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
   const [amount, setAmount] = useState<string>('')
   // set amount when input changes
   const handleAmountChange = (amount: string) => {
-    if (validAmountChange(amount)) {
-      console.log(amount)
-      setAmount(amount)
-    }
+    if (validAmountChange(amount)) setAmount(amount)
   }
 
   const isSufficientBalance = isSufficientBalanceFn(amount, unlockedPythBalance)
