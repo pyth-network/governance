@@ -40,23 +40,19 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
 
   const [amount, setAmount] = useState<string>('')
 
-  const deposit = useCallback(
-    (amount: string) =>
-      // we are disabling actions when mainStakeAccount is undefined
-      // or stakeConnection is undefined
-      depositMutation.mutate({
-        amount,
-        // If mainStakeAccount is undefined this action is disabled
-        // undefined means that the mainStakeAccount is loading.
-        // If we execute this action, this will work. But it will create a
-        // new stake account for the user.
-        mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
-        // action is disabled below if these is undefined
-        stakeConnection: stakeConnection!,
-      }),
-    []
-  )
-
+  const deposit = (amount: string) =>
+    // we are disabling actions when mainStakeAccount is undefined
+    // or stakeConnection is undefined
+    depositMutation.mutate({
+      amount,
+      // If mainStakeAccount is undefined this action is disabled
+      // undefined means that the mainStakeAccount is loading.
+      // If we execute this action, this will work. But it will create a
+      // new stake account for the user.
+      mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
+      // action is disabled below if these is undefined
+      stakeConnection: stakeConnection!,
+    })
   const isSufficientBalance = isSufficientBalanceFn(amount, pythBalance)
 
   // set amount when input changes
