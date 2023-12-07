@@ -36,19 +36,22 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
   const [amount, setAmount] = useState<string>('')
   // set amount when input changes
   const handleAmountChange = (amount: string) => {
-    if (validAmountChange(amount)) setAmount(amount)
+    if (validAmountChange(amount)) {
+      console.log(amount)
+      setAmount(amount)
+    }
   }
 
   const isSufficientBalance = isSufficientBalanceFn(amount, unlockedPythBalance)
 
-  const onAction = useCallback(() => {
+  const onAction = () => {
     withdrawMutation.mutate({
       amount,
       // action enabled only when the two props are defined
       mainStakeAccount: mainStakeAccount as StakeAccount,
       stakeConnection: stakeConnection!,
     })
-  }, [])
+  }
 
   return (
     <Layout>
