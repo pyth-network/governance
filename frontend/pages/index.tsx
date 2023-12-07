@@ -105,10 +105,8 @@ const Staking: NextPage = () => {
       mainStakeAccount === 'NA'
     )
       return
-    ;(async () => {
-      if (!(await stakeConnection.isLlcMember(mainStakeAccount)))
-        setIsLlcModalOpen(true)
-    })()
+
+    if (!stakeConnection.isLlcMember(mainStakeAccount)) setIsLlcModalOpen(true)
   }, [stakeConnection, mainStakeAccount])
 
   // First stake connection will load, then stake accounts, and

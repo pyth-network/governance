@@ -195,18 +195,14 @@ function LockedModalButton({
 
   const onStakeAll = useCallback(async () => {
     if (mainStakeAccount === 'NA' || mainStakeAccount === undefined) return
-    try {
-      const isLlcMember = await stakeConnection!.isLlcMember(mainStakeAccount)
+    const isLlcMember = stakeConnection!.isLlcMember(mainStakeAccount)
 
-      if (isLlcMember === true)
-        unvestedLockAll.mutate({
-          mainStakeAccount: mainStakeAccount,
-          stakeConnection: stakeConnection!,
-        })
-      else setIsLlcModalOpen(true)
-    } catch {
-      toast.error('Connection error')
-    }
+    if (isLlcMember === true)
+      unvestedLockAll.mutate({
+        mainStakeAccount: mainStakeAccount,
+        stakeConnection: stakeConnection!,
+      })
+    else setIsLlcModalOpen(true)
   }, [stakeConnection, mainStakeAccount])
 
   if (mainStakeAccount === 'NA') return <></>

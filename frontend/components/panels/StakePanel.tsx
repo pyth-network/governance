@@ -62,19 +62,13 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
   const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
 
   // This only executes if deposit action is enabled
-  const onAction = useCallback(async () => {
+  const onAction = useCallback(() => {
     if (mainStakeAccount === 'NA') setIsLlcModalOpen(true)
     else {
-      try {
-        const isLlcMember = await stakeConnection!.isLlcMember(
-          mainStakeAccount!
-        )
+      const isLlcMember = stakeConnection!.isLlcMember(mainStakeAccount!)
 
-        if (isLlcMember === true) deposit(amount)
-        else setIsLlcModalOpen(true)
-      } catch {
-        toast.error('Connection error')
-      }
+      if (isLlcMember === true) deposit(amount)
+      else setIsLlcModalOpen(true)
     }
   }, [deposit, amount, stakeConnection, mainStakeAccount])
 
