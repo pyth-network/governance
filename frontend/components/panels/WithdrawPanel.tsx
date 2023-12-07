@@ -41,14 +41,14 @@ export function WithdrawPanel({ mainStakeAccount }: WithdrawPanelProps) {
 
   const isSufficientBalance = isSufficientBalanceFn(amount, unlockedPythBalance)
 
-  const onAction = useCallback(() => {
+  const onAction = () => {
     withdrawMutation.mutate({
       amount,
       // action enabled only when the two props are defined
       mainStakeAccount: mainStakeAccount as StakeAccount,
       stakeConnection: stakeConnection!,
     })
-  }, [])
+  }
 
   return (
     <Layout>
