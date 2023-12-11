@@ -145,7 +145,7 @@ const Staking: NextPage = () => {
                 <Dialog.Panel className="w-full max-w-md transform rounded-2xl border-2 border-purpleHeart bg-jaguar p-10 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
-                    className="text-md font-inter font-bold leading-6 "
+                    className="text-md font-header font-bold leading-6 "
                   >
                     Select stake account
                   </Dialog.Title>

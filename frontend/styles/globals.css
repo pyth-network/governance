@@ -42,7 +42,7 @@
 }
 
 .diaglogTitle {
-  @apply mb-8 text-center font-body text-[32px] lg:text-[44px] lg:mb-11 leading-[1.1];
+  @apply mb-8 text-center font-header text-[32px] lg:text-[44px] lg:mb-11 leading-[1.1];
 }
 
 .input-no-spin::-webkit-inner-spin-button {
