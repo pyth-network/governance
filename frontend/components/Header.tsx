@@ -46,7 +46,7 @@ const Header = () => {
           </Link>
         </div>
         <div className="flex items-center justify-end space-x-2">
-          <div className="flex w-[200px] justify-end">
+          <div className="solana-wallet-button flex w-[200px] justify-end [&_button]:!rounded-none">
             <WalletMultiButtonDynamic
               style={{
                 padding: '0 18px',

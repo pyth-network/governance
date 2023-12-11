@@ -11,7 +11,7 @@ export function AmountInput({ amount, onAmountChange }: AmountInputProps) {
       autoComplete="amount"
       value={amount}
       onChange={(e) => onAmountChange(e.target.value)}
-      className="input-no-spin mb-8 mt-1 block h-14 w-full rounded-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
+      className="input-no-spin mb-8 mt-1 block h-14 w-full bg-darkGray4 px-4 text-center text-lg font-semibold  focus:outline-none"
     />
   )
 }

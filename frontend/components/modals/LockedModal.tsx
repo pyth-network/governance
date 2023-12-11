@@ -233,7 +233,7 @@ function LockedModalButton({
         <>
           <button
             type="button"
-            className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+            className="btn btn--light"
             onClick={() =>
               unvestedLockAll.mutate({
                 mainStakeAccount: mainStakeAccount as StakeAccount,
@@ -260,12 +260,14 @@ function LockedModalButton({
                 Stake all
               </Tooltip>
             ) : (
-              'Stake all'
+              <span className="relative inline-flex items-center whitespace-nowrap">
+                Stake all
+              </span>
             )}
           </button>
           <button
             type="button"
-            className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
+            className="btn btn--dark"
             onClick={() =>
               unvestedUnlockAll.mutate({
                 mainStakeAccount: mainStakeAccount as StakeAccount,
@@ -294,10 +296,14 @@ function LockedModalButton({
                 }
                 className="m-4"
               >
-                Unstake all
+                <span className="relative inline-flex items-center whitespace-nowrap">
+                  Unstake all
+                </span>
               </Tooltip>
             ) : (
-              'Unstake all'
+              <span className="relative inline-flex items-center whitespace-nowrap">
+                Unstake all
+              </span>
             )}
           </button>
         </>

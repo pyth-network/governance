@@ -16,18 +16,16 @@ export function ActionButton({
   tooltipContentOnDisabled,
 }: ActionButtonProps) {
   return (
-    <button
-      className="action-btn text-base "
-      onClick={onAction}
-      disabled={isActionDisabled || isActionLoading}
-    >
-      {isActionLoading ? (
-        <Spinner />
-      ) : isActionDisabled ? (
-        <Tooltip content={tooltipContentOnDisabled}>{actionLabel}</Tooltip>
-      ) : (
-        actionLabel
-      )}
-    </button>
+    <Tooltip content={tooltipContentOnDisabled}>
+      <button
+        className="btn btn--light"
+        onClick={onAction}
+        disabled={isActionDisabled || isActionLoading}
+      >
+        <span className="relative inline-flex items-center whitespace-nowrap">
+          {isActionLoading ? <Spinner /> : actionLabel}
+        </span>
+      </button>
+    </Tooltip>
   )
 }

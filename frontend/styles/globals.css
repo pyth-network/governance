@@ -12,22 +12,32 @@
   .gradient-border {
     @apply absolute left-8 bottom-0 h-px w-[calc(100%-64px)] bg-radial opacity-60;
   }
+  .btn-bg {
+    @apply absolute top-px left-px h-[calc(100%-2px)] w-[calc(100%-2px)]  transition-all;
+  }
 }
 
-.primary-btn {
-  @apply rounded-full h-[45px] text-xs px-8 uppercase  font-mono border border-solid border-pythPurple bg-pythPurple whitespace-nowrap;
+.btn {
+  @apply relative inline-block py-3 px-8 text-sm transition-all before:btn-bg;
+  @apply disabled:cursor-not-allowed disabled:opacity-40;
 }
 
-.secondary-btn {
-  @apply rounded-full  px-8 uppercase  font-mono  h-[45px] bg-darkGray2 leading-none  transition-colors;
+.btn--dark {
+  @apply bg-radial before:bg-dark;
+  @apply hover:text-dark hover:before:bg-light;
+  /* disable hover effect when disabled */
+  @apply disabled:text-light disabled:before:bg-dark;
+
 }
 
-.action-btn {
-  @apply rounded-full px-8 uppercase  font-mono leading-none  h-[45px] transition-colors  bg-pythPurple hover:bg-mediumSlateBlue  font-semibold disabled:opacity-70 disabled:hover:bg-pythPurple;
+.btn--light {
+  @apply z-10 bg-radial2 text-dark before:bg-light;
+  @apply hover:text-light hover:before:bg-dark;
+  /* disable hover effect when disabled */
+  @apply disabled:!text-dark disabled:before:!bg-light;
 }
-
 .outlined-btn {
-  @apply rounded-full bg-darkGray2 px-6 py-1 transition-colors;
+  @apply bg-darkGray2 px-6 py-1 transition-colors; 
 }
 
 .nav-link {
@@ -35,7 +45,7 @@
 }
 
 .diaglogPanel {
-  @apply pt-20 pb-8 px-6  lg:p-10  md:mt-[92px] flex h-full min-h-[420px] w-[calc(100%-64px)]  max-w-3xl transform items-center justify-center rounded-[40px] bg-[rgba(49,47,71,0.85)]  p-5 text-center  align-middle shadow-xl transition-all;
+  @apply pt-20 pb-8 px-6  lg:p-10  md:mt-[92px] flex h-full min-h-[420px] w-[calc(100%-64px)]  max-w-3xl transform items-center justify-center bg-[rgba(49,47,71)]  p-5 text-center  align-middle shadow-xl transition-all;
 }
 .diaglogClose {
   @apply absolute right-10 top-8  flex items-center leading-none;
@@ -55,7 +65,7 @@
 }
 
 .wallet-adapter-modal-wrapper {
-  @apply bg-darkGray2  max-w-[660px] rounded-4xl;
+  @apply bg-darkGray2  max-w-[660px] rounded-none;
 }
 
 .wallet-adapter-modal-title {
@@ -63,7 +73,7 @@
 }
 
 .wallet-adapter-modal-list {
-  @apply mx-auto max-w-[380px]  text-light;
+  @apply mx-auto max-w-[380px]  text-light !rounded-none;
 }
 
 .wallet-adapter-modal-list-more {
@@ -72,6 +82,14 @@
 .wallet-adapter-dropdown-list .wallet-adapter-dropdown-list-item:hover,
 .wallet-adapter-modal-list .wallet-adapter-button:hover {
   background-color: #413e53;
+}
+
+.wallet-adapter-dropdown-list-active {
+  @apply rounded-none;
+}
+
+.wallet-adapter-dropdown-list-item {
+  @apply rounded-none
 }
 
 .wallet-adapter-modal-button-close {
