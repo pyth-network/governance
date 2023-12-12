@@ -119,7 +119,3 @@ async function getAllStakeAccounts(connection: Connection) {
     return account.pubkey
   })
 }
-
-export const config = {
-  runtime: 'experimental-edge',
-}

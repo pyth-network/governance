@@ -166,7 +166,3 @@ export function getUnlockEvents(
   }
   return []
 }
-
-export const config = {
-  runtime: 'experimental-edge',
-}
