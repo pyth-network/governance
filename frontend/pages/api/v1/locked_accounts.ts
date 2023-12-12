@@ -1,15 +1,15 @@
-import { AnchorProvider, Program } from '@coral-xyz/anchor'
-import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { splTokenProgram } from '@coral-xyz/spl-token'
-import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
+import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
+import BN from 'bn.js'
+import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
+import { Program, AnchorProvider } from '@coral-xyz/anchor'
+import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
+import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import BN from 'bn.js'
-import { NextApiRequest, NextApiResponse } from 'next'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
