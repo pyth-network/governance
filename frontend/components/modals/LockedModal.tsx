@@ -254,7 +254,7 @@ function LockedModalButton({
             currentVestingAccountState ==
               VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ? (
               <Tooltip
-                content="Your tokens are in the process of being unlocked."
+                content="Your tokens are in the process of being unstaked."
                 className="m-4"
               >
                 Stake all
@@ -289,8 +289,8 @@ function LockedModalButton({
                 content={
                   currentVestingAccountState ==
                   VestingAccountState.UnvestedTokensFullyUnlocked
-                    ? "You don't have any locked tokens to unlock."
-                    : 'Your tokens are in the process of being unlocked.'
+                    ? "You don't have any locked tokens to unstake."
+                    : 'Your tokens are in the process of being unstaked.'
                 }
                 className="m-4"
               >
