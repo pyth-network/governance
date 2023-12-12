@@ -1,15 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
-import BN from 'bn.js'
-import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { Program, AnchorProvider } from '@coral-xyz/anchor'
+import { AnchorProvider, Program } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
+import { splTokenProgram } from '@coral-xyz/spl-token'
+import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
+import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
-import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import BN from 'bn.js'
+import { NextApiRequest, NextApiResponse } from 'next'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
@@ -42,13 +42,13 @@ export default async function handlerLockedAccounts(
       connection,
       new PublicKey(owner)
     )
-    res.status(200).json(
-      await Promise.all(
-        stakeAccounts.map((account) => {
-          return getStakeAccountDetails(account)
-        })
-      )
+    const stakeAccountDetails = await Promise.all(
+      stakeAccounts.map((account) => {
+        return getStakeAccountDetails(account)
+      })
     )
+    res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
+    res.status(200).json(stakeAccountDetails)
   }
 }
 

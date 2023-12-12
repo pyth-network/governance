@@ -1,15 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
-import BN from 'bn.js'
-import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { Connection, Keypair } from '@solana/web3.js'
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
+import { AnchorProvider, IdlAccounts, Program } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
+import { splTokenProgram } from '@coral-xyz/spl-token'
+import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
+import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
-import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { Connection, Keypair } from '@solana/web3.js'
+import BN from 'bn.js'
+import { NextApiRequest, NextApiResponse } from 'next'
 import {
   getCustodyAccountAddress,
   getMetadataAccountAddress,
@@ -76,7 +76,7 @@ export default async function handlerAllLockedAccounts(
     }, new BN(0))
   )
 
-  res.status(200).json({
+  const data = {
     totalLockedAmount: totalLockedAmount.toString(),
     accounts: lockedCustodyAccounts.map((account) => {
       return {
@@ -84,7 +84,10 @@ export default async function handlerAllLockedAccounts(
         actualAmount: new PythBalance(account.data!.amount).toString(), // ! is safe because of the filter above
       }
     }),
-  })
+  }
+
+  res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
+  res.status(200).json(data)
 }
 
 function hasStandardLockup(
@@ -115,4 +118,8 @@ async function getAllStakeAccounts(connection: Connection) {
   return response.map((account) => {
     return account.pubkey
   })
+}
+
+export const config = {
+  runtime: 'experimental-edge',
 }
