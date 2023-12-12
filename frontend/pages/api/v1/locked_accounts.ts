@@ -42,13 +42,13 @@ export default async function handlerLockedAccounts(
       connection,
       new PublicKey(owner)
     )
-    res.status(200).json(
-      await Promise.all(
-        stakeAccounts.map((account) => {
-          return getStakeAccountDetails(account)
-        })
-      )
+    const stakeAccountDetails = await Promise.all(
+      stakeAccounts.map((account) => {
+        return getStakeAccountDetails(account)
+      })
     )
+    res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
+    res.status(200).json(stakeAccountDetails)
   }
 }
 

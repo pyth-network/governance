@@ -76,7 +76,7 @@ export default async function handlerAllLockedAccounts(
     }, new BN(0))
   )
 
-  res.status(200).json({
+  const data = {
     totalLockedAmount: totalLockedAmount.toString(),
     accounts: lockedCustodyAccounts.map((account) => {
       return {
@@ -84,7 +84,10 @@ export default async function handlerAllLockedAccounts(
         actualAmount: new PythBalance(account.data!.amount).toString(), // ! is safe because of the filter above
       }
     }),
-  })
+  }
+
+  res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
+  res.status(200).json(data)
 }
 
 function hasStandardLockup(
