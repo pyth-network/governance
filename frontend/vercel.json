@@ -1,6 +1,6 @@
 {
   "functions": {
-    "pages/api/**/*": {
+    "pages/api/v1/all_locked_accounts.ts": {
       "maxDuration": 30
     }
   }
