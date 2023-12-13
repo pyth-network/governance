@@ -66,13 +66,9 @@ module.exports = {
       offPurple: '#745E9D',
     },
     fontFamily: {
-      arboria: 'arboria, sans-serif',
-      roboto: 'roboto, sans-serif',
-      robotoMono: 'roboto-mono, monospace',
-      inter: 'inter, sans-serif',
-      poppins: 'poppins, sans-serif',
-      body: 'Urbanist, sans-serif',
-      mono: 'IBM Plex Mono, monospace',
+      header: ["'Red Hat Display'", 'sans-serif'],
+      body: ["'Red Hat Text'", 'sans-serif'],
+      mono: ["'Red Hat Mono'", 'monospace'],
     },
 
     extend: {
