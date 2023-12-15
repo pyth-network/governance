@@ -598,7 +598,7 @@ export class StakeConnection {
   }
 
   /**
-   * Join the DAO LLC for the give stake account.
+   * Join the DAO LLC for the given stake account.
    */
   public async joinDaoLlc(stakeAccount: StakeAccount) {
     const transaction: Transaction = new Transaction();
