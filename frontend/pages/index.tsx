@@ -22,6 +22,8 @@ import { StakePanel } from '@components/panels/StakePanel'
 import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { LlcModal } from '@components/modals/LlcModal'
+import { useJoinDaoLlcMutation } from 'hooks/useJoinDaoLlcMutation'
 
 enum TabEnum {
   Stake,
@@ -50,7 +52,8 @@ const Staking: NextPage = () => {
   const wallet = useAnchorWallet()
   const isWalletConnected = wallet !== undefined
 
-  const { isLoading: isStakeConnectionLoading } = useStakeConnection()
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
   const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
     useStakeAccounts()
 
@@ -92,6 +95,19 @@ const Staking: NextPage = () => {
 
   const { data: currentVestingAccountState } =
     useVestingAccountState(mainStakeAccount)
+
+  const joinDaoLlcMutation = useJoinDaoLlcMutation()
+  const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
+  useEffect(() => {
+    if (
+      stakeConnection === undefined ||
+      mainStakeAccount === undefined ||
+      mainStakeAccount === 'NA'
+    )
+      return
+
+    if (!stakeConnection.isLlcMember(mainStakeAccount)) setIsLlcModalOpen(true)
+  }, [stakeConnection, mainStakeAccount])
 
   // First stake connection will load, then stake accounts, and
   // then if a main stake account exists, the balance will load
@@ -404,6 +420,25 @@ const Staking: NextPage = () => {
           </div>
         </div>
       </div>
+      <LlcModal
+        isLlcModalOpen={isLlcModalOpen}
+        setIsLlcModalOpen={setIsLlcModalOpen}
+        onSignLlc={() => {
+          // this modal will only be shown if there is a stakeConnection and mainStakeAccount
+          joinDaoLlcMutation.mutate(
+            {
+              stakeConnection: stakeConnection!,
+              mainStakeAccount: mainStakeAccount as StakeAccount,
+            },
+            {
+              onSettled() {
+                setIsLlcModalOpen(false)
+              },
+            }
+          )
+        }}
+        isSigning={joinDaoLlcMutation.isLoading}
+      />
     </Layout>
   )
 }

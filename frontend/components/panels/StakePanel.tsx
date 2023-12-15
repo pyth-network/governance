@@ -16,6 +16,8 @@ import {
 } from './components'
 import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficientBalance'
 import { WalletModalButton } from '@components/WalletModalButton'
+import { LlcModal } from '@components/modals/LlcModal'
+import toast from 'react-hot-toast'
 
 type StakePanelProps = {
   mainStakeAccount: MainStakeAccount
@@ -40,19 +42,36 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
 
   const [amount, setAmount] = useState<string>('')
 
-  const deposit = (amount: string) =>
-    // we are disabling actions when mainStakeAccount is undefined
-    // or stakeConnection is undefined
-    depositMutation.mutate({
-      amount,
-      // If mainStakeAccount is undefined this action is disabled
-      // undefined means that the mainStakeAccount is loading.
-      // If we execute this action, this will work. But it will create a
-      // new stake account for the user.
-      mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
-      // action is disabled below if these is undefined
-      stakeConnection: stakeConnection!,
-    })
+  const deposit = useCallback(
+    (amount: string) =>
+      // we are disabling actions when mainStakeAccount is undefined
+      // or stakeConnection is undefined
+      depositMutation.mutate({
+        amount,
+        // If mainStakeAccount is undefined this action is disabled
+        // undefined means that the mainStakeAccount is loading.
+        // If we execute this action, this will work. But it will create a
+        // new stake account for the user.
+        mainStakeAccount: mainStakeAccount as StakeAccount | 'NA',
+        // action is disabled below if these is undefined
+        stakeConnection: stakeConnection!,
+      }),
+    [depositMutation.mutate, mainStakeAccount, stakeConnection]
+  )
+
+  const [isLlcModalOpen, setIsLlcModalOpen] = useState(false)
+
+  // This only executes if deposit action is enabled
+  const onAction = useCallback(() => {
+    if (mainStakeAccount === 'NA') setIsLlcModalOpen(true)
+    else {
+      const isLlcMember = stakeConnection!.isLlcMember(mainStakeAccount!)
+
+      if (isLlcMember === true) deposit(amount)
+      else setIsLlcModalOpen(true)
+    }
+  }, [deposit, amount, stakeConnection, mainStakeAccount])
+
   const isSufficientBalance = isSufficientBalanceFn(amount, pythBalance)
 
   // set amount when input changes
@@ -88,7 +107,7 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
           ) : (
             <ActionButton
               actionLabel={'Stake'}
-              onAction={() => deposit(amount)}
+              onAction={onAction}
               isActionDisabled={
                 !isSufficientBalance ||
                 // if mainStakeAccount is undefined, the action should be disabled
@@ -107,6 +126,17 @@ export function StakePanel({ mainStakeAccount }: StakePanelProps) {
             />
           )}
         </div>
+        <LlcModal
+          isLlcModalOpen={isLlcModalOpen}
+          setIsLlcModalOpen={setIsLlcModalOpen}
+          onSignLlc={() => {
+            // Once the user clicks sign llc agreement
+            // Sign and deposit will happen in the same transaction
+            // We are handling the loading in the panel itself.
+            deposit(amount)
+            setIsLlcModalOpen(false)
+          }}
+        />
       </Layout>
     </>
   )

@@ -463,7 +463,7 @@ export class StakeConnection {
     return stakeAccountKeypair;
   }
 
-  public async isLlcMember(stakeAccount: StakeAccount) {
+  public isLlcMember(stakeAccount: StakeAccount) {
     return (
       JSON.stringify(stakeAccount.stakeAccountMetadata.signedAgreementHash) ==
       JSON.stringify(this.config.agreementHash)
@@ -580,7 +580,7 @@ export class StakeConnection {
       );
     }
 
-    if (!(await this.isLlcMember(stakeAccount))) {
+    if (!this.isLlcMember(stakeAccount)) {
       await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
     }
 
@@ -594,6 +594,15 @@ export class StakeConnection {
         .instruction()
     );
 
+    await this.provider.sendAndConfirm(transaction);
+  }
+
+  /**
+   * Join the DAO LLC for the given stake account.
+   */
+  public async joinDaoLlc(stakeAccount: StakeAccount) {
+    const transaction: Transaction = new Transaction();
+    await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
     await this.provider.sendAndConfirm(transaction);
   }
 
@@ -662,7 +671,7 @@ export class StakeConnection {
       );
     }
 
-    if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
+    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
       await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
@@ -767,7 +776,7 @@ export class StakeConnection {
       );
     }
 
-    if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
+    if (!stakeAccount || !this.isLlcMember(stakeAccount)) {
       await this.withJoinDaoLlc(ixs, stakeAccountAddress);
     }
 
