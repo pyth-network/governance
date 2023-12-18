@@ -10,11 +10,7 @@ import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import {
-  getConfig,
-  getCustodyAccountAddress,
-  getMetadataAccountAddress,
-} from './../locked_accounts'
+import { getConfig } from './../locked_accounts'
 import {
   getAllCustodyAccounts,
   getAllMetadataAccounts,
