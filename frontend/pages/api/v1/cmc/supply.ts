@@ -50,13 +50,6 @@ export default async function handlerSupply(
     const configAccountData = await getConfig(stakingProgram)
     const allStakeAccounts = await getAllStakeAccounts(connection)
 
-    const allMetadataAccountAddresses = allStakeAccounts.map((account) =>
-      getMetadataAccountAddress(account)
-    )
-    const allCustodyAccountAddresses = allStakeAccounts.map((account) =>
-      getCustodyAccountAddress(account)
-    )
-
     const allMetadataAccounts = await getAllMetadataAccounts(
       stakingProgram,
       allStakeAccounts
@@ -66,16 +59,10 @@ export default async function handlerSupply(
       allStakeAccounts
     )
 
-    const lockedCustodyAccounts = allCustodyAccounts.map(
-      (data: any, index: number) => {
-        return { lock: allMetadataAccounts[index], amount: data?.amount }
-      }
-    )
-
-    const totalLockedAmount = lockedCustodyAccounts.reduce(
-      (total: PythBalance, account: any) => {
+    const totalLockedAmount = allMetadataAccounts.reduce(
+      (total: PythBalance, account: any, index: number) => {
         return total.add(
-          account.amount && account.lock
+          allCustodyAccounts[index].amount && account.lock
             ? new PythBalance(account.amount).min(
                 getCurrentlyLockedAmount(account.lock, configAccountData)
               )

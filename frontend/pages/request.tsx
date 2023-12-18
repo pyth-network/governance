@@ -79,8 +79,8 @@ const ApproveSplit: NextPage = () => {
 
   return (
     <Layout>
-      <SEO title={'Approve Split'} />
-      <p className=" text-sm ">Approve a split request from {key}</p>
+      <SEO title={'Request Split'} />
+      <p className=" text-sm ">Request a transfer of locked tokens {key}</p>
       <p>
         {stakeAccount != undefined
           ? `stake account address: ${stakeAccount.address}`
