@@ -3,7 +3,7 @@ import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import { PYTH_TOKEN } from '@pythnetwork/staking/app/deploy/mainnet_beta'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair } from '@solana/web3.js'
 import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
@@ -15,7 +15,11 @@ import {
   getCustodyAccountAddress,
   getMetadataAccountAddress,
 } from './../locked_accounts'
-import { getAllStakeAccounts } from '../all_locked_accounts'
+import {
+  getAllCustodyAccounts,
+  getAllMetadataAccounts,
+  getAllStakeAccounts,
+} from '../all_locked_accounts'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
@@ -53,27 +57,33 @@ export default async function handlerSupply(
       getCustodyAccountAddress(account)
     )
 
-    const allMetadataAccounts =
-      await stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
-        allMetadataAccountAddresses
-      )
-    const allCustodyAccounts = await tokenProgram.account.account.fetchMultiple(
-      allCustodyAccountAddresses
+    const allMetadataAccounts = await getAllMetadataAccounts(
+      stakingProgram,
+      allStakeAccounts
+    )
+    const allCustodyAccounts = await getAllCustodyAccounts(
+      tokenProgram,
+      allStakeAccounts
     )
 
-    const lockedCustodyAccounts = allCustodyAccounts.map((data, index) => {
-      return { lock: allMetadataAccounts[index], amount: data?.amount }
-    })
+    const lockedCustodyAccounts = allCustodyAccounts.map(
+      (data: any, index: number) => {
+        return { lock: allMetadataAccounts[index], amount: data?.amount }
+      }
+    )
 
-    const totalLockedAmount = lockedCustodyAccounts.reduce((total, account) => {
-      return total.add(
-        account.amount && account.lock
-          ? new PythBalance(account.amount).min(
-              getCurrentlyLockedAmount(account.lock, configAccountData)
-            )
-          : PythBalance.zero()
-      )
-    }, PythBalance.zero())
+    const totalLockedAmount = lockedCustodyAccounts.reduce(
+      (total: PythBalance, account: any) => {
+        return total.add(
+          account.amount && account.lock
+            ? new PythBalance(account.amount).min(
+                getCurrentlyLockedAmount(account.lock, configAccountData)
+              )
+            : PythBalance.zero()
+        )
+      },
+      PythBalance.zero()
+    )
 
     res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
     res
