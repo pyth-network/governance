@@ -55,13 +55,13 @@ export class PythBalance {
       .padStart(PYTH_DECIMALS + 1, "0");
 
     const integerPart = padded.slice(0, padded.length - PYTH_DECIMALS);
-    return commas
-      ? addCommas(integerPart)
-      : integerPart +
-          ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
-            TRAILING_ZEROS,
-            ""
-          );
+    return (
+      (commas ? addCommas(integerPart) : integerPart) +
+      ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
+        TRAILING_ZEROS,
+        ""
+      )
+    );
   }
 
   toBN() {
