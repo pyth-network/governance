@@ -142,7 +142,7 @@ function getCurrentlyLockedAmountPeriodic(
   if (currentTimestamp.lte(startDate)) {
     return new PythBalance(initialBalance)
   } else {
-    const periodsElapsed = startDate.sub(currentTimestamp).div(periodDuration)
+    const periodsElapsed = currentTimestamp.sub(startDate).div(periodDuration)
     if (periodsElapsed.gte(numPeriods)) {
       return PythBalance.zero()
     } else {
