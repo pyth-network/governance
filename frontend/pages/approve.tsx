@@ -22,7 +22,7 @@ import { useRouter } from 'next/router'
 const ApproveSplit: NextPage = () => {
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
-  const { connected } = useWallet()
+  const { publicKey, connected } = useWallet()
 
   const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
 
