@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { Connection, Keypair } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
 import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
@@ -39,17 +39,14 @@ export default async function handlerAllLockedAccounts(
 ) {
   const allStakeAccounts = await getAllStakeAccounts(connection)
 
-  const allMetadataAccountAddresses = allStakeAccounts.map((account) =>
-    getMetadataAccountAddress(account)
+  const allMetadataAccounts = await getAllMetadataAccounts(
+    stakingProgram,
+    allStakeAccounts
   )
+
   const allCustodyAccountAddresses = allStakeAccounts.map((account) =>
     getCustodyAccountAddress(account)
   )
-
-  const allMetadataAccounts =
-    await stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
-      allMetadataAccountAddresses
-    )
   const allCustodyAccounts = await tokenProgram.account.account.fetchMultiple(
     allCustodyAccountAddresses
   )
@@ -103,7 +100,7 @@ function hasStandardLockup(
     )
   )
 }
-async function getAllStakeAccounts(connection: Connection) {
+export async function getAllStakeAccounts(connection: Connection) {
   const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
     encoding: 'base64',
     filters: [
@@ -118,4 +115,26 @@ async function getAllStakeAccounts(connection: Connection) {
   return response.map((account) => {
     return account.pubkey
   })
+}
+
+export async function getAllMetadataAccounts(
+  stakingProgram: Program<Staking>,
+  stakeAccounts: PublicKey[]
+): Promise<(IdlAccounts<Staking>['stakeAccountMetadataV2'] | null)[]> {
+  const metadataAccountAddresses = stakeAccounts.map((account) =>
+    getMetadataAccountAddress(account)
+  )
+  return stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
+    metadataAccountAddresses
+  )
+}
+
+export async function getAllCustodyAccounts(
+  tokenProgram: any,
+  stakeAccounts: PublicKey[]
+) {
+  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
+    getCustodyAccountAddress(account)
+  )
+  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses)
 }
