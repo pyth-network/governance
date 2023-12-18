@@ -103,7 +103,7 @@ function hasStandardLockup(
     )
   )
 }
-async function getAllStakeAccounts(connection: Connection) {
+export async function getAllStakeAccounts(connection: Connection) {
   const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
     encoding: 'base64',
     filters: [

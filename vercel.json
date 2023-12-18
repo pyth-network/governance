@@ -2,6 +2,9 @@
   "functions": {
     "pages/api/v1/all_locked_accounts.ts": {
       "maxDuration": 30
+    },
+    "pages/api/v1/cmc/supply.ts": {
+      "maxDuration": 30
     }
   }
 }

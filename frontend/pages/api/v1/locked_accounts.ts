@@ -4,7 +4,7 @@ import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { Program, AnchorProvider } from '@coral-xyz/anchor'
+import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
@@ -51,14 +51,18 @@ export default async function handlerLockedAccounts(
   }
 }
 
-async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
+export async function getConfig(
+  stakingProgram: Program<Staking>
+): Promise<IdlAccounts<Staking>['globalConfig']> {
   const configAccountAddress = PublicKey.findProgramAddressSync(
     [Buffer.from('config')],
     STAKING_ADDRESS
   )[0]
-  const configAccountData = await stakingProgram.account.globalConfig.fetch(
-    configAccountAddress
-  )
+  return await stakingProgram.account.globalConfig.fetch(configAccountAddress)
+}
+
+async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
+  const configAccountData = await getConfig(stakingProgram)
 
   const metadataAccountAddress = getMetadataAccountAddress(
     positionAccountAddress

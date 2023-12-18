@@ -49,18 +49,19 @@ export class PythBalance {
     }
   }
 
-  toString(): string {
+  toString(commas = true): string {
     const padded = this.toBN()
       .toString()
       .padStart(PYTH_DECIMALS + 1, "0");
 
-    return (
-      addCommas(padded.slice(0, padded.length - PYTH_DECIMALS)) +
-      ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
-        TRAILING_ZEROS,
-        ""
-      )
-    );
+    const integerPart = padded.slice(0, padded.length - PYTH_DECIMALS);
+    return commas
+      ? addCommas(integerPart)
+      : integerPart +
+          ("." + padded.slice(padded.length - PYTH_DECIMALS)).replace(
+            TRAILING_ZEROS,
+            ""
+          );
   }
 
   toBN() {
@@ -91,8 +92,16 @@ export class PythBalance {
     return new PythBalance(other.toBN().add(this.toBN()));
   }
 
+  sub(other: PythBalance): PythBalance {
+    return new PythBalance(this.toBN().sub(other.toBN()));
+  }
+
   isZero(): boolean {
     return this.eq(PythBalance.zero());
+  }
+
+  min(other: PythBalance): PythBalance {
+    return this.lt(other) ? this : other;
   }
 }
 
