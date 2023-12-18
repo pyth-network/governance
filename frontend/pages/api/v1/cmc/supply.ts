@@ -59,8 +59,8 @@ export default async function handlerSupply(
       (total: PythBalance, account: any, index: number) => {
         return total.add(
           allCustodyAccounts[index].amount && account.lock
-            ? new PythBalance(account.amount).min(
-                getCurrentlyLockedAmount(account.lock, configAccountData)
+            ? new PythBalance(allCustodyAccounts[index].amount).min(
+                getCurrentlyLockedAmount(account, configAccountData)
               )
             : PythBalance.zero()
         )
