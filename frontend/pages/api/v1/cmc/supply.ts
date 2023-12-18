@@ -33,6 +33,10 @@ const tokenProgram = splTokenProgram({
   provider: provider as any,
 })
 
+/**
+ * This API imitates the one implemented by https://avascan.info/api/v1/supply
+ * It is used by Coinmarketcap to display the right circulating and total supply of PYTH
+ */
 export default async function handlerSupply(
   req: NextApiRequest,
   res: NextApiResponse
