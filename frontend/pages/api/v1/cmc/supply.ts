@@ -2,8 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { PYTH_TOKEN } from '@pythnetwork/staking/app/deploy/mainnet_beta'
-import { Connection, Keypair } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
@@ -16,6 +15,8 @@ import {
   getAllMetadataAccounts,
   getAllStakeAccounts,
 } from '../all_locked_accounts'
+
+const PYTH_TOKEN = new PublicKey('HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3')
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
