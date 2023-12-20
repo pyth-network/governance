@@ -96,11 +96,7 @@ const ApproveSplit: NextPage = () => {
 
   const approveSplit = async () => {
     if (stakeConnection && selectedStakeAccount && recipient && amount)
-      await stakeConnection!.acceptSplit(
-        selectedStakeAccount,
-        amount!,
-        recipient!
-      )
+      await stakeConnection.acceptSplit(selectedStakeAccount, amount, recipient)
   }
 
   return (
