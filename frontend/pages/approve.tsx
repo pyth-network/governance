@@ -16,6 +16,8 @@ import { useEffect, useState } from 'react'
 import { Wallet } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
 import { useRouter } from 'next/router'
+import toast from 'react-hot-toast'
+import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 const ApproveSplit: NextPage = () => {
   const { connection } = useConnection()
@@ -95,8 +97,18 @@ const ApproveSplit: NextPage = () => {
   }, [stakeAccounts])
 
   const approveSplit = async () => {
-    if (stakeConnection && selectedStakeAccount && recipient && amount)
-      await stakeConnection.acceptSplit(selectedStakeAccount, amount, recipient)
+    if (stakeConnection && selectedStakeAccount && recipient && amount) {
+      try {
+        await stakeConnection.acceptSplit(
+          selectedStakeAccount,
+          amount,
+          recipient
+        )
+        toast.success('Successfully created transfer request')
+      } catch (err) {
+        toast.error(capitalizeFirstLetter(err.message))
+      }
+    }
   }
 
   return (
