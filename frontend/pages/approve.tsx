@@ -54,10 +54,13 @@ const ApproveSplit: NextPage = () => {
   const approveSplit = async () => {
     if (stakeConnection && selectedStakeAccount && splitRequest) {
       try {
+        const response = await fetch('/api/internal/create_ephemeral_account')
+        const ephemeralAccount = (await response.json()).publicKey
         await stakeConnection.acceptSplit(
           selectedStakeAccount,
           splitRequest.balance,
-          splitRequest.recipient
+          splitRequest.recipient,
+          ephemeralAccount
         )
         toast.success('Successfully created transfer request')
       } catch (err) {
