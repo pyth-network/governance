@@ -30,7 +30,7 @@ const ApproveSplit: NextPage = () => {
   const [selectedStakeAccount, setSelectStakeAccount] = useState<StakeAccount>()
 
   const router = useRouter()
-  const { key } = router.query
+  const { owner } = router.query
 
   const handleSelectStakeAccount = (event: any) => {
     for (const stakeAccount of stakeAccounts!) {
@@ -62,7 +62,7 @@ const ApproveSplit: NextPage = () => {
     const loadStakeAccounts = async () => {
       if (stakeConnection && anchorWallet) {
         const stakeAccounts = await stakeConnection.getStakeAccounts(
-          new PublicKey(key!)
+          new PublicKey(owner!)
         )
         setStakeAccounts(stakeAccounts)
       } else {
@@ -114,7 +114,7 @@ const ApproveSplit: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Approve Split'} />
-      <p className=" text-sm ">Approve a split request from {key}</p>
+      <p className=" text-sm ">Approve a split request from {owner}</p>
       <p>
         {stakeConnection &&
           stakeAccounts !== undefined &&
