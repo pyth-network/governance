@@ -18,14 +18,14 @@ const RequestSplit: NextPage = () => {
   const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
 
-  const [owner, setOwner] = useState<PublicKey>()
+  const [recipient, setRecipient] = useState<PublicKey>()
   const [amount, setAmount] = useState<PythBalance>()
 
-  const handleSetOwner = (event: any) => {
+  const handleSetRecipient = (event: any) => {
     try {
-      setOwner(new PublicKey(event.target.value))
+      setRecipient(new PublicKey(event.target.value))
     } catch (e) {
-      setOwner(undefined)
+      setRecipient(undefined)
     }
   }
   const handleSetAmount = (event: any) => {
@@ -88,7 +88,7 @@ const RequestSplit: NextPage = () => {
         )
         if (request) {
           setAmount(request.balance)
-          setOwner(request.recipient)
+          setRecipient(request.recipient)
         }
       }
       loadCurrentRequest()
@@ -101,9 +101,13 @@ const RequestSplit: NextPage = () => {
   }, [stakeAccounts])
 
   const requestSplit = async () => {
-    if (stakeConnection && selectedStakeAccount && owner && amount)
+    if (stakeConnection && selectedStakeAccount && recipient && amount)
       try {
-        await stakeConnection.requestSplit(selectedStakeAccount, amount, owner)
+        await stakeConnection.requestSplit(
+          selectedStakeAccount,
+          amount,
+          recipient
+        )
         toast.success('Successfully created transfer request')
       } catch (err) {
         toast.error(capitalizeFirstLetter(err.message))
@@ -141,12 +145,12 @@ const RequestSplit: NextPage = () => {
               </p>
             )}
 
-            <p className=" text-sm ">New owner</p>
+            <p className=" text-sm ">Recipient</p>
             <input
               type="text"
               style={{ color: 'black' }}
-              value={owner ? owner.toString() : ''}
-              onChange={handleSetOwner}
+              value={recipient ? recipient.toString() : ''}
+              onChange={handleSetRecipient}
             />
             <p className=" text-sm ">Amount</p>
             <input
@@ -156,7 +160,8 @@ const RequestSplit: NextPage = () => {
               onChange={handleSetAmount}
             />
             <p className=" text-sm ">
-              Owner : {owner ? owner.toString() : 'Invalid new owner'}
+              Recipient :{' '}
+              {recipient ? recipient.toString() : 'Invalid recipient'}
             </p>
             <p className=" text-sm ">
               Amount to be transferred:{' '}
@@ -165,7 +170,7 @@ const RequestSplit: NextPage = () => {
           </div>
         )}
 
-      {stakeConnection && owner && amount ? (
+      {stakeConnection && recipient && amount ? (
         <p>
           <button
             className="rounded-full p-2 hover:bg-hoverGray"
@@ -176,8 +181,8 @@ const RequestSplit: NextPage = () => {
         </p>
       ) : !stakeConnection ? (
         <p className="p-2 hover:bg-hoverGray"> Please connect wallet</p>
-      ) : !owner ? (
-        <p className="p-2 hover:bg-hoverGray ">Please insert valid new owner</p>
+      ) : !recipient ? (
+        <p className="p-2 hover:bg-hoverGray ">Please insert valid recipient</p>
       ) : (
         <p className="p-2 hover:bg-hoverGray ">
           Please insert valid amount to be transferred

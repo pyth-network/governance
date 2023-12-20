@@ -898,14 +898,18 @@ export class StakeConnection {
       ],
       this.program.programId
     )[0];
-    const splitRequest = await this.program.account.splitRequest.fetch(
+    const splitRequest = await this.program.account.splitRequest.fetchNullable(
       splitRequestAccount
     );
 
-    return {
-      balance: new PythBalance(splitRequest.amount),
-      recipient: splitRequest.recipient,
-    };
+    if (splitRequest) {
+      return {
+        balance: new PythBalance(splitRequest.amount),
+        recipient: splitRequest.recipient,
+      };
+    } else {
+      return undefined;
+    }
   }
 
   public async acceptSplit(
