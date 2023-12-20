@@ -1,26 +1,18 @@
 import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react'
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-  STAKING_ADDRESS,
-} from '@pythnetwork/staking'
+import { PythBalance, StakeAccount } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
-import { BN, Wallet } from '@coral-xyz/anchor'
+import { BN } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import { useStakeConnection } from 'hooks/useStakeConnection'
 
 const TWELVE_MONTHS = new BN(3600 * 24 * 365)
 const NUM_PERIODS = new BN(4)
 
 const CreateLockedAccount: NextPage = () => {
-  const { connection } = useConnection()
-  const anchorWallet = useAnchorWallet()
-
   const [owner, setOwner] = useState<PublicKey>()
   const [amount, setAmount] = useState<PythBalance>()
 
@@ -39,25 +31,8 @@ const CreateLockedAccount: NextPage = () => {
     }
   }
 
-  const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
+  const { data: stakeConnection } = useStakeConnection()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>()
-
-  useEffect(() => {
-    const initialize = async () => {
-      const stakeConnection = await StakeConnection.createStakeConnection(
-        connection,
-        anchorWallet as Wallet,
-        STAKING_ADDRESS
-      )
-      setStakeConnection(stakeConnection)
-    }
-
-    if (!anchorWallet) {
-      setStakeConnection(undefined)
-    } else {
-      initialize()
-    }
-  }, [anchorWallet])
 
   useEffect(() => {
     const loadStakeAccounts = async () => {

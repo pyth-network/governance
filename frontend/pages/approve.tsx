@@ -1,33 +1,24 @@
 import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import {
-  useAnchorWallet,
-  useConnection,
-  useWallet,
-} from '@solana/wallet-adapter-react'
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-  STAKING_ADDRESS,
-} from '@pythnetwork/staking'
+import { useAnchorWallet } from '@solana/wallet-adapter-react'
+import { StakeAccount } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
-import { Wallet } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useSplitRequest } from 'hooks/useSplitRequest'
 
 const ApproveSplit: NextPage = () => {
-  const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
-  const [amount, setAmount] = useState<PythBalance>()
-  const [recipient, setRecipient] = useState<PublicKey>()
 
-  const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>()
   const [selectedStakeAccount, setSelectStakeAccount] = useState<StakeAccount>()
+
+  const { data: splitRequest } = useSplitRequest(selectedStakeAccount)
+  const { data: stakeConnection } = useStakeConnection()
 
   const router = useRouter()
   const { owner } = router.query
@@ -40,23 +31,6 @@ const ApproveSplit: NextPage = () => {
       }
     }
   }
-
-  useEffect(() => {
-    const initialize = async () => {
-      const stakeConnection = await StakeConnection.createStakeConnection(
-        connection,
-        anchorWallet as Wallet,
-        STAKING_ADDRESS
-      )
-      setStakeConnection(stakeConnection)
-    }
-
-    if (!anchorWallet) {
-      setStakeConnection(undefined)
-    } else {
-      initialize()
-    }
-  }, [anchorWallet])
 
   useEffect(() => {
     const loadStakeAccounts = async () => {
@@ -73,36 +47,17 @@ const ApproveSplit: NextPage = () => {
   }, [stakeConnection])
 
   useEffect(() => {
-    const loadCurrentRequest = async () => {
-      if (stakeConnection && selectedStakeAccount) {
-        const request = await stakeConnection.getSplitRequest(
-          selectedStakeAccount
-        )
-
-        if (request) {
-          setAmount(request.balance)
-          setRecipient(request.recipient)
-        } else {
-          setAmount(undefined)
-          setRecipient(undefined)
-        }
-      }
-    }
-    loadCurrentRequest()
-  }, [selectedStakeAccount])
-
-  useEffect(() => {
     if (stakeAccounts && stakeAccounts.length > 0)
       setSelectStakeAccount(stakeAccounts[0])
   }, [stakeAccounts])
 
   const approveSplit = async () => {
-    if (stakeConnection && selectedStakeAccount && recipient && amount) {
+    if (stakeConnection && selectedStakeAccount && splitRequest) {
       try {
         await stakeConnection.acceptSplit(
           selectedStakeAccount,
-          amount,
-          recipient
+          splitRequest.balance,
+          splitRequest.recipient
         )
         toast.success('Successfully created transfer request')
       } catch (err) {
@@ -141,9 +96,15 @@ const ApproveSplit: NextPage = () => {
           ? `stake account address: ${selectedStakeAccount.address}`
           : 'no owner'}
       </p>
-      <p>{amount != undefined ? `amount: ${amount}` : 'no amount'}</p>
       <p>
-        {recipient != undefined ? `recipient: ${recipient}` : 'no recipient'}
+        {splitRequest != undefined
+          ? `amount: ${splitRequest.balance}`
+          : 'no amount'}
+      </p>
+      <p>
+        {splitRequest != undefined
+          ? `recipient: ${splitRequest.recipient}`
+          : 'no recipient'}
       </p>
       <button
         className="rounded-full p-2 hover:bg-hoverGray"
