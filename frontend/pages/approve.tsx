@@ -62,7 +62,7 @@ const ApproveSplit: NextPage = () => {
           splitRequest.recipient,
           ephemeralAccount
         )
-        toast.success('Successfully created transfer request')
+        toast.success('Successfully accepted transfer request')
       } catch (err) {
         toast.error(capitalizeFirstLetter(err.message))
       }
