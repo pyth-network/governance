@@ -13,7 +13,11 @@ const wallet = new NodeWallet(
   )
 )
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
-const provider = new AnchorProvider(connection, wallet, {})
+const provider = new AnchorProvider(
+  connection,
+  wallet,
+  AnchorProvider.defaultOptions()
+)
 const stakingProgram = new Program<Staking>(
   idl as Staking,
   STAKING_ADDRESS,
