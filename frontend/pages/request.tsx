@@ -1,25 +1,18 @@
 import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react'
-import {
-  PythBalance,
-  StakeAccount,
-  StakeConnection,
-  STAKING_ADDRESS,
-} from '@pythnetwork/staking'
+import { PythBalance, StakeAccount } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
-import { Wallet } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
+import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
+import { useSplitRequest } from 'hooks/useSplitRequest'
 
 const RequestSplit: NextPage = () => {
-  const { connection } = useConnection()
-  const anchorWallet = useAnchorWallet()
-
   const [recipient, setRecipient] = useState<PublicKey>()
-  const [amount, setAmount] = useState<PythBalance>()
+  const [balance, setBalance] = useState<PythBalance>()
 
   const handleSetRecipient = (event: any) => {
     try {
@@ -30,15 +23,16 @@ const RequestSplit: NextPage = () => {
   }
   const handleSetAmount = (event: any) => {
     try {
-      setAmount(PythBalance.fromString(event.target.value))
+      setBalance(PythBalance.fromString(event.target.value))
     } catch (e) {
-      setAmount(undefined)
+      setBalance(undefined)
     }
   }
 
-  const [stakeConnection, setStakeConnection] = useState<StakeConnection>()
-  const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>()
+  const { data: stakeConnection } = useStakeConnection()
+  const { data: stakeAccounts } = useStakeAccounts()
   const [selectedStakeAccount, setSelectStakeAccount] = useState<StakeAccount>()
+  const { data: initialSplitRequest } = useSplitRequest(selectedStakeAccount)
 
   const handleSelectStakeAccount = (event: any) => {
     for (const stakeAccount of stakeAccounts!) {
@@ -50,50 +44,14 @@ const RequestSplit: NextPage = () => {
   }
 
   useEffect(() => {
-    const initialize = async () => {
-      const stakeConnection = await StakeConnection.createStakeConnection(
-        connection,
-        anchorWallet as Wallet,
-        STAKING_ADDRESS
-      )
-      setStakeConnection(stakeConnection)
-    }
-
-    if (!anchorWallet) {
-      setStakeConnection(undefined)
+    if (initialSplitRequest) {
+      setRecipient(initialSplitRequest.recipient)
+      setBalance(initialSplitRequest.balance)
     } else {
-      initialize()
+      setRecipient(undefined)
+      setBalance(undefined)
     }
-  }, [anchorWallet])
-
-  useEffect(() => {
-    const loadStakeAccounts = async () => {
-      if (stakeConnection && anchorWallet) {
-        const stakeAccounts = await stakeConnection.getStakeAccounts(
-          anchorWallet.publicKey
-        )
-        setStakeAccounts(stakeAccounts)
-      } else {
-        setStakeAccounts(undefined)
-      }
-    }
-    loadStakeAccounts()
-  }, [stakeConnection])
-
-  useEffect(() => {
-    const loadCurrentRequest = async () => {
-      if (stakeConnection && selectedStakeAccount) {
-        const request = await stakeConnection.getSplitRequest(
-          selectedStakeAccount
-        )
-        if (request) {
-          setAmount(request.balance)
-          setRecipient(request.recipient)
-        }
-      }
-      loadCurrentRequest()
-    }
-  }, [selectedStakeAccount])
+  }, [initialSplitRequest])
 
   useEffect(() => {
     if (stakeAccounts && stakeAccounts.length > 0)
@@ -101,11 +59,11 @@ const RequestSplit: NextPage = () => {
   }, [stakeAccounts])
 
   const requestSplit = async () => {
-    if (stakeConnection && selectedStakeAccount && recipient && amount)
+    if (stakeConnection && selectedStakeAccount && recipient && balance)
       try {
         await stakeConnection.requestSplit(
           selectedStakeAccount,
-          amount,
+          balance,
           recipient
         )
         toast.success('Successfully created transfer request')
@@ -156,7 +114,7 @@ const RequestSplit: NextPage = () => {
             <input
               type="text"
               style={{ color: 'black' }}
-              value={amount ? amount.toString() : ''}
+              value={balance ? balance.toString() : ''}
               onChange={handleSetAmount}
             />
             <p className=" text-sm ">
@@ -165,12 +123,12 @@ const RequestSplit: NextPage = () => {
             </p>
             <p className=" text-sm ">
               Amount to be transferred:{' '}
-              {amount ? amount.toString() : 'Invalid amount to transfer'}
+              {balance ? balance.toString() : 'Invalid amount to transfer'}
             </p>
           </div>
         )}
 
-      {stakeConnection && recipient && amount ? (
+      {stakeConnection && recipient && balance ? (
         <p>
           <button
             className="rounded-full p-2 hover:bg-hoverGray"
