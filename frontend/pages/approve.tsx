@@ -78,10 +78,6 @@ const ApproveSplit: NextPage = () => {
           stakeAccounts !== undefined &&
           stakeAccounts.length > 0 && (
             <div>
-              <p className=" p-2 ">
-                Request a transfer of locked tokens to a new account
-              </p>
-
               <select
                 style={{ color: 'black' }}
                 value={selectedStakeAccount?.address.toString()}
