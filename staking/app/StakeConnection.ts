@@ -915,28 +915,40 @@ export class StakeConnection {
   public async acceptSplit(
     stakeAccount: StakeAccount,
     amount: PythBalance,
-    recipient: PublicKey
+    recipient: PublicKey,
+    ephemeralAccount: PublicKey | undefined = undefined
   ) {
-    const newStakeAccountKeypair = new Keypair();
+    if (ephemeralAccount) {
+      await this.program.methods
+        .acceptSplit(amount.toBN(), recipient)
+        .accounts({
+          sourceStakeAccountPositions: stakeAccount.address,
+          newStakeAccountPositions: ephemeralAccount,
+          mint: this.config.pythTokenMint,
+        })
+        .rpc();
+    } else {
+      const newStakeAccountKeypair = new Keypair();
 
-    const instructions = [];
-    instructions.push(
-      await this.program.account.positionData.createInstruction(
-        newStakeAccountKeypair,
-        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-      )
-    );
+      const instructions = [];
+      instructions.push(
+        await this.program.account.positionData.createInstruction(
+          newStakeAccountKeypair,
+          wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+        )
+      );
 
-    await this.program.methods
-      .acceptSplit(amount.toBN(), recipient)
-      .accounts({
-        sourceStakeAccountPositions: stakeAccount.address,
-        newStakeAccountPositions: newStakeAccountKeypair.publicKey,
-        mint: this.config.pythTokenMint,
-      })
-      .signers([newStakeAccountKeypair])
-      .preInstructions(instructions)
-      .rpc();
+      await this.program.methods
+        .acceptSplit(amount.toBN(), recipient)
+        .accounts({
+          sourceStakeAccountPositions: stakeAccount.address,
+          newStakeAccountPositions: newStakeAccountKeypair.publicKey,
+          mint: this.config.pythTokenMint,
+        })
+        .signers([newStakeAccountKeypair])
+        .preInstructions(instructions)
+        .rpc();
+    }
   }
 }
 export interface BalanceSummary {
