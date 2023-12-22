@@ -54,8 +54,9 @@ const ApproveSplit: NextPage = () => {
   const approveSplit = async () => {
     if (stakeConnection && selectedStakeAccount && splitRequest) {
       try {
-        const response = await fetch('/api/internal/create_ephemeral_account')
-        const ephemeralAccount = (await response.json()).publicKey
+        const ephemeralAccount = new PublicKey(
+          '5u9jTgPQnTGQH2qupkoHCQFweXn2kv7SzrvK9ouqUfYG'
+        )
         await stakeConnection.acceptSplit(
           selectedStakeAccount,
           splitRequest.balance,
