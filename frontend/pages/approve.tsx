@@ -55,7 +55,7 @@ const ApproveSplit: NextPage = () => {
     if (stakeConnection && selectedStakeAccount && splitRequest) {
       try {
         const ephemeralAccount = new PublicKey(
-          'FUYcu4W2pa2MuKhMTvbwsBYJS2kaLyJwwbQHkSeiSYjd'
+          'GmJg5NHSSnixPWBYa3gs3oX41vRewXPTLxcDcykajBM1'
         )
         await stakeConnection.acceptSplit(
           selectedStakeAccount,
