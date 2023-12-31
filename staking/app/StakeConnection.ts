@@ -926,7 +926,7 @@ export class StakeConnection {
   ) {
     if (ephemeralAccount) {
       const preInstructions = [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 120000 }),
         ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
       ];
 
