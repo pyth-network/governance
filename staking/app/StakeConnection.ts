@@ -15,7 +15,6 @@ import {
   Signer,
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
-  ComputeBudgetInstruction,
   ComputeBudgetProgram,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
