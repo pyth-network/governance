@@ -15,6 +15,7 @@ import {
   Signer,
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
 import {
@@ -880,8 +881,13 @@ export class StakeConnection {
     amount: PythBalance,
     recipient: PublicKey
   ) {
+    const preInstructions = [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
+    ];
     await this.program.methods
       .requestSplit(amount.toBN(), recipient)
+      .preInstructions(preInstructions)
       .accounts({
         stakeAccountPositions: stakeAccount.address,
       })
@@ -919,8 +925,14 @@ export class StakeConnection {
     ephemeralAccount: PublicKey | undefined = undefined
   ) {
     if (ephemeralAccount) {
+      const preInstructions = [
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
+      ];
+
       await this.program.methods
         .acceptSplit(amount.toBN(), recipient)
+        .preInstructions(preInstructions)
         .accounts({
           sourceStakeAccountPositions: stakeAccount.address,
           newStakeAccountPositions: ephemeralAccount,
