@@ -882,7 +882,7 @@ export class StakeConnection {
     recipient: PublicKey
   ) {
     const preInstructions = [
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 30000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
     ];
     await this.program.methods
