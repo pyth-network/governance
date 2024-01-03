@@ -975,6 +975,10 @@ export class StakeConnection {
     }
   }
 
+  /**
+   * This returns the current scaling factor between staked tokens and realms voter weight.
+   * The formula is n_staked_tokens = scaling_factor * n_voter_weight
+   */
   public getScalingFactor(): number {
     let currentEpoch = new BN(Date.now() / 1000).div(this.config.epochDuration);
     let currentAmountLocked = Number(
