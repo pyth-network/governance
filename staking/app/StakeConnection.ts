@@ -929,14 +929,17 @@ export class StakeConnection {
     amount: PythBalance,
     recipient: PublicKey
   ) {
-    const instructions = [];
+    const preInstructions = [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 120000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
+    ];
     const nonce = crypto.randomUUID();
     const ephemeralAccount = await PublicKey.createWithSeed(
       this.userPublicKey(),
       nonce,
       this.program.programId
     );
-    instructions.push(
+    preInstructions.push(
       SystemProgram.createAccountWithSeed({
         fromPubkey: this.userPublicKey(),
         newAccountPubkey: ephemeralAccount,
