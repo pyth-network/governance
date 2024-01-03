@@ -42,6 +42,7 @@ import { PositionAccountJs } from "./PositionAccountJs";
 import * as crypto from "crypto";
 let wasm = wasm2;
 export { wasm };
+
 interface ClosingItem {
   amount: BN;
   index: number;
@@ -606,6 +607,19 @@ export class StakeConnection {
     transfer: boolean = true
   ) {
     const transaction: Transaction = new Transaction();
+
+    //Forgive me, I didn't find a better way to check the enum variant
+    if (vestingSchedule.periodicVestingAfterListing) {
+      assert(vestingSchedule.periodicVestingAfterListing.initialBalance);
+      assert(
+        vestingSchedule.periodicVestingAfterListing.initialBalance.lte(
+          amount.toBN()
+        )
+      );
+    } else if (vestingSchedule.periodicVesting) {
+      assert(vestingSchedule.periodicVesting.initialBalance);
+      assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
+    }
 
     const stakeAccountKeypair = await this.withCreateAccount(
       transaction.instructions,
