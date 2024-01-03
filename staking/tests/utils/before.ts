@@ -490,7 +490,6 @@ export async function standardSetup(
   const temporaryConfig = { ...globalConfig };
   // User becomes a temporary dictator during setup
   temporaryConfig.governanceAuthority = user;
-  temporaryConfig.pdaAuthority = user;
 
   await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
