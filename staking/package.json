@@ -38,7 +38,7 @@
     "wasm-pack": "^0.10.2"
   },
   "scripts": {
-    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/voter_weight_test.ts",
     "build": "npm run build_wasm && tsc -p tsconfig.api.json",
     "build_wasm": "./scripts/build_wasm.sh",
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",

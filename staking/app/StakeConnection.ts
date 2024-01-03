@@ -132,8 +132,6 @@ export class StakeConnection {
       await program.provider.connection.getAccountInfo(
         votingProductMetadataAccount
       );
-    console.log(votingProductMetadataAccountData);
-    console.log(votingProductMetadataAccountData!.data);
     const votingAccountMetadataWasm = new wasm.WasmTargetMetadata(
       votingProductMetadataAccountData!.data
     );
@@ -976,9 +974,8 @@ export class StakeConnection {
         .rpc();
     }
   }
-
-  public async;
 }
+
 export interface BalanceSummary {
   withdrawable: PythBalance;
   // We may break this down into active, warmup, and cooldown in the future
