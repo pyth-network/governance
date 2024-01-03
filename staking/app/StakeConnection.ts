@@ -974,6 +974,16 @@ export class StakeConnection {
         .rpc();
     }
   }
+
+  public getScalingFactor(): number {
+    let currentEpoch = new BN(Date.now() / 1000).div(this.config.epochDuration);
+    let currentAmountLocked = Number(
+      this.votingAccountMetadataWasm.getCurrentAmountLocked(
+        BigInt(currentEpoch.toString())
+      )
+    );
+    return currentAmountLocked / Number(wasm.Constants.MAX_VOTER_WEIGHT());
+  }
 }
 
 export interface BalanceSummary {
