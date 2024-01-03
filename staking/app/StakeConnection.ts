@@ -16,6 +16,7 @@ import {
   Transaction,
   SYSVAR_CLOCK_PUBKEY,
   ComputeBudgetProgram,
+  SystemProgram,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
 import {
@@ -38,9 +39,9 @@ import {
 import { GOVERNANCE_ADDRESS, STAKING_ADDRESS } from "./constants";
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
+import * as crypto from "crypto";
 let wasm = wasm2;
 export { wasm };
-
 interface ClosingItem {
   amount: BN;
   index: number;
@@ -606,19 +607,6 @@ export class StakeConnection {
   ) {
     const transaction: Transaction = new Transaction();
 
-    //Forgive me, I didn't find a better way to check the enum variant
-    if (vestingSchedule.periodicVestingAfterListing) {
-      assert(vestingSchedule.periodicVestingAfterListing.initialBalance);
-      assert(
-        vestingSchedule.periodicVestingAfterListing.initialBalance.lte(
-          amount.toBN()
-        )
-      );
-    } else if (vestingSchedule.periodicVesting) {
-      assert(vestingSchedule.periodicVesting.initialBalance);
-      assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
-    }
-
     const stakeAccountKeypair = await this.withCreateAccount(
       transaction.instructions,
       owner,
@@ -925,48 +913,43 @@ export class StakeConnection {
   public async acceptSplit(
     stakeAccount: StakeAccount,
     amount: PythBalance,
-    recipient: PublicKey,
-    ephemeralAccount: PublicKey | undefined = undefined
+    recipient: PublicKey
   ) {
-    if (ephemeralAccount) {
-      const preInstructions = [
-        ComputeBudgetProgram.setComputeUnitLimit({ units: 120000 }),
-        ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
-      ];
+    const instructions = [];
+    const nonce = crypto.randomUUID();
+    const ephemeralAccount = await PublicKey.createWithSeed(
+      this.userPublicKey(),
+      nonce,
+      this.program.programId
+    );
+    instructions.push(
+      SystemProgram.createAccountWithSeed({
+        fromPubkey: this.userPublicKey(),
+        newAccountPubkey: ephemeralAccount,
+        basePubkey: this.userPublicKey(),
+        seed: nonce,
+        lamports:
+          await this.program.provider.connection.getMinimumBalanceForRentExemption(
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+          ),
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+        programId: this.program.programId,
+      })
+    );
 
-      await this.program.methods
-        .acceptSplit(amount.toBN(), recipient)
-        .preInstructions(preInstructions)
-        .accounts({
-          sourceStakeAccountPositions: stakeAccount.address,
-          newStakeAccountPositions: ephemeralAccount,
-          mint: this.config.pythTokenMint,
-        })
-        .rpc();
-    } else {
-      const newStakeAccountKeypair = new Keypair();
-
-      const instructions = [];
-      instructions.push(
-        await this.program.account.positionData.createInstruction(
-          newStakeAccountKeypair,
-          wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-        )
-      );
-
-      await this.program.methods
-        .acceptSplit(amount.toBN(), recipient)
-        .accounts({
-          sourceStakeAccountPositions: stakeAccount.address,
-          newStakeAccountPositions: newStakeAccountKeypair.publicKey,
-          mint: this.config.pythTokenMint,
-        })
-        .signers([newStakeAccountKeypair])
-        .preInstructions(instructions)
-        .rpc();
-    }
+    await this.program.methods
+      .acceptSplit(amount.toBN(), recipient)
+      .accounts({
+        sourceStakeAccountPositions: stakeAccount.address,
+        newStakeAccountPositions: ephemeralAccount,
+        mint: this.config.pythTokenMint,
+      })
+      .signers([])
+      .preInstructions(instructions)
+      .rpc();
   }
 }
+
 export interface BalanceSummary {
   withdrawable: PythBalance;
   // We may break this down into active, warmup, and cooldown in the future

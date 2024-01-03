@@ -3,7 +3,7 @@ import Layout from '../components/Layout'
 import SEO from '../components/SEO'
 import { PythBalance, StakeAccount } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
-import { PublicKey } from '@solana/web3.js'
+import { ComputeBudgetProgram, PublicKey } from '@solana/web3.js'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
@@ -61,13 +61,21 @@ const RequestSplit: NextPage = () => {
   const requestSplit = async () => {
     if (stakeConnection && selectedStakeAccount && recipient && balance)
       try {
-        await stakeConnection.requestSplit(
-          selectedStakeAccount,
-          balance,
-          recipient
-        )
+        console.log('requesting split')
+        const preInstructions = [
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+          ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
+        ]
+        await stakeConnection.program.methods
+          .requestSplit(balance.toBN(), recipient)
+          // .preInstructions(preInstructions)
+          .accounts({
+            stakeAccountPositions: selectedStakeAccount.address,
+          })
+          .rpc()
         toast.success('Successfully created transfer request')
       } catch (err) {
+        console.log(err)
         toast.error(capitalizeFirstLetter(err.message))
       }
   }

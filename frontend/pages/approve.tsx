@@ -54,14 +54,10 @@ const ApproveSplit: NextPage = () => {
   const approveSplit = async () => {
     if (stakeConnection && selectedStakeAccount && splitRequest) {
       try {
-        const ephemeralAccount = new PublicKey(
-          'GmJg5NHSSnixPWBYa3gs3oX41vRewXPTLxcDcykajBM1'
-        )
         await stakeConnection.acceptSplit(
           selectedStakeAccount,
           splitRequest.balance,
-          splitRequest.recipient,
-          ephemeralAccount
+          splitRequest.recipient
         )
         toast.success('Successfully accepted transfer request')
       } catch (err) {
