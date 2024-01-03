@@ -59,6 +59,7 @@ export class StakeConnection {
   configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
   votingProduct = { voting: {} };
+  votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
 
   private constructor(
@@ -66,7 +67,8 @@ export class StakeConnection {
     provider: AnchorProvider,
     config: GlobalConfig,
     configAddress: PublicKey,
-    votingProductMetadataAccount: PublicKey
+    votingProductMetadataAccount: PublicKey,
+    votingAccountMetadataWasm: any
   ) {
     this.program = program;
     this.provider = provider;
@@ -74,6 +76,7 @@ export class StakeConnection {
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress = GOVERNANCE_ADDRESS();
+    this.votingAccountMetadataWasm = votingAccountMetadataWasm;
   }
 
   public static async connect(
@@ -125,12 +128,23 @@ export class StakeConnection {
       )
     )[0];
 
+    const votingProductMetadataAccountData =
+      await program.provider.connection.getAccountInfo(
+        votingProductMetadataAccount
+      );
+    console.log(votingProductMetadataAccountData);
+    console.log(votingProductMetadataAccountData!.data);
+    const votingAccountMetadataWasm = new wasm.WasmTargetMetadata(
+      votingProductMetadataAccountData!.data
+    );
+
     return new StakeConnection(
       program,
       provider,
       config,
       configAddress,
-      votingProductMetadataAccount
+      votingProductMetadataAccount,
+      votingAccountMetadataWasm
     );
   }
 
@@ -882,7 +896,7 @@ export class StakeConnection {
     recipient: PublicKey
   ) {
     const preInstructions = [
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 20000 }),
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 30000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
     ];
     await this.program.methods
@@ -962,6 +976,8 @@ export class StakeConnection {
         .rpc();
     }
   }
+
+  public async;
 }
 export interface BalanceSummary {
   withdrawable: PythBalance;
