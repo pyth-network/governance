@@ -933,7 +933,7 @@ export class StakeConnection {
       ComputeBudgetProgram.setComputeUnitLimit({ units: 120000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
     ];
-    const nonce = crypto.randomUUID();
+    const nonce = crypto.randomBytes(16).toString("hex");
     const ephemeralAccount = await PublicKey.createWithSeed(
       this.userPublicKey(),
       nonce,
@@ -962,7 +962,7 @@ export class StakeConnection {
         mint: this.config.pythTokenMint,
       })
       .signers([])
-      .preInstructions(instructions)
+      .preInstructions(preInstructions)
       .rpc();
   }
 }
