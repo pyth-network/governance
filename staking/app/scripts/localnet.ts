@@ -39,7 +39,7 @@ async function main() {
       epochDuration: new BN(1),
       mockClockTime: new BN(10),
       freeze: false,
-      pdaAuthority: new PublicKey(0),
+      pdaAuthority: null,
       governanceProgram: new PublicKey(0),
       pythTokenListTime: null,
       agreementHash: getDummyAgreementHash(),

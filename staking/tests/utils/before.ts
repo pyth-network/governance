@@ -483,10 +483,13 @@ export async function standardSetup(
     globalConfig.pythGovernanceRealm = realm;
   }
 
+  if (globalConfig.pdaAuthority == null) {
+    globalConfig.pdaAuthority = user;
+  }
+
   const temporaryConfig = { ...globalConfig };
   // User becomes a temporary dictator during setup
   temporaryConfig.governanceAuthority = user;
-  temporaryConfig.pdaAuthority = user;
 
   await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
