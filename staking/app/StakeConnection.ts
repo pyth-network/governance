@@ -61,6 +61,7 @@ export class StakeConnection {
   configAddress: PublicKey;
   votingProductMetadataAccount: PublicKey;
   votingProduct = { voting: {} };
+  votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
 
   private constructor(
@@ -68,7 +69,8 @@ export class StakeConnection {
     provider: AnchorProvider,
     config: GlobalConfig,
     configAddress: PublicKey,
-    votingProductMetadataAccount: PublicKey
+    votingProductMetadataAccount: PublicKey,
+    votingAccountMetadataWasm: any
   ) {
     this.program = program;
     this.provider = provider;
@@ -76,6 +78,7 @@ export class StakeConnection {
     this.configAddress = configAddress;
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress = GOVERNANCE_ADDRESS();
+    this.votingAccountMetadataWasm = votingAccountMetadataWasm;
   }
 
   public static async connect(
@@ -127,12 +130,21 @@ export class StakeConnection {
       )
     )[0];
 
+    const votingProductMetadataAccountData =
+      await program.provider.connection.getAccountInfo(
+        votingProductMetadataAccount
+      );
+    const votingAccountMetadataWasm = new wasm.WasmTargetMetadata(
+      votingProductMetadataAccountData!.data
+    );
+
     return new StakeConnection(
       program,
       provider,
       config,
       configAddress,
-      votingProductMetadataAccount
+      votingProductMetadataAccount,
+      votingAccountMetadataWasm
     );
   }
 
@@ -964,6 +976,20 @@ export class StakeConnection {
       .signers([])
       .preInstructions(preInstructions)
       .rpc();
+  }
+
+  /**
+   * This returns the current scaling factor between staked tokens and realms voter weight.
+   * The formula is n_staked_tokens = scaling_factor * n_voter_weight
+   */
+  public getScalingFactor(): number {
+    let currentEpoch = new BN(Date.now() / 1000).div(this.config.epochDuration);
+    let currentAmountLocked = Number(
+      this.votingAccountMetadataWasm.getCurrentAmountLocked(
+        BigInt(currentEpoch.toString())
+      )
+    );
+    return currentAmountLocked / Number(wasm.Constants.MAX_VOTER_WEIGHT());
   }
 }
 
