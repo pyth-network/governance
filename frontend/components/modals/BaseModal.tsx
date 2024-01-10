@@ -15,7 +15,9 @@ export function BaseModal({
   title,
   children,
 }: BaseModalProps) {
-  const closeModal = () => setIsModalOpen(false)
+  const closeModal = () => {
+    console.log('CLOSING', title), setIsModalOpen(false)
+  }
 
   return (
     <Transition appear show={isModalOpen} as={Fragment}>

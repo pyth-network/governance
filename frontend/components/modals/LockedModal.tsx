@@ -12,6 +12,8 @@ import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { MainStakeAccount } from 'pages'
+import { useState } from 'react'
+import { LockedTokenActionModal } from './StakeLockedModal'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
@@ -41,39 +43,58 @@ export function LockedModal({
   const { nextVestingDate, nextVestingAmount = PythBalance.zero() } =
     nextVestingEvent ?? {}
 
-  return (
-    <BaseModal
-      title="Locked tokens"
-      isModalOpen={isLockedModalOpen}
-      setIsModalOpen={setIsLockedModalOpen}
-    >
-      <p className="mb-4">
-        You currently have {unvestedTotalPythBalance.toString()} locked tokens.{' '}
-        {nextVestingDate && !unvestedTotalPythBalance.isZero()
-          ? `${nextVestingAmount.toString()} tokens
-                      will unlock on ${nextVestingDate.toLocaleString()}.`
-          : null}
-        <br />
-        <br />
-        <LockedModalCurrentState
-          currentVestingAccountState={currentVestingAccountState}
-          unvestedLockedPythBalance={unvestedLockedPythBalance}
-          unvestedLockingPythBalance={unvestedLockingPythBalance}
-          unvestedUnlockedPythBalance={unvestedUnlockedPythBalance}
-          unvestedPreUnlockingPythBalance={unvestedPreUnlockingPythBalance}
-          unvestedUnlockingPythBalance={unvestedUnlockingPythBalance}
-          nextVestingAmount={nextVestingAmount}
-          nextVestingDate={nextVestingDate}
-        />
-      </p>
+  const [isStakeLockedModalOpen, setIsStakeLockedModalOpen] =
+    useState<boolean>(false)
+  const [isUnstakeLockedModalOpen, setIsUnstakeLockedModalOpen] =
+    useState<boolean>(false)
 
-      <div className="flex flex-col items-center  space-y-4 text-center md:block md:space-x-10">
-        <LockedModalButton
-          currentVestingAccountState={currentVestingAccountState}
-          mainStakeAccount={mainStakeAccount}
-        />
-      </div>
-    </BaseModal>
+  return (
+    <>
+      <LockedTokenActionModal
+        isStakeLockedModalOpen={isStakeLockedModalOpen}
+        setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
+        title={'Stake locked tokens'}
+        mainStakeAccount={mainStakeAccount}
+        balance={unv}
+        onAction={function (amount: string): void {
+          throw new Error('Function not implemented.')
+        }}
+      />
+      <BaseModal
+        title="Locked tokens"
+        isModalOpen={isLockedModalOpen}
+        setIsModalOpen={setIsLockedModalOpen}
+      >
+        <p className="mb-4">
+          You currently have {unvestedTotalPythBalance?.toString()} locked
+          tokens.{' '}
+          {nextVestingDate && !unvestedTotalPythBalance?.isZero()
+            ? `${nextVestingAmount?.toString()} tokens
+                      will unlock on ${nextVestingDate?.toLocaleString()}.`
+            : null}
+          <br />
+          <br />
+          <LockedModalCurrentState
+            currentVestingAccountState={currentVestingAccountState}
+            unvestedLockedPythBalance={unvestedLockedPythBalance}
+            unvestedLockingPythBalance={unvestedLockingPythBalance}
+            unvestedUnlockedPythBalance={unvestedUnlockedPythBalance}
+            unvestedPreUnlockingPythBalance={unvestedPreUnlockingPythBalance}
+            unvestedUnlockingPythBalance={unvestedUnlockingPythBalance}
+            nextVestingAmount={nextVestingAmount}
+            nextVestingDate={nextVestingDate}
+          />
+        </p>
+
+        <div className="flex flex-col items-center  space-y-4 text-center md:block md:space-x-10">
+          <LockedModalButton
+            currentVestingAccountState={currentVestingAccountState}
+            mainStakeAccount={mainStakeAccount}
+            setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
+          />
+        </div>
+      </BaseModal>
+    </>
   )
 }
 
@@ -173,7 +194,8 @@ type LockedModalButtonProps = {
 function LockedModalButton({
   currentVestingAccountState,
   mainStakeAccount,
-}: LockedModalButtonProps) {
+  setIsStakeLockedModalOpen,
+}: any) {
   if (mainStakeAccount === 'NA') return <></>
 
   switch (currentVestingAccountState) {
@@ -198,6 +220,7 @@ function LockedModalButton({
           <StakeAllButton
             currentVestingAccountState={currentVestingAccountState}
             mainStakeAccount={mainStakeAccount}
+            setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
           />
           <UnstakeAllButton
             currentVestingAccountState={currentVestingAccountState}
@@ -283,7 +306,8 @@ function UnstakeAllButton({
 function StakeAllButton({
   currentVestingAccountState,
   mainStakeAccount,
-}: LockedModalButtonProps) {
+  setIsStakeLockedModalOpen,
+}: any) {
   const { data: stakeConnection } = useStakeConnection()
   const unvestedLockAll = useUnvestedLockAllMutation()
 
@@ -291,12 +315,7 @@ function StakeAllButton({
     <button
       type="button"
       className="primary-btn min-w-[145px] px-8 py-3 text-base font-semibold  hover:bg-blueGemHover disabled:bg-valhalla"
-      onClick={() =>
-        unvestedLockAll.mutate({
-          mainStakeAccount: mainStakeAccount as StakeAccount,
-          stakeConnection: stakeConnection!,
-        })
-      }
+      onClick={() => setIsStakeLockedModalOpen(true)}
       disabled={
         currentVestingAccountState ==
           VestingAccountState.UnvestedTokensFullyLockedExceptCooldown ||
