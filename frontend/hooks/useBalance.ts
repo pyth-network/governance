@@ -62,7 +62,7 @@ export function useBalance(mainStakeAccount: MainStakeAccount) {
         unvestedLockedPythBalance: unvested.locked,
         unvestedPreUnlockingPythBalance: unvested.preunlocking,
         unvestedUnlockingPythBalance: unvested.unlocking,
-        unvestedUnlockedPythBalance: unvested.unlocking,
+        unvestedUnlockedPythBalance: unvested.unlocked,
       }
     },
     {
