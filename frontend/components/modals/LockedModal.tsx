@@ -29,16 +29,17 @@ export function LockedModal({
     useBalance(mainStakeAccount)
 
   const {
-    unvestedTotalPythBalance,
-    unvestedLockingPythBalance,
-    unvestedLockedPythBalance,
-    unvestedPreUnlockingPythBalance,
-    unvestedUnlockingPythBalance,
-    unvestedUnlockedPythBalance,
+    unvestedTotalPythBalance = PythBalance.zero(),
+    unvestedLockingPythBalance = PythBalance.zero(),
+    unvestedLockedPythBalance = PythBalance.zero(),
+    unvestedPreUnlockingPythBalance = PythBalance.zero(),
+    unvestedUnlockingPythBalance = PythBalance.zero(),
+    unvestedUnlockedPythBalance = PythBalance.zero(),
   } = balanceData ?? {}
 
   const { data: nextVestingEvent } = useNextVestingEvent(mainStakeAccount)
-  const { nextVestingDate, nextVestingAmount } = nextVestingEvent ?? {}
+  const { nextVestingDate, nextVestingAmount = PythBalance.zero() } =
+    nextVestingEvent ?? {}
 
   return (
     <BaseModal
@@ -47,31 +48,21 @@ export function LockedModal({
       setIsModalOpen={setIsLockedModalOpen}
     >
       <p className="mb-4">
-        You currently have {unvestedTotalPythBalance?.toString()} locked tokens.{' '}
-        {nextVestingDate && !unvestedTotalPythBalance?.isZero()
-          ? `${nextVestingAmount?.toString()} tokens
-                      will unlock on ${nextVestingDate?.toLocaleString()}.`
+        You currently have {unvestedTotalPythBalance.toString()} locked tokens.{' '}
+        {nextVestingDate && !unvestedTotalPythBalance.isZero()
+          ? `${nextVestingAmount.toString()} tokens
+                      will unlock on ${nextVestingDate.toLocaleString()}.`
           : null}
         <br />
         <br />
         <LockedModalCurrentState
           currentVestingAccountState={currentVestingAccountState}
-          unvestedLockedPythBalance={
-            unvestedLockedPythBalance ?? PythBalance.zero()
-          }
-          unvestedLockingPythBalance={
-            unvestedLockingPythBalance ?? PythBalance.zero()
-          }
-          unvestedUnlockedPythBalance={
-            unvestedUnlockedPythBalance ?? PythBalance.zero()
-          }
-          unvestedPreUnlockingPythBalance={
-            unvestedPreUnlockingPythBalance ?? PythBalance.zero()
-          }
-          unvestedUnlockingPythBalance={
-            unvestedUnlockingPythBalance ?? PythBalance.zero()
-          }
-          nextVestingAmount={nextVestingAmount ?? PythBalance.zero()}
+          unvestedLockedPythBalance={unvestedLockedPythBalance}
+          unvestedLockingPythBalance={unvestedLockingPythBalance}
+          unvestedUnlockedPythBalance={unvestedUnlockedPythBalance}
+          unvestedPreUnlockingPythBalance={unvestedPreUnlockingPythBalance}
+          unvestedUnlockingPythBalance={unvestedUnlockingPythBalance}
+          nextVestingAmount={nextVestingAmount}
           nextVestingDate={nextVestingDate}
         />
       </p>
