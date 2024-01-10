@@ -223,6 +223,8 @@ function LockedModalCurrentState({
 type LockedModalButtonProps = {
   currentVestingAccountState: VestingAccountState | undefined
   mainStakeAccount: MainStakeAccount
+  setIsStakeLockedModalOpen: (open: boolean) => void
+  setIsUnstakeLockedModalOpen: (open: boolean) => void
 }
 function LockedModalButton({
   currentVestingAccountState,
@@ -236,10 +238,7 @@ function LockedModalButton({
     case VestingAccountState.UnvestedTokensFullyLocked:
       return (
         <>
-          <PreliminaryUnstakeButton
-            currentVestingAccountState={currentVestingAccountState}
-            mainStakeAccount={mainStakeAccount}
-          />
+          <PreliminaryUnstakeButton mainStakeAccount={mainStakeAccount} />
           <UnstakeButton
             currentVestingAccountState={currentVestingAccountState}
             mainStakeAccount={mainStakeAccount}
@@ -268,9 +267,10 @@ function LockedModalButton({
 }
 
 function PreliminaryUnstakeButton({
-  currentVestingAccountState,
   mainStakeAccount,
-}: LockedModalButtonProps) {
+}: {
+  mainStakeAccount: MainStakeAccount
+}) {
   const { data: stakeConnection } = useStakeConnection()
   const unvestedPreUnlockAll = usePreunstakeLockedMutation()
 
@@ -295,7 +295,11 @@ function UnstakeButton({
   currentVestingAccountState,
   mainStakeAccount,
   setIsUnstakeLockedModalOpen,
-}: any) {
+}: {
+  currentVestingAccountState: VestingAccountState | undefined
+  mainStakeAccount: MainStakeAccount
+  setIsUnstakeLockedModalOpen: (open: boolean) => void
+}) {
   const { data: stakeConnection } = useStakeConnection()
 
   return (
@@ -338,9 +342,12 @@ function StakeAllButton({
   currentVestingAccountState,
   mainStakeAccount,
   setIsStakeLockedModalOpen,
-}: any) {
+}: {
+  currentVestingAccountState: VestingAccountState | undefined
+  mainStakeAccount: MainStakeAccount
+  setIsStakeLockedModalOpen: (open: boolean) => void
+}) {
   const { data: stakeConnection } = useStakeConnection()
-  const unvestedLockAll = useStakeLockedMutation()
 
   return (
     <button
