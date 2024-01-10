@@ -12,8 +12,8 @@ import { isSufficientBalance as isSufficientBalanceFn } from 'utils/isSufficient
 import { MainStakeAccount } from 'pages'
 
 type LockedTokenActionModal = {
-  isStakeLockedModalOpen: boolean
-  setIsStakeLockedModalOpen: (open: boolean) => void
+  isModalOpen: boolean
+  setIsModalOpen: (open: boolean) => void
   title: string
   mainStakeAccount: MainStakeAccount
   balance: PythBalance
@@ -21,8 +21,8 @@ type LockedTokenActionModal = {
 }
 
 export function LockedTokenActionModal({
-  isStakeLockedModalOpen,
-  setIsStakeLockedModalOpen,
+  isModalOpen,
+  setIsModalOpen,
   mainStakeAccount,
   title,
   balance,
@@ -39,8 +39,8 @@ export function LockedTokenActionModal({
   return (
     <BaseModal
       title={title}
-      isModalOpen={isStakeLockedModalOpen}
-      setIsModalOpen={setIsStakeLockedModalOpen}
+      isModalOpen={isModalOpen}
+      setIsModalOpen={setIsModalOpen}
     >
       {' '}
       <>

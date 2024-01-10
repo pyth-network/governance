@@ -22,9 +22,9 @@ export function useStakeLockedMutation() {
       stakeConnection: StakeConnection
       mainStakeAccount: StakeAccount
     }) => {
-      const unlockAmount = PythBalance.fromString(amount)
-      if (unlockAmount.gt(PythBalance.zero())) {
-        await stakeConnection.unlockTokens(mainStakeAccount, unlockAmount)
+      const stakedAmount = PythBalance.fromString(amount)
+      if (stakedAmount.gt(PythBalance.zero())) {
+        await stakeConnection.lockTokens(mainStakeAccount, stakedAmount)
         toast.success('Successfully staked!')
       } else {
         throw new Error('Amount must be greater than 0.')

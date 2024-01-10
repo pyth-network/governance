@@ -59,8 +59,8 @@ export function LockedModal({
   return (
     <>
       <LockedTokenActionModal
-        isStakeLockedModalOpen={isStakeLockedModalOpen}
-        setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
+        isModalOpen={isStakeLockedModalOpen}
+        setIsModalOpen={setIsStakeLockedModalOpen}
         title={'Stake locked tokens'}
         mainStakeAccount={mainStakeAccount}
         balance={unvestedUnlockedPythBalance}
@@ -74,8 +74,8 @@ export function LockedModal({
         }
       />
       <LockedTokenActionModal
-        isStakeLockedModalOpen={isUnstakeLockedModalOpen}
-        setIsStakeLockedModalOpen={setIsUnstakeLockedModalOpen}
+        isModalOpen={isUnstakeLockedModalOpen}
+        setIsModalOpen={setIsUnstakeLockedModalOpen}
         title={'Unstake locked tokens'}
         mainStakeAccount={mainStakeAccount}
         balance={lockedPythBalance
@@ -296,7 +296,6 @@ function UnstakeButton({
   setIsUnstakeLockedModalOpen,
 }: any) {
   const { data: stakeConnection } = useStakeConnection()
-  const unvestedUnlockAll = useUnvestedUnlockAllMutation()
 
   return (
     <button
