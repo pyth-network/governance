@@ -16,7 +16,7 @@ export function BaseModal({
   children,
 }: BaseModalProps) {
   const closeModal = () => {
-    console.log('CLOSING', title), setIsModalOpen(false)
+    setIsModalOpen(false)
   }
 
   return (
