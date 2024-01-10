@@ -231,7 +231,7 @@ function LockedModalButton({
   mainStakeAccount,
   setIsStakeLockedModalOpen,
   setIsUnstakeLockedModalOpen,
-}: any) {
+}: LockedModalButtonProps) {
   if (mainStakeAccount === 'NA') return <></>
 
   switch (currentVestingAccountState) {
@@ -251,7 +251,7 @@ function LockedModalButton({
     default:
       return (
         <>
-          <StakeAllButton
+          <StakeButton
             currentVestingAccountState={currentVestingAccountState}
             mainStakeAccount={mainStakeAccount}
             setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
@@ -338,7 +338,7 @@ function UnstakeButton({
   )
 }
 
-function StakeAllButton({
+function StakeButton({
   currentVestingAccountState,
   mainStakeAccount,
   setIsStakeLockedModalOpen,
