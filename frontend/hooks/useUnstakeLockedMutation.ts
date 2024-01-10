@@ -1,29 +1,40 @@
-import { StakeAccount, StakeConnection } from '@pythnetwork/staking'
+import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
 import { useMutation, useQueryClient } from 'react-query'
 import { StakeConnectionQueryKey } from './useStakeConnection'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
-export function useUnvestedPreUnlockAllMutation() {
+export function useUnstakeLockedMutation() {
   const queryClient = useQueryClient()
 
   return useMutation(
-    ['unlock-pre-all-unvested-mutation'],
+    ['unstake-locked-mutation'],
     async ({
+      amount,
       mainStakeAccount,
       stakeConnection,
     }: {
+      amount: string
       mainStakeAccount: StakeAccount
       stakeConnection: StakeConnection
     }) => {
-      await stakeConnection?.unlockBeforeVestingEvent(mainStakeAccount)
-      toast.success('Tokens have started unlocking.')
-      // TODO:
-      //   toast.success(
-      //     `${nextVestingAmount
-      //       ?.add(lockedPythBalance ?? PythBalance.zero())
-      //       .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
-      //   )
+      if (!amount) {
+        throw new Error('Please enter a valid amount!')
+      }
+      const stakedAmount = PythBalance.fromString(amount)
+      if (stakedAmount.gt(PythBalance.zero())) {
+        await stakeConnection.unlockTokensUnchecked(
+          mainStakeAccount,
+          stakedAmount
+        )
+        toast.success('Tokens have started unstaking!')
+      } else {
+        throw new Error('Amount must be greater than 0.')
+      }
     },
     {
       onSuccess() {

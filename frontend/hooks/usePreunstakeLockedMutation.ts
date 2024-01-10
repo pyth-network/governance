@@ -4,20 +4,26 @@ import { StakeConnectionQueryKey } from './useStakeConnection'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
-export function useUnvestedLockAllMutation() {
+export function usePreunstakeLockedMutation() {
   const queryClient = useQueryClient()
 
   return useMutation(
-    ['lock-all-unvested-mutation'],
+    ['preunstake-locked-mutation'],
     async ({
-      stakeConnection,
       mainStakeAccount,
+      stakeConnection,
     }: {
-      stakeConnection: StakeConnection
       mainStakeAccount: StakeAccount
+      stakeConnection: StakeConnection
     }) => {
-      await stakeConnection.lockAllUnvested(mainStakeAccount)
-      toast.success('Successfully opted into governance!')
+      await stakeConnection?.unlockBeforeVestingEvent(mainStakeAccount)
+      toast.success('Tokens have started unstaking.')
+      // TODO:
+      //   toast.success(
+      //     `${nextVestingAmount
+      //       ?.add(lockedPythBalance ?? PythBalance.zero())
+      //       .toString()} tokens have started unlocking. You will be able to withdraw them after ${nextVestingDate?.toLocaleString()}`
+      //   )
     },
     {
       onSuccess() {
