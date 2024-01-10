@@ -24,7 +24,6 @@ export function LockedTokenActionModal({
   isStakeLockedModalOpen,
   setIsStakeLockedModalOpen,
   title,
-  mainStakeAccount,
   balance,
   onAction,
 }: LockedTokenActionModal) {
@@ -37,7 +36,7 @@ export function LockedTokenActionModal({
   const isSufficientBalance = isSufficientBalanceFn(amount, balance)
   return (
     <BaseModal
-      title="Stake locked tokens"
+      title={title}
       isModalOpen={isStakeLockedModalOpen}
       setIsModalOpen={setIsStakeLockedModalOpen}
     >

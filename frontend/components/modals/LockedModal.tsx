@@ -5,7 +5,7 @@ import {
 } from '@pythnetwork/staking'
 import { BaseModal } from './BaseModal'
 import Tooltip from '@components/Tooltip'
-import { useUnvestedLockAllMutation } from 'hooks/useUnvestedLockAllMutation'
+import { useStakeLockedMutation } from 'hooks/useUnvestedLockAllMutation'
 import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMutation'
 import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation'
 import { useBalance } from 'hooks/useBalance'
@@ -27,6 +27,8 @@ export function LockedModal({
   currentVestingAccountState,
   mainStakeAccount,
 }: LockedModalProps) {
+  const { data: stakeConnection } = useStakeConnection()
+
   const { data: balanceData, isLoading: _isBalanceLoading } =
     useBalance(mainStakeAccount)
 
@@ -48,6 +50,8 @@ export function LockedModal({
   const [isUnstakeLockedModalOpen, setIsUnstakeLockedModalOpen] =
     useState<boolean>(false)
 
+  const stakeLockedMutation = useStakeLockedMutation()
+
   return (
     <>
       <LockedTokenActionModal
@@ -55,10 +59,15 @@ export function LockedModal({
         setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
         title={'Stake locked tokens'}
         mainStakeAccount={mainStakeAccount}
-        balance={unv}
-        onAction={function (amount: string): void {
-          throw new Error('Function not implemented.')
-        }}
+        balance={unvestedUnlockedPythBalance}
+        // These casts are safe because the button is disabled if the mainStakeAccount or stakeConnection is undefined
+        onAction={(amount) =>
+          stakeLockedMutation.mutate({
+            amount,
+            stakeConnection: stakeConnection!,
+            mainStakeAccount: mainStakeAccount as StakeAccount,
+          })
+        }
       />
       <BaseModal
         title="Locked tokens"
@@ -309,7 +318,7 @@ function StakeAllButton({
   setIsStakeLockedModalOpen,
 }: any) {
   const { data: stakeConnection } = useStakeConnection()
-  const unvestedLockAll = useUnvestedLockAllMutation()
+  const unvestedLockAll = useStakeLockedMutation()
 
   return (
     <button

@@ -1,23 +1,34 @@
-import { StakeAccount, StakeConnection } from '@pythnetwork/staking'
+import {
+  PythBalance,
+  StakeAccount,
+  StakeConnection,
+} from '@pythnetwork/staking'
 import { useMutation, useQueryClient } from 'react-query'
 import { StakeConnectionQueryKey } from './useStakeConnection'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
-export function useUnvestedLockAllMutation() {
+export function useStakeLockedMutation() {
   const queryClient = useQueryClient()
 
   return useMutation(
-    ['lock-all-unvested-mutation'],
+    ['stake-locked-mutation'],
     async ({
+      amount,
       stakeConnection,
       mainStakeAccount,
     }: {
+      amount: string
       stakeConnection: StakeConnection
       mainStakeAccount: StakeAccount
     }) => {
-      await stakeConnection.lockAllUnvested(mainStakeAccount)
-      toast.success('Successfully opted into governance!')
+      const unlockAmount = PythBalance.fromString(amount)
+      if (unlockAmount.gt(PythBalance.zero())) {
+        await stakeConnection.unlockTokens(mainStakeAccount, unlockAmount)
+        toast.success('Successfully staked!')
+      } else {
+        throw new Error('Amount must be greater than 0.')
+      }
     },
     {
       onSuccess() {
