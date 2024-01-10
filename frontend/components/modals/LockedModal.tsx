@@ -15,6 +15,7 @@ import { MainStakeAccount } from 'pages'
 import { useState } from 'react'
 import { AmountInput } from '@components/panels/components'
 import { validAmountChange } from 'utils/validAmountChange'
+import { useUnlockMutation } from 'hooks/useUnlockMutation'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
@@ -30,15 +31,6 @@ export function LockedModal({
 }: LockedModalProps) {
   const { data: balanceData, isLoading: _isBalanceLoading } =
     useBalance(mainStakeAccount)
-
-  const [amount, setAmount] = useState<string>('')
-  const handleAmountChange = (amount: string) => {
-    console.log(amount)
-    if (validAmountChange(amount)) {
-      console.log(validAmountChange(amount))
-      setAmount(amount)
-    }
-  }
 
   const {
     unvestedTotalPythBalance,
@@ -89,7 +81,6 @@ export function LockedModal({
       </p>
 
       <div className="flex flex-col items-center  space-y-4 text-center md:block md:space-x-10">
-        <AmountInput amount={amount} onAmountChange={handleAmountChange} />
         <LockedModalButton
           currentVestingAccountState={currentVestingAccountState}
           mainStakeAccount={mainStakeAccount}
@@ -280,7 +271,24 @@ function UnstakeAllButton({
         stakeConnection === undefined
       }
     >
-      Unstake all
+      {currentVestingAccountState ==
+        VestingAccountState.UnvestedTokensFullyUnlocked ||
+      currentVestingAccountState ==
+        VestingAccountState.UnvestedTokensFullyUnlockedExceptCooldown ? (
+        <Tooltip
+          content={
+            currentVestingAccountState ==
+            VestingAccountState.UnvestedTokensFullyUnlocked
+              ? "You don't have any locked tokens to unstake."
+              : 'Your tokens are in the process of being unstaked.'
+          }
+          className="m-4"
+        >
+          Unstake all
+        </Tooltip>
+      ) : (
+        'Unstake all'
+      )}
     </button>
   )
 }
