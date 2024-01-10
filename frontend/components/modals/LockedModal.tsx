@@ -6,7 +6,7 @@ import {
 import { BaseModal } from './BaseModal'
 import Tooltip from '@components/Tooltip'
 import { useStakeLockedMutation } from 'hooks/useStakeLockedMutation'
-import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMutation'
+import { usePreunstakeLockedMutation } from 'hooks/usePreunstakeLockedMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
@@ -272,7 +272,7 @@ function PreliminaryUnstakeButton({
   mainStakeAccount,
 }: LockedModalButtonProps) {
   const { data: stakeConnection } = useStakeConnection()
-  const unvestedPreUnlockAll = useUnvestedPreUnlockAllMutation()
+  const unvestedPreUnlockAll = usePreunstakeLockedMutation()
 
   return (
     <button
