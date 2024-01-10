@@ -165,8 +165,12 @@ function LockedModalCurrentState({
           locked tokens are in cooldown period.
           <br />
           <br />
-          Your {nextVestingAmount.toString()} tokens scheduled to unlock on{' '}
-          {nextVestingDate?.toLocaleString()} will be withdrawable.
+          {unvestedUnlockedPythBalance.gte(nextVestingAmount) && (
+            <>
+              Your {nextVestingAmount.toString()} tokens scheduled to unlock on{' '}
+              {nextVestingDate?.toLocaleString()} will be withdrawable.
+            </>
+          )}
           <br />
           <br />
         </>
@@ -197,8 +201,7 @@ function LockedModalCurrentState({
           {nextVestingDate?.toLocaleString()} to become withdrawable on unlock.
           <br />
           <br />
-          You may also choose to unstake all of your locked tokens, immediately
-          reducing your governance power.
+          You may also choose to unstake any number of locked token.
         </>
       )
     case VestingAccountState.UnvestedTokensFullyUnlocked:
