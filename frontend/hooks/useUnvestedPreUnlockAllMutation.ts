@@ -17,7 +17,7 @@ export function useUnvestedPreUnlockAllMutation() {
       stakeConnection: StakeConnection
     }) => {
       await stakeConnection?.unlockBeforeVestingEvent(mainStakeAccount)
-      toast.success('Tokens have started unlocking.')
+      toast.success('Tokens have started unstaking.')
       // TODO:
       //   toast.success(
       //     `${nextVestingAmount

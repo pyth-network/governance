@@ -5,16 +5,15 @@ import {
 } from '@pythnetwork/staking'
 import { BaseModal } from './BaseModal'
 import Tooltip from '@components/Tooltip'
-import { useStakeLockedMutation } from 'hooks/useUnvestedLockAllMutation'
+import { useStakeLockedMutation } from 'hooks/useStakeLockedMutation'
 import { useUnvestedPreUnlockAllMutation } from 'hooks/useUnvestedPreUnlockAllMutation'
-import { useUnvestedUnlockAllMutation } from 'hooks/useUnvestedUnlockAllMutation'
 import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { MainStakeAccount } from 'pages'
 import { useState } from 'react'
-import { LockedTokenActionModal } from './StakeLockedModal'
-import { useUnlockMutation } from 'hooks/useUnlockMutation'
+import { LockedTokenActionModal } from './LockedTokenActionModal'
+import { useUnstakeLockedMutation } from 'hooks/useUnstakeLockedMutation'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
@@ -54,7 +53,7 @@ export function LockedModal({
     useState<boolean>(false)
 
   const stakeLockedMutation = useStakeLockedMutation()
-  const unlockTokens = useUnlockMutation()
+  const unstakedLockedMutation = useUnstakeLockedMutation()
 
   return (
     <>
@@ -62,6 +61,7 @@ export function LockedModal({
         isModalOpen={isStakeLockedModalOpen}
         setIsModalOpen={setIsStakeLockedModalOpen}
         title={'Stake locked tokens'}
+        actionLabel="Stake"
         mainStakeAccount={mainStakeAccount}
         balance={unvestedUnlockedPythBalance}
         // These casts are safe because the button is disabled if the mainStakeAccount or stakeConnection is undefined
@@ -77,6 +77,7 @@ export function LockedModal({
         isModalOpen={isUnstakeLockedModalOpen}
         setIsModalOpen={setIsUnstakeLockedModalOpen}
         title={'Unstake locked tokens'}
+        actionLabel="Unstake"
         mainStakeAccount={mainStakeAccount}
         balance={lockedPythBalance
           .add(lockingPythBalance)
@@ -84,7 +85,7 @@ export function LockedModal({
           .add(unvestedLockingPythBalance)}
         // These casts are safe because the button is disabled if the mainStakeAccount or stakeConnection is undefined
         onAction={(amount) =>
-          unlockTokens.mutate({
+          unstakedLockedMutation.mutate({
             amount,
             stakeConnection: stakeConnection!,
             mainStakeAccount: mainStakeAccount as StakeAccount,
@@ -122,7 +123,7 @@ export function LockedModal({
             currentVestingAccountState={currentVestingAccountState}
             mainStakeAccount={mainStakeAccount}
             setIsStakeLockedModalOpen={setIsStakeLockedModalOpen}
-            setIsUnstakedLockedModalOpen={setIsUnstakeLockedModalOpen}
+            setIsUnstakeLockedModalOpen={setIsUnstakeLockedModalOpen}
           />
         </div>
       </BaseModal>
@@ -324,10 +325,10 @@ function UnstakeButton({
           }
           className="m-4"
         >
-          Unstake all
+          Unstake
         </Tooltip>
       ) : (
-        'Unstake all'
+        'Unstake'
       )}
     </button>
   )
@@ -363,10 +364,10 @@ function StakeAllButton({
           content="Your tokens are in the process of being unstaked."
           className="m-4"
         >
-          Stake all
+          Stake
         </Tooltip>
       ) : (
-        'Stake all'
+        'Stake'
       )}
     </button>
   )
