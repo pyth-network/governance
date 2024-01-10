@@ -40,7 +40,7 @@ Each PIP must be labeled as:
         - the election of the Pythian Council
         - the election of the Price Feed Council
         - the management of the Pyth DAO Treasury
-        - Exceptional council member replacement
+        - the exceptional replacement of a council member
     - Operational PIPs delegated to the Pythian Council involve:
         - the upgrade of the oracle program
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
