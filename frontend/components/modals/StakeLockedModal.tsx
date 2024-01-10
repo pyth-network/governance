@@ -23,10 +23,12 @@ type LockedTokenActionModal = {
 export function LockedTokenActionModal({
   isStakeLockedModalOpen,
   setIsStakeLockedModalOpen,
+  mainStakeAccount,
   title,
   balance,
   onAction,
 }: LockedTokenActionModal) {
+  console.log(title, balance.toString())
   const [amount, setAmount] = useState<string>('')
   const handleAmountChange = (amount: string) => {
     if (validAmountChange(amount)) setAmount(amount)
