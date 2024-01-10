@@ -34,8 +34,7 @@ export function LockedTokenActionModal({
   const handleAmountChange = (amount: string) => {
     if (validAmountChange(amount)) setAmount(amount)
   }
-  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
-    useStakeConnection()
+  const { data: stakeConnection } = useStakeConnection()
   const isSufficientBalance = isSufficientBalanceFn(amount, balance)
   return (
     <BaseModal
