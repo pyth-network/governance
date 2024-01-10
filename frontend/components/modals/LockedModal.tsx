@@ -12,10 +12,6 @@ import { useBalance } from 'hooks/useBalance'
 import { useNextVestingEvent } from 'hooks/useNextVestingEvent'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { MainStakeAccount } from 'pages'
-import { useState } from 'react'
-import { AmountInput } from '@components/panels/components'
-import { validAmountChange } from 'utils/validAmountChange'
-import { useUnlockMutation } from 'hooks/useUnlockMutation'
 
 export type LockedModalProps = {
   isLockedModalOpen: boolean
