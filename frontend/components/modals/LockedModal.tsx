@@ -53,7 +53,7 @@ export function LockedModal({
     useState<boolean>(false)
 
   const stakeLockedMutation = useStakeLockedMutation()
-  const unstakedLockedMutation = useUnstakeLockedMutation()
+  const unstakeLockedMutation = useUnstakeLockedMutation()
 
   return (
     <>
@@ -85,7 +85,7 @@ export function LockedModal({
           .add(unvestedLockingPythBalance)}
         // These casts are safe because the button is disabled if the mainStakeAccount or stakeConnection is undefined
         onAction={(amount) =>
-          unstakedLockedMutation.mutate({
+          unstakeLockedMutation.mutate({
             amount,
             stakeConnection: stakeConnection!,
             mainStakeAccount: mainStakeAccount as StakeAccount,
