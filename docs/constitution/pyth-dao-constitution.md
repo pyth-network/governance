@@ -1,6 +1,6 @@
 # [DRAFT] Pyth DAO Constitution Proposal
 
-# Terminology
+## Terminology
 
 - **Votable Token:** staked token in the governance contract
 - **Pyth Improvement Proposal (PIP)**
@@ -8,13 +8,14 @@
 - **Pyth Forum:** the system adopted by the DAO to manage PIP, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain
 - **Pythian Multisig Wallet:** smart contract wallet signed by the elected members of the Pythian Council
 - **Price Feed Multisig Wallet:** smart contract wallet signed by the elected members of the Price Feed Council
+- **Operations Wallet:** smart contract wallet used by council members to submit PIPs on-chain
 - **PGAS:** utility token exclusively used in the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
 - **Pyth DAO LLC Agreement:** ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi
 
-# Introduction
+## Introduction
 
-This Constitution describes the decision-making framework for the Pyth DAO and the governing framework for the holders of $PYTH. 
+This Constitution describes the decision-making framework for the Pyth DAO and the governing framework for the holders of $PYTH.
 
 Rules and procedures in this Constitution will be generally enforced through on-chain contracts and the associated parameters, unless specified by the Pyth DAO for actuation off-chain.
 
@@ -22,39 +23,39 @@ The Pyth DAO is legally structured as “Pyth DAO LLC” (of which the OPERATING
 
 ![pyth_dao.light.png](diagrams/pyth_dao.light.png)
 
-# Pyth DAO Governance Procedures
+## Pyth DAO Governance Procedures
 
-## Pyth Improvement Proposals
+### Pyth Improvement Proposals
 
 Pyth Improvement Proposals (”PIPs”) are the primary methods to introduce, discuss and implement changes to the Pyth DAO constitution, governance and operations.
 
-## PIP Types
+### PIP Types
 
 Each PIP must be labeled as:
 
 - Constitutional PIPs are voted on by the Pyth DAO and they involve:
-    - the upgrade of the Governance, Staking or Multisig programs
-    - the amendment of this Constitution
+  - the upgrade of the Governance, Staking or Multisig programs
+  - the amendment of this Constitution
 - Operational PIPs that are either voted on by the Pyth DAO or delegated to one of the two Councils.
-    - Operational PIPs that are voted on by the Pyth DAO:
+  - Operational PIPs that are voted on by the Pyth DAO:
         - the election of the Pythian Council
         - the election of the Price Feed Council
         - the management of the Pyth DAO Treasury
         - the exceptional replacement of a council member
-    - Operational PIPs delegated to the Pythian Council involve:
+  - Operational PIPs delegated to the Pythian Council involve:
         - the upgrade of the oracle program
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
         - the setting of data request fees per blockchain
         - the management of PGAS allocation and delegation to validators
-    - Operational PIPs delegated to the Price Feed Council involve:
+  - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
 
-## PIP Process
+### PIP Process
 
 No PIP may be in violation of any of terms of the Pyth DAO LLC Agreement, or any applicable laws, in particular sanctions-related regulations.
 
-End to end process length: 7 days
+The end to end process length is 7 days.
 
 1. **Proposal Submission**
 
@@ -65,6 +66,8 @@ A PIP is submitted through a structured process via the **Pyth Forum** (e.g. Git
 - Key Terms - technical and/or commercial associated with the PIP
 - Implementation Plan - steps envisioned to implement the PIP, including resources needed for each step and timelines. The implementation plan may include binding on-chain actions that will automatically execute when the PIP passes.
 
+A council member uses the Operations Wallet to submit the proposed PIP on-chain.
+
 2. **DAO Voting on formal PIP (7 days)**
 
 The Pyth DAO is able to vote directly on-chain on the completed PIP during 7 days. The PIP passes if the following condition is met:
@@ -74,13 +77,13 @@ The Pyth DAO is able to vote directly on-chain on the completed PIP during 7 day
 
 3. **Implementation**
 
-The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. 
+The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step.
 
-# Council Election Process
+## Council Election Process
 
 1. **The Pythian Council**
 
-The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet, which has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council require 6-of-8 approval
+The Pythian Council is made of 9 members who are signers of the Pythian Multisig Wallet, including the Operations Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council require 7-of-9 approval. The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
 The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.  
 
@@ -103,7 +106,7 @@ In the event of a member needing to be exceptionally replaced outside of schedul
 
 2. **The Price Feed Council**
 
-The Price Feed Council is made of 7 members who are signers of the Price Feed Multisig Wallet, which has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Price Feed Council require 4-of-7 approval.
+The Price Feed Council is made of 8 members who are signers of the Price Feed Multisig Wallet, including the Operations Wallet. The Price Feed Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Price Feed Council require 5-of-8 approval. The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
 The first election of the Price Feed Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 3 members of its cohort of 7 members.
 
@@ -124,7 +127,7 @@ The following process governs the election that starts at time T:
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Price Feed Council will be offered membership in the Price Feed Council.
 
-# Community Values
+## Community Values
 
 The Pyth DAO is built on the principles of ownership and governance. Its members work together to achieve common goals, and they share in the success of Pyth. As such, the guiding values of the Pyth DAO should be:
 
