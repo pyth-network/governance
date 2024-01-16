@@ -68,7 +68,7 @@ A PIP is submitted through a structured process via the **Pyth Forum** (e.g. Git
 
 Once the proposed PIP is reviewed, a member of the council responsible for the PIP uses the corresponding Operations Wallet to submit the proposed PIP on-chain.
 
-1. **DAO Voting on formal PIP (7 days)**
+2. **DAO Voting on formal PIP (7 days)**
 
 The Pyth DAO is able to vote directly on-chain on the submitted PIP during 7 days. The PIP passes if the following condition is met:
 
