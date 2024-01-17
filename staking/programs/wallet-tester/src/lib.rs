@@ -1,20 +1,18 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::entrypoint::ProgramResult,
-};
+use anchor_lang::prelude::*;
 
 declare_id!("tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz");
 
 #[program]
 pub mod wallet_tester {
     use super::*;
-    pub fn test_withdraw(_: Context<TestWithdraw>) -> ProgramResult {
+
+    pub fn test(ctx: Context<Test>) -> Result<()> {
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct TestWithdraw<'info> {
+pub struct Test<'info> {
     #[account(mut)]
     payer:          Signer<'info>,
     /// CHECK: this is just a receipt account without any data

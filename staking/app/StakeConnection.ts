@@ -1003,7 +1003,7 @@ export class StakeConnection {
       WALLET_TESTER_ADDRESS,
       this.provider
     );
-    await walletTester.methods.testWithdraw().rpc();
+    await walletTester.methods.test().rpc();
   }
 }
 
