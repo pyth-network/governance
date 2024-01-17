@@ -1,20 +1,17 @@
+//! Wallet tester program
+//!
+//! This is just program that is used to test that a wallet can send a transaction to a program
+//! It's used so that future recipients of locked tokens can test before they receive the tokens
+#![allow(clippy::result_large_err)]
 use anchor_lang::prelude::*;
 
 declare_id!("tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz");
 
-
 #[program]
-/**
- * The sole goal of this program
- * is for owners of locked Pyth tokens
- * to be able to test their wallet setup
- * to make sure it's compatible with the frontend
- * and contract calls
- */
 pub mod wallet_tester {
     use super::*;
 
-    pub fn test(ctx: Context<Test>) -> Result<()> {
+    pub fn test(_ctx: Context<Test>) -> Result<()> {
         Ok(())
     }
 }
