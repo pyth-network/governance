@@ -38,23 +38,16 @@ describe("wallet tester", async () => {
   });
 
   it("tests a wallet", async () => {
-    const receiptAddress: PublicKey = PublicKey.findProgramAddressSync(
-      [stakeConnection.userPublicKey().toBytes()],
-      WALLET_TESTER_ADDRESS
-    )[0];
-    let receipt = await stakeConnection.provider.connection.getAccountInfo(
-      receiptAddress
+    assert(
+      !(await stakeConnection.walletHasTested(stakeConnection.userPublicKey()))
     );
-    assert(receipt === null);
     await stakeConnection.testWallet();
-    receipt = await stakeConnection.provider.connection.getAccountInfo(
-      receiptAddress
+    assert(
+      await stakeConnection.walletHasTested(stakeConnection.userPublicKey())
     );
-    assert(receipt !== null);
     await stakeConnection.testWallet();
-    receipt = await stakeConnection.provider.connection.getAccountInfo(
-      receiptAddress
+    assert(
+      await stakeConnection.walletHasTested(stakeConnection.userPublicKey())
     );
-    assert(receipt !== null);
   });
 });

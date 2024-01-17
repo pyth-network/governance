@@ -1005,6 +1005,17 @@ export class StakeConnection {
     );
     await walletTester.methods.test().rpc();
   }
+
+  public async walletHasTested(wallet: PublicKey): Promise<boolean> {
+    const receiptAddress: PublicKey = PublicKey.findProgramAddressSync(
+      [wallet.toBytes()],
+      WALLET_TESTER_ADDRESS
+    )[0];
+    const receipt = await this.provider.connection.getAccountInfo(
+      receiptAddress
+    );
+    return receipt !== null;
+  }
 }
 
 export interface BalanceSummary {
