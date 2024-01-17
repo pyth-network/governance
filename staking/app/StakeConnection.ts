@@ -29,6 +29,7 @@ import BN from "bn.js";
 import * as idljs from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import IDL from "../target/idl/staking.json";
+import * as WalletTesterIDL from "../target/idl/wallet_tester.json";
 import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
 import {
@@ -36,7 +37,11 @@ import {
   PROGRAM_VERSION_V2,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
-import { GOVERNANCE_ADDRESS, STAKING_ADDRESS } from "./constants";
+import {
+  GOVERNANCE_ADDRESS,
+  STAKING_ADDRESS,
+  WALLET_TESTER_ADDRESS,
+} from "./constants";
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
 import * as crypto from "crypto";
@@ -990,6 +995,26 @@ export class StakeConnection {
       )
     );
     return currentAmountLocked / Number(wasm.Constants.MAX_VOTER_WEIGHT());
+  }
+
+  public async testWallet(): Promise<void> {
+    const walletTester = new Program(
+      WalletTesterIDL as Idl,
+      WALLET_TESTER_ADDRESS,
+      this.provider
+    );
+    await walletTester.methods.test().rpc();
+  }
+
+  public async walletHasTested(wallet: PublicKey): Promise<boolean> {
+    const receiptAddress: PublicKey = PublicKey.findProgramAddressSync(
+      [wallet.toBytes()],
+      WALLET_TESTER_ADDRESS
+    )[0];
+    const receipt = await this.provider.connection.getAccountInfo(
+      receiptAddress
+    );
+    return receipt !== null;
   }
 }
 

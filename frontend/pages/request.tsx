@@ -34,6 +34,18 @@ const RequestSplit: NextPage = () => {
   const [selectedStakeAccount, setSelectStakeAccount] = useState<StakeAccount>()
   const { data: initialSplitRequest } = useSplitRequest(selectedStakeAccount)
 
+  const [hasTested, setHasTested] = useState<boolean>(false)
+
+  useEffect(() => {
+    const loadWalletHasTested = async () => {
+      if (stakeConnection && recipient) {
+        const tested = await stakeConnection.walletHasTested(recipient)
+        setHasTested(tested)
+      }
+    }
+    loadWalletHasTested()
+  }, [recipient])
+
   const handleSelectStakeAccount = (event: any) => {
     for (const stakeAccount of stakeAccounts!) {
       if (stakeAccount.address.toString() === event.target.value) {
@@ -110,6 +122,11 @@ const RequestSplit: NextPage = () => {
               value={recipient ? recipient.toString() : ''}
               onChange={handleSetRecipient}
             />
+            <p>
+              {hasTested
+                ? '✅ This recipient is compatible with WalletConnect'
+                : '❗This recipient has not tested Wallet Connect, please proceed with caution'}
+            </p>
             <p className=" text-sm ">Amount</p>
             <input
               type="text"

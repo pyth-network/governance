@@ -1,0 +1,15 @@
+[package]
+name = "wallet-tester"
+version = "1.0.0"
+description = "Created with Anchor"
+edition = "2018"
+
+[features]
+mock-clock = []
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "wallet_tester"
+
+[dependencies]
+anchor-lang = {version ="0.24.2", features = ["init-if-needed"]}
