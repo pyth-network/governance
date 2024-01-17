@@ -45,6 +45,7 @@ export interface AnchorConfig {
     binary_path: string;
     governance_path: string;
     chat_path: string;
+    wallet_tester_path: string;
   };
   provider: {
     cluster: string;
@@ -55,6 +56,7 @@ export interface AnchorConfig {
       staking: string;
       governance: string;
       chat: string;
+      wallet_tester: string;
     };
   };
   validator: {
@@ -181,9 +183,11 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     config.programs.localnet.governance
   } ${config.path.governance_path} --bpf-program ${
     config.programs.localnet.chat
-  } ${
-    config.path.chat_path
-  } --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -ud`;
+  } ${config.path.chat_path}  --bpf-program ${
+    config.programs.localnet.wallet_tester
+  } ${config.path.wallet_tester_path}
+
+  --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -ud`;
 
   const { controller, connection } = await startValidatorRaw(
     portNumber,

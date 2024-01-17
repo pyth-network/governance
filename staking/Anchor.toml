@@ -4,20 +4,24 @@ anchor_version = "0.24.1"
 seeds = true
 
 [workspace]
-members = ["programs/staking"]
+members = ["programs/staking", "programs/wallet-tester"]
 
 [programs.localnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
+wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 
 [programs.devnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
+wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 
 [programs.mainnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
+wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
+
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -37,3 +41,4 @@ idl_path = "./target/idl/staking.json"
 binary_path = "./target/deploy/staking.so"
 governance_path = "./target/deploy/governance.so"
 chat_path = "./target/deploy/chat.so"
+wallet_tester_path = "./target/deploy/wallet_tester.so"
