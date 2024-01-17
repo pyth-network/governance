@@ -58,7 +58,7 @@ const Test: NextPage = () => {
           </p>
         ) : stakeConnection && hasTested ? (
           <Description>
-            This wallet has already been tested succesfully.
+            Your wallet has already been tested succesfully.
           </Description>
         ) : (
           <p className="p-2 hover:bg-hoverGray"> Please connect you wallet</p>
