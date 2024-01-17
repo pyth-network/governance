@@ -23,6 +23,20 @@ const ApproveSplit: NextPage = () => {
   const router = useRouter()
   const { owner } = router.query
 
+  const [hasTested, setHasTested] = useState<boolean>(false)
+
+  useEffect(() => {
+    const loadWalletHasTested = async () => {
+      if (stakeConnection && splitRequest) {
+        const tested = await stakeConnection.walletHasTested(
+          splitRequest.recipient
+        )
+        setHasTested(tested)
+      }
+    }
+    loadWalletHasTested()
+  }, [splitRequest])
+
   const handleSelectStakeAccount = (event: any) => {
     for (const stakeAccount of stakeAccounts!) {
       if (stakeAccount.address.toString() === event.target.value) {
@@ -101,6 +115,11 @@ const ApproveSplit: NextPage = () => {
         {splitRequest != undefined
           ? `recipient: ${splitRequest.recipient}`
           : 'no recipient'}
+      </p>
+      <p>
+        {hasTested
+          ? '✅ This recipient is compatible with WalletConnect'
+          : '❗This recipient has not tested Wallet Connect, please proceed with caution'}
       </p>
       <button
         className="rounded-full p-2 hover:bg-hoverGray"
