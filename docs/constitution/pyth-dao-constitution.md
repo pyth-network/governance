@@ -37,19 +37,9 @@ Each PIP must be labeled as:
   - the upgrade of the Governance, Staking or Multisig programs
   - the amendment of this Constitution
 - Operational PIPs that are either voted on by the Pyth DAO or delegated to one of the two Councils.
-  - Operational PIPs that are voted on by the Pyth DAO:
-        - the election of the Pythian Council
-        - the election of the Price Feed Council
-        - the management of the Pyth DAO Treasury
-        - the exceptional replacement of a council member
-  - Operational PIPs delegated to the Pythian Council involve:
-        - the upgrade of the oracle program
-        - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
-        - the setting of data request fees per blockchain
-        - the management of PGAS allocation and delegation to validators
-  - Operational PIPs delegated to the Price Feed Council involve:
-        - the management of the list of price feeds available through Pyth
-        - the selection of publishers and the setting of the minimum number of such publishers per price feed
+  - Operational PIPs that are voted on by the Pyth DAO: - the election of the Pythian Council - the election of the Price Feed Council - the management of the Pyth DAO Treasury - the exceptional replacement of a council member
+  - Operational PIPs delegated to the Pythian Council involve: - the upgrade of the oracle program - the upgrade of the verification program for each of the blockchains where Pyth data is accessible - the setting of data request fees per blockchain - the management of PGAS allocation and delegation to validators
+  - Operational PIPs delegated to the Price Feed Council involve: - the management of the list of price feeds available through Pyth - the selection of publishers and the setting of the minimum number of such publishers per price feed
 
 ### PIP Process
 
@@ -83,9 +73,9 @@ The PIP is then fully executed and implemented. Any on-chain actions in the impl
 
 1. **The Pythian Council**
 
-The Pythian Council is made of 9 members who are signers of the Pythian Multisig Wallet, including the Operations Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council require 7-of-9 approval. The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
+The Pythian Council is made of 9 members who are signers of the Pythian Multisig Wallet, including the Operations Wallet. The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council require 7-of-9 approval. The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
-The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.  
+The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
 
 The 4 members to remain are selected given the following cascading criteria:
 
@@ -95,7 +85,7 @@ The 4 members to remain are selected given the following cascading criteria:
 
 unless such member decides to step down from the Pythian Council.
 
-Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election. 
+Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
 The following process governs the election that starts at time T:
 
@@ -118,7 +108,7 @@ The 3 members to remain are selected given the following cascading criteria:
 
 unless such member decides to step down from the Pythian Council.
 
-Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election. 
+Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
 The following process governs the election that starts at time T:
 
