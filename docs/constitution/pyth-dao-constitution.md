@@ -8,7 +8,7 @@
 - **Pyth Forum:** the system adopted by the DAO to manage PIP, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain
 - **Pythian Multisig Wallet:** smart contract wallet signed by the elected members of the Pythian Council
 - **Price Feed Multisig Wallet:** smart contract wallet signed by the elected members of the Price Feed Council
-- **Operations Wallet:** smart contract wallet used by council members to submit PIPs on-chain. Each council has access to a dedicated and separate Operations Wallet.
+- **Operations Wallet:** wallet used by council members to submit PIPs on-chain. Each council has access to a dedicated and separate Operations Wallet. This shared wallet can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token exclusively used in the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
 - **Pyth DAO LLC Agreement:** ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi
@@ -66,7 +66,9 @@ A PIP is submitted through a structured process via the **Pyth Forum** (e.g. Git
 - Key Terms - technical and/or commercial associated with the PIP
 - Implementation Plan - steps envisioned to implement the PIP, including resources needed for each step and timelines. The implementation plan may include binding on-chain actions that will automatically execute when the PIP passes.
 
-Once the proposed PIP is reviewed, a member of the council responsible for the PIP uses the corresponding Operations Wallet to submit the proposed PIP on-chain.
+The requirements for formally proposing a proposal to the on-chain governance program are:
+- For a proposal voted on by the Pyth DAO, the proposer needs to hold at least 0.25% of the current Votable Tokens.
+- For a proposal voted on by a council, a members of such council needs to propose it.
 
 2. **DAO Voting on formal PIP (7 days)**
 
