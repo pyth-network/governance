@@ -68,7 +68,7 @@ A PIP is submitted through a structured process via the **Pyth Forum** (e.g. Git
 
 The requirements for formally proposing a proposal to the on-chain governance program are:
 - For a proposal voted on by the Pyth DAO, the proposer needs to hold at least 0.25% of the current Votable Tokens.
-- For a proposal voted on by a council, a member of such council (potentially the operational wallet) needs to propose it.
+- For a proposal voted on by a council, a member of such council needs to propose it.
 
 2. **DAO Voting on formal PIP (7 days)**
 
