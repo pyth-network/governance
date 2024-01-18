@@ -4,3 +4,4 @@ staking/target
 staking/lib
 wasm
 staking/app/keypairs
+docs/pyth-dao-constitution.md
