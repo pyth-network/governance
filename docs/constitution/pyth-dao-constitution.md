@@ -85,7 +85,7 @@ The PIP is then fully executed and implemented. Any on-chain actions in the impl
 
 The Pythian Council is made of 9 members who are signers of the Pythian Multisig Wallet, including the Operations Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council require 7-of-9 approval. The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
-The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.  
+The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
 
 The 4 members to remain are selected given the following cascading criteria:
 
@@ -95,7 +95,7 @@ The 4 members to remain are selected given the following cascading criteria:
 
 unless such member decides to step down from the Pythian Council.
 
-Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election. 
+Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
 The following process governs the election that starts at time T:
 
@@ -118,7 +118,7 @@ The 3 members to remain are selected given the following cascading criteria:
 
 unless such member decides to step down from the Pythian Council.
 
-Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election. 
+Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
 The following process governs the election that starts at time T:
 
