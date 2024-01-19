@@ -114,6 +114,14 @@ function getIdentityFromString(
   ecosystem: Ecosystem
 ): IdlTypes<Profile>["Identity"] {
   if (ecosystem === "evm") {
-    return { evm: { pubkey: Array.from(Buffer.from(string.slice(2), "hex")) } };
+    try {
+      const evmPubkey = Array.from(Buffer.from(string.slice(2), "hex"));
+      if (evmPubkey.length !== 20) {
+        throw new Error("Invalid length.");
+      }
+      return { evm: { pubkey: evmPubkey } };
+    } catch (e) {
+      throw new Error("Your EVM address is invalid.");
+    }
   }
 }
