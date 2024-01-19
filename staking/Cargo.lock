@@ -884,6 +884,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "profile"
+version = "1.0.0"
+dependencies = [
+ "anchor-lang",
+]
+
+[[package]]
 name = "pyth-staking-program"
 version = "1.0.0"
 dependencies = [

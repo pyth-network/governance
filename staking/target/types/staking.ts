@@ -1721,19 +1721,19 @@ export type Staking = {
             "name": "PeriodicVesting",
             "fields": [
               {
-                "name": "initial_balance",
+                "name": "initialBalance",
                 "type": "u64"
               },
               {
-                "name": "start_date",
+                "name": "startDate",
                 "type": "i64"
               },
               {
-                "name": "period_duration",
+                "name": "periodDuration",
                 "type": "u64"
               },
               {
-                "name": "num_periods",
+                "name": "numPeriods",
                 "type": "u64"
               }
             ]
@@ -1742,15 +1742,15 @@ export type Staking = {
             "name": "PeriodicVestingAfterListing",
             "fields": [
               {
-                "name": "initial_balance",
+                "name": "initialBalance",
                 "type": "u64"
               },
               {
-                "name": "period_duration",
+                "name": "periodDuration",
                 "type": "u64"
               },
               {
-                "name": "num_periods",
+                "name": "numPeriods",
                 "type": "u64"
               }
             ]
@@ -3692,19 +3692,19 @@ export const IDL: Staking = {
             "name": "PeriodicVesting",
             "fields": [
               {
-                "name": "initial_balance",
+                "name": "initialBalance",
                 "type": "u64"
               },
               {
-                "name": "start_date",
+                "name": "startDate",
                 "type": "i64"
               },
               {
-                "name": "period_duration",
+                "name": "periodDuration",
                 "type": "u64"
               },
               {
-                "name": "num_periods",
+                "name": "numPeriods",
                 "type": "u64"
               }
             ]
@@ -3713,15 +3713,15 @@ export const IDL: Staking = {
             "name": "PeriodicVestingAfterListing",
             "fields": [
               {
-                "name": "initial_balance",
+                "name": "initialBalance",
                 "type": "u64"
               },
               {
-                "name": "period_duration",
+                "name": "periodDuration",
                 "type": "u64"
               },
               {
-                "name": "num_periods",
+                "name": "numPeriods",
                 "type": "u64"
               }
             ]
