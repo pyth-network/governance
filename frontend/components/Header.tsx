@@ -35,7 +35,9 @@ const Header = () => {
           <Link href="/profile">
             <a
               className={
-                router.pathname == '/profile' ? 'nav-link font-bold' : 'nav-link '
+                router.pathname == '/profile'
+                  ? 'nav-link font-bold'
+                  : 'nav-link '
               }
             >
               Profile
