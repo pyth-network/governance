@@ -54,16 +54,13 @@ export class ProfileConnection {
 
   async updateProfile(currProfile: UserProfile, newProfile: UserProfile) {
     for (let ecosystem of EcosystemValues) {
-      if (
-        currProfile[ecosystem] !== newProfile[ecosystem] &&
-        newProfile[ecosystem] !== undefined
-      ) {
+      if (currProfile[ecosystem] !== newProfile[ecosystem]) {
         await this.updateIdentity(newProfile[ecosystem], ecosystem);
       }
     }
   }
 
-  async updateIdentity(string: string, ecosystem: Ecosystem) {
+  async updateIdentity(string: string | undefined, ecosystem: Ecosystem) {
     const identityAccountAddress = getIdentityAccountAddress(
       this.userPublicKey(),
       ecosystem
@@ -101,18 +98,27 @@ function getIdentityAccountAddress(
   )[0];
 }
 
-function getIdentityAsString(identity: IdlTypes<Profile>["Identity"]): string {
+function getIdentityAsString(
+  identity: IdlTypes<Profile>["Identity"]
+): string | undefined {
   if (identity.evm) {
-    return ethers.getAddress(
-      "0x" + Buffer.from(identity.evm.pubkey).toString("hex")
-    );
+    if (!identity.evm.pubkey) {
+      return undefined;
+    } else {
+      return ethers.getAddress(
+        "0x" + Buffer.from(identity.evm.pubkey).toString("hex")
+      );
+    }
   }
 }
 
 function getIdentityFromString(
-  string: string,
+  string: string | undefined,
   ecosystem: Ecosystem
 ): IdlTypes<Profile>["Identity"] {
+  if (!string) {
+    return { [ecosystem]: { pubkey: null } };
+  }
   if (ecosystem === "evm") {
     try {
       const evmPubkey = Array.from(Buffer.from(string.slice(2), "hex"));

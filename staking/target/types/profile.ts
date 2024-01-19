@@ -59,10 +59,12 @@ export type Profile = {
               {
                 "name": "pubkey",
                 "type": {
-                  "array": [
-                    "u8",
-                    20
-                  ]
+                  "option": {
+                    "array": [
+                      "u8",
+                      20
+                    ]
+                  }
                 }
               }
             ]
@@ -134,10 +136,12 @@ export const IDL: Profile = {
               {
                 "name": "pubkey",
                 "type": {
-                  "array": [
-                    "u8",
-                    20
-                  ]
+                  "option": {
+                    "array": [
+                      "u8",
+                      20
+                    ]
+                  }
                 }
               }
             ]

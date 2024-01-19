@@ -41,7 +41,7 @@ describe("profile", async () => {
     ));
   });
 
-  it("tests a wallet", async () => {
+  it("sets up profile", async () => {
     let profileConnection = new ProfileConnection(
       stakeConnection.provider.connection,
       stakeConnection.provider.wallet
@@ -62,5 +62,11 @@ describe("profile", async () => {
       profileConnection.updateProfile(profile, { evm: "0xdeadbeef" }),
       "Your EVM address is invalid"
     );
+
+    await profileConnection.updateProfile(profile, { evm: undefined });
+    profile = await profileConnection.getProfile(
+      stakeConnection.userPublicKey()
+    );
+    assert(profile["evm"] === undefined);
   });
 });
