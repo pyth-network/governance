@@ -1,4 +1,4 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import assert from "assert";
 import { StakeConnection } from "../app/StakeConnection";
 import {
@@ -10,8 +10,9 @@ import {
 } from "./utils/before";
 import {} from "../../staking/tests/utils/before";
 import path from "path";
-import { PythBalance, WALLET_TESTER_ADDRESS } from "../app";
+import { PythBalance } from "../app";
 import { ProfileConnection } from "../app/ProfileConnection";
+import { expectFailApi } from "./utils/utils";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -56,5 +57,10 @@ describe("profile", async () => {
       stakeConnection.userPublicKey()
     );
     assert(profile["evm"] === EVM_TEST_ADDRESS);
+
+    expectFailApi(
+      profileConnection.updateProfile(profile, { evm: "0xdeadbeef" }),
+      "Your EVM address is invalid"
+    );
   });
 });
