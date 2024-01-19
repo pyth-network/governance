@@ -9,7 +9,7 @@ import { ethers } from "ethers";
 type Ecosystem = "evm";
 const EcosystemValues: Ecosystem[] = ["evm"];
 
-type UserProfile = Partial<Record<Ecosystem, string>>;
+export type UserProfile = Partial<Record<Ecosystem, string>>;
 
 export class ProfileConnection {
   program: Program<Profile>;

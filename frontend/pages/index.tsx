@@ -12,16 +12,19 @@ import SEO from '../components/SEO'
 import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
 import UnvestedIcon from '@components/icons/UnvestedIcon'
+import { LockedModal } from '@components/modals/LockedModal'
+import { ProfileModal } from '@components/modals/ProfileModal'
 import { StakedModal } from '@components/modals/StakedModal'
 import { UnstakedModal } from '@components/modals/UnstakedModal'
-import { useStakeAccounts } from 'hooks/useStakeAccounts'
-import { useBalance } from 'hooks/useBalance'
-import { useVestingAccountState } from 'hooks/useVestingAccountState'
-import { LockedModal } from '@components/modals/LockedModal'
 import { StakePanel } from '@components/panels/StakePanel'
 import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
+import { UserProfile } from '@pythnetwork/staking/lib/app/ProfileConnection'
+import { useBalance } from 'hooks/useBalance'
+import { useProfileConnection } from 'hooks/useProfileConnection'
+import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useStakeConnection } from 'hooks/useStakeConnection'
+import { useVestingAccountState } from 'hooks/useVestingAccountState'
 
 enum TabEnum {
   Stake,
@@ -42,6 +45,7 @@ const Staking: NextPage = () => {
   const [isStakedModalOpen, setIsStakedModalOpen] = useState<boolean>(false)
   const [isUnstakedModalOpen, setIsUnstakedModalOpen] = useState<boolean>(false)
   const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false)
   const [
     multipleStakeAccountsModalOption,
     setMultipleStakeAccountsModalOption,
@@ -50,11 +54,36 @@ const Staking: NextPage = () => {
   const wallet = useAnchorWallet()
   const isWalletConnected = wallet !== undefined
 
-  const { isLoading: isStakeConnectionLoading } = useStakeConnection()
+  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
+    useStakeConnection()
+  const { data: profileConnection, isLoading: isProfileConnectionLoading } =
+    useProfileConnection(stakeConnection)
+  const [profile, setProfile] = useState<UserProfile>({})
+  const [isProfileLoading, setIsProfileLoading] = useState(true)
   const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
     useStakeAccounts()
 
   const [mainStakeAccount, setMainStakeAccount] = useState<MainStakeAccount>()
+
+  useEffect(() => {
+    if (!profileConnection || !stakeConnection) return
+    const getProfile = async () => {
+      const profile = await profileConnection.getProfile(
+        stakeConnection.userPublicKey()
+      )
+      setProfile(profile)
+      setIsProfileLoading(false)
+    }
+    getProfile()
+  }, [profileConnection, stakeConnection])
+
+  useEffect(() => {
+    if (!isProfileLoading) {
+      profile['evm'] === undefined
+        ? setIsProfileModalOpen(true)
+        : setIsProfileModalOpen(false)
+    }
+  }, [isProfileLoading])
 
   // set main stake account
   useEffect(() => {
@@ -255,6 +284,11 @@ const Staking: NextPage = () => {
         setIsLockedModalOpen={setIsLockedModalOpen}
         mainStakeAccount={mainStakeAccount}
         currentVestingAccountState={currentVestingAccountState}
+      />
+
+      <ProfileModal
+        isProfileModalOpen={isProfileModalOpen}
+        setIsProfileModalOpen={setIsProfileModalOpen}
       />
 
       <div className="mb-10 px-8  md:mb-20  ">
