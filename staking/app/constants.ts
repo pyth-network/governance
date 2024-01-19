@@ -12,6 +12,10 @@ export const WALLET_TESTER_ADDRESS = new PublicKey(
   "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 );
 
+export const PROFILE_ADDRESS = new PublicKey(
+  "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
+);
+
 export const REALM_ID = new PublicKey(
   "4ct8XU5tKbMNRphWy4rePsS9kBqPhDdvZoGpmprPaug4"
 );

@@ -3,14 +3,9 @@
 //! This program allows a Solana user to map their Solana address to their addresses on other chains
 
 #![allow(clippy::result_large_err)]
-use {
-    anchor_lang::prelude::*,
-    ecosystems::evm::EvmPubkey,
-};
+use anchor_lang::prelude::*;
 
 declare_id!("prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ");
-
-mod ecosystems;
 
 #[program]
 pub mod profile {
@@ -39,11 +34,11 @@ pub struct IdentityAccount {
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone)]
 pub enum Identity {
-    Evm { pubkey: EvmPubkey },
+    Evm { pubkey: [u8; 20] },
 }
 
 impl Identity {
-    fn as_u8(&self) -> u8 {
+    fn to_u8(&self) -> u8 {
         match self {
             Identity::Evm { .. } => 0,
         }
@@ -53,7 +48,7 @@ impl Identity {
         return 8
             + 1
             + match self {
-                Identity::Evm { .. } => EvmPubkey::LEN,
+                Identity::Evm { .. } => 20,
             };
     }
 }
@@ -68,9 +63,7 @@ pub mod tests {
 
     #[test]
     fn check_size() {
-        let evm_identity = Identity::Evm {
-            pubkey: EvmPubkey([0u8; 20]),
-        };
+        let evm_identity = Identity::Evm { pubkey: [0u8; 20] };
 
         assert_eq!(
             IdentityAccount::discriminator().len() + evm_identity.try_to_vec().unwrap().len(),

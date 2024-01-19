@@ -18,6 +18,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.87.5",
     "encoding": "^0.1.13",
+    "ethers": "^6.10.0",
     "ts-node": "^10.7.0",
     "typescript": "^4.3.5"
   },
@@ -38,7 +39,7 @@
     "wasm-pack": "^0.10.2"
   },
   "scripts": {
-    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/profile.ts",
     "build": "npm run build_wasm && tsc -p tsconfig.api.json",
     "build_wasm": "./scripts/build_wasm.sh",
     "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
