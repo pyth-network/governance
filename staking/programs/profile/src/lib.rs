@@ -45,11 +45,10 @@ impl Identity {
     }
 
     fn size(&self) -> usize {
-        return 8
-            + 1
+        8 + 1
             + match self {
                 Identity::Evm { .. } => 20,
-            };
+            }
     }
 }
 
