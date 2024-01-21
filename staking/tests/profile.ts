@@ -68,5 +68,18 @@ describe("profile", async () => {
       stakeConnection.userPublicKey()
     );
     assert(profile["evm"] === undefined);
+
+    await profileConnection.updateProfile(profile, { evm: EVM_TEST_ADDRESS });
+
+    profile = await profileConnection.getProfile(
+      stakeConnection.userPublicKey()
+    );
+    assert(profile["evm"] === EVM_TEST_ADDRESS);
+
+    await profileConnection.updateProfile(profile, { evm: "" });
+    profile = await profileConnection.getProfile(
+      stakeConnection.userPublicKey()
+    );
+    assert(profile["evm"] === undefined);
   });
 });
