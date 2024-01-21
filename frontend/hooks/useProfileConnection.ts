@@ -1,4 +1,3 @@
-// frontend/hooks/useProfileConnection.ts
 import { ProfileConnection, StakeConnection } from '@pythnetwork/staking'
 import { useAnchorWallet } from '@solana/wallet-adapter-react'
 import toast from 'react-hot-toast'
