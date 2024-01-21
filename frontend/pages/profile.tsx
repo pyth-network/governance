@@ -13,7 +13,6 @@ const Profile: NextPage = () => {
   const { connected } = useWallet()
   const [evmAddress, setEvmAddress] = useState<string>()
   const { data: profile, isLoading: isProfileLoading } = useProfile()
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     setEvmAddress(profile?.evm)
@@ -60,7 +59,7 @@ const Profile: NextPage = () => {
                         })
                       }
                       isActionDisabled={false}
-                      isActionLoading={isSubmitting}
+                      isActionLoading={updateProfile.isLoading}
                       tooltipContentOnDisabled={''}
                     />
                   </div>

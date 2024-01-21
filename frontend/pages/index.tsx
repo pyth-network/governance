@@ -8,7 +8,6 @@ import { Fragment, useEffect, useState } from 'react'
 import { classNames } from 'utils/classNames'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-
 import LockedIcon from '@components/icons/LockedIcon'
 import UnlockedIcon from '@components/icons/UnlockedIcon'
 import UnvestedIcon from '@components/icons/UnvestedIcon'
@@ -19,12 +18,11 @@ import { UnstakedModal } from '@components/modals/UnstakedModal'
 import { StakePanel } from '@components/panels/StakePanel'
 import { UnstakePanel } from '@components/panels/UnstakePanel'
 import { WithdrawPanel } from '@components/panels/WithdrawPanel'
-import { UserProfile } from '@pythnetwork/staking/lib/app/ProfileConnection'
 import { useBalance } from 'hooks/useBalance'
-import { useProfileConnection } from 'hooks/useProfileConnection'
 import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useVestingAccountState } from 'hooks/useVestingAccountState'
+import { useProfile } from 'hooks/useProfile'
 
 enum TabEnum {
   Stake,
@@ -54,36 +52,20 @@ const Staking: NextPage = () => {
   const wallet = useAnchorWallet()
   const isWalletConnected = wallet !== undefined
 
-  const { data: stakeConnection, isLoading: isStakeConnectionLoading } =
-    useStakeConnection()
-  const { data: profileConnection, isLoading: isProfileConnectionLoading } =
-    useProfileConnection(stakeConnection)
-  const [profile, setProfile] = useState<UserProfile>({})
-  const [isProfileLoading, setIsProfileLoading] = useState(true)
+  const { isLoading: isStakeConnectionLoading } = useStakeConnection()
+  const { data: profile } = useProfile()
   const { data: stakeAccounts, isLoading: isStakeAccountsLoading } =
     useStakeAccounts()
 
   const [mainStakeAccount, setMainStakeAccount] = useState<MainStakeAccount>()
 
   useEffect(() => {
-    if (!profileConnection || !stakeConnection) return
-    const getProfile = async () => {
-      const profile = await profileConnection.getProfile(
-        stakeConnection.userPublicKey()
-      )
-      setProfile(profile)
-      setIsProfileLoading(false)
-    }
-    getProfile()
-  }, [profileConnection, stakeConnection])
-
-  useEffect(() => {
-    if (!isProfileLoading) {
+    if (profile) {
       profile['evm'] === undefined
         ? setIsProfileModalOpen(true)
         : setIsProfileModalOpen(false)
     }
-  }, [isProfileLoading])
+  }, [profile])
 
   // set main stake account
   useEffect(() => {
