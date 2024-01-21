@@ -41,10 +41,7 @@ export class ProfileConnection {
     user: PublicKey,
     ecosystem: Ecosystem
   ): Promise<IdlTypes<Profile>["Identity"] | undefined> {
-    const identityAccountAddress = getIdentityAccountAddress(
-      this.userPublicKey(),
-      ecosystem
-    );
+    const identityAccountAddress = getIdentityAccountAddress(user, ecosystem);
     return (
       await this.program.account.identityAccount.fetchNullable(
         identityAccountAddress
