@@ -1,77 +1,25 @@
 import Spinner from '@components/Spinner'
 import { WalletModalButton } from '@components/WalletModalButton'
 import { ActionButton } from '@components/panels/components'
-import { ProfileConnection } from '@pythnetwork/staking'
-import {
-  UserProfile,
-  areDifferentProfiles,
-} from '@pythnetwork/staking/lib/app/ProfileConnection'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { useProfileConnection } from 'hooks/useProfileConnection'
-import { useStakeConnection } from 'hooks/useStakeConnection'
 import type { NextPage } from 'next'
 import { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
+import { useProfile } from 'hooks/useProfile'
+import { useUpdateProfileMutation } from 'hooks/useUpdateProfileMutation'
 
 const Profile: NextPage = () => {
   const { connected } = useWallet()
   const [evmAddress, setEvmAddress] = useState<string>()
-  const { data: stakeConnection } = useStakeConnection()
-  const { data: profileConnection, isLoading: isProfileConnectionLoading } =
-    useProfileConnection(stakeConnection)
-  const [profile, setProfile] = useState<UserProfile>({})
-  const [isProfileLoading, setIsProfileLoading] = useState(true)
+  const { data: profile, isLoading: isProfileLoading } = useProfile()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!profileConnection || !stakeConnection) return
-    const getProfile = async () => {
-      const profile = await profileConnection.getProfile(
-        stakeConnection.userPublicKey()
-      )
-      setProfile(profile)
-      setIsProfileLoading(false)
-      setEvmAddress(profile['evm'])
-    }
-    getProfile()
-  }, [profileConnection, stakeConnection])
+    setEvmAddress(profile?.evm)
+  }, [profile])
 
-  const updateProfile = async () => {
-    if (!stakeConnection) return
-    setIsSubmitting(true)
-    let profileConnection = new ProfileConnection(
-      stakeConnection.provider.connection,
-      stakeConnection.provider.wallet
-    )
-    let profile = await profileConnection.getProfile(
-      stakeConnection.userPublicKey()
-    )
-    const diff = areDifferentProfiles(profile, { evm: evmAddress })
-    if (!diff) {
-      toast.error('There is nothing to update.')
-      setIsSubmitting(false)
-      return
-    }
-
-    try {
-      await profileConnection.updateProfile(profile, { evm: evmAddress })
-      toast.success(
-        `EVM address ${
-          evmAddress === '' ? 'removed' : 'submitted'
-        } successfully.`
-      )
-    } catch (e) {
-      toast.error(e.message)
-    }
-    profile = await profileConnection.getProfile(
-      stakeConnection.userPublicKey()
-    )
-
-    setProfile(profile)
-    setIsSubmitting(false)
-  }
+  const updateProfile = useUpdateProfileMutation()
 
   return (
     <Layout>
@@ -85,7 +33,7 @@ const Profile: NextPage = () => {
           </div>
           <div className="bg-[#252236] px-8 py-8">
             {connected ? (
-              !isProfileConnectionLoading && !isProfileLoading ? (
+              !isProfileLoading && profile ? (
                 <>
                   <div className="space-y-2">
                     <p className="mb-4 text-[14px] font-medium leading-[18.2px] tracking-[.03em]">
@@ -98,7 +46,6 @@ const Profile: NextPage = () => {
                       autoComplete="off"
                       defaultValue={profile['evm']}
                       onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        console.log('onChange triggered')
                         setEvmAddress(e.target.value)
                       }}
                     />
@@ -106,9 +53,12 @@ const Profile: NextPage = () => {
                   <div className="mt-8 flex items-center justify-center">
                     <ActionButton
                       actionLabel={'Submit'}
-                      onAction={() => {
-                        updateProfile()
-                      }}
+                      onAction={() =>
+                        updateProfile.mutate({
+                          currProfile: profile,
+                          newProfile: { evm: evmAddress },
+                        })
+                      }
                       isActionDisabled={false}
                       isActionLoading={isSubmitting}
                       tooltipContentOnDisabled={''}
