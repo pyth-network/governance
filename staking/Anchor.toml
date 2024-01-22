@@ -4,23 +4,26 @@ anchor_version = "0.24.1"
 seeds = true
 
 [workspace]
-members = ["programs/staking", "programs/wallet-tester"]
+members = ["programs/staking", "programs/wallet-tester", "programs/profile"]
 
 [programs.localnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
+profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
 
 [programs.devnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
+profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
 
 [programs.mainnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
+profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
 
 
 [registry]
@@ -42,3 +45,4 @@ binary_path = "./target/deploy/staking.so"
 governance_path = "./target/deploy/governance.so"
 chat_path = "./target/deploy/chat.so"
 wallet_tester_path = "./target/deploy/wallet_tester.so"
+profile_path = "./target/deploy/profile.so"

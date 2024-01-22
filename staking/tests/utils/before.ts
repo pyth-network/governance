@@ -46,6 +46,7 @@ export interface AnchorConfig {
     governance_path: string;
     chat_path: string;
     wallet_tester_path: string;
+    profile_path: string;
   };
   provider: {
     cluster: string;
@@ -57,6 +58,7 @@ export interface AnchorConfig {
       governance: string;
       chat: string;
       wallet_tester: string;
+      profile: string;
     };
   };
   validator: {
@@ -185,7 +187,9 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     config.programs.localnet.chat
   } ${config.path.chat_path}  --bpf-program ${
     config.programs.localnet.wallet_tester
-  } ${config.path.wallet_tester_path}
+  } ${config.path.wallet_tester_path} --bpf-program ${
+    config.programs.localnet.profile
+  } ${config.path.profile_path}
 
   --clone ENmcpFCpxN1CqyUjuog9yyUVfdXBKF3LVCwLr7grJZpk -ud`;
 

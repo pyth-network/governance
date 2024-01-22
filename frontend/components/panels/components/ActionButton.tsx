@@ -17,7 +17,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   return (
     <button
-      className="action-btn text-base "
+      className="action-btn text-base"
       onClick={onAction}
       disabled={isActionDisabled || isActionLoading}
     >

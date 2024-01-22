@@ -1,8 +1,8 @@
 import { Dialog } from '@headlessui/react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import dynamic from 'next/dynamic'
 
 const WalletMultiButtonDynamic = dynamic(
   async () =>
@@ -30,6 +30,17 @@ const Header = () => {
               }
             >
               Staking
+            </a>
+          </Link>
+          <Link href="/profile">
+            <a
+              className={
+                router.pathname == '/profile'
+                  ? 'nav-link font-bold'
+                  : 'nav-link '
+              }
+            >
+              Profile
             </a>
           </Link>
           <Link
@@ -97,6 +108,9 @@ const Header = () => {
             <div className="griw-rows-2 grid space-y-5 pt-10 text-center text-base18">
               <Link href="/">
                 <a>Staking</a>
+              </Link>
+              <Link href="/">
+                <a>Profile</a>
               </Link>
               <Link
                 href={`https://app.realms.today/dao/PYTH${
