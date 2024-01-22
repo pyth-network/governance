@@ -39,7 +39,7 @@ const Test: NextPage = () => {
 
   return (
     <Layout>
-      <SEO title={'Test'} />
+      <SEO title={'Wallet Compatiblity Test'} />
 
       <PanelLayout>
         {stakeConnection && !hasTested ? (
@@ -61,7 +61,7 @@ const Test: NextPage = () => {
             Your wallet has already been tested succesfully.
           </Description>
         ) : (
-          <p className="p-2 hover:bg-hoverGray"> Please connect you wallet</p>
+          <p className="p-2 hover:bg-hoverGray"> Please connect your wallet</p>
         )}
       </PanelLayout>
     </Layout>
