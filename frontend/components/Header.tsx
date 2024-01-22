@@ -109,7 +109,7 @@ const Header = () => {
               <Link href="/">
                 <a>Staking</a>
               </Link>
-              <Link href="/">
+              <Link href="/profile">
                 <a>Profile</a>
               </Link>
               <Link
