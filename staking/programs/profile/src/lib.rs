@@ -22,7 +22,7 @@ pub mod profile {
 pub struct UpdateIdentity<'info> {
     #[account(mut)]
     payer:            Signer<'info>,
-    #[account(init_if_needed, payer = payer, space = identity.size(), seeds = [&[identity.to_u8()], payer.key().as_ref()], bump ) ]
+    #[account(init_if_needed, payer = payer, space = identity.size(), seeds = [&[identity.ecosystem_id_as_u8()], payer.key().as_ref()], bump ) ]
     identity_account: Account<'info, IdentityAccount>,
     system_program:   Program<'info, System>,
 }
@@ -38,7 +38,7 @@ pub enum Identity {
 }
 
 impl Identity {
-    fn to_u8(&self) -> u8 {
+    fn ecosystem_id_as_u8(&self) -> u8 {
         match self {
             Identity::Evm { .. } => 0,
         }
