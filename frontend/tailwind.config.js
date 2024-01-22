@@ -25,7 +25,6 @@ module.exports = {
       scampi: '#696890',
       darkSlateBlue: '#42428E',
       lavenderGray: '#BABAD2',
-
       light: '#E6DAFE',
       dark: '#110F23',
     },
@@ -73,8 +72,9 @@ module.exports = {
       poppins: 'poppins, sans-serif',
       body: 'Urbanist, sans-serif',
       mono: 'IBM Plex Mono, monospace',
+      redHatDisplay: 'Red Hat Display, sans-serif',
+      redHatText: 'Red Hat Text, sans-serif',
     },
-
     extend: {
       spacing: {
         128: '32rem',
