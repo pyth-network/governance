@@ -1,30 +1,26 @@
-import { ProfileConnection, StakeConnection } from '@pythnetwork/staking'
-import { useAnchorWallet } from '@solana/wallet-adapter-react'
+import { Wallet } from '@coral-xyz/anchor'
+import { ProfileConnection } from '@pythnetwork/staking'
+import { useAnchorWallet, useConnection } from '@solana/wallet-adapter-react'
 import toast from 'react-hot-toast'
 import { useQuery } from 'react-query'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 
 export const ProfileConnectionQueryKey = 'create-profile-connection'
-export function useProfileConnection(stakeConnection?: StakeConnection) {
+export function useProfileConnection() {
+  const { connection } = useConnection()
   const anchorWallet = useAnchorWallet()
 
   return useQuery(
     [ProfileConnectionQueryKey, anchorWallet?.publicKey.toString()],
     async () => {
-      if (!stakeConnection) {
-        return undefined
-      }
-      return new ProfileConnection(
-        stakeConnection.provider.connection,
-        stakeConnection.provider.wallet
-      )
+      return new ProfileConnection(connection, anchorWallet as Wallet)
     },
     {
       onError(err: Error) {
         toast.error(capitalizeFirstLetter(err.message))
       },
-      // we should only fetch when anchor wallet and stakeConnection are defined
-      enabled: anchorWallet !== undefined && stakeConnection !== undefined,
+      // we should only fetch when anchor wallet is defined
+      enabled: anchorWallet !== undefined,
     }
   )
 }
