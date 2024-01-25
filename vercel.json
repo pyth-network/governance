@@ -1,13 +1,10 @@
 {
   "functions": {
     "pages/api/v1/all_locked_accounts.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "pages/api/v1/cmc/supply.ts": {
-      "maxDuration": 30
-    },
-    "pages/api/internal/create_ephemeral_account.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }
