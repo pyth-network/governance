@@ -3,20 +3,18 @@ import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import {
+  getAllMetadataAccounts,
+  getAllStakeAccounts,
   getCustodyAccountAddress,
-  getMetadataAccountAddress,
+  hasStandardLockup,
 } from '@pythnetwork/staking/app/api_utils'
-
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { Program, AnchorProvider, IdlAccounts } from '@coral-xyz/anchor'
+import { Connection, Keypair } from '@solana/web3.js'
+import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-
-const ONE_YEAR = new BN(3600 * 24 * 365)
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
@@ -86,56 +84,4 @@ export default async function handlerAllLockedAccounts(
 
   res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
   res.status(200).json(data)
-}
-
-function hasStandardLockup(
-  metadataAccountData: IdlAccounts<Staking>['stakeAccountMetadataV2']
-) {
-  return (
-    metadataAccountData.lock.periodicVestingAfterListing &&
-    metadataAccountData.lock.periodicVestingAfterListing.numPeriods.eq(
-      new BN(4)
-    ) &&
-    metadataAccountData.lock.periodicVestingAfterListing.periodDuration.eq(
-      ONE_YEAR
-    )
-  )
-}
-export async function getAllStakeAccounts(connection: Connection) {
-  const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
-    encoding: 'base64',
-    filters: [
-      {
-        memcmp: {
-          offset: 0,
-          bytes: bs58.encode(Buffer.from('55c3f14f7cc04f0b', 'hex')), // Positions account discriminator
-        },
-      },
-    ],
-  })
-  return response.map((account) => {
-    return account.pubkey
-  })
-}
-
-export async function getAllMetadataAccounts(
-  stakingProgram: Program<Staking>,
-  stakeAccounts: PublicKey[]
-): Promise<(IdlAccounts<Staking>['stakeAccountMetadataV2'] | null)[]> {
-  const metadataAccountAddresses = stakeAccounts.map((account) =>
-    getMetadataAccountAddress(account)
-  )
-  return stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
-    metadataAccountAddresses
-  )
-}
-
-export async function getAllCustodyAccounts(
-  tokenProgram: any,
-  stakeAccounts: PublicKey[]
-) {
-  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
-    getCustodyAccountAddress(account)
-  )
-  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses)
 }
