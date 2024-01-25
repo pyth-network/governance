@@ -10,6 +10,7 @@ import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { StakeConnection } from '@pythnetwork/staking'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
