@@ -43,6 +43,8 @@ export default async function handlerLockedAccounts(
       connection,
       new PublicKey(owner)
     )
+    await StakeConnection.connect(connection, new NodeWallet(new Keypair()))
+
     const stakeAccountDetails = await Promise.all(
       stakeAccounts.map((account) => {
         return getStakeAccountDetails(account)
