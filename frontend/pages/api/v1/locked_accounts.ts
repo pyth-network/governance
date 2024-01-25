@@ -13,7 +13,7 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getCustodyAccountAddress,
   getMetadataAccountAddress,
-} from '@pythnetwork/staking'
+} from '@pythnetwork/staking/app/api_utils'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
