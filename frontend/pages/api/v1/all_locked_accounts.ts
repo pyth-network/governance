@@ -13,7 +13,7 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getCustodyAccountAddress,
   getMetadataAccountAddress,
-} from './locked_accounts'
+} from '@pythnetwork/staking'
 
 const ONE_YEAR = new BN(3600 * 24 * 365)
 
