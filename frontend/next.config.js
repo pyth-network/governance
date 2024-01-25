@@ -19,7 +19,6 @@ module.exports = {
       config.output.webassemblyModuleFilename = 'chunks/[id].wasm'
       config.plugins.push(new WasmChunksFixPlugin())
     }
-    config.optimization.moduleIds = 'named'
     // End of hack
 
     // Import the browser version of wasm instead of the node version
