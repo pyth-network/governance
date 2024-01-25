@@ -15,12 +15,12 @@ module.exports = {
   webpack(config, { isServer }) {
     config.experiments = { asyncWebAssembly: true, layers: true }
     // This is hack to fix the import of the wasm files https://github.com/vercel/next.js/issues/25852
-    if (isServer) {
-      config.output.webassemblyModuleFilename =
-        './../static/wasm/[modulehash].wasm'
-    } else {
-      config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm'
-    }
+    // if (isServer) {
+    //   config.output.webassemblyModuleFilename =
+    //     './../static/wasm/[modulehash].wasm'
+    // } else {
+    config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm'
+    // }
     config.optimization.moduleIds = 'named'
     // End of hack
 
