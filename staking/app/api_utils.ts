@@ -120,16 +120,6 @@ export async function getAllMetadataAccounts(
   );
 }
 
-export async function getAllCustodyAccounts(
-  tokenProgram: any,
-  stakeAccounts: PublicKey[]
-) {
-  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
-    getCustodyAccountAddress(account)
-  );
-  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses);
-}
-
 // ======================================
 // Locked accounts
 // ======================================
