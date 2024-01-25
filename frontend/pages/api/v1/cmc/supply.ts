@@ -12,7 +12,6 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getCurrentlyLockedAmount,
   getTotalSupply,
-  getAllCustodyAccounts,
   getAllMetadataAccounts,
   getConfig,
   getCustodyAccountAddress,
