@@ -1,4 +1,4 @@
-// This file contains utility functions for the API. We can't use StakeConnection directly because it has wasm imports that are not compatible with the Next API.
+// This file contains utility functions for the API. Unfortunately we can't use StakeConnection directly because it has wasm imports that are not compatible with the Next API.
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { STAKING_ADDRESS, PYTH_TOKEN } from "./constants";
