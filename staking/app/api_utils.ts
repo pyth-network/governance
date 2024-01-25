@@ -10,6 +10,10 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 const ONE_YEAR = new BN(3600 * 24 * 365);
 
+// ======================================
+// PDA derivations
+// ======================================
+
 export function getMetadataAccountAddress(positionAccountAddress: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("stake_metadata"), positionAccountAddress.toBuffer()],
@@ -23,6 +27,71 @@ export function getCustodyAccountAddress(positionAccountAddress: PublicKey) {
     STAKING_ADDRESS
   )[0];
 }
+
+// ======================================
+// One-user getters
+// ======================================
+
+export async function getStakeAccountsByOwner(
+  connection: Connection,
+  owner: PublicKey
+) {
+  const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
+    encoding: "base64",
+    filters: [
+      {
+        memcmp: {
+          offset: 0,
+          bytes: bs58.encode(Buffer.from("55c3f14f7cc04f0b", "hex")), // Positions account discriminator
+        },
+      },
+      {
+        memcmp: {
+          offset: 8,
+          bytes: owner.toBase58(),
+        },
+      },
+    ],
+  });
+  return response.map((account) => {
+    return account.pubkey;
+  });
+}
+
+export async function getStakeAccountDetails(
+  stakingProgram: Program<Staking>,
+  tokenProgram: any,
+  positionAccountAddress: PublicKey
+) {
+  const configAccountData = await getConfig(stakingProgram);
+
+  const metadataAccountAddress = getMetadataAccountAddress(
+    positionAccountAddress
+  );
+  const metadataAccountData =
+    await stakingProgram.account.stakeAccountMetadataV2.fetch(
+      metadataAccountAddress
+    );
+
+  const lock = metadataAccountData.lock;
+
+  const custodyAccountAddress = getCustodyAccountAddress(
+    positionAccountAddress
+  );
+  const custodyAccountData = await tokenProgram.account.account.fetch(
+    custodyAccountAddress
+  );
+
+  return {
+    custodyAccount: custodyAccountAddress.toBase58(),
+    actualAmount: new PythBalance(custodyAccountData.amount).toString(),
+    lock: getLockSummary(lock, configAccountData.pythTokenListTime),
+  };
+}
+
+// ======================================
+// Global getters
+// ======================================
 
 export async function getConfig(
   stakingProgram: Program<Staking>
@@ -78,6 +147,10 @@ export async function getAllCustodyAccounts(
   return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses);
 }
 
+// ======================================
+// Locked accounts
+// ======================================
+
 export function hasStandardLockup(
   metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"]
 ) {
@@ -91,67 +164,6 @@ export function hasStandardLockup(
     )
   );
 }
-
-export async function getStakeAccountDetails(
-  stakingProgram: Program<Staking>,
-  tokenProgram: any,
-  positionAccountAddress: PublicKey
-) {
-  const configAccountData = await getConfig(stakingProgram);
-
-  const metadataAccountAddress = getMetadataAccountAddress(
-    positionAccountAddress
-  );
-  const metadataAccountData =
-    await stakingProgram.account.stakeAccountMetadataV2.fetch(
-      metadataAccountAddress
-    );
-
-  const lock = metadataAccountData.lock;
-
-  const custodyAccountAddress = getCustodyAccountAddress(
-    positionAccountAddress
-  );
-  const custodyAccountData = await tokenProgram.account.account.fetch(
-    custodyAccountAddress
-  );
-
-  return {
-    custodyAccount: custodyAccountAddress.toBase58(),
-    actualAmount: new PythBalance(custodyAccountData.amount).toString(),
-    lock: getLockSummary(lock, configAccountData.pythTokenListTime),
-  };
-}
-
-export async function getStakeAccounts(
-  connection: Connection,
-  owner: PublicKey
-) {
-  const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
-    encoding: "base64",
-    filters: [
-      {
-        memcmp: {
-          offset: 0,
-          bytes: bs58.encode(Buffer.from("55c3f14f7cc04f0b", "hex")), // Positions account discriminator
-        },
-      },
-      {
-        memcmp: {
-          offset: 8,
-          bytes: owner.toBase58(),
-        },
-      },
-    ],
-  });
-  return response.map((account) => {
-    return account.pubkey;
-  });
-}
-
-// ======================================
-// Locked accounts
-// ======================================
 
 export function getCurrentlyLockedAmount(
   metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"],

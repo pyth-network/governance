@@ -9,7 +9,7 @@ import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getStakeAccountDetails,
-  getStakeAccounts,
+  getStakeAccountsByOwner,
 } from '@pythnetwork/staking/app/api_utils'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
@@ -39,7 +39,7 @@ export default async function handlerLockedAccounts(
       error: "Must provide the 'owner' query parameters",
     })
   } else {
-    const stakeAccounts = await getStakeAccounts(
+    const stakeAccounts = await getStakeAccountsByOwner(
       connection,
       new PublicKey(owner)
     )
