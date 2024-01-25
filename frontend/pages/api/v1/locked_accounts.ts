@@ -10,13 +10,10 @@ import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { StakeConnection } from '@pythnetwork/staking'
-
-export const runtime = 'edge' // 'nodejs' is the default
-export const dynamic = 'force-dynamic' // static by default, unless reading the request
-export const config = {
-  runtime: 'experimental-edge',
-}
+import {
+  getCustodyAccountAddress,
+  getMetadataAccountAddress,
+} from '@pythnetwork/staking'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
@@ -49,7 +46,6 @@ export default async function handlerLockedAccounts(
       connection,
       new PublicKey(owner)
     )
-    await StakeConnection.connect(connection, new NodeWallet(new Keypair()))
 
     const stakeAccountDetails = await Promise.all(
       stakeAccounts.map((account) => {
@@ -93,20 +89,6 @@ async function getStakeAccountDetails(positionAccountAddress: PublicKey) {
     actualAmount: new PythBalance(custodyAccountData.amount).toString(),
     lock: getLockSummary(lock, configAccountData.pythTokenListTime),
   }
-}
-
-export function getMetadataAccountAddress(positionAccountAddress: PublicKey) {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('stake_metadata'), positionAccountAddress.toBuffer()],
-    STAKING_ADDRESS
-  )[0]
-}
-
-export function getCustodyAccountAddress(positionAccountAddress: PublicKey) {
-  return PublicKey.findProgramAddressSync(
-    [Buffer.from('custody'), positionAccountAddress.toBuffer()],
-    STAKING_ADDRESS
-  )[0]
 }
 
 async function getStakeAccounts(connection: Connection, owner: PublicKey) {
