@@ -108,23 +108,6 @@ export async function getTotalSupply(tokenProgram: any): Promise<PythBalance> {
   return new PythBalance(pythTokenMintData.supply);
 }
 
-export async function getAllStakeAccounts(connection: Connection) {
-  const response = await connection.getProgramAccounts(STAKING_ADDRESS, {
-    encoding: "base64",
-    filters: [
-      {
-        memcmp: {
-          offset: 0,
-          bytes: bs58.encode(Buffer.from("55c3f14f7cc04f0b", "hex")), // Positions account discriminator
-        },
-      },
-    ],
-  });
-  return response.map((account) => {
-    return account.pubkey;
-  });
-}
-
 export async function getAllMetadataAccounts(
   stakingProgram: Program<Staking>,
   stakeAccounts: PublicKey[]

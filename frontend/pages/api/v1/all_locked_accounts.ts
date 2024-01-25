@@ -4,7 +4,6 @@ import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import {
   getAllMetadataAccounts,
-  getAllStakeAccounts,
   getCustodyAccountAddress,
   hasStandardLockup,
 } from '@pythnetwork/staking/app/api_utils'
@@ -15,8 +14,10 @@ import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { getAllStakeAccounts } from '../getAllStakingAccounts'
 
-const connection = new Connection(process.env.BACKEND_ENDPOINT!)
+const RPC_URL = process.env.BACKEND_ENDPOINT!
+const connection = new Connection(RPC_URL)
 const provider = new AnchorProvider(
   connection,
   new NodeWallet(new Keypair()),
@@ -36,7 +37,7 @@ export default async function handlerAllLockedAccounts(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const allStakeAccounts = await getAllStakeAccounts(connection)
+  const allStakeAccounts = await getAllStakeAccounts(RPC_URL)
 
   const allMetadataAccounts = await getAllMetadataAccounts(
     stakingProgram,

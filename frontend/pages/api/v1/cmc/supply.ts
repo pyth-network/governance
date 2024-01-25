@@ -15,10 +15,12 @@ import {
   getAllCustodyAccounts,
   getAllMetadataAccounts,
   getConfig,
-  getAllStakeAccounts,
+  getCustodyAccountAddress,
 } from '@pythnetwork/staking/app/api_utils'
+import { getAllStakeAccounts } from 'pages/api/getAllStakingAccounts'
 
-const connection = new Connection(process.env.BACKEND_ENDPOINT!)
+const RPC_URL = process.env.BACKEND_ENDPOINT!
+const connection = new Connection(RPC_URL)
 const provider = new AnchorProvider(
   connection,
   new NodeWallet(new Keypair()),
@@ -48,23 +50,27 @@ export default async function handlerSupply(
     res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
     res.status(200).send((await getTotalSupply(tokenProgram)).toString(false))
   } else if (q === 'circulatingSupply') {
-    const configAccountData = await getConfig(stakingProgram)
-    const allStakeAccounts = await getAllStakeAccounts(connection)
+    const allStakeAccounts = await getAllStakeAccounts(RPC_URL)
 
     const allMetadataAccounts = await getAllMetadataAccounts(
       stakingProgram,
       allStakeAccounts
     )
-    const allCustodyAccounts = await getAllCustodyAccounts(
-      tokenProgram,
-      allStakeAccounts
+
+    const allCustodyAccountAddresses = allStakeAccounts.map((account) =>
+      getCustodyAccountAddress(account)
     )
+    const allCustodyAccounts = await tokenProgram.account.account.fetchMultiple(
+      allCustodyAccountAddresses
+    )
+
+    const configAccountData = await getConfig(stakingProgram)
 
     const totalLockedAmount = allMetadataAccounts.reduce(
       (total: PythBalance, account: any, index: number) => {
         return total.add(
-          allCustodyAccounts[index].amount && account.lock
-            ? new PythBalance(allCustodyAccounts[index].amount).min(
+          allCustodyAccounts[index]?.amount && account.lock
+            ? new PythBalance(allCustodyAccounts[index]!.amount).min(
                 getCurrentlyLockedAmount(account, configAccountData)
               )
             : PythBalance.zero()
