@@ -12,6 +12,9 @@ import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { StakeConnection } from '@pythnetwork/staking'
 
+export const runtime = 'edge' // 'nodejs' is the default
+export const dynamic = 'force-dynamic' // static by default, unless reading the request
+
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
   connection,
