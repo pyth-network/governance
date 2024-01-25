@@ -14,6 +14,9 @@ import { StakeConnection } from '@pythnetwork/staking'
 
 export const runtime = 'edge' // 'nodejs' is the default
 export const dynamic = 'force-dynamic' // static by default, unless reading the request
+export const config = {
+  runtime: 'experimental-edge',
+}
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
