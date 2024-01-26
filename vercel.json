@@ -5,6 +5,9 @@
     },
     "pages/api/v1/cmc/supply.ts": {
       "maxDuration": 90
+    },
+    "pages/api/v1/snapshot.ts": {
+      "maxDuration": 90
     }
   }
 }
