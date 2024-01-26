@@ -12,6 +12,7 @@ import {
 import * as fs from "fs";
 import Papa from "papaparse";
 import dotenv from "dotenv";
+import BN from "bn.js";
 dotenv.config();
 
 const RPC_URL = process.env.ENDPOINT!;
@@ -20,7 +21,7 @@ const RPC_URL = process.env.ENDPOINT!;
 // We get around this by using the base64+ztsd encoding instead of base64 that @solana/web3.js uses
 async function getAllStakeAccounts(
   url: string
-): Promise<{ publicKey: PublicKey; data: string }> {
+): Promise<{ publicKey: PublicKey; data: string }[]> {
   const response = await axios({
     method: "post",
     url: url,
@@ -104,15 +105,17 @@ async function main() {
   const stakeAccounts = await getAllStakeAccounts(RPC_URL);
   const profileAccounts = await getAllProfileAccounts(RPC_URL);
 
-  const stakers: { owner: PublicKey; stakedAmount: string }[] =
-    stakeAccounts.map((x, index) => {
+  const stakers: { owner: PublicKey; stakedAmount: BN }[] = stakeAccounts.map(
+    (x, index) => {
       console.log("Processing staker :", index);
-      const buffer = Buffer.from(x.data, "base64");
-      const accountData = ZstdStream.decompress(new Uint8Array(buffer));
+      const accountData = ZstdStream.decompress(
+        new Uint8Array(Buffer.from(x.data, "base64"))
+      );
       return stakeConnection.getStakerAndAmountFromPositionAccountData(
         Buffer.from(accountData)
       );
-    });
+    }
+  );
 
   const stakersWithProfile = stakers.map(({ owner, stakedAmount }, index) => {
     console.log("Processing profile :", index);
@@ -127,9 +130,12 @@ async function main() {
       identity = profileConnection.getIdentityFromProfileAccountData(
         Buffer.from(accountData)
       );
-      return { solana: owner, stakedAmount, evm: identity };
     }
-    return { solana: owner, stakedAmount, evm: "" };
+    return {
+      solana: owner,
+      stakedAmount: stakedAmount.toString(),
+      evm: identity,
+    };
   });
 
   fs.writeFileSync(
