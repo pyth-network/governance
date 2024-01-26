@@ -15,7 +15,7 @@ export class ProfileConnection {
   program: Program<Profile>;
 
   public userPublicKey(): PublicKey {
-    return this.program.provider.publicKey;
+    return this.program.provider.publicKey!;
   }
 
   constructor(connection: Connection, wallet: Wallet) {
@@ -27,7 +27,7 @@ export class ProfileConnection {
   }
 
   async getProfile(user: PublicKey): Promise<UserProfile> {
-    let profile = {};
+    let profile: UserProfile = {};
     for (let ecosystem of EcosystemValues) {
       const identity = await this.getEcosystemIdentity(user, ecosystem);
       if (identity) {
@@ -126,5 +126,7 @@ function getIdentityFromString(
     } catch (e) {
       throw new Error("Your EVM address is invalid.");
     }
+  } else {
+    throw new Error("Invalid ecosystem.");
   }
 }
