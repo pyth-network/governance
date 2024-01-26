@@ -1,5 +1,5 @@
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
-import { PROFILE_ADDRESS } from '@pythnetwork/staking'
+import { PROFILE_ADDRESS } from '@pythnetwork/staking/app/constants'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import axios from 'axios'
 

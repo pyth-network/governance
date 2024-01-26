@@ -3,7 +3,6 @@ import { ZstdInit, ZstdStream } from '@oneidentity/zstd-js'
 import { getAllStakeAccounts } from '../getAllStakingAccounts'
 import { BorshCoder, Idl } from '@coral-xyz/anchor'
 import IDL from '@pythnetwork/staking/target/idl/staking.json'
-import { PublicKey } from '@solana/web3.js'
 import { IdlCoder } from '@coral-xyz/anchor/dist/cjs/coder/borsh/idl'
 import { IdlTypeDef } from '@coral-xyz/anchor/dist/cjs/idl'
 
