@@ -5,9 +5,6 @@
     },
     "pages/api/v1/cmc/supply.ts": {
       "maxDuration": 30
-    },
-    "pages/api/internal/create_ephemeral_account.ts": {
-      "maxDuration": 30
     }
   }
 }

@@ -20,4 +20,9 @@ export const REALM_ID = new PublicKey(
   "4ct8XU5tKbMNRphWy4rePsS9kBqPhDdvZoGpmprPaug4"
 );
 
+// This one is valid on mainnet only
+export const PYTH_TOKEN = new PublicKey(
+  "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3"
+);
+
 export const EPOCH_DURATION = 3600 * 24 * 7;

@@ -6,4 +6,5 @@ export {
   VestingAccountState,
 } from "./StakeConnection";
 export * from "./constants";
+export * from "./api_utils";
 export { PYTH_DECIMALS, PythBalance } from "./pythBalance";
