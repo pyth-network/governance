@@ -82,7 +82,7 @@ export function areDifferentProfiles(
   return false;
 }
 
-function getIdentityAccountAddress(
+export function getIdentityAccountAddress(
   user: PublicKey,
   ecosystem: Ecosystem
 ): PublicKey {
