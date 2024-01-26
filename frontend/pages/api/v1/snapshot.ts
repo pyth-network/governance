@@ -43,10 +43,12 @@ export default async function handlerSnapshot(
   const stakers: { solana: PublicKey; stakedAmount: string }[] = Object.keys(
     stakeAccounts
   ).map((key, index) => {
+    console.log(index)
     return getStakerAndAmount(stakeAccounts[key], epoch)
   })
 
-  const stakersWithProfile = stakers.map(({ solana, stakedAmount }) => {
+  const stakersWithProfile = stakers.map(({ solana, stakedAmount }, index) => {
+    console.log(index)
     return { solana, stakedAmount, evm: getEvmProfile(solana, profileAccounts) }
   })
 
