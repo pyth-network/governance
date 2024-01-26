@@ -68,6 +68,14 @@ export class ProfileConnection {
       .accounts({ identityAccount: identityAccountAddress })
       .rpc();
   }
+
+  getIdentityFromProfileAccountData(accountData: Buffer): string {
+    const decoded = this.program.coder.accounts.decode(
+      "IdentityAccount",
+      Buffer.from(accountData)
+    );
+    return getIdentityAsString(decoded.identity);
+  }
 }
 
 export function areDifferentProfiles(
@@ -82,7 +90,7 @@ export function areDifferentProfiles(
   return false;
 }
 
-function getIdentityAccountAddress(
+export function getIdentityAccountAddress(
   user: PublicKey,
   ecosystem: Ecosystem
 ): PublicKey {

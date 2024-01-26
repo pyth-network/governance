@@ -1016,6 +1016,33 @@ export class StakeConnection {
     );
     return receipt !== null;
   }
+
+  public getStakerAndAmountFromPositionAccountData(
+    positionAccountData: Buffer
+  ): { owner: PublicKey; stakedAmount: BN } {
+    const positionAccountJs = new PositionAccountJs(
+      Buffer.from(positionAccountData),
+      IDL as Idl
+    );
+    const positionAccountWasm = new wasm.WasmPositionData(positionAccountData);
+
+    const time = new BN(Date.now() / 1000);
+    const currentEpoch = time.div(this.config.epochDuration);
+    const unlockingDuration = this.config.unlockingDuration;
+    const currentEpochBI = BigInt(currentEpoch.toString());
+
+    const lockedBalanceSummary = positionAccountWasm.getLockedBalanceSummary(
+      currentEpochBI,
+      unlockingDuration
+    );
+
+    return {
+      owner: positionAccountJs.owner,
+      stakedAmount: new BN(lockedBalanceSummary.locked.toString()).add(
+        new BN(lockedBalanceSummary.preunlocking.toString())
+      ),
+    };
+  }
 }
 
 export interface BalanceSummary {
