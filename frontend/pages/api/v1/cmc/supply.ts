@@ -49,6 +49,7 @@ export default async function handlerSupply(
     res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
     res.status(200).send((await getTotalSupply(tokenProgram)).toString(false))
   } else if (q === 'circulatingSupply') {
+    const configAccountData = await getConfig(stakingProgram)
     const allStakeAccounts = await getAllStakeAccounts(RPC_URL)
 
     const allMetadataAccounts = await getAllMetadataAccounts(
@@ -61,13 +62,11 @@ export default async function handlerSupply(
       allStakeAccounts
     )
 
-    const configAccountData = await getConfig(stakingProgram)
-
     const totalLockedAmount = allMetadataAccounts.reduce(
       (total: PythBalance, account: any, index: number) => {
         return total.add(
-          allCustodyAccounts[index]?.amount && account.lock
-            ? new PythBalance(allCustodyAccounts[index]!.amount).min(
+          allCustodyAccounts[index].amount && account.lock
+            ? new PythBalance(allCustodyAccounts[index].amount).min(
                 getCurrentlyLockedAmount(account, configAccountData)
               )
             : PythBalance.zero()
