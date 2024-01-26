@@ -4,9 +4,15 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { STAKING_ADDRESS, PYTH_TOKEN } from "./constants";
 import BN from "bn.js";
 import { PythBalance } from "./pythBalance";
-import { IdlAccounts, Program } from "@coral-xyz/anchor";
-import { Staking } from "../target/types/staking";
+import {
+  BorshAccountsCoder,
+  Idl,
+  IdlAccounts,
+  Program,
+} from "@coral-xyz/anchor";
+import { IDL, Staking } from "../target/types/staking";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { PositionAccountJs } from "./PositionAccountJs";
 
 const ONE_YEAR = new BN(3600 * 24 * 365);
 
@@ -236,4 +242,12 @@ function getUnlockEvents(
       });
   }
   return [];
+}
+
+// ======================================
+// Staked accounts
+// ======================================
+
+export async function decodeStakeAccount(buffer: Buffer) {
+  return new PositionAccountJs(buffer, IDL as Idl);
 }

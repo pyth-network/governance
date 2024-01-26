@@ -1,17 +1,33 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { ZstdInit } from '@oneidentity/zstd-js'
+import { ZstdInit, ZstdStream } from '@oneidentity/zstd-js'
+import { getAllStakeAccounts } from '../getAllStakingAccounts'
+import { BorshCoder, Idl } from '@coral-xyz/anchor'
+import IDL from '@pythnetwork/staking/target/idl/staking.json'
+import { PublicKey } from '@solana/web3.js'
 
+const RPC_URL = process.env.BACKEND_ENDPOINT!
+
+const coder = new BorshCoder(IDL as Idl)
 export default async function handlerSnapshot(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { ZstdStream } = await ZstdInit()
-  const data = ZstdStream.decompress(
-    Buffer.from(
-      '28b52ffd0058ed0100440355c3f14f7cc04f0be9622664781048f7a82f0ec2d9cabc75c910de0618ab304fc4973fbc36ee33940164552b0800000000050b00010014791f4001',
-      'hex'
-    )
-  )
+  await ZstdInit()
+  const stakeAccounts = await getAllStakeAccounts(RPC_URL)
 
-  res.status(200).json(Buffer.from(data).toString('hex'))
+  const owners: PublicKey[] = Object.keys(stakeAccounts).map((key) => {
+    return deserializePositionsAccount(stakeAccounts[key])
+  })
+
+  res.status(200).json(owners)
+}
+
+function deserializePositionsAccount(data: string): PublicKey {
+  const buffer = Buffer.from(data, 'base64')
+  const accountData = ZstdStream.decompress(new Uint8Array(buffer))
+  const decoded = coder.accounts.decode(
+    'PositionData',
+    Buffer.from(accountData)
+  )
+  return decoded.owner
 }
