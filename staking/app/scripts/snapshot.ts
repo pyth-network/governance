@@ -18,9 +18,9 @@ const RPC_URL = process.env.ENDPOINT!;
 
 // The JSON payload is too big when using the @solana/web3.js getProgramAccounts
 // We get around this by using the base64+ztsd encoding instead of base64 that @solana/web3.js uses
-export async function getAllStakeAccounts(
+async function getAllStakeAccounts(
   url: string
-): Promise<Record<string, any>> {
+): Promise<{ publicKey: PublicKey; data: string }> {
   const response = await axios({
     method: "post",
     url: url,
@@ -50,7 +50,7 @@ export async function getAllStakeAccounts(
   });
 }
 
-export async function getAllProfileAccounts(
+async function getAllProfileAccounts(
   url: string
 ): Promise<Record<string, any>> {
   const response = await axios({
