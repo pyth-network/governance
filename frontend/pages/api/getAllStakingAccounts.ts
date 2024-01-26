@@ -5,6 +5,7 @@ import axios from 'axios'
 // The JSON payload is too big when using the @solana/web3.js getProgramAccounts
 // We get around this by using the base64+ztsd encoding instead of base64 that @solana/web3.js uses
 export async function getAllStakeAccounts(url: string): Promise<PublicKey[]> {
+  console.log('LOG')
   const response = await axios({
     method: 'post',
     url: url,
@@ -28,5 +29,6 @@ export async function getAllStakeAccounts(url: string): Promise<PublicKey[]> {
       ],
     },
   })
+  console.log('LOG2')
   return response.data.result.map((x: any) => new PublicKey(x.pubkey))
 }
