@@ -14,7 +14,7 @@ import {
   getTotalSupply,
   getAllMetadataAccounts,
   getConfig,
-  getCustodyAccountAddress,
+  getAllCustodyAccounts,
 } from '@pythnetwork/staking/app/api_utils'
 import { getAllStakeAccounts } from 'pages/api/getAllStakingAccounts'
 
@@ -56,11 +56,9 @@ export default async function handlerSupply(
       allStakeAccounts
     )
 
-    const allCustodyAccountAddresses = allStakeAccounts.map((account) =>
-      getCustodyAccountAddress(account)
-    )
-    const allCustodyAccounts = await tokenProgram.account.account.fetchMultiple(
-      allCustodyAccountAddresses
+    const allCustodyAccounts = await getAllCustodyAccounts(
+      tokenProgram,
+      allStakeAccounts
     )
 
     const configAccountData = await getConfig(stakingProgram)
