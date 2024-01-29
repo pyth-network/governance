@@ -138,13 +138,15 @@ async function main() {
     };
   });
 
+  const date = Date.now();
+
   fs.writeFileSync(
-    "snapshot.json",
+    `snapshot-${date.toString()}.json`,
     JSON.stringify(stakersWithProfile, null, 2),
     "utf-8"
   );
   fs.writeFileSync(
-    "snapshot.csv",
+    `snapshot-${date.toString()}.csv`,
     Papa.unparse(stakersWithProfile, { header: true, skipEmptyLines: true }),
     "utf-8"
   );
