@@ -80,7 +80,7 @@ The Pyth DAO is able to vote directly on-chain on the submitted PIP for 7 days. 
 
 The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step.
 
-## Council Election Process
+## Council Election Process & Voting Procedures
 
 1. **The Pythian Council**
 
