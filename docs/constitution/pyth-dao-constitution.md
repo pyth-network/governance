@@ -100,7 +100,7 @@ Any Council member who has voted less than 1/3 of the proposals during the term 
 
 The following process governs the election that starts at time T:
 
-- Nomination (T until T+2 days): Any Pyth DAO LLC member can nominate himself or herself for candidacy to the Council. Each; provided that each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 50,000 of Votable Tokens 
+- Nomination (T until T+2 days): Any Pyth DAO LLC member can nominate himself or herself for candidacy to the Council. Each; provided that each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 50,000 of Votable Tokens
 - Member Election (T+2 days until T+7 days): Each Votable Token may be cast for one candidate.
 
 
