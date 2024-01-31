@@ -2,14 +2,14 @@
 
 ## Terminology
 
-- **Votable Token:** PYTH tokens staked token in the governance contract at the following address: pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U
+- **Votable Token:** PYTH tokens staked token in the staking contract at the following address: `pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
 - **PIP:** Pyth Improvement Proposal
-- **Pyth DAO Treasury:** all tokens held in the governance smart contract, at the following address: [treasury_wallet_address] , that is directly governed by the Pyth DAO via on-chain voting
-- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [URL]
-- **Pythian Multisig Wallet:** smart contract wallet, at the following address 6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
-- **Price Feed Multisig Wallet:** smart contract wallet, at the following address CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
-- **Operations Wallets:** wallets, at the following addresses opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7 and ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy for the Pythian Council and the Price Feed Council respectively, used by council members to submit PIPs on-chain. Each council has access to a dedicated and separate Operations Wallet. This shared wallet can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
-- **PGAS:** utility token, at the following address DgpbK8SiypiUHBkBTAunMnwRWF3McGGR4iKxTrTfTXq4 exclusively used in the Pythnet Appchain, governed by the Pyth DAO
+- **Pyth DAO Treasury:** all tokens held in the governance smart contract, at the following address: `Gx4MBPb1vqZLJajZmsKLg8fGw9ErhoKsR8LeKcCKFyak` , that is directly governed by the Pyth DAO via on-chain voting
+- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://discord.gg/nE79EaQA](https://discord.gg/nE79EaQA)
+- **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
+- **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
+- **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
+- **PGAS:** utility token, at the following address `DgpbK8SiypiUHBkBTAunMnwRWF3McGGR4iKxTrTfTXq4` exclusively used in the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
 
 ## Introduction
