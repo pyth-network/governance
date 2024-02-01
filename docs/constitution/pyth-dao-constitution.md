@@ -111,7 +111,7 @@ The Price Feed Council is made of 7 members who are signers of the Price Feed Mu
 
 The first election of the Price Feed Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 3 members of its cohort of 7 members.
 
-The 3 members to remain are selected given the following cascading criteria:
+The 4 members to remain are selected given the following cascading criteria:
 
 - the shorter tenure till the date of the election;
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
