@@ -2,7 +2,7 @@
 
 ## Terminology
 
-- **Votable Token:** PYTH tokens staked token in the staking contract at the following address: `pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
+- **Votable Token:** PYTH tokens staked in the staking contract at the following address: `pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
 - **PIP:** Pyth Improvement Proposal
 - **Pyth DAO Treasury:** all tokens held in the wallets at the following addresses: `Gx4MBPb1vqZLJajZmsKLg8fGw9ErhoKsR8LeKcCKFyak` for the native SOL token and `9HKkxg5dpqjUEW1U2r76SpQCH7uvDMciytNYxrpwMVNc` for the SPL Token, that is directly governed by the Pyth DAO via on-chain voting
 - **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://discord.gg/nE79EaQA](https://discord.gg/nE79EaQA)
@@ -18,7 +18,7 @@ This Constitution describes the decision-making framework for the Pyth DAO and t
 
 Rules and procedures in this Constitution will be generally enforced through on-chain contracts and the associated parameters, unless specified by the Pyth DAO for actuation off-chain.
 
-The Pyth DAO LLC, is legally structured as “a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC” (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://cloudflare-ipfs.com/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi)). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
+The Pyth DAO LLC, is legally structured as “a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC” (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://cloudflare-ipfs.com/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi)). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury and pay Pyth DAO related costs and expenses, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
 
 ![pyth_dao.light.png](diagrams/pyth_dao.light.png)
 
@@ -52,7 +52,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
 
 ### PIP Process
 
-No PIP may be in violation of any of terms of the Operating Agreement of Pyth DAO LLC Agreement, or any applicable laws (including, in particular, sanctions-related regulations).
+No PIP may be in violation of any of terms of the Operating Agreement of Pyth DAO LLC, or any applicable laws (including, in particular, sanctions-related regulations).
 
 The end-to-end process length is 7 days.
 
@@ -86,9 +86,9 @@ The PIP is then fully executed and implemented. Any on-chain actions in the impl
 
 The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council requires 7-of-9 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
-The first election of the Pythian Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
+The first election of the Pythian Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
 
-The 4 members to remain are selected given the following cascading criteria:
+The 4 members to remain are selected given the following cascading criteria (the Election Criteria):
 
 - the shorter tenure till the date of the election;
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
@@ -100,16 +100,16 @@ Any Council member who has voted less than 1/3 of the proposals during the term 
 
 The following process governs the election that starts at time T:
 
-- Nomination (T until T+2 days): Any Pyth DAO LLC member can nominate himself or herself for candidacy to the Council. Each person nominating a candidate or the candidate himself or herself, must hold at least 50,000 of Votable Tokens
+- Nomination (T until T+2 days): Any Pyth DAO LLC member can be nominated or nominate himself or herself for candidacy to the Council. Each person nominating a candidate or the candidate himself or herself, must hold at least 50,000 of Votable Tokens
 - Member Election (T+2 days until T+7 days): Each Votable Token may be cast for one candidate.
 
-In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Pythian Council will be offered membership in the Pythian Council.
+In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Pythian Council will be offered membership in the Pythian Council, subject to the Election Criteria as set forth above.
 
 2. **The Price Feed Council**
 
 The Price Feed Council is made of 7 members who are signers of the Price Feed Multisig Wallet. The Price Feed Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Price Feed Council requires 5-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
-The first election of the Price Feed Council will be ratified on-chain. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 3 members of its cohort of 7 members.
+The first election of the Price Feed Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 3 members of its cohort of 7 members.
 
 The 3 members to remain are selected given the following cascading criteria:
 
@@ -123,7 +123,7 @@ Any Council member who has voted less than 1/3 of the proposals during the term 
 
 The following process governs the election that starts at time T:
 
-- Nomination (T until T+2 days): Any DAO member can nominate himself or herself for candidacy to the Council. Each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 50,000 Votable Tokens
+- Nomination (T until T+2 days): Any DAO member can be nominated or nominate himself or herself for candidacy to the Council. Each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 50,000 Votable Tokens
 - Member Election (T+2 days until T+7 days): Each token may be cast for one candidate.
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Price Feed Council will be offered membership in the Price Feed Council.
