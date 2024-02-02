@@ -35,6 +35,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
 - Constitutional PIPs are voted on by the Pyth DAO and they involve:
   - the upgrade of the Governance, Staking or Multisig programs
   - the amendment of this Constitution
+  - the creation of Pyth DAO councils and sub-committees
 - Operational PIPs that are either voted on by the Pyth DAO or delegated to one of the two Councils.
   - Operational PIPs that are voted on by the Pyth DAO:
         - the election of members of the Pythian Council
@@ -44,7 +45,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
   - Operational PIPs delegated to the Pythian Council involve:
         - the upgrade of the oracle program
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
-        - the setting of data request fees per blockchain
+        - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
@@ -78,7 +79,8 @@ The Pyth DAO is able to vote directly on-chain on the submitted PIP for 7 days. 
 
 3. **Implementation**
 
-The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step.
+The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other
+service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
 
 ## Council Election Process & Voting Procedures
 
