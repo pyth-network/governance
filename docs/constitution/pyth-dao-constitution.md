@@ -102,7 +102,7 @@ Any Council member who has voted less than 1/3 of the proposals during the term 
 
 The following process governs the election that starts at time T:
 
-- Nomination (T until T+2 days): Any Pyth DAO LLC member can be nominated or nominate himself or herself for candidacy to the Council. Each person nominating a candidate or the candidate himself or herself, must hold at least 0.5 bps of the current Votable Tokens
+- Nomination (T until T+2 days): Any Pyth DAO LLC member can be nominated or nominate himself or herself for candidacy to the Council. Each person nominating a candidate or the candidate himself or herself, must hold at least 0.5 basis points of the current Votable Tokens
 - Member Election (T+2 days until T+7 days): Each Votable Token may be cast for one candidate.
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Pythian Council will be offered membership in the Pythian Council, subject to the Election Criteria as set forth above.
@@ -125,7 +125,7 @@ Any Council member who has voted less than 1/3 of the proposals during the term 
 
 The following process governs the election that starts at time T:
 
-- Nomination (T until T+2 days): Any DAO member can be nominated or nominate himself or herself for candidacy to the Council. Each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 0.5 bps of the current Votable Tokens
+- Nomination (T until T+2 days): Any DAO member can be nominated or nominate himself or herself for candidacy to the Council. Each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 0.5 basis points of the current Votable Tokens
 - Member Election (T+2 days until T+7 days): Each token may be cast for one candidate.
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Price Feed Council will be offered membership in the Price Feed Council.
