@@ -1,4 +1,4 @@
-# [DRAFT] Pyth DAO Constitution Proposal
+# Pyth DAO Constitution
 
 ## Terminology
 
@@ -86,7 +86,7 @@ service providers of the Pyth DAO LLC will take any necessary off-chain actions 
 
 1. **The Pythian Council**
 
-The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Pythian Council requires 7-of-9 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
+The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The composition of the Pythian Council should be geographically diverse in furtherance of the ethos, mission and guiding values of the Pyth DAO. The execution of such actions by the Pythian Council requires 7-of-9 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
 The first election of the Pythian Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
 
