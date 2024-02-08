@@ -48,7 +48,7 @@ export default async function handlerAllLockedAccounts(
     accounts: allLockedCustodyAccounts.map((account) => {
       return {
         custodyAccount: account.pubkey.toBase58(),
-        actualAmount: account.amount.toString(), // ! is safe because of the filter above
+        actualAmount: account.amount.toString(),
       }
     }),
   }
