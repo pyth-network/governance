@@ -162,7 +162,7 @@ export async function getAllLockedCustodyAccounts(
     );
 
   return allLockedCustodyAccounts
-    .map((data: any, index) => {
+    .map((data: any, index: number) => {
       const amount =
         data.amount && allLockedMetadataAccounts[index].lock
           ? new PythBalance(data.amount).min(
