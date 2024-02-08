@@ -1050,7 +1050,7 @@ export class StakeConnection {
       undefined
     );
 
-    // Default to the start of the next epoch
+    // Default to the start of the next epoch if there are no positions
     const timeOfFirstStake = (
       epochOfFirstStake ?? currentEpoch.add(new BN(1))
     ).mul(this.config.epochDuration);
