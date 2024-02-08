@@ -110,8 +110,7 @@ async function main() {
     stakedAmount: BN;
     timeOfFirstStake: BN;
   }[] = stakeAccounts.map((x, index) => {
-    console.log("Processing staker with key:", index, x.publicKey.toString());
-    // console.log(x.publicKey.toString())
+    console.log("Processing staker :", index);
     const accountData = ZstdStream.decompress(
       new Uint8Array(Buffer.from(x.data, "base64"))
     );
