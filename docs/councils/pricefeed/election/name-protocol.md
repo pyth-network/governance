@@ -1,3 +1,5 @@
+- Wallet address (SPL/Solana)
+
 - Name of Candidate
   - Full Name
   - Twitter handle
