@@ -121,16 +121,6 @@ async function getAllMetadataAccounts(
   );
 }
 
-async function getAllCustodyAccounts(
-  tokenProgram: any,
-  stakeAccounts: PublicKey[]
-) {
-  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
-    getCustodyAccountAddress(account)
-  );
-  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses);
-}
-
 // ======================================
 // Locked accounts
 // ======================================
@@ -164,19 +154,24 @@ export async function getAllLockedCustodyAccounts(
   return allLockedCustodyAccounts
     .map((data: any, index: number) => {
       const amount =
-        data.amount && allLockedMetadataAccounts[index].lock
+        data.amount && allLockedMetadataAccounts[index]?.lock
           ? new PythBalance(data.amount).min(
               getCurrentlyLockedAmount(
-                allLockedMetadataAccounts[index],
+                allLockedMetadataAccounts[index]!,
                 configAccountData
               )
             )
           : new PythBalance(new BN(0));
       return { pubkey: allLockedCustodyAccountAddresses[index], amount };
     })
-    .sort((a, b) => {
-      return a.amount.lte(b.amount) ? 1 : -1;
-    }); // ! is safe because of the filter above
+    .sort(
+      (
+        a: { pubkey: PublicKey; amount: PythBalance },
+        b: { pubkey: PublicKey; amount: PythBalance }
+      ) => {
+        return a.amount.lte(b.amount) ? 1 : -1;
+      }
+    ); // ! is safe because of the filter above
 }
 
 function getCurrentlyLockedAmount(
