@@ -1019,7 +1019,7 @@ export class StakeConnection {
 
   public getStakerAndAmountFromPositionAccountData(
     positionAccountData: Buffer
-  ): { owner: PublicKey; stakedAmount: BN } {
+  ): { owner: PublicKey; stakedAmount: BN; timeOfFirstStake: BN } {
     const positionAccountJs = new PositionAccountJs(
       Buffer.from(positionAccountData),
       IDL as Idl
@@ -1036,11 +1036,31 @@ export class StakeConnection {
       unlockingDuration
     );
 
+    const epochOfFirstStake: BN = positionAccountJs.positions.reduce(
+      (prev: BN | undefined, curr) => {
+        if (!curr) {
+          return prev;
+        }
+        if (!prev) {
+          return curr.activationEpoch;
+        } else {
+          return BN.min(curr.activationEpoch, prev);
+        }
+      },
+      undefined
+    );
+
+    // Default to the start of the next epoch if there are no positions
+    const timeOfFirstStake = (
+      epochOfFirstStake ?? currentEpoch.add(new BN(1))
+    ).mul(this.config.epochDuration);
+
     return {
       owner: positionAccountJs.owner,
       stakedAmount: new BN(lockedBalanceSummary.locked.toString()).add(
         new BN(lockedBalanceSummary.preunlocking.toString())
       ),
+      timeOfFirstStake,
     };
   }
 }

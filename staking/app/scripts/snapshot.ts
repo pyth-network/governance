@@ -105,48 +105,57 @@ async function main() {
   const stakeAccounts = await getAllStakeAccounts(RPC_URL);
   const profileAccounts = await getAllProfileAccounts(RPC_URL);
 
-  const stakers: { owner: PublicKey; stakedAmount: BN }[] = stakeAccounts.map(
-    (x, index) => {
-      console.log("Processing staker :", index);
-      const accountData = ZstdStream.decompress(
-        new Uint8Array(Buffer.from(x.data, "base64"))
-      );
-      return stakeConnection.getStakerAndAmountFromPositionAccountData(
-        Buffer.from(accountData)
-      );
+  const stakers: {
+    owner: PublicKey;
+    stakedAmount: BN;
+    timeOfFirstStake: BN;
+  }[] = stakeAccounts.map((x, index) => {
+    console.log("Processing staker :", index);
+    const accountData = ZstdStream.decompress(
+      new Uint8Array(Buffer.from(x.data, "base64"))
+    );
+    return stakeConnection.getStakerAndAmountFromPositionAccountData(
+      Buffer.from(accountData)
+    );
+  });
+
+  const stakersWithProfile = stakers.map(
+    ({ owner, stakedAmount, timeOfFirstStake }, index) => {
+      console.log("Processing profile :", index);
+      const profileAddress = getIdentityAccountAddress(owner, "evm");
+      let identity = "";
+      if (profileAccounts[profileAddress.toString()]) {
+        const accountData = ZstdStream.decompress(
+          new Uint8Array(
+            Buffer.from(profileAccounts[profileAddress.toString()], "base64")
+          )
+        );
+        identity = profileConnection.getIdentityFromProfileAccountData(
+          Buffer.from(accountData)
+        );
+      }
+      return {
+        solana: owner,
+        stakedAmount: stakedAmount.toString(),
+        timeOfFirstStake: timeOfFirstStake.toString(),
+        evm: identity,
+      };
     }
   );
 
-  const stakersWithProfile = stakers.map(({ owner, stakedAmount }, index) => {
-    console.log("Processing profile :", index);
-    const profileAddress = getIdentityAccountAddress(owner, "evm");
-    let identity = "";
-    if (profileAccounts[profileAddress.toString()]) {
-      const accountData = ZstdStream.decompress(
-        new Uint8Array(
-          Buffer.from(profileAccounts[profileAddress.toString()], "base64")
-        )
-      );
-      identity = profileConnection.getIdentityFromProfileAccountData(
-        Buffer.from(accountData)
-      );
-    }
-    return {
-      solana: owner,
-      stakedAmount: stakedAmount.toString(),
-      evm: identity,
-    };
-  });
-
   const date = Date.now();
 
+  if (!fs.existsSync("snapshots")) {
+    fs.mkdirSync("snapshots");
+  }
+
   fs.writeFileSync(
-    `snapshot-${date.toString()}.json`,
+    `snapshots/snapshot-${date.toString()}.json`,
     JSON.stringify(stakersWithProfile, null, 2),
     "utf-8"
   );
   fs.writeFileSync(
-    `snapshot-${date.toString()}.csv`,
+    `snapshots/snapshot-${date.toString()}.csv`,
     Papa.unparse(stakersWithProfile, { header: true, skipEmptyLines: true }),
     "utf-8"
   );
