@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
 import { getAllLockedCustodyAccounts } from '@pythnetwork/staking/app/api_utils'
-import { Connection, Keypair } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
@@ -37,7 +37,10 @@ export default async function handlerAllLockedAccounts(
   )
 
   const totalLockedAmount = allLockedCustodyAccounts.reduce(
-    (total: PythBalance, account: any) => {
+    (
+      total: PythBalance,
+      account: { pubkey: PublicKey; amount: PythBalance }
+    ) => {
       return total.add(account.amount)
     },
     PythBalance.zero()
