@@ -152,12 +152,12 @@ async function main() {
 
   fs.writeFileSync(
     `snapshots/snapshot-${date.toString()}.json`,
-    JSON.stringify({}, null, 2),
+    JSON.stringify(stakersWithProfile, null, 2),
     "utf-8"
   );
   fs.writeFileSync(
     `snapshots/snapshot-${date.toString()}.csv`,
-    Papa.unparse({}, { header: true, skipEmptyLines: true }),
+    Papa.unparse(stakersWithProfile, { header: true, skipEmptyLines: true }),
     "utf-8"
   );
 }
