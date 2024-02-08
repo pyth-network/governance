@@ -1,3 +1,5 @@
+- Wallet address
+
 - Name of Candidate
   - Full Name
   - Twitter handle
