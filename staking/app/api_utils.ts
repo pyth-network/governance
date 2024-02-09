@@ -7,6 +7,7 @@ import { PythBalance } from "./pythBalance";
 import { IdlAccounts, Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING } from "./lockedAccounts";
 
 const ONE_YEAR = new BN(3600 * 24 * 365);
 
@@ -14,14 +15,14 @@ const ONE_YEAR = new BN(3600 * 24 * 365);
 // PDA derivations
 // ======================================
 
-export function getMetadataAccountAddress(positionAccountAddress: PublicKey) {
+function getMetadataAccountAddress(positionAccountAddress: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("stake_metadata"), positionAccountAddress.toBuffer()],
     STAKING_ADDRESS
   )[0];
 }
 
-export function getCustodyAccountAddress(positionAccountAddress: PublicKey) {
+function getCustodyAccountAddress(positionAccountAddress: PublicKey) {
   return PublicKey.findProgramAddressSync(
     [Buffer.from("custody"), positionAccountAddress.toBuffer()],
     STAKING_ADDRESS
@@ -93,7 +94,7 @@ export async function getStakeAccountDetails(
 // Global getters
 // ======================================
 
-export async function getConfig(
+async function getConfig(
   stakingProgram: Program<Staking>
 ): Promise<IdlAccounts<Staking>["globalConfig"]> {
   const configAccountAddress = PublicKey.findProgramAddressSync(
@@ -108,7 +109,7 @@ export async function getTotalSupply(tokenProgram: any): Promise<PythBalance> {
   return new PythBalance(pythTokenMintData.supply);
 }
 
-export async function getAllMetadataAccounts(
+async function getAllMetadataAccounts(
   stakingProgram: Program<Staking>,
   stakeAccounts: PublicKey[]
 ): Promise<(IdlAccounts<Staking>["stakeAccountMetadataV2"] | null)[]> {
@@ -120,35 +121,65 @@ export async function getAllMetadataAccounts(
   );
 }
 
-export async function getAllCustodyAccounts(
-  tokenProgram: any,
-  stakeAccounts: PublicKey[]
-) {
-  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
-    getCustodyAccountAddress(account)
-  );
-  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses);
-}
-
 // ======================================
 // Locked accounts
 // ======================================
 
-export function hasStandardLockup(
-  metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"]
-) {
-  return (
-    metadataAccountData.lock.periodicVestingAfterListing &&
-    metadataAccountData.lock.periodicVestingAfterListing.numPeriods.eq(
-      new BN(4)
-    ) &&
-    metadataAccountData.lock.periodicVestingAfterListing.periodDuration.eq(
-      ONE_YEAR
-    )
+function getAllLockedStakeAccounts() {
+  return LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING.map(
+    (account) => new PublicKey(account)
   );
 }
 
-export function getCurrentlyLockedAmount(
+/**
+ * WARNING: This function uses a hardcoded list of locked staking accounts. This is because
+ * otherwise you'd need to fetch all staking account and that's cumbersome since there are so many. On the other hand,
+ * the list of locked staking accounts is small and doesn't change often.
+ */
+export async function getAllLockedCustodyAccounts(
+  stakingProgram: Program<Staking>,
+  tokenProgram: any
+): Promise<{ pubkey: PublicKey; amount: PythBalance }[]> {
+  const configAccountData = await getConfig(stakingProgram);
+  const allLockedStakeAccounts = getAllLockedStakeAccounts();
+
+  const allLockedMetadataAccounts = await getAllMetadataAccounts(
+    stakingProgram,
+    allLockedStakeAccounts
+  );
+
+  const allLockedCustodyAccountAddresses = allLockedStakeAccounts.map(
+    (account) => getCustodyAccountAddress(account)
+  );
+  const allLockedCustodyAccounts =
+    await tokenProgram.account.account.fetchMultiple(
+      allLockedCustodyAccountAddresses
+    );
+
+  return allLockedCustodyAccounts
+    .map((data: any, index: number) => {
+      const amount =
+        data.amount && allLockedMetadataAccounts[index]?.lock
+          ? new PythBalance(data.amount).min(
+              getCurrentlyLockedAmount(
+                allLockedMetadataAccounts[index]!,
+                configAccountData
+              )
+            )
+          : new PythBalance(new BN(0));
+      return { pubkey: allLockedCustodyAccountAddresses[index], amount };
+    })
+    .sort(
+      (
+        a: { pubkey: PublicKey; amount: PythBalance },
+        b: { pubkey: PublicKey; amount: PythBalance }
+      ) => {
+        return a.amount.lte(b.amount) ? 1 : -1;
+      }
+    ); // ! is safe because of the filter above
+}
+
+function getCurrentlyLockedAmount(
   metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"],
   configAccountData: IdlAccounts<Staking>["globalConfig"]
 ): PythBalance {
@@ -201,7 +232,7 @@ function getCurrentlyLockedAmountPeriodic(
   }
 }
 
-export function getLockSummary(lock: any, listTime: BN | null) {
+function getLockSummary(lock: any, listTime: BN | null) {
   if (lock.fullyVested) {
     return { type: "fullyUnlocked" };
   } else if (lock.periodicVestingAfterListing) {

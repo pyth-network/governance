@@ -1,20 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
-import BN from 'bn.js'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import {
-  getAllMetadataAccounts,
-  getCustodyAccountAddress,
-  hasStandardLockup,
-} from '@pythnetwork/staking/app/api_utils'
-import { Connection, Keypair } from '@solana/web3.js'
+import { getAllLockedCustodyAccounts } from '@pythnetwork/staking/app/api_utils'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { getAllStakeAccounts } from '../getAllStakingAccounts'
 
 const RPC_URL = process.env.BACKEND_ENDPOINT!
 const connection = new Connection(RPC_URL)
@@ -37,48 +31,27 @@ export default async function handlerAllLockedAccounts(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const allStakeAccounts = await getAllStakeAccounts(RPC_URL)
-
-  const allMetadataAccounts = await getAllMetadataAccounts(
+  const allLockedCustodyAccounts = await getAllLockedCustodyAccounts(
     stakingProgram,
-    allStakeAccounts
+    tokenProgram
   )
 
-  const allCustodyAccountAddresses = allStakeAccounts.map((account) =>
-    getCustodyAccountAddress(account)
-  )
-  const allCustodyAccounts = await tokenProgram.account.account.fetchMultiple(
-    allCustodyAccountAddresses
-  )
-
-  const lockedCustodyAccounts = allCustodyAccounts
-    .map((data, index) => {
-      return { pubkey: allCustodyAccountAddresses[index], data }
-    })
-    .filter((account, index) => {
-      const metadataAccountData = allMetadataAccounts[index]
-      return (
-        metadataAccountData &&
-        account.data &&
-        hasStandardLockup(metadataAccountData)
-      )
-    })
-    .sort((a, b) => {
-      return a.data!.amount.lte(b.data!.amount) ? 1 : -1
-    }) // ! is safe because of the filter above
-
-  const totalLockedAmount = new PythBalance(
-    lockedCustodyAccounts.reduce((total, account) => {
-      return total.add(account.data ? new BN(account.data.amount) : new BN(0))
-    }, new BN(0))
+  const totalLockedAmount = allLockedCustodyAccounts.reduce(
+    (
+      total: PythBalance,
+      account: { pubkey: PublicKey; amount: PythBalance }
+    ) => {
+      return total.add(account.amount)
+    },
+    PythBalance.zero()
   )
 
   const data = {
     totalLockedAmount: totalLockedAmount.toString(),
-    accounts: lockedCustodyAccounts.map((account) => {
+    accounts: allLockedCustodyAccounts.map((account) => {
       return {
         custodyAccount: account.pubkey.toBase58(),
-        actualAmount: new PythBalance(account.data!.amount).toString(), // ! is safe because of the filter above
+        actualAmount: account.amount.toString(),
       }
     }),
   }
