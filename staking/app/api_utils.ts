@@ -131,6 +131,11 @@ function getAllLockedStakeAccounts() {
   );
 }
 
+/**
+ * WARNING: This function uses a hardcoded list of locked staking accounts. This is because
+ * otherwise you'd need to fetch all staking account and that's cumbersome since there are so many. On the other hand,
+ * the list of locked staking accounts is small and doesn't change often.
+ */
 export async function getAllLockedCustodyAccounts(
   stakingProgram: Program<Staking>,
   tokenProgram: any
