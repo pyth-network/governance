@@ -459,28 +459,40 @@ export class StakeConnection {
     vesting: VestingSchedule = {
       fullyVested: {},
     }
-  ): Promise<Keypair> {
-    const stakeAccountKeypair = new Keypair();
+  ): Promise<PublicKey> {
+    const nonce = crypto.randomBytes(16).toString("hex");
+    const stakeAccountAddress = await PublicKey.createWithSeed(
+      this.userPublicKey(),
+      nonce,
+      this.program.programId
+    );
 
     instructions.push(
-      await this.program.account.positionData.createInstruction(
-        stakeAccountKeypair,
-        wasm.Constants.POSITIONS_ACCOUNT_SIZE()
-      )
+      SystemProgram.createAccountWithSeed({
+        fromPubkey: this.userPublicKey(),
+        newAccountPubkey: stakeAccountAddress,
+        basePubkey: this.userPublicKey(),
+        seed: nonce,
+        lamports:
+          await this.program.provider.connection.getMinimumBalanceForRentExemption(
+            wasm.Constants.POSITIONS_ACCOUNT_SIZE()
+          ),
+        space: wasm.Constants.POSITIONS_ACCOUNT_SIZE(),
+        programId: this.program.programId,
+      })
     );
 
     instructions.push(
       await this.program.methods
         .createStakeAccount(owner, vesting)
         .accounts({
-          stakeAccountPositions: stakeAccountKeypair.publicKey,
+          stakeAccountPositions: stakeAccountAddress,
           mint: this.config.pythTokenMint,
         })
-        .signers([stakeAccountKeypair])
         .instruction()
     );
 
-    return stakeAccountKeypair;
+    return stakeAccountAddress;
   }
 
   public async isLlcMember(stakeAccount: StakeAccount) {
@@ -638,7 +650,7 @@ export class StakeConnection {
       assert(vestingSchedule.periodicVesting.initialBalance.lte(amount.toBN()));
     }
 
-    const stakeAccountKeypair = await this.withCreateAccount(
+    const stakeAccountAddress = await this.withCreateAccount(
       transaction.instructions,
       owner,
       vestingSchedule
@@ -646,14 +658,11 @@ export class StakeConnection {
 
     if (transfer) {
       transaction.instructions.push(
-        await this.buildTransferInstruction(
-          stakeAccountKeypair.publicKey,
-          amount.toBN()
-        )
+        await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
       );
     }
 
-    await this.provider.sendAndConfirm(transaction, [stakeAccountKeypair]);
+    await this.provider.sendAndConfirm(transaction, []);
   }
 
   public async depositTokens(
@@ -667,9 +676,7 @@ export class StakeConnection {
     const signers: Signer[] = [];
 
     if (!stakeAccount) {
-      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
-      signers.push(stakeAccountKeypair);
-      stakeAccountAddress = stakeAccountKeypair.publicKey;
+      stakeAccountAddress = await this.withCreateAccount(ixs, owner);
     } else {
       stakeAccountAddress = stakeAccount.address;
     }
@@ -763,9 +770,7 @@ export class StakeConnection {
     const signers: Signer[] = [];
 
     if (!stakeAccount) {
-      const stakeAccountKeypair = await this.withCreateAccount(ixs, owner);
-      signers.push(stakeAccountKeypair);
-      stakeAccountAddress = stakeAccountKeypair.publicKey;
+      stakeAccountAddress = await this.withCreateAccount(ixs, owner);
     } else {
       stakeAccountAddress = stakeAccount.address;
       const vestingAccountState = stakeAccount.getVestingAccountState(

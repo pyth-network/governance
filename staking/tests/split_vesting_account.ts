@@ -86,7 +86,7 @@ describe("split vesting account", async () => {
 
     const transaction = new Transaction();
 
-    const stakeAccountKeypair = await samConnection.withCreateAccount(
+    const stakeAccountAddress = await samConnection.withCreateAccount(
       transaction.instructions,
       samConnection.userPublicKey(),
       {
@@ -101,21 +101,19 @@ describe("split vesting account", async () => {
 
     await samConnection.withJoinDaoLlc(
       transaction.instructions,
-      stakeAccountKeypair.publicKey
+      stakeAccountAddress
     );
 
     transaction.instructions.push(
       await samConnection.buildTransferInstruction(
-        stakeAccountKeypair.publicKey,
+        stakeAccountAddress,
         PythBalance.fromString(totalBalance).toBN()
       )
     );
 
-    await samConnection.provider.sendAndConfirm(
-      transaction,
-      [stakeAccountKeypair],
-      { skipPreflight: true }
-    );
+    await samConnection.provider.sendAndConfirm(transaction, [], {
+      skipPreflight: true,
+    });
 
     let stakeAccount = await samConnection.getMainAccount(
       samConnection.userPublicKey()

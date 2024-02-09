@@ -81,7 +81,7 @@ describe("vesting", async () => {
 
     const transaction = new Transaction();
 
-    const stakeAccountKeypair = await samConnection.withCreateAccount(
+    const stakeAccountAddress = await samConnection.withCreateAccount(
       transaction.instructions,
       sam.publicKey,
       {
@@ -96,21 +96,19 @@ describe("vesting", async () => {
 
     await samConnection.withJoinDaoLlc(
       transaction.instructions,
-      stakeAccountKeypair.publicKey
+      stakeAccountAddress
     );
 
     transaction.instructions.push(
       await samConnection.buildTransferInstruction(
-        stakeAccountKeypair.publicKey,
+        stakeAccountAddress,
         PythBalance.fromString("100").toBN()
       )
     );
 
-    await samConnection.provider.sendAndConfirm(
-      transaction,
-      [stakeAccountKeypair],
-      { skipPreflight: true }
-    );
+    await samConnection.provider.sendAndConfirm(transaction, [], {
+      skipPreflight: true,
+    });
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -770,7 +768,7 @@ describe("vesting", async () => {
 
     const transaction = new Transaction();
 
-    const stakeAccountKeypair = await aliceConnection.withCreateAccount(
+    const stakeAccountAddress = await aliceConnection.withCreateAccount(
       transaction.instructions,
       alice.publicKey,
       {
@@ -785,16 +783,14 @@ describe("vesting", async () => {
 
     transaction.instructions.push(
       await aliceConnection.buildTransferInstruction(
-        stakeAccountKeypair.publicKey,
+        stakeAccountAddress,
         PythBalance.fromString("100").toBN()
       )
     );
 
-    await aliceConnection.provider.sendAndConfirm(
-      transaction,
-      [stakeAccountKeypair],
-      { skipPreflight: true }
-    );
+    await aliceConnection.provider.sendAndConfirm(transaction, [], {
+      skipPreflight: true,
+    });
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
