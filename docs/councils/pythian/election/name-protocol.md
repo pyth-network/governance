@@ -3,6 +3,7 @@
 - Name of Candidate
   - Full Name
   - Twitter handle
+  - Discord handle
   - Github handle
 
 - Current Role / Ecosystem
