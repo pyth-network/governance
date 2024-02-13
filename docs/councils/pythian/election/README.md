@@ -4,7 +4,7 @@ Thank you for your interest in becoming a member of the Pythian Council.
 
 1. **What is the Pythian Council?**
 
-    As defined in the proposed [Pyth DAO Constitution](https://github.com/pyth-network/governance/blob/main/docs/constitution/pyth-dao-constitution.md), the Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet. The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO.
+    As defined in the adopted [Pyth DAO Constitution](https://github.com/pyth-network/governance/blob/main/docs/constitution/pyth-dao-constitution.md), the Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet. The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO.
 
     The Operational PIPs delegated to the Pythian Council involve:
 
