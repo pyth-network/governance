@@ -9,9 +9,9 @@
     - Through PIP-1, the Pyth DAO will have the ability to submit subsequent Pyth Improvement Proposals (“**PIPs**”), collectively decide on them and implement them, and delegate certain responsibilities to elected councils.
 
 - Key Terms:
-    
+
     PIP-1 proposes to adopt the Pyth DAO Constitution, a framework that:
-    
+
     - sets rules and procedures on the submission and voting on PIPs
     - suggests the formation of two councils: the Pythian Council and the Price Feed Council which are respectively responsible for the voting and implementation of certain Operational PIPs as defined in the proposed constitution
     - lists a set of values and principles for the Pyth DAO community centered around ownership, governance, and inclusivity for the long-term benefit of the Pyth DAO
