@@ -3,7 +3,7 @@ import { StakeConnection } from "../StakeConnection";
 import { PROFILE_ADDRESS, STAKING_ADDRESS } from "../constants";
 import axios from "axios";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { ZstdInit, ZstdStream } from "@oneidentity/zstd-js";
+import { ZstdInit } from "@oneidentity/zstd-js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import {
   ProfileConnection,
@@ -96,7 +96,7 @@ const profileConnection = new ProfileConnection(
 );
 
 async function main() {
-  await ZstdInit();
+  const { ZstdStream } = await ZstdInit();
 
   const stakeConnection = await StakeConnection.connect(
     connection,
