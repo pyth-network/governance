@@ -1,7 +1,6 @@
 - Wallet address (SPL/Solana)
 
-- For key custody, do you use a hardware wallet?
-  - Yes/No
+- Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc).
 
 - Name of Candidate
   - Full Name
