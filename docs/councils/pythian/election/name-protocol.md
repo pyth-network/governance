@@ -1,5 +1,8 @@
 - Wallet address (SPL/Solana)
 
+- For key custody, do you use a hardware wallet?
+  - Yes/No
+
 - Name of Candidate
   - Full Name
   - Twitter handle
