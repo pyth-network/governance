@@ -1,5 +1,7 @@
 - Wallet address (SPL/Solana)
 
+- Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc).
+
 - Name of Candidate
   - Full Name
   - Twitter handle
