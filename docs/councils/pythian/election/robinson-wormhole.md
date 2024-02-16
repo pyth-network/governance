@@ -10,7 +10,7 @@
 
 **Current Role / Ecosystem**
 
-- Title CCO and Co-Founder 
+- Title CCO and Co-Founder
 - Company name (if applicable) or Protocol Wormhole Foundation
 
 **Main Location**
@@ -26,4 +26,3 @@ Wormhole is critical infrastructure for the Pyth Network and as such, it would b
 - Lead the Wormhole Foundation, a core contributor to the Wormhole Protocol
 - Previously core contributor to Acala Network
 - Participate in various DAOs across evm and non-evm chains
-
