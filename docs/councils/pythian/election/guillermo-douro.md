@@ -15,7 +15,7 @@ Ledger hardware wallet
   - Douro Labs
 
 - Main Location
-  - Portugal
+  - Europe
 
 - Motivations to participate in the Pythian Council
   - Douro Labs is a significant technical contributor to the Pyth protocol
