@@ -16,8 +16,8 @@
   - North America
 
 - Motivations to participate in the Pythian Council
-  - Synthetix is a top consumer of Pyth data with plans for further collaboration in the future. 
+  - Synthetix is a top consumer of Pyth data with plans for further collaboration in the future.
 
 - Relevant Experience
   - Contributor to the Synthetix protocol for 3 years.
-  - Expertise with onchain derivatives, oracle systems, general DeFi knowledge  
+  - Expertise with onchain derivatives, oracle systems, general DeFi knowledge

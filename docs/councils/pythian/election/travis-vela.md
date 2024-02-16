@@ -2,7 +2,7 @@
 PhvHHzfLj8znqWHCoLNjEaGa6ZzHeNGgva3iei212nn
 
 - Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc).
-Offline / Cold Storage 
+Offline / Cold Storage
 
 - Name of Candidate
   - Travis Skweres
