@@ -1,5 +1,7 @@
 - Wallet address (SPL/Solana): 9sfogFjG8CJKJGWvNDB7NgPusALti3hWKkHGZhKmmxD7
 
+- Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc). Ledger hardware wallet
+
 - Name of Candidate
   - Full Name: Marc Tillement
   - Twitter handle: @KemarTiti
