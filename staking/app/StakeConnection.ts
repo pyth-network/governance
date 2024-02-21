@@ -1118,7 +1118,7 @@ export class StakeConnection {
       GOVERNANCE_ADDRESS(),
       PROGRAM_VERSION_V2,
       REALM_ID,
-      new PublicKey("FVQyHcooAtThJ83XFrNnv74BcinbRH3bRmfFamAHBfuj"),
+      new PublicKey("6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT"), // this seed is the authority of the pythian multisig
       governanceConfig,
       await getTokenOwnerRecordAddress(
         GOVERNANCE_ADDRESS(),
