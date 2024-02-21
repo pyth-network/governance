@@ -1077,7 +1077,7 @@ export class StakeConnection {
     };
   }
 
-  // This is a helper to create the election governance.
+  // This is a helper to create the election governance from the UI.
   // The address is hardcoded so it can only be run once.
   public async createElectionGovernance(stakeAccount: StakeAccount) {
     const governanceConfig = new GovernanceConfig({
