@@ -34,11 +34,19 @@ import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
 import {
   getTokenOwnerRecordAddress,
+  GovernanceConfig,
+  PROGRAM_VERSION,
   PROGRAM_VERSION_V2,
+  VoteThreshold,
+  VoteThresholdType,
+  VoteTipping,
+  withCreateGovernance,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
 import {
+  EPOCH_DURATION,
   GOVERNANCE_ADDRESS,
+  REALM_ID,
   STAKING_ADDRESS,
   WALLET_TESTER_ADDRESS,
 } from "./constants";
@@ -1067,6 +1075,64 @@ export class StakeConnection {
       ),
       timeOfFirstStake,
     };
+  }
+
+  // This is a helper to create the election governance from the UI.
+  // The address is hardcoded so it can only be run once.
+  public async createElectionGovernance(stakeAccount: StakeAccount) {
+    const governanceConfig = new GovernanceConfig({
+      communityVoteThreshold: new VoteThreshold({
+        type: VoteThresholdType.YesVotePercentage,
+        value: 1, // 1%, irrelevant since the proposals won't be executed
+      }),
+      minCommunityTokensToCreateProposal: new BN(
+        wasm.Constants.MAX_VOTER_WEIGHT().toString()
+      ).div(new BN(20000)), // 0.5 basis points of the staked supply
+      minInstructionHoldUpTime: 0, // irrelevant since the proposals won't be executed
+      baseVotingTime: EPOCH_DURATION, // Is equal to 1 Pyth epoch
+      communityVoteTipping: VoteTipping.Disabled, // Let it run for the full duration
+      minCouncilTokensToCreateProposal: new BN(1), // Not used since we don't have a council
+
+      // V3
+      councilVoteThreshold: new VoteThreshold({
+        type: VoteThresholdType.Disabled,
+      }),
+      councilVetoVoteThreshold: new VoteThreshold({
+        type: VoteThresholdType.Disabled,
+      }),
+      communityVetoVoteThreshold: new VoteThreshold({
+        type: VoteThresholdType.Disabled,
+      }),
+      councilVoteTipping: VoteTipping.Disabled, // Not used since we don't have a council
+      votingCoolOffTime: 0,
+      depositExemptProposalCount: 100,
+    });
+
+    const tx = new Transaction();
+
+    const { voterWeightAccount, maxVoterWeightRecord } =
+      await this.withUpdateVoterWeight(tx.instructions, stakeAccount, {
+        createGovernance: {},
+      });
+    await withCreateGovernance(
+      tx.instructions,
+      GOVERNANCE_ADDRESS(),
+      PROGRAM_VERSION,
+      REALM_ID,
+      new PublicKey("6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT"), // this seed is the authority of the pythian multisig
+      governanceConfig,
+      await getTokenOwnerRecordAddress(
+        GOVERNANCE_ADDRESS(),
+        REALM_ID,
+        this.config.pythTokenMint,
+        this.userPublicKey()
+      ),
+      this.userPublicKey(),
+      this.userPublicKey(),
+      voterWeightAccount
+    );
+
+    await this.provider.sendAndConfirm(tx);
   }
 }
 
