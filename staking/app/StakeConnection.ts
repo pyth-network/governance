@@ -53,7 +53,6 @@ import {
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
 import * as crypto from "crypto";
-import { Constants } from "@pythnetwork/staking-wasm";
 let wasm = wasm2;
 export { wasm };
 
@@ -1085,7 +1084,7 @@ export class StakeConnection {
         value: 1, // 1%, irrelevant since the proposals won't be executed
       }),
       minCommunityTokensToCreateProposal: new BN(
-        Constants.MAX_VOTER_WEIGHT().toString()
+        wasm.Constants.MAX_VOTER_WEIGHT().toString()
       ).div(new BN(20000)), // 0.5 basis points of the staked supply
       minInstructionHoldUpTime: 0, // irrelevant since the proposals won't be executed
       baseVotingTime: EPOCH_DURATION, // Is equal to 1 Pyth epoch
