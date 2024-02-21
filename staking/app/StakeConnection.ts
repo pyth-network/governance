@@ -40,7 +40,6 @@ import {
   VoteThresholdType,
   VoteTipping,
   withCreateGovernance,
-  withCreateProgramGovernance,
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
 import {
