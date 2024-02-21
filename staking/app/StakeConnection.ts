@@ -35,6 +35,7 @@ import { PythBalance } from "./pythBalance";
 import {
   getTokenOwnerRecordAddress,
   GovernanceConfig,
+  PROGRAM_VERSION,
   PROGRAM_VERSION_V2,
   VoteThreshold,
   VoteThresholdType,
@@ -1115,7 +1116,7 @@ export class StakeConnection {
     await withCreateGovernance(
       tx.instructions,
       GOVERNANCE_ADDRESS(),
-      PROGRAM_VERSION_V2,
+      PROGRAM_VERSION,
       REALM_ID,
       new PublicKey("6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT"), // this seed is the authority of the pythian multisig
       governanceConfig,
