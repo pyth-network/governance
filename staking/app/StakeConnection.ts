@@ -921,6 +921,11 @@ export class StakeConnection {
       ComputeBudgetProgram.setComputeUnitLimit({ units: 30000 }),
       ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
     ];
+
+    preInstructions.push(
+      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
+    );
+
     await this.program.methods
       .requestSplit(amount.toBN(), recipient)
       .preInstructions(preInstructions)
