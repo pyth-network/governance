@@ -31,12 +31,18 @@ Thank you for your interest in becoming a member of the Pythian Council.
     2. commit your name-protocol.md file in the same folder to a new branch
     3. raise a PR for the file to be added
     4. once merged, join the [Pyth Discord](https://discord.com/invite/pythnetwork) and publish a message (2/3 lines and your nomination Github link) in the Election: Pythian Council channel
-    5. upon completion of the previous step, submit a proposal on [Realms](https://app.realms.today/dao/PYTH) to formalise your candidacy. The text allowed on Realms is limited to 512 characters and should include:
-        1. Title: Pythian Council Nomination - your name and protocol
-        2. Description: 1 line + link to your candidacy file on Github
+    5. upon completion of the previous step, submit a proposal on [Realms](https://app.realms.today/dao/PYTH) to formalise your candidacy following the steps below:
+       1. Go to: https://app.realms.today/dao/PYTH
+       2. Connect your wallet (that has the staked PYTH tokens). as of February 21st, you would need 63,000 $PYTH tokens staked to submit your proposal
+       3. Click on “New proposal”
+       4. Fill in the “Title” section with the following: [Pythian Council Election] Name - Protocol
+       5.  Fill in the “Description” section by copy-pasting the url of your candidacy file on Github
+       6.  `IMPORTANT`: In the “Wallet” section, select `8f866…8R5rh`, this identifies this proposal as an election proposal
+       7.  Click on “Add proposal” and sign with your wallet
+    Please refer to [this video](https://drive.google.com/file/d/12ZjjpQx2brquNu9mRzZepEppWjzIQNVW/view?usp=drive_link) for a step by step demonstration.
 &nbsp;
 
-5. **What is the Timeline for the council formation?**
+1. **What is the Timeline for the council formation?**
     1. PR submission on Github by Feb 21st
     2. Candidacy proposal submission on Realms on Feb 22nd
     3. Voting and resolution on Feb 29th
