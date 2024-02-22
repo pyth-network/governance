@@ -918,8 +918,7 @@ export class StakeConnection {
     recipient: PublicKey
   ) {
     const preInstructions = [
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 30000 }),
-      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
     ];
 
     preInstructions.push(
