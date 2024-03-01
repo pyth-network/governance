@@ -1,5 +1,5 @@
 - Wallet address (SPL/Solana)
-  94XZdEZkJphrTCPJUmeQrc7H4DPXA2tabo5g8igtba4A
+  E5KR7yfb9UyVB6ZhmhQki1rM1eBcxHvyGKFZakAC5uc
 
 - Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc).
 Ledger hardware wallet
