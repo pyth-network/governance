@@ -61,18 +61,14 @@ async function getAllStakeAccounts(
 
 async function main() {
   const configAccountData = await getConfig(stakingProgram);
-  console.log("after configAccountData");
   const stakeAccounts = await getAllStakeAccounts(RPC_URL);
-  console.log("after stakeAccounts");
   const stakeAccountPubkeys = stakeAccounts.map(
     (account) => new PublicKey(account.publicKey)
   );
-  console.log("after stakeAccountPubkeys");
   const allMetadataAccounts = await getAllMetadataAccounts(
     stakingProgram,
     stakeAccountPubkeys
   );
-  console.log("after allMetadataAccounts");
 
   allMetadataAccounts.forEach(
     (
