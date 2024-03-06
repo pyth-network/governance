@@ -117,14 +117,12 @@ export async function getAllMetadataAccounts(
     getMetadataAccountAddress(account)
   );
   // split metadata accounts into chunks of 1000 to avoid hitting the limit
-  const chunks = metadataAccountAddresses.reduce((resultArray, item, index) => {
-    const chunkIndex = Math.floor(index / 1000);
-    if (!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = [];
-    }
-    resultArray[chunkIndex].push(item);
-    return resultArray;
-  }, []);
+  const chunkSize = 1000;
+  const chunks = Array.from(
+    { length: Math.ceil(metadataAccountAddresses.length / chunkSize) },
+    (_, i) =>
+      metadataAccountAddresses.slice(i * chunkSize, i * chunkSize + chunkSize)
+  );
 
   // for each chunk, fetch the metadata accounts
   let allMetadataAccounts: (
