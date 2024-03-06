@@ -119,12 +119,13 @@ export async function getAllMetadataAccounts(
   // split metadata accounts into chunks of 1000 to avoid hitting the limit
   const chunks = metadataAccountAddresses.reduce((resultArray, item, index) => {
     const chunkIndex = Math.floor(index / 1000);
-    if (!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = []; // start a new chunk
+    if (resultArray.length < chunkIndex + 1) {
+      resultArray.push([]);
     }
     resultArray[chunkIndex].push(item);
     return resultArray;
   }, []);
+
   // for each chunk, fetch the metadata accounts
   let allMetadataAccounts: (
     | IdlAccounts<Staking>["stakeAccountMetadataV2"]
@@ -138,9 +139,6 @@ export async function getAllMetadataAccounts(
     allMetadataAccounts = allMetadataAccounts.concat(metadataAccounts);
   }
   return allMetadataAccounts;
-  // return stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
-  //   metadataAccountAddresses
-  // );
 }
 
 export async function getAllCustodyAccounts(
@@ -264,7 +262,7 @@ function getCurrentlyLockedAmountPeriodic(
   }
 }
 
-function getLockSummary(lock: any, listTime: BN | null) {
+export function getLockSummary(lock: any, listTime: BN | null) {
   if (lock.fullyVested) {
     return { type: "fullyUnlocked" };
   } else if (lock.periodicVestingAfterListing) {

@@ -1,20 +1,16 @@
 import { AnchorProvider, IdlAccounts, Program } from "@coral-xyz/anchor";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
-import { splTokenProgram } from "@coral-xyz/spl-token";
 import {
-  getAllCustodyAccounts,
   getAllMetadataAccounts,
   getConfig,
-  getCurrentlyLockedAmount,
+  getLockSummary,
 } from "@pythnetwork/staking/app/api_utils";
 import idl from "@pythnetwork/staking/target/idl/staking.json";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import axios from "axios";
 import { Staking } from "../../target/types/staking";
 import { STAKING_ADDRESS } from "../constants";
-import { PythBalance } from "../pythBalance";
 
 const RPC_URL = process.env.ENDPOINT!;
 const connection = new Connection(RPC_URL);
@@ -28,10 +24,6 @@ const stakingProgram = new Program<Staking>(
   STAKING_ADDRESS,
   provider
 );
-const tokenProgram = splTokenProgram({
-  programId: TOKEN_PROGRAM_ID,
-  provider: provider as any,
-});
 
 // The JSON payload is too big when using the @solana/web3.js getProgramAccounts
 // We get around this by using the base64+ztsd encoding instead of base64 that @solana/web3.js uses
@@ -81,23 +73,19 @@ async function main() {
     stakeAccountPubkeys
   );
   console.log("after allMetadataAccounts");
-  const allCustodyAccounts = await getAllCustodyAccounts(
-    tokenProgram,
-    stakeAccountPubkeys
-  );
-  console.log("after allCustodyAccounts");
+
   allMetadataAccounts.forEach(
     (
       account: IdlAccounts<Staking>["stakeAccountMetadataV2"] | null,
       index: number
     ) => {
-      if (account !== null) {
-        const pythBalance = new PythBalance(
-          allCustodyAccounts[index].amount
-        ).min(getCurrentlyLockedAmount(account, configAccountData));
-        if (!pythBalance.isZero()) {
-          console.log(stakeAccountPubkeys[index].toBase58());
-        }
+      if (account === null) {
+        return;
+      }
+      const lock = account.lock;
+      const summary = getLockSummary(lock, configAccountData.pythTokenListTime);
+      if (summary && summary.type !== "fullyUnlocked") {
+        console.log(stakeAccountPubkeys[index].toBase58());
       }
     }
   );
