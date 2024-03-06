@@ -1,13 +1,13 @@
 // This file contains utility functions for the API. Unfortunately we can't use StakeConnection directly because it has wasm imports that are not compatible with the Next API.
 
-import { Connection, PublicKey } from "@solana/web3.js";
-import { STAKING_ADDRESS, PYTH_TOKEN } from "./constants";
-import BN from "bn.js";
-import { PythBalance } from "./pythBalance";
 import { IdlAccounts, Program } from "@coral-xyz/anchor";
-import { Staking } from "../target/types/staking";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
+import { Connection, PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
+import { Staking } from "../target/types/staking";
+import { PYTH_TOKEN, STAKING_ADDRESS } from "./constants";
 import { LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING } from "./lockedAccounts";
+import { PythBalance } from "./pythBalance";
 
 const ONE_YEAR = new BN(3600 * 24 * 365);
 
@@ -94,7 +94,7 @@ export async function getStakeAccountDetails(
 // Global getters
 // ======================================
 
-async function getConfig(
+export async function getConfig(
   stakingProgram: Program<Staking>
 ): Promise<IdlAccounts<Staking>["globalConfig"]> {
   const configAccountAddress = PublicKey.findProgramAddressSync(
@@ -109,16 +109,44 @@ export async function getTotalSupply(tokenProgram: any): Promise<PythBalance> {
   return new PythBalance(pythTokenMintData.supply);
 }
 
-async function getAllMetadataAccounts(
+export async function getAllMetadataAccounts(
   stakingProgram: Program<Staking>,
   stakeAccounts: PublicKey[]
 ): Promise<(IdlAccounts<Staking>["stakeAccountMetadataV2"] | null)[]> {
   const metadataAccountAddresses = stakeAccounts.map((account) =>
     getMetadataAccountAddress(account)
   );
-  return stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
-    metadataAccountAddresses
+  // split metadata accounts into chunks of 1000 to avoid hitting the limit
+  const chunkSize = 1000;
+  const chunks = Array.from(
+    { length: Math.ceil(metadataAccountAddresses.length / chunkSize) },
+    (_, i) =>
+      metadataAccountAddresses.slice(i * chunkSize, i * chunkSize + chunkSize)
   );
+
+  // for each chunk, fetch the metadata accounts
+  let allMetadataAccounts: (
+    | IdlAccounts<Staking>["stakeAccountMetadataV2"]
+    | null
+  )[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const metadataAccounts =
+      await stakingProgram.account.stakeAccountMetadataV2.fetchMultiple(
+        chunks[i]
+      );
+    allMetadataAccounts = allMetadataAccounts.concat(metadataAccounts);
+  }
+  return allMetadataAccounts;
+}
+
+export async function getAllCustodyAccounts(
+  tokenProgram: any,
+  stakeAccounts: PublicKey[]
+) {
+  const allCustodyAccountAddresses = stakeAccounts.map((account) =>
+    getCustodyAccountAddress(account)
+  );
+  return tokenProgram.account.account.fetchMultiple(allCustodyAccountAddresses);
 }
 
 // ======================================
@@ -179,7 +207,7 @@ export async function getAllLockedCustodyAccounts(
     ); // ! is safe because of the filter above
 }
 
-function getCurrentlyLockedAmount(
+export function getCurrentlyLockedAmount(
   metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"],
   configAccountData: IdlAccounts<Staking>["globalConfig"]
 ): PythBalance {
@@ -232,7 +260,7 @@ function getCurrentlyLockedAmountPeriodic(
   }
 }
 
-function getLockSummary(lock: any, listTime: BN | null) {
+export function getLockSummary(lock: any, listTime: BN | null) {
   if (lock.fullyVested) {
     return { type: "fullyUnlocked" };
   } else if (lock.periodicVestingAfterListing) {
