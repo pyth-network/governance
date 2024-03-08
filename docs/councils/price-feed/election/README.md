@@ -43,5 +43,6 @@ Thank you for your interest in becoming a member of the Price Feed Council.
     1. PR submission on Github by Mar 13th
     2. Candidacy proposal submission on Realms on Mar 14th
     3. Voting and resolution on Mar 21st
-    4. Council becomes operational straight after
+    4. DAO voting on approval of the election results from Mar 21st to Mar 28th
+    5. Council becomes operational straight after
 &nbsp;
