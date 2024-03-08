@@ -69,6 +69,7 @@ async function main() {
     stakingProgram,
     stakeAccountPubkeys
   );
+  const res: string[] = [];
 
   allMetadataAccounts.forEach(
     (
@@ -81,10 +82,12 @@ async function main() {
       const lock = account.lock;
       const summary = getLockSummary(lock, configAccountData.pythTokenListTime);
       if (summary && summary.type !== "fullyUnlocked") {
-        console.log(stakeAccountPubkeys[index].toBase58());
+        res.push(stakeAccountPubkeys[index].toBase58());
       }
     }
   );
+  res.sort();
+  console.log(JSON.stringify(res));
 }
 
 main();

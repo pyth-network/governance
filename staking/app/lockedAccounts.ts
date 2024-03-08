@@ -1,5 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
-
 // A hardcoded sorted list to be able to query the locked accounts while ignoring the rest of the accounts
 // This list is generated from the locked_state_accounts script and is updated periodically.
 export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
@@ -8,6 +6,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "27ie9QX9Eij7hsNuuEKDpUtRxRPZvwwa21RFSdL3nxgk",
   "27jqbevULYSFXxvABLZN1zGuoBQBZnSk9j6aiY6CD4Pj",
   "28eLwY6nmr6LQCgv7WgwpaoZEnjAPx9gdW4cGkYhHYvT",
+  "2LFU5122whHRYJn3WR8zSPFpjTNkTQuYzwFt3Cd1qUMk",
   "2kHtg3cZU4WqqhhMCCqDnX3baA3dxpoYUHemrRVvAPJC",
   "2kpirbG1cj6pwG2owAyvr2F3YExrbAAjeKnQuDWnxWGT",
   "2w9TLJTzBh163iX59voSiEcEzF3h9vxaDqheoezvPGfY",
@@ -40,6 +39,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "5hxYJAn5Gu9hMKATUQKxo8ML73V12S3B5pfdunu5mYXm",
   "5iBPZZDetKQqTKtDa8Lr5xszNAGBPaMEYpFRKf7TGyNC",
   "5j4h8gnWaNyjzaU8hT9mPG8Bfjq97dN8F23o1kmSUJy7",
+  "5tKG4CVKFsMkDe6rPitnR4byCRKi3SJndvPvW7HmmYiS",
   "5u9jTgPQnTGQH2qupkoHCQFweXn2kv7SzrvK9ouqUfYG",
   "5uPFTcSvfu4dpjMxi9d6ypsjwkzwrrhgbcCf2nJvTUMP",
   "5wGRRN2ypRy5mztJyUhDv7WSdhXgU5PDo9FTJopF8Neh",
@@ -85,6 +85,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "9w9Zq6Fw3v6C42zj4eJeBjmDMHGGGYbUCrtHXr6sQhGi",
   "AAXs8LvfhG8RPLawCGMarmpHiK9A5yQHuXLEKQTGbHve",
   "ANnQSQdM22UVXTNH55TCMhi6K7CKutH17rK7zxrrysvb",
+  "APsRcukGm6vmCAD6RA3M64Tkp2WmXJjxQtJ2wNMkcFdd",
   "AtCDxNAh8sjHeqJV1UernGHtToUr8tSrvpwTMmidyrTZ",
   "B7Jbbf9ryXmC2JPNUaaqf3R88KWxcDUSd8JNVbPN7uDF",
   "BNqi3qWY2w5wkgTJKXMZu1pF7w6YWj7yTuuNPMYZ4bK",
@@ -111,6 +112,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "DN9SA9JaPjP1axRSEwPzRAS43pJvtXRG17wvbT6U4e5d",
   "DUaQrWNbxEeMFG171TEnVns52BayYBrRPkppcoLrExpQ",
   "DWeuQ46EG8arDbmXq13EvBdg2PLRb5B89PTjQ5FHkdSP",
+  "DneuPhRUfEJxGimZYDoPj9vK1F2wzQGgCspz9awRjJJP",
   "DpkFS4VCSUAbdy6V38mqcq8dbU3EpuHTLcopuf9YTjqd",
   "Drunvbjsmu1CoYBtzKXEmYLd8QU8TwPTJLM7EU1heo4y",
   "DtPFK9oTe4kaGLbKUaUFhQHNcbMZbP6aM8Nr9uV7P63u",
@@ -130,6 +132,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "F2AQUvDPBmYE2se2ZmpWvogP6hsDV1M1g7iVJKW81jsM",
   "F73qVWE5CmoHgocDf6nPK5zZconuBrLNjBJBch3SAh4L",
   "F7XPBguzruzWTRtWPUh2mnSHdxwkjtYRVonpnv1wuNsF",
+  "F9XMhzeJFMSES5cjreiicRZvzomdr5QFviQMUhrN2vDi",
   "FCXLPra2FJ9ETWT5Lh6Fzp4PtSeAZJgLarfP8JKiEHLp",
   "FFS4VHZpiBi3ab2GPPZc2BU6nzd4yF6J2GvmSL7effKQ",
   "FKG5HrMSSr5o8nyiBNQRPmzRRVteX9doTch2FSgaCTvK",
@@ -144,6 +147,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "FuzGzhtWrkBf79CxkYmHk6JMd2x2CEZ6QFGNFHiHnDmM",
   "FvMtvg6eCQ9yfTuSxqisz43iNz6YRqV151aJDASCgt2T",
   "G1YMqGoNCCy8eb43vAUZKAeYvWYPa84s5y3mZBizh59v",
+  "G5XL3Rev3WKibez41fzGZfjqc9kFU2QUjn7yQKoCC356",
   "GYoxcTgTf6fN1vjJGRZZDwEYNnyma68xgSUKoBinyJRd",
   "GdjFTrQdJTSexhsRfdCcLpf3Gy3hLCgXT1R4dFWWZpu3",
   "Gg6gtQ2771nX69ab3PouvgapVJtsj9n7MdhmaRGdsar6",
@@ -161,6 +165,7 @@ export const LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING = [
   "JD2DYdJB8RVWqsGzcYeBdttKnNQkmTeQ5AXBxgrMFXmx",
   "WKTtMcfF5iBXT5HVsaprW8QUZS56JqvTeydjzxAKztd",
   "YwwCN67Yip8bKnEBoTCYXjfxTcnwiDF3wZuBAC5HHpH",
+  "dPVBFE56eJRLLtmDo3HHQtH86GkumeEtEcWUoweTgmN",
   "dn2kZYZ3phhKxJ5ANgDmUzCHiQ8K9b6o8B4vrrkB6jj",
   "wwpuSxQAZ5coYm78iUehdRT5yTP6KFjSvXUrDxu1ign",
   "zheN5dEZeVdJxsrAJ5ircduDpY1d9QwtDTnoa1mDEHh",
