@@ -6,7 +6,7 @@ Upgrade the current Pyth oracle contract on Blast to be able to collect a share 
 
 ## Rationale
 
-Further increase the Pyth revenue generated from usage of the oracle by downstream at no extra cost to users (paid out from the centralized sequencer revenue).
+Collect the revenue generated from usage of the oracle by downstream applications at no extra cost to users (paid out from the centralized sequencer revenue).
 
 ## Description
 
