@@ -14,7 +14,7 @@ This proposal is to update the Pyth contract on Mode to enable gas fee claims (a
 
 ## Implementation Plan
 
-* Discuss [Proposal](https://xc-admin.xyz.pyth.network/?tab=proposals&proposal=3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth : `3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth` among council Members
+* Discuss [Proposal](https://xc-admin.xyz.pyth.network/?tab=proposals&proposal=3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth : `3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth` among the Pyth community
 
 * Implement the proposed [Code change](https://github.com/pyth-network/pyth-crosschain/compare/chore/evm/mode-claim-gas) ([docs](https://docs.mode.network/build-on-mode/sfs-sequencer-fee-sharing/register-a-smart-contract/sfs-registering-a-contract-with-remix) for this change and gas sharing contract address)
 
