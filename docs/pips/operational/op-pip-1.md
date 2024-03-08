@@ -1,18 +1,26 @@
-# Operational PIP: Upgrade Blast Contract
+# Operational PIP: Upgrade Blast Contract (Pythian Council)
 
-**TL;DR:** Upgrade the current Pyth oracle contract on Blast to be able to collect a share of the gas fees spent when updating a price on-chain.
+## Abstract
 
-**Rationale:** Further increase the Pyth revenue generated from usage of the oracle by downstream at no extra cost to users (paid out from the centralized sequencer revenue).
+Upgrade the current Pyth oracle contract on Blast to be able to collect a share of the gas fees spent when updating a price on-chain.
 
-**Description:** This proposal update our Blast contract to enable gas fee claims (as part of sequencer revenue sharing of these protocols). After we upgrade the contract to this version, we call the new added function which enables the gas fee claims (to the contract itself) and later we can add functionality to claim them.
+## Rationale
 
-[Proposal](http://xc-admin.xyz.pyth.network/?tab=proposals&proposal=9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su): `9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su`
+Further increase the Pyth revenue generated from usage of the oracle by downstream at no extra cost to users (paid out from the centralized sequencer revenue).
 
-[Code change](https://github.com/pyth-network/pyth-crosschain/compare/chore/evm/blast-claim-gas) ([docs](https://docs.blast.io/building/guides/gas-fees) for this change and gas sharing contract address)
+## Description
+
+This proposal is to update the Pyth contract on Blast to enable gas fee claims (as part of sequencer revenue sharing). After we upgrade the contract to this version, we call the new added function which enables the gas fee claims (to the contract itself) and later we can add functionality to claim them.
+
+## Implementation Plan
+
+* Discuss [Proposal](http://xc-admin.xyz.pyth.network/?tab=proposals&proposal=9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su): `9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su` among council Members
+
+* Implement the proposed [Code change](https://github.com/pyth-network/pyth-crosschain/compare/chore/evm/blast-claim-gas) in accordance with the Blast [docs](https://docs.blast.io/building/guides/gas-fees
 
 [Branch](https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/blast-claim-gas): `chore/evm/blast-claim-gas`
 
-Verification (for each proposal):
+* Verify the implementation following the guide below:
 
 1. Make sure you node-js and forge installed.
 2. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm)

@@ -1,18 +1,26 @@
 # Operational PIP: Upgrade Mode Contract (Pythian Council)
 
-**TL;DR:** Upgrade the current Pyth oracle contract on Mode to be able to collect a share of the gas fees spent when updating a price on-chain.
+## Abstract
 
-**Rationale:** Further increase the Pyth revenue generated from usage of the oracle by downstream at no extra cost to users (paid out from the centralized sequencer revenue).
+Upgrade the current Pyth oracle contract on Mode to be able to collect a share of the gas fees spent when updating a price on-chain.
 
-**Description:** This proposal update our Mode contract to enable gas fee claims (as part of sequencer revenue sharing of these protocols). After we upgrade the contract to this version, we call the new added function which enables the gas fee claims (to the contract itself) and later we can add functionality to claim them.
+## Rationale
 
-[Proposal](https://xc-admin.xyz.pyth.network/?tab=proposals&proposal=3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth): `3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth`
+Collect the revenue generated from usage of the oracle by downstream applications at no extra cost to users (paid out from the centralized sequencer revenue).
 
-[Code change](https://github.com/pyth-network/pyth-crosschain/compare/chore/evm/mode-claim-gas) ([docs](https://docs.mode.network/build-on-mode/sfs-sequencer-fee-sharing/register-a-smart-contract/sfs-registering-a-contract-with-remix) for this change and gas sharing contract address)
+## Description
+
+This proposal is to update the Pyth contract on Mode to enable gas fee claims (as part of sequencer revenue sharing of these protocols). After we upgrade the contract to this version, we call the new added function which enables the gas fee claims (to the contract itself) and later we can add functionality to claim them.
+
+## Implementation Plan
+
+* Discuss [Proposal](https://xc-admin.xyz.pyth.network/?tab=proposals&proposal=3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth : `3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth` among council Members
+
+* Implement the proposed [Code change](https://github.com/pyth-network/pyth-crosschain/compare/chore/evm/mode-claim-gas) ([docs](https://docs.mode.network/build-on-mode/sfs-sequencer-fee-sharing/register-a-smart-contract/sfs-registering-a-contract-with-remix) for this change and gas sharing contract address)
 
 [branch](https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/mode-claim-gas): `chore/evm/mode-claim-gas`
 
-Verification (for each proposal):
+* Verify the implementation following the guide below:
 
 1. Make sure you node-js and forge installed.
 2. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm)
