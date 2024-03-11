@@ -190,7 +190,7 @@ export async function getAllLockedCustodyAccounts(
         data.amount && allLockedMetadataAccounts[index]?.lock
           ? new PythBalance(data.amount).min(
               getCurrentlyLockedAmount(
-                allLockedMetadataAccounts[index]?.lock,
+                allLockedMetadataAccounts[index]!.lock,
                 configAccountData
               )
             )
