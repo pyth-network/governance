@@ -18,11 +18,9 @@ Hardware wallet
   - Continent: Europe
 
 - Motivations to participate in the Price Feed Council
-  - Max 3 points:
   - To ensure robustness and reliability of new and existing price feeds on the oracle
   - Ensure price feeds have passed the relative conformance tests within Pythtest before going live in Pythnet
 
 - Relevant Experience
-  - Max 3 points
   - 2+ Years worth experience as a contributor to Pyth within the price feed process and technical integration of new publishers 
   - 10+ Years experience working across multiple tradfi and crypto native firms, offering trade and technical support across all asset classes
