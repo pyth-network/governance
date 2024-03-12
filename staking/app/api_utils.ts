@@ -1,6 +1,6 @@
 // This file contains utility functions for the API. Unfortunately we can't use StakeConnection directly because it has wasm imports that are not compatible with the Next API.
 
-import { IdlAccounts, Program } from "@coral-xyz/anchor";
+import { IdlAccounts, IdlTypes, Program } from "@coral-xyz/anchor";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
@@ -9,7 +9,7 @@ import { PYTH_TOKEN, STAKING_ADDRESS } from "./constants";
 import { LOCKED_ACCOUNTS_PERIODIC_AFTER_LISTING } from "./lockedAccounts";
 import { PythBalance } from "./pythBalance";
 
-const ONE_YEAR = new BN(3600 * 24 * 365);
+export const ONE_YEAR = new BN(3600 * 24 * 365);
 
 // ======================================
 // PDA derivations
@@ -190,7 +190,7 @@ export async function getAllLockedCustodyAccounts(
         data.amount && allLockedMetadataAccounts[index]?.lock
           ? new PythBalance(data.amount).min(
               getCurrentlyLockedAmount(
-                allLockedMetadataAccounts[index]!,
+                allLockedMetadataAccounts[index]!.lock,
                 configAccountData
               )
             )
@@ -208,10 +208,9 @@ export async function getAllLockedCustodyAccounts(
 }
 
 export function getCurrentlyLockedAmount(
-  metadataAccountData: IdlAccounts<Staking>["stakeAccountMetadataV2"],
+  lock: IdlTypes<Staking>["VestingSchedule"],
   configAccountData: IdlAccounts<Staking>["globalConfig"]
 ): PythBalance {
-  const lock = metadataAccountData.lock;
   const listTime = configAccountData.pythTokenListTime;
   if (lock.fullyVested) {
     return PythBalance.zero();

@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
 import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { Program, AnchorProvider } from '@coral-xyz/anchor'
+import { Connection, Keypair } from '@solana/web3.js'
+import { Program, AnchorProvider, IdlTypes, BN } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
 import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
@@ -10,7 +10,9 @@ import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getTotalSupply,
-  getAllLockedCustodyAccounts,
+  ONE_YEAR,
+  getConfig,
+  getCurrentlyLockedAmount,
 } from '@pythnetwork/staking/app/api_utils'
 
 const RPC_URL = process.env.BACKEND_ENDPOINT!
@@ -20,6 +22,15 @@ const provider = new AnchorProvider(
   new NodeWallet(new Keypair()),
   {}
 )
+
+const GLOBAL_VESTING_SCHEDULE: IdlTypes<Staking>['VestingSchedule'] = {
+  periodicVestingAfterListing: {
+    initialBalance: PythBalance.fromString('8,500,000,000').toBN(),
+    periodDuration: ONE_YEAR,
+    numPeriods: new BN(4),
+  },
+}
+
 const stakingProgram = new Program<Staking>(
   idl as Staking,
   STAKING_ADDRESS,
@@ -44,21 +55,11 @@ export default async function handlerSupply(
     res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
     res.status(200).send((await getTotalSupply(tokenProgram)).toString(false))
   } else if (q === 'circulatingSupply') {
-    const allLockedCustodyAccounts = await getAllLockedCustodyAccounts(
-      stakingProgram,
-      tokenProgram
+    const config = await getConfig(stakingProgram)
+    const totalLockedAmount = getCurrentlyLockedAmount(
+      GLOBAL_VESTING_SCHEDULE,
+      config
     )
-
-    const totalLockedAmount = allLockedCustodyAccounts.reduce(
-      (
-        total: PythBalance,
-        account: { pubkey: PublicKey; amount: PythBalance }
-      ) => {
-        return total.add(account.amount)
-      },
-      PythBalance.zero()
-    )
-
     res.setHeader('Cache-Control', 'max-age=0, s-maxage=3600')
     res
       .status(200)
