@@ -20,7 +20,7 @@ This proposal is to update the Pyth contract on Blast to enable gas fee claims (
 
 Proposal id: [`9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su`](https://proposals.pyth.network/?tab=proposals&proposal=9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su)
 
-Branch: [`chore/evm/blast-claim-gas`]((https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/blast-claim-gas))
+Branch: [`chore/evm/blast-claim-gas`](https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/blast-claim-gas)
 
 * Verify the implementation following the guide below:
 
