@@ -1,7 +1,7 @@
 - Wallet address (SPL/Solana):
 HTq8PB7piUrHuUC9xMSEphFRL2BAeyBLxWirxzKqzo6g
 
-- Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc): 
+- Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc):
 Ledger hardware wallet
 
 - Name of Candidate
