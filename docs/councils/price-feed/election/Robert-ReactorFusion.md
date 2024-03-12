@@ -4,7 +4,7 @@ HiHaM78P75gz4UBosf3bWWAuP8HoRCin4bL6qiK6dvfV
 - Describe how you will custody your private key (hardware wallet, MPC provider such as Fireblocks, etc) : Hardware wallet
 
 - Name of Candidate
-  - Full Name : Reactor Fusion
+  - Full Name : Robert
   - Twitter handle : @ReactorFusionR
   - Discord handle : @robert_reactorfusion
   - Github handle : @ReactorFusion
