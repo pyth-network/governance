@@ -27,7 +27,7 @@ Branch: [`chore/evm/blast-claim-gas`](https://github.com/pyth-network/pyth-cros
 1. Make sure you node-js and forge installed.
 2. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm)
 3. forge: install it from [here](https://getfoundry.sh/)
-4. Clone pyth-crosschain repo (`git clone https://github.com/pyth-network/pyth-crosschain.git`) and run the following command: `npm ci && npx lerna run build`
+4. Clone the `pyth-crosschain` repo (`git clone https://github.com/pyth-network/pyth-crosschain.git`) and run the following command: `npm ci && npx lerna run build`
 5. Go to the proposal code branch `git checkout <branch name>`
 6. Get the on-chain implementation code digest by going to the `contract_manager` directory and running `npx ts-node scripts/check_proposal.ts --cluster mainnet-beta --proposal <proposal id>`
 7. Get the source code digest by going to the `target_chains/ethereum/contracts` directory and running `npx truffle compile --all && cat build/contracts/PythUpgradable.json | jq -r .deployedBytecode | tr -d '\n' | cast keccak`
