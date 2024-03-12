@@ -22,5 +22,5 @@ Hardware wallet
   - Ensure price feeds have passed the relative conformance tests within Pythtest before going live in Pythnet
 
 - Relevant Experience
-  - 2+ Years worth experience as a contributor to Pyth within the price feed process and technical integration of new publishers 
+  - 2+ Years worth experience as a contributor to Pyth within the price feed process and technical integration of new publishers
   - 10+ Years experience working across multiple tradfi and crypto native firms, offering trade and technical support across all asset classes
