@@ -20,7 +20,7 @@ This proposal is to update the Pyth contract on Mode to enable gas fee claims (a
 
 Proposal id: [`3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth`](https://proposals.pyth.network/?tab=proposals&proposal=3GPW7Xed6N8Tfix21VqmywHJg5JDeK3nMJMD1gwmQvth)
 
-Branch: [`chore/evm/blast-claim-gas`](https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/mode-claim-gas)
+Branch: [`chore/evm/mode-claim-gas`](https://github.com/pyth-network/pyth-crosschain/tree/chore/evm/mode-claim-gas)
 
 
 * Verify the implementation following the guide below:
