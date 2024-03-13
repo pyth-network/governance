@@ -26,4 +26,3 @@
 - Relevant Experience
   - 2+ years as a contributor to Synthetix, focusing on governance, communications, and partner support.
   - Contributors to Optimism governance as a member of OP grants council, external governance support, etc.
-
