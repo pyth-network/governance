@@ -25,7 +25,7 @@ Branch: [`chore/evm/blast-claim-gas`](https://github.com/pyth-network/pyth-cros
 * Verify the implementation following the guide below:
 
 1. Make sure you node-js, forge and jq installed.
-    1. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm). Install node 18 (`nvm install 18; nvm use 18`)
+    1. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm). Install node-js 18 (`nvm install 18; nvm use 18`).
     2. forge: install it from [here](https://getfoundry.sh/)
     3. jq: install it from [here](https://jqlang.github.io/jq/)
 2. Clone the `pyth-crosschain` repo (`git clone https://github.com/pyth-network/pyth-crosschain.git`). Go to the `pyth-crosschain` directory and run the following command: `npm ci && npx lerna run build`
@@ -33,4 +33,6 @@ Branch: [`chore/evm/blast-claim-gas`](https://github.com/pyth-network/pyth-cros
 4. Get the on-chain implementation code digest by going to the `contract_manager` directory and running `npx ts-node scripts/check_proposal.ts --cluster mainnet-beta --proposal <proposal id>`
 5. Get the source code digest by going to the `target_chains/ethereum/contracts` directory and running `npx truffle compile --all && cat build/contracts/PythUpgradable.json | jq -r .deployedBytecode | tr -d '\r\n' | cast keccak`
 6. Check the hash digest from the on-chain implementation (from step 4) matches the hash digest from the source code (from step 5).
+
+
 p.s: the codes above are not merged in our contract because these are one-off and cannot be in our generic smart-contract. We will store the diff in the repo like [this](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/ethereum/contracts/canto-deployment-patch.diff) one.
