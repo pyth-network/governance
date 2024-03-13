@@ -25,7 +25,7 @@ Branch: [`chore/evm/mode-claim-gas`](https://github.com/pyth-network/pyth-cross
 
 * Verify the implementation following the guide below:
 
-1. Make sure you node-js, forge and jq installed.
+1. Make sure you have node-js, forge and jq installed.
     1. node-js: install `nvm` from [here](https://github.com/nvm-sh/nvm). Install node-js 18 (`nvm install 18; nvm use 18`).
     2. forge: install it from [here](https://getfoundry.sh/)
     3. jq: install it from [here](https://jqlang.github.io/jq/)
