@@ -6,7 +6,7 @@ Hardware wallet
 
 - Name of Candidate
   - Full Name: Harnaik Kalirai
-  - Twitter handle: NA
+  - Twitter handle: silverfox8465
   - Discord handle: silverfox8465
   - Github handle: hkaliraipyth
 
@@ -19,8 +19,10 @@ Hardware wallet
 
 - Motivations to participate in the Price Feed Council
   - To ensure robustness and reliability of new and existing price feeds on the oracle
-  - Ensure price feeds have passed the relative conformance tests within Pythtest before going live in Pythnet
+  - Ensure price feeds have passed the relative conformance tests within Pythtest before going live in Pythnet. This is to prevent the risk of price deviation and correlated errors within Pythnet
+  - To support the oracle's expansion into additional markets and diverse asset classes
 
 - Relevant Experience
-  - 2+ Years worth experience as a contributor to Pyth within the price feed process and technical integration of new publishers
+  - 2+ Years worth experience as a key contributor to Pyth within the price feed process and technical integration of new publishers
   - 10+ Years experience working across multiple tradfi and crypto native firms, offering trade and technical support across all asset classes
+  - Effectively managed global teams, ensuring alignment of price feed strategies with respect to volumes and liquidity across multiple venues
