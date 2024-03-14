@@ -34,8 +34,9 @@ Thank you for your interest in becoming a member of the Price Feed Council.
        3. Click on “New proposal”
        4. Fill in the “Title” section with the following: [Price Feed Council Election] Name - Protocol
        5.  Fill in the “Description” section by copy-pasting the url of your candidacy file on Github
-       6.  `IMPORTANT`: In the “Wallet” section, select `8f866…8R5rh`, this identifies this proposal as an election proposal
-       7.  Click on “Add proposal” and sign with your wallet
+       6.  `IMPORTANT`: In the “Instruction 1” section, select `Common: None`
+       7.  `IMPORTANT`: In the “Wallet” section, select `8f866…8R5rh`, this identifies this proposal as an election proposal
+       8.  Click on “Add proposal” and sign with your wallet
     Please refer to [this video](https://drive.google.com/file/d/12ZjjpQx2brquNu9mRzZepEppWjzIQNVW/view?usp=drive_link) for a step by step demonstration.
 &nbsp;
 
