@@ -79,7 +79,7 @@ export class StakeConnection {
   votingProduct = { voting: {} };
   votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
-  addressLookupTable: PublicKey;
+  addressLookupTable: PublicKey | undefined;
 
   private constructor(
     program: Program<Staking>,

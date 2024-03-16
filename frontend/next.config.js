@@ -11,7 +11,7 @@ module.exports = {
   env: {
     ENDPOINT: process.env.ENDPOINT,
     CLUSTER: process.env.CLUSTER,
-    ACCOUNT_LOOKUP_TABLE: process.env.ACCOUNT_LOOKUP_TABLE,
+    ADDRESS_LOOKUP_TABLE: process.env.ADDRESS_LOOKUP_TABLE,
   },
   webpack(config, { isServer }) {
     config.experiments = { asyncWebAssembly: true, layers: true }
