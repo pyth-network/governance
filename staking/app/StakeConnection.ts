@@ -17,6 +17,9 @@ import {
   SYSVAR_CLOCK_PUBKEY,
   ComputeBudgetProgram,
   SystemProgram,
+  Message,
+  TransactionMessage,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
 import {
@@ -634,7 +637,22 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.provider.sendAndConfirm(transaction);
+    const addressLookupTable = (
+      await this.program.provider.connection.getAddressLookupTable(
+        new PublicKey("9gioRTKjaKv5P2u3YmVNL3LoCUBqTZHNsGUJXQiN8ueC")
+      )
+    ).value;
+
+    const transactionMessage = new TransactionMessage({
+      instructions: transaction.instructions,
+      payerKey: this.provider.wallet.publicKey,
+      recentBlockhash: (await this.provider.connection.getLatestBlockhash())
+        .blockhash,
+    }).compileToV0Message([addressLookupTable]);
+
+    const versionedTransaction = new VersionedTransaction(transactionMessage);
+
+    await this.provider.sendAndConfirm(versionedTransaction);
   }
 
   public async setupVestingAccount(
