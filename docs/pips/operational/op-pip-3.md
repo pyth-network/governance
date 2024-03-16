@@ -22,13 +22,12 @@ Validators:
 
 ## Implementation Plan
 
-Approve the following proposal:
+* Proposal id: [`DGPSH5fBSSHegaESeUP8L8KxY1R2CN3fZDQMchaqhAUp`](https://proposals.pyth.network/?tab=proposals&proposal=DGPSH5fBSSHegaESeUP8L8KxY1R2CN3fZDQMchaqhAUp)
 
-- [`XXXYYYZZZ`](https://proposals.pyth.network/?tab=proposals&proposal=XXXYYYZZZ)
 
-The following commands will show the delinquent validators and the stake accounts associated with them:
+* Verify the implementation following the guide below:
 
-```
-$ solana -u https://api2.pythnet.pyth.network validators
-$ solana -u https://api2.pythnet.pyth.network stakes
-```
+1. Make sure you have the Solana CLI. You can install it [here](https://docs.solanalabs.com/cli/install)
+2. Find out the `Vote Account` keys of the two deliquent validators by running `solana -u https://pythnet.rpcpool.com validators` in your terminal. The deliquent validators are indicated with a warning sign.
+3. Find out their `Stake Pubkey`s  by running `solana -u https://pythnet.rpcpool.com stakes <vote account>`
+4. Check that the `Stake Pubkey`s from step 3 matches `stakePubkey` in [the proposal UI](https://proposals.pyth.network/?tab=proposals&proposal=DGPSH5fBSSHegaESeUP8L8KxY1R2CN3fZDQMchaqhAUp).
