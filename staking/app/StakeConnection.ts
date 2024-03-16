@@ -17,7 +17,6 @@ import {
   SYSVAR_CLOCK_PUBKEY,
   ComputeBudgetProgram,
   SystemProgram,
-  Message,
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
