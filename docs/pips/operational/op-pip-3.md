@@ -25,3 +25,10 @@ Validators:
 Approve the following proposal:
 
 - [`XXXYYYZZZ`](https://proposals.pyth.network/?tab=proposals&proposal=XXXYYYZZZ)
+
+The following commands will show the delinquent validators and the stake accounts associated with them:
+
+```
+$ solana -u https://api2.pythnet.pyth.network validators
+$ solana -u https://api2.pythnet.pyth.network stakes
+```
