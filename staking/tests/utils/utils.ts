@@ -13,6 +13,13 @@ import { Staking } from "../../target/types/staking";
 
 type StakeTarget = anchor.IdlTypes<Staking>["Target"];
 
+export function getConfigAccount(programId: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [anchor.utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
+    programId
+  )[0];
+}
+
 export async function getTargetAccount(
   stakeTarget: StakeTarget,
   programId: PublicKey

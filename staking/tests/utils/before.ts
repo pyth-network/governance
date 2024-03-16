@@ -6,6 +6,12 @@ import {
   Keypair,
   Transaction,
   LAMPORTS_PER_SOL,
+  AddressLookupTableProgram,
+  ComputeBudgetProgram,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  VersionedTransaction,
+  TransactionMessage,
 } from "@solana/web3.js";
 import fs from "fs";
 import { Program, Wallet, utils, AnchorProvider } from "@coral-xyz/anchor";
@@ -33,9 +39,21 @@ import BN from "bn.js";
 import toml from "toml";
 import path from "path";
 import os from "os";
-import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
+import {
+  StakeConnection,
+  PythBalance,
+  PYTH_DECIMALS,
+  STAKING_ADDRESS,
+  REALM_ID,
+  GOVERNANCE_ADDRESS,
+  getConfig,
+} from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
-import { createMint, getTargetAccount as getTargetAccount } from "./utils";
+import {
+  createMint,
+  getConfigAccount,
+  getTargetAccount as getTargetAccount,
+} from "./utils";
 import { loadKeypair } from "./keys";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
@@ -340,11 +358,6 @@ export async function initConfig(
   pythMintAccount: PublicKey,
   globalConfig: GlobalConfig
 ) {
-  const [configAccount, bump] = await PublicKey.findProgramAddress(
-    [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
-    program.programId
-  );
-
   await program.methods.initConfig(globalConfig).rpc({
     skipPreflight: true,
   });
@@ -387,6 +400,51 @@ export async function initGovernanceProduct(
       governanceSigner: governanceSigner,
     })
     .rpc();
+}
+
+export async function initAddressLookupTable(
+  provider: AnchorProvider,
+  mint: PublicKey
+) {
+  const configAccount = getConfigAccount(STAKING_ADDRESS);
+  const targetAccount = await getTargetAccount({ voting: {} }, STAKING_ADDRESS);
+
+  const [loookupTableInstruction, lookupTableAddress] =
+    AddressLookupTableProgram.createLookupTable({
+      authority: provider.publicKey,
+      payer: provider.publicKey,
+      recentSlot: await provider.connection.getSlot(),
+    });
+  const extendInstruction = AddressLookupTableProgram.extendLookupTable({
+    payer: provider.publicKey,
+    authority: provider.publicKey,
+    lookupTable: lookupTableAddress,
+    addresses: [
+      ComputeBudgetProgram.programId,
+      SystemProgram.programId,
+      STAKING_ADDRESS,
+      REALM_ID,
+      mint,
+      configAccount,
+      SYSVAR_RENT_PUBKEY,
+      TOKEN_PROGRAM_ID,
+      GOVERNANCE_ADDRESS(),
+      targetAccount,
+    ],
+  });
+  const createLookupTableTx = new VersionedTransaction(
+    new TransactionMessage({
+      instructions: [loookupTableInstruction, extendInstruction],
+      payerKey: provider.publicKey,
+      recentBlockhash: (await provider.connection.getLatestBlockhash())
+        .blockhash,
+    }).compileToV0Message()
+  );
+  await provider.sendAndConfirm!(createLookupTableTx, [], {
+    skipPreflight: true,
+  });
+  console.log(lookupTableAddress.toBase58());
+  return lookupTableAddress;
 }
 
 export async function withCreateDefaultGovernance(
@@ -508,6 +566,11 @@ export async function standardSetup(
     .updateGovernanceAuthority(globalConfig.governanceAuthority)
     .accounts({ governanceSigner: user })
     .rpc();
+
+  await initAddressLookupTable(provider, pythMintAccount.publicKey);
+
+  // Sleep 10 seconds
+  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   const connection = new Connection(
     `http://127.0.0.1:${portNumber}`,
