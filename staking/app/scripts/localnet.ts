@@ -22,7 +22,6 @@ async function main() {
   const alice = loadKeypair("./app/keypairs/alice.json");
   const bob = loadKeypair("./app/keypairs/bob.json");
   const pythMintAccount = loadKeypair("./app/keypairs/pyth_mint.json");
-  const lookupTable = loadKeypair("./app/keypairs/lookup_table.json");
 
   console.log("Validator at port ", portNumber);
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
