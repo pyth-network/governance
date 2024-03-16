@@ -63,9 +63,7 @@ async function initAddressLookupTable(
         .blockhash,
     }).compileToV0Message()
   );
-  await provider.sendAndConfirm!(createLookupTableTx, [], {
-    skipPreflight: true,
-  });
+  await provider.sendAndConfirm(createLookupTableTx, []);
   return lookupTableAddress;
 }
 
