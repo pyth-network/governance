@@ -670,24 +670,11 @@ export class StakeConnection {
         .instruction()
     );
 
-    const addressLookupTable = (
-      await this.program.provider.connection.getAddressLookupTable(
-        new PublicKey("TtUoL1YnKbTUSKiF1RRuNaP8vhTHLj64iUqLvmd99x6")
-      )
-    ).value;
-
-    const transactionMessage = new TransactionMessage({
-      instructions: transaction.instructions,
-      payerKey: this.provider.wallet.publicKey,
-      recentBlockhash: (await this.provider.connection.getLatestBlockhash())
-        .blockhash,
-    }).compileToV0Message([addressLookupTable]);
-
-    const versionedTransaction = new VersionedTransaction(transactionMessage);
-
-    await this.provider.sendAndConfirm(versionedTransaction);
+    await this.sendAndConfirmAsVersionedTransaction(
+      transaction.instructions,
+      []
+    );
   }
-
   public async setupVestingAccount(
     amount: PythBalance,
     owner: PublicKey,
@@ -762,25 +749,7 @@ export class StakeConnection {
 
     const tx = new Transaction();
     tx.add(...ixs);
-
-    const addressLookupTable = (
-      await this.program.provider.connection.getAddressLookupTable(
-        new PublicKey("TtUoL1YnKbTUSKiF1RRuNaP8vhTHLj64iUqLvmd99x6")
-      )
-    ).value;
-
-    const transactionMessage = new TransactionMessage({
-      instructions: tx.instructions,
-      payerKey: this.provider.wallet.publicKey,
-      recentBlockhash: (await this.provider.connection.getLatestBlockhash())
-        .blockhash,
-    }).compileToV0Message([addressLookupTable]);
-
-    const versionedTransaction = new VersionedTransaction(transactionMessage);
-
-    await this.provider.sendAndConfirm(versionedTransaction, [], {
-      skipPreflight: true,
-    });
+    this.provider.sendAndConfirm(tx, signers);
   }
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
