@@ -35,7 +35,11 @@ import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig } from "../../app/StakeConnection";
-import { createMint, getTargetAccount as getTargetAccount } from "./utils";
+import {
+  createMint,
+  getTargetAccount as getTargetAccount,
+  initAddressLookupTable,
+} from "./utils";
 import { loadKeypair } from "./keys";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
@@ -502,6 +506,12 @@ export async function standardSetup(
   await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
 
   await initGovernanceProduct(program, user);
+
+  const lookupTableAddress = await initAddressLookupTable(
+    provider,
+    pythMintAccount.publicKey
+  );
+  console.log("Lookup table address: ", lookupTableAddress.toBase58());
 
   // Give the power back to the people
   await program.methods

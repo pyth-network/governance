@@ -1,15 +1,21 @@
-import { Token, MintLayout } from "@solana/spl-token";
+import { Token, MintLayout, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   PublicKey,
   Keypair,
   Transaction,
   SystemProgram,
+  AddressLookupTableProgram,
+  ComputeBudgetProgram,
+  SYSVAR_RENT_PUBKEY,
+  VersionedTransaction,
+  TransactionMessage,
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { AnchorError } from "@coral-xyz/anchor";
 import assert from "assert";
 import * as wasm from "@pythnetwork/staking-wasm";
 import { Staking } from "../../target/types/staking";
+import { GOVERNANCE_ADDRESS, REALM_ID, STAKING_ADDRESS } from "../../app";
 
 type StakeTarget = anchor.IdlTypes<Staking>["Target"];
 
@@ -81,6 +87,48 @@ export async function createMint(
   const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
     skipPreflight: true,
   });
+}
+
+export async function initAddressLookupTable(
+  provider: anchor.AnchorProvider,
+  mint: PublicKey
+) {
+  const configAccount = getConfigAccount(STAKING_ADDRESS);
+  const targetAccount = await getTargetAccount({ voting: {} }, STAKING_ADDRESS);
+
+  const [loookupTableInstruction, lookupTableAddress] =
+    AddressLookupTableProgram.createLookupTable({
+      authority: provider.publicKey,
+      payer: provider.publicKey,
+      recentSlot: await provider.connection.getSlot(),
+    });
+  const extendInstruction = AddressLookupTableProgram.extendLookupTable({
+    payer: provider.publicKey,
+    authority: provider.publicKey,
+    lookupTable: lookupTableAddress,
+    addresses: [
+      ComputeBudgetProgram.programId,
+      SystemProgram.programId,
+      STAKING_ADDRESS,
+      REALM_ID,
+      mint,
+      configAccount,
+      SYSVAR_RENT_PUBKEY,
+      TOKEN_PROGRAM_ID,
+      GOVERNANCE_ADDRESS(),
+      targetAccount,
+    ],
+  });
+  const createLookupTableTx = new VersionedTransaction(
+    new TransactionMessage({
+      instructions: [loookupTableInstruction, extendInstruction],
+      payerKey: provider.publicKey,
+      recentBlockhash: (await provider.connection.getLatestBlockhash())
+        .blockhash,
+    }).compileToV0Message()
+  );
+  await provider.sendAndConfirm(createLookupTableTx);
+  return lookupTableAddress;
 }
 
 /**

@@ -19,8 +19,8 @@ export function useStakeConnection() {
         // anchor wallet is defined, as we have used enabled below
         anchorWallet as Wallet,
         STAKING_ADDRESS,
-        process.env.ACCOUNT_LOOKUP_TABLE
-          ? new PublicKey(process.env.ACCOUNT_LOOKUP_TABLE)
+        process.env.ADDRESS_LOOKUP_TABLE
+          ? new PublicKey(process.env.ADDRESS_LOOKUP_TABLE)
           : undefined
       )
     },
