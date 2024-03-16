@@ -749,7 +749,7 @@ export class StakeConnection {
 
     const tx = new Transaction();
     tx.add(...ixs);
-    this.provider.sendAndConfirm(tx, signers);
+    await this.provider.sendAndConfirm(tx, signers);
   }
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
