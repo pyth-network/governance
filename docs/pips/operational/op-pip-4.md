@@ -23,7 +23,7 @@ the governance authority to the Pythian council.
 
 * Verify the implementation following the guide below:
 
-1. Check the `targetGovernanceAuthority` of the contract from Config Account of the receiver contract by going to the "Accounts Data" tab
-   [here](https://solscan.io/account/rec5EKMGg6MxZYaMdyBfgwp4d5rB9T1VQH5pJv5LtFJ#accountsData)
-2. Make sure that this matches the "payer" field of the proposal instruction. `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT` is the authority of
-   the Pythian council multisig and signs the instruction to accept the governance authority.
+1. Check out the instruction to accept the governance authority from
+   [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/solana/programs/pyth-solana-receiver/src/lib.rs#L82-L91).
+   Also, some constraints are checked in the accounts definition
+   [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/solana/programs/pyth-solana-receiver/src/lib.rs#L276-L285).
