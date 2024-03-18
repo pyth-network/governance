@@ -25,5 +25,5 @@ the governance authority to the Pythian council.
 
 1. Check out the instruction to accept the governance authority from
    [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/solana/programs/pyth-solana-receiver/src/lib.rs#L82-L91).
-   Also, some constraints are checked in the accounts definition
+   Also, some constraints are checked in the context definition
    [here](https://github.com/pyth-network/pyth-crosschain/blob/main/target_chains/solana/programs/pyth-solana-receiver/src/lib.rs#L276-L285).
