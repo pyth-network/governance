@@ -17,6 +17,9 @@ import {
   SYSVAR_CLOCK_PUBKEY,
   ComputeBudgetProgram,
   SystemProgram,
+  TransactionMessage,
+  VersionedTransaction,
+  AddressLookupTableAccount,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
 import {
@@ -76,6 +79,7 @@ export class StakeConnection {
   votingProduct = { voting: {} };
   votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
+  addressLookupTable: PublicKey | undefined;
 
   private constructor(
     program: Program<Staking>,
@@ -83,7 +87,8 @@ export class StakeConnection {
     config: GlobalConfig,
     configAddress: PublicKey,
     votingProductMetadataAccount: PublicKey,
-    votingAccountMetadataWasm: any
+    votingAccountMetadataWasm: any,
+    addressLookupTable: PublicKey | undefined
   ) {
     this.program = program;
     this.provider = provider;
@@ -92,6 +97,7 @@ export class StakeConnection {
     this.votingProductMetadataAccount = votingProductMetadataAccount;
     this.governanceAddress = GOVERNANCE_ADDRESS();
     this.votingAccountMetadataWasm = votingAccountMetadataWasm;
+    this.addressLookupTable = addressLookupTable;
   }
 
   public static async connect(
@@ -110,7 +116,8 @@ export class StakeConnection {
   public static async createStakeConnection(
     connection: Connection,
     wallet: Wallet,
-    stakingProgramAddress: PublicKey
+    stakingProgramAddress: PublicKey,
+    addressLookupTable?: PublicKey
   ): Promise<StakeConnection> {
     const provider = new AnchorProvider(connection, wallet, {});
     const program = new Program(
@@ -157,8 +164,37 @@ export class StakeConnection {
       config,
       configAddress,
       votingProductMetadataAccount,
-      votingAccountMetadataWasm
+      votingAccountMetadataWasm,
+      addressLookupTable
     );
+  }
+
+  private async sendAndConfirmAsVersionedTransaction(
+    instructions: TransactionInstruction[],
+    signers: Signer[]
+  ) {
+    const addressLookupTables: AddressLookupTableAccount[] | undefined = this
+      .addressLookupTable
+      ? [
+          (
+            await this.program.provider.connection.getAddressLookupTable(
+              new PublicKey(this.addressLookupTable)
+            )
+          ).value,
+        ]
+      : [];
+    const message = new TransactionMessage({
+      instructions: instructions,
+      recentBlockhash: (await this.provider.connection.getLatestBlockhash())
+        .blockhash,
+      payerKey: this.provider.wallet.publicKey,
+    });
+    const versionedTransaction = new VersionedTransaction(
+      message.compileToV0Message(addressLookupTables)
+    );
+    return await this.provider.sendAndConfirm(versionedTransaction, signers, {
+      skipPreflight: true,
+    });
   }
 
   /** The public key of the user of the staking program. This connection sends transactions as this user. */
@@ -634,9 +670,11 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.provider.sendAndConfirm(transaction);
+    await this.sendAndConfirmAsVersionedTransaction(
+      transaction.instructions,
+      []
+    );
   }
-
   public async setupVestingAccount(
     amount: PythBalance,
     owner: PublicKey,
@@ -816,15 +854,17 @@ export class StakeConnection {
       // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we fit in the transaction
       ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount))); // Try to make room by closing unlocked positions
     }
-    await this.program.methods
-      .createPosition(this.votingProduct, amount.toBN())
-      .preInstructions(ixs)
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        targetAccount: this.votingProductMetadataAccount,
-      })
-      .signers(signers)
-      .rpc({ skipPreflight: true });
+    ixs.push(
+      await this.program.methods
+        .createPosition(this.votingProduct, amount.toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccountAddress,
+          targetAccount: this.votingProductMetadataAccount,
+        })
+        .instruction()
+    );
+
+    await this.sendAndConfirmAsVersionedTransaction(ixs, signers);
   }
 
   public async buildCleanupUnlockedPositions(
