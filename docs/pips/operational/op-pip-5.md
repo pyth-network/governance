@@ -31,7 +31,7 @@ https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b
     1. solana: install `solana` from [here](https://docs.solanalabs.com/cli/install).
     2. Docker: install it from [here](https://www.docker.com/products/docker-desktop/)
 2. Clone the `pyth-crosschain` repo (`git clone https://github.com/pyth-network/pyth-crosschain.git`).
-3. Go to `target_chains/solana/`
+3. Go to `pyth-crosschain/target_chains/solana/`
 4. Run `./scripts/build_verifiable_program.sh`. This will compile the code in a reproducible way and output a hash of the bytecode obtained from the code.
 5. In the [proposal page](https://proposals.pyth.network/?tab=proposals&proposal=FZJywtTuJqZMRtP72Vh4dvcBhduGHLNz58Y3X3C5EpW6), look at the following two important keys:
    1. The `program` field should match the program we're trying to upgrade.
