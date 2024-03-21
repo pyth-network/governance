@@ -1,4 +1,4 @@
-# Operational PIP: Accept Pyth Solana receiver governance authority
+# Operational PIP: Improve usability of Pyth Solana Receiver
 
 ## Abstract
 
