@@ -35,6 +35,6 @@ https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b
 4. Run `./scripts/build_verifiable_program.sh`. This will compile the code in a reproducible way and output a hash of the bytecode obtained from the code.
 5. In the [proposal page](https://proposals.pyth.network/?tab=proposals&proposal=FZJywtTuJqZMRtP72Vh4dvcBhduGHLNz58Y3X3C5EpW6), look at the following two important keys:
    1. The `program` field should match the program we're trying to upgrade.
-   2. The `buffer` field is the account that contains the new implementation for the program. Copy the address.
+   2. The `buffer` field is the account that contains the proposed new implementation for the program. Copy the address.
 6. Get the hash of the proposed buffer `solana -u m program dump <buffer> temp_file && shasum -a 256 temp_file && rm temp_file`
 7. Make sure the hash from step 4 and from step 6 match.
