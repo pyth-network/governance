@@ -22,8 +22,8 @@ We are adding two features:
 * Proposal id: [`FZJywtTuJqZMRtP72Vh4dvcBhduGHLNz58Y3X3C5EpW6`](https://proposals.pyth.network/?tab=proposals&proposal=FZJywtTuJqZMRtP72Vh4dvcBhduGHLNz58Y3X3C5EpW6)
 
 * Relevant commits:
-- https://github.com/pyth-network/pyth-crosschain/commit/f79f205895de61ddec69ae3ed6d4bd1ca1c6542f
-- https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b9330db754950a05
+https://github.com/pyth-network/pyth-crosschain/commit/f79f205895de61ddec69ae3ed6d4bd1ca1c6542f
+https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b9330db754950a05
 
 * Verify the implementation following the guide below:
 
