@@ -1198,6 +1198,79 @@ export type Staking = {
           }
         }
       ]
+    },
+    {
+      "name": "recoverAccount",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payerTokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -3169,6 +3242,79 @@ export const IDL: Staking = {
           }
         }
       ]
+    },
+    {
+      "name": "recoverAccount",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payerTokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
