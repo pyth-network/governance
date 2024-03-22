@@ -27,9 +27,10 @@ https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b
 
 * Verify the implementation following the guide below:
 
-1. Make sure you have the Solana CLI tools and Docker.
+1. Make sure you have the Solana CLI tools, Docker and sha256sum.
     1. solana: install `solana` from [here](https://docs.solanalabs.com/cli/install).
     2. Docker: install it from [here](https://www.docker.com/products/docker-desktop/)
+    3. sha256sum: if on Mac you can install it as a part of coreutils with `brew install coreutils`
 2. Clone the `pyth-crosschain` repo (`git clone https://github.com/pyth-network/pyth-crosschain.git`).
 3. Go to `pyth-crosschain/target_chains/solana/`
 4. Run `./scripts/build_verifiable_program.sh`. This will compile the code in a reproducible way and output a hash of the bytecode obtained from the code.
