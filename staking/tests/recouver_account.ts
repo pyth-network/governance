@@ -1,4 +1,9 @@
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import {
+  AnchorProvider,
+  parseIdlErrors,
+  Program,
+  Wallet,
+} from "@coral-xyz/anchor";
 import {
   Keypair,
   PublicKey,
@@ -19,7 +24,12 @@ import {
   requestPythAirdrop,
   startValidator,
 } from "./utils/before";
-import { createMint, getTargetAccount, StakeTarget } from "./utils/utils";
+import {
+  createMint,
+  expectFailApi,
+  getTargetAccount,
+  StakeTarget,
+} from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
@@ -113,7 +123,7 @@ describe("config", async () => {
     await program.methods.advanceClock(new BN(5)).rpc({ skipPreflight: DEBUG });
   });
 
-  it("creates recover account instruction", async () => {
+  it("updates stake account owner with governance authority", async () => {
     const governanceConnection = await StakeConnection.createStakeConnection(
       program.provider.connection,
       provider.wallet as NodeWallet,
@@ -177,6 +187,75 @@ describe("config", async () => {
     assert.equal(
       fixedAccount.stakeAccountPositionsJs.owner.toString(),
       newOwner.publicKey.toString()
+    );
+  });
+
+  it("does not update stake account owner without governance authority", async () => {
+    const governanceConnection = await StakeConnection.createStakeConnection(
+      program.provider.connection,
+      provider.wallet as NodeWallet,
+      program.programId
+    );
+
+    const alice = new Keypair();
+    const aliceConnection = await StakeConnection.createStakeConnection(
+      program.provider.connection,
+      new Wallet(alice),
+      program.programId
+    );
+
+    const aliceAssociatedTokenAddress = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      pythMintAccount.publicKey,
+      alice.publicKey,
+      true
+    );
+
+    const createAssociatedTokenAccountInstruction =
+      Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        pythMintAccount.publicKey,
+        aliceAssociatedTokenAddress,
+        alice.publicKey,
+        pythMintAuthority.publicKey
+      );
+
+    const instructions: TransactionInstruction[] = [
+      createAssociatedTokenAccountInstruction,
+    ];
+
+    const badStakeAccountAddress = await governanceConnection.withCreateAccount(
+      instructions,
+      aliceAssociatedTokenAddress,
+      {
+        fullyVested: {},
+      }
+    );
+
+    const transaction: Transaction = new Transaction();
+    transaction.instructions.push(...instructions);
+
+    await governanceConnection.program.provider.sendAndConfirm(transaction, [
+      pythMintAuthority,
+    ]);
+
+    // The fix
+
+    const recoverAccountInstruction =
+      await aliceConnection.buildRecoverAccountInstruction(
+        badStakeAccountAddress,
+        provider.wallet.publicKey
+      );
+    const recoverAccountTransaction = new Transaction();
+    recoverAccountTransaction.instructions.push(recoverAccountInstruction);
+
+    await expectFailApi(
+      aliceConnection.program.provider.sendAndConfirm(
+        recoverAccountTransaction
+      ),
+      "Signature verification failed"
     );
   });
 });
