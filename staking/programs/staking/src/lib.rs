@@ -706,4 +706,15 @@ pub mod staking {
             Some(ctx.accounts.config.agreement_hash);
         Ok(())
     }
+
+    pub fn recover_account(ctx: Context<RecoverAccount>) -> Result<()> {
+        let new_owner = ctx.accounts.payer_token_account.owner;
+
+        ctx.accounts.stake_account_metadata.owner = new_owner;
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        stake_account_positions.owner = new_owner;
+        ctx.accounts.voter_record.governing_token_owner = new_owner;
+
+        Ok(())
+    }
 }
