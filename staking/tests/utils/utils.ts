@@ -17,7 +17,7 @@ import * as wasm from "@pythnetwork/staking-wasm";
 import { Staking } from "../../target/types/staking";
 import { GOVERNANCE_ADDRESS, REALM_ID, STAKING_ADDRESS } from "../../app";
 
-type StakeTarget = anchor.IdlTypes<Staking>["Target"];
+export type StakeTarget = anchor.IdlTypes<Staking>["Target"];
 
 export function getConfigAccount(programId: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
