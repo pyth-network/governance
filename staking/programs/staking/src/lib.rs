@@ -566,7 +566,7 @@ pub mod staking {
 
 
     /**
-     * A split request can only be accepted by the `pda_authority`` from
+     * A split request can only be accepted by the `pda_authority` from
      * the config account. If accepted, `amount` tokens are transferred to a new stake account
      * owned by the `recipient` and the split request is reset (by setting `amount` to 0).
      * The recipient of a transfer can't vote during the epoch of the transfer.
@@ -707,6 +707,12 @@ pub mod staking {
         Ok(())
     }
 
+    /** Recovers a user's `stake account` ownership by transferring ownership
+     * from a token account to the `owner` of that token account.
+     *
+     * This functionality addresses the scenario where a user mistakenly
+     * created a stake account using their token account address as the owner.
+     */
     pub fn recover_account(ctx: Context<RecoverAccount>) -> Result<()> {
         let new_owner = ctx.accounts.payer_token_account.owner;
 
