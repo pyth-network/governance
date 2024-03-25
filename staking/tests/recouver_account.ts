@@ -1,9 +1,4 @@
-import {
-  AnchorProvider,
-  parseIdlErrors,
-  Program,
-  Wallet,
-} from "@coral-xyz/anchor";
+import { AnchorProvider, Program, Wallet } from "@coral-xyz/anchor";
 import {
   Keypair,
   PublicKey,
@@ -24,12 +19,7 @@ import {
   requestPythAirdrop,
   startValidator,
 } from "./utils/before";
-import {
-  createMint,
-  expectFailApi,
-  getTargetAccount,
-  StakeTarget,
-} from "./utils/utils";
+import { createMint, getTargetAccount, StakeTarget } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
@@ -64,8 +54,6 @@ describe("config", async () => {
   });
 
   before(async () => {
-    // Can't we use standard setup here? I tried and it gave me errors I couldn't resolve
-
     ({ controller, program } = await startValidator(portNumber, config));
 
     provider = program.provider as AnchorProvider;
@@ -101,8 +89,6 @@ describe("config", async () => {
         skipPreflight: DEBUG,
       });
 
-    // Why do you I get this error without this line
-    // ypeError: Cannot read properties of null (reading 'data')
     await program.methods
       .createTarget(votingProduct)
       .accounts({
@@ -119,8 +105,7 @@ describe("config", async () => {
       provider.connection
     );
 
-    // Why do we need to advance the clock in this test? It gives me error without it
-    await program.methods.advanceClock(new BN(5)).rpc({ skipPreflight: DEBUG });
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   });
 
   it("updates stake account owner with governance authority", async () => {
@@ -204,6 +189,12 @@ describe("config", async () => {
       program.programId
     );
 
+    aliceConnection.program.provider.connection.requestAirdrop(
+      alice.publicKey,
+      100_000_000
+    );
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     const aliceAssociatedTokenAddress = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
@@ -241,21 +232,25 @@ describe("config", async () => {
       pythMintAuthority,
     ]);
 
-    // The fix
-
     const recoverAccountInstruction =
       await aliceConnection.buildRecoverAccountInstruction(
         badStakeAccountAddress,
-        provider.wallet.publicKey
+        alice.publicKey
       );
     const recoverAccountTransaction = new Transaction();
     recoverAccountTransaction.instructions.push(recoverAccountInstruction);
 
-    await expectFailApi(
-      aliceConnection.program.provider.sendAndConfirm(
-        recoverAccountTransaction
-      ),
-      "Signature verification failed"
-    );
+    try {
+      await aliceConnection.program.provider.sendAndConfirm(
+        recoverAccountTransaction,
+        undefined,
+        {
+          skipPreflight: DEBUG,
+        }
+      );
+      assert.fail("Sending the transaction should throw an exception");
+    } catch (e) {
+      assert.match(e.message, new RegExp("2012"));
+    }
   });
 });
