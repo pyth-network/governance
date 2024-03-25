@@ -1257,7 +1257,7 @@
         },
         {
           "name": "config",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false,
           "pda": {
             "seeds": [

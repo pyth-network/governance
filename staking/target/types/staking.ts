@@ -1257,7 +1257,7 @@ export type Staking = {
         },
         {
           "name": "config",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false,
           "pda": {
             "seeds": [
@@ -3301,7 +3301,7 @@ export const IDL: Staking = {
         },
         {
           "name": "config",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false,
           "pda": {
             "seeds": [

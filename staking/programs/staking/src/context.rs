@@ -437,6 +437,6 @@ pub struct RecoverAccount<'info> {
     )]
     pub voter_record: Account<'info, voter_weight_record::VoterWeightRecord>,
 
-    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config: Account<'info, global_config::GlobalConfig>,
 }
