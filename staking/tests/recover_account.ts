@@ -173,6 +173,10 @@ describe("config", async () => {
       fixedAccount.stakeAccountPositionsJs.owner.toString(),
       newOwner.publicKey.toString()
     );
+    assert.equal(
+      fixedAccount.stakeAccountMetadata.owner.toString(),
+      newOwner.publicKey.toString()
+    );
   });
 
   it("does not update stake account owner without governance authority", async () => {
