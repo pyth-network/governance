@@ -1,5 +1,5 @@
 export type Staking = {
-  "version": "1.0.0",
+  "version": "1.2.0",
   "name": "staking",
   "instructions": [
     {
@@ -915,7 +915,7 @@ export type Staking = {
     {
       "name": "acceptSplit",
       "docs": [
-        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
+        "* A split request can only be accepted by the `pda_authority` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
       ],
       "accounts": [
         {
@@ -1201,6 +1201,9 @@ export type Staking = {
     },
     {
       "name": "recoverAccount",
+      "docs": [
+        "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
+      ],
       "accounts": [
         {
           "name": "payer",
@@ -2043,7 +2046,7 @@ export type Staking = {
 };
 
 export const IDL: Staking = {
-  "version": "1.0.0",
+  "version": "1.2.0",
   "name": "staking",
   "instructions": [
     {
@@ -2959,7 +2962,7 @@ export const IDL: Staking = {
     {
       "name": "acceptSplit",
       "docs": [
-        "* A split request can only be accepted by the `pda_authority`` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
+        "* A split request can only be accepted by the `pda_authority` from\n     * the config account. If accepted, `amount` tokens are transferred to a new stake account\n     * owned by the `recipient` and the split request is reset (by setting `amount` to 0).\n     * The recipient of a transfer can't vote during the epoch of the transfer.\n     *\n     * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and\n     * these parameters must match the request (in the `split_request` account)."
       ],
       "accounts": [
         {
@@ -3245,6 +3248,9 @@ export const IDL: Staking = {
     },
     {
       "name": "recoverAccount",
+      "docs": [
+        "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
+      ],
       "accounts": [
         {
           "name": "payer",
