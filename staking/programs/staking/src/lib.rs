@@ -718,7 +718,7 @@ pub mod staking {
         // Transferring accounts with staked tokens might lead to double voting
         require!(
             ctx.accounts.stake_account_metadata.next_index == 0,
-            ErrorCode::SplitWithStake
+            ErrorCode::RecoverWithStake
         );
 
         let new_owner = ctx.accounts.payer_token_account.owner;
