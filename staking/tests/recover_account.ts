@@ -151,8 +151,20 @@ describe("recover account", async () => {
       pythMintAuthority,
     ]);
 
-    // The fix
+    const badStakeAccount = await governanceConnection.loadStakeAccount(
+      badStakeAccountAddress
+    );
 
+    assert.equal(
+      badStakeAccount.stakeAccountPositionsJs.owner.toString(),
+      newOwnerAta.toString()
+    );
+    assert.equal(
+      badStakeAccount.stakeAccountMetadata.owner.toString(),
+      newOwnerAta.toString()
+    );
+
+    // The fix
     const recoverAccountInstruction =
       await governanceConnection.buildRecoverAccountInstruction(
         badStakeAccountAddress,
