@@ -74,6 +74,8 @@ pub enum ErrorCode {
     SplitWithStake,
     #[msg("The approval arguments do not match the split request.")] // 6034
     InvalidApproval,
-    #[msg("Other")] //6035
+    #[msg("Can't recover account with staking positions. Unstake your tokens first.")] // 6035
+    RecoverWithStake,
+    #[msg("Other")] //6036
     Other,
 }

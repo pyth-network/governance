@@ -714,6 +714,13 @@ pub mod staking {
      * created a stake account using their token account address as the owner.
      */
     pub fn recover_account(ctx: Context<RecoverAccount>) -> Result<()> {
+        // Check that there aren't any positions (i.e., staked tokens) in the account.
+        // Transferring accounts with staked tokens might lead to double voting
+        require!(
+            ctx.accounts.stake_account_metadata.next_index == 0,
+            ErrorCode::SplitWithStake
+        );
+
         let new_owner = ctx.accounts.payer_token_account.owner;
 
         ctx.accounts.stake_account_metadata.owner = new_owner;

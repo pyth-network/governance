@@ -2039,6 +2039,11 @@ export type Staking = {
     },
     {
       "code": 6035,
+      "name": "RecoverWithStake",
+      "msg": "Can't recover account with staking positions. Unstake your tokens first."
+    },
+    {
+      "code": 6036,
       "name": "Other",
       "msg": "Other"
     }
@@ -4086,6 +4091,11 @@ export const IDL: Staking = {
     },
     {
       "code": 6035,
+      "name": "RecoverWithStake",
+      "msg": "Can't recover account with staking positions. Unstake your tokens first."
+    },
+    {
+      "code": 6036,
       "name": "Other",
       "msg": "Other"
     }
