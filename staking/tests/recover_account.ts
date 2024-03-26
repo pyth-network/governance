@@ -32,7 +32,7 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
-describe("config", async () => {
+describe("recover account", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
 
