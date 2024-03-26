@@ -1178,6 +1178,21 @@ export class StakeConnection {
 
     await this.provider.sendAndConfirm(tx);
   }
+
+  public async buildRecoverAccountInstruction(
+    stakeAccountAddress: PublicKey,
+    governanceAuthorityAddress: PublicKey
+  ): Promise<TransactionInstruction> {
+    const stakeAccount = await this.loadStakeAccount(stakeAccountAddress);
+    return await this.program.methods
+      .recoverAccount()
+      .accounts({
+        payer: governanceAuthorityAddress,
+        payerTokenAccount: stakeAccount.stakeAccountPositionsJs.owner,
+        stakeAccountPositions: stakeAccountAddress,
+      })
+      .instruction();
+  }
 }
 
 export interface BalanceSummary {
