@@ -566,7 +566,7 @@ pub mod staking {
 
 
     /**
-     * A split request can only be accepted by the `pda_authority`` from
+     * A split request can only be accepted by the `pda_authority` from
      * the config account. If accepted, `amount` tokens are transferred to a new stake account
      * owned by the `recipient` and the split request is reset (by setting `amount` to 0).
      * The recipient of a transfer can't vote during the epoch of the transfer.
@@ -704,6 +704,30 @@ pub mod staking {
     pub fn join_dao_llc(ctx: Context<JoinDaoLlc>, _agreement_hash: [u8; 32]) -> Result<()> {
         ctx.accounts.stake_account_metadata.signed_agreement_hash =
             Some(ctx.accounts.config.agreement_hash);
+        Ok(())
+    }
+
+    /** Recovers a user's `stake account` ownership by transferring ownership
+     * from a token account to the `owner` of that token account.
+     *
+     * This functionality addresses the scenario where a user mistakenly
+     * created a stake account using their token account address as the owner.
+     */
+    pub fn recover_account(ctx: Context<RecoverAccount>) -> Result<()> {
+        // Check that there aren't any positions (i.e., staked tokens) in the account.
+        // Transferring accounts with staked tokens might lead to double voting
+        require!(
+            ctx.accounts.stake_account_metadata.next_index == 0,
+            ErrorCode::RecoverWithStake
+        );
+
+        let new_owner = ctx.accounts.payer_token_account.owner;
+
+        ctx.accounts.stake_account_metadata.owner = new_owner;
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        stake_account_positions.owner = new_owner;
+        ctx.accounts.voter_record.governing_token_owner = new_owner;
+
         Ok(())
     }
 }
