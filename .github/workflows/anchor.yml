@@ -20,11 +20,11 @@ jobs:
         run: npm ci
       - name: Install Solana
         run: |
-          sh -c "$(curl -sSfL https://release.solana.com/v1.14.20/install)"
+          sh -c "$(curl -sSfL https://release.solana.com/v1.18.8/install)"
           echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
       - name: Install Anchor
         working-directory: ./staking
-        run: npm i -g @coral-xyz/anchor-cli@0.27.0
+        run: npm i -g @coral-xyz/anchor-cli@0.29.0
       - name: Anchor test
         working-directory: ./staking
         run: npm run test
