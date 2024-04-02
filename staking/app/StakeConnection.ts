@@ -390,6 +390,7 @@ export class StakeConnection {
     stakeAccount: StakeAccount,
     amount: PythBalance
   ) {
+    const maxCapacity = stakeAccount.hasReachedMaxCapacity();
     const positions = stakeAccount.stakeAccountPositionsJs.positions;
 
     const time = await this.getTime();
@@ -427,10 +428,12 @@ export class StakeConnection {
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
       if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
-        toClose.push({
-          index: sortPositions[i].index,
-          amount: amountBeforeFinishing,
-        });
+        if (!maxCapacity) {
+          toClose.push({
+            index: sortPositions[i].index,
+            amount: amountBeforeFinishing,
+          });
+        }
         amountBeforeFinishing = new BN(0);
       } else {
         toClose.push({
@@ -1487,5 +1490,11 @@ export class StakeAccount {
 
     const balanceSummary = this.getBalanceSummary(timeOfEval).locked;
     return balanceSummary.locking.toBN().add(balanceSummary.locked.toBN());
+  }
+
+  public hasReachedMaxCapacity(): boolean {
+    return (
+      this.stakeAccountMetadata.nextIndex == wasm.Constants.MAX_POSITIONS()
+    );
   }
 }
