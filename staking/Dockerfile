@@ -12,14 +12,5 @@ WORKDIR /workspace
 
 COPY . .
 
-CMD ["bash", "-c", "\
-        if [ \"$TEST\" = \"true\" ]; then \
-                anchor build -- --features mock-clock && \
-        else \
-                anchor build && \
-        fi \
-        cp -r target/ /artifacts && \
-        if [ \"$TEST\" = \"true\" ]; then \
-                chmod -R 777 /artifacts; \
-        fi \
-"]
+CMD ["bash", "-c", \
+        "if [ \"$TEST\" = \"true\" ]; then anchor build -- --features mock-clock; else anchor build; fi && cp -r target/ /artifacts && if [ \"$TEST\" = \"true\" ]; then chmod -R 777 /artifacts; fi"]
