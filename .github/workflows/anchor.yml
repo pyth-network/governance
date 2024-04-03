@@ -30,6 +30,7 @@ jobs:
         run: |
           npm run build_wasm
           ./scripts/build_verifiable_staking_program.sh -t
+          chmod -R 777 ./artifacts/target/
           cp -r ./artifacts/target/ ./target
           npm run dump_governance
       - name: Anchor test
