@@ -30,8 +30,7 @@ jobs:
         run: |
           npm run build_wasm
           ./scripts/build_verifiable_staking_program.sh -t
-          anchor build -- --features mock-clock
-          cp ./artifacts/target/deploy/staking.so ./target/deploy/staking.so
+          cp ./artifacts/target/ ./target/
           npm run dump_governance
       - name: Anchor test
         working-directory: ./staking
