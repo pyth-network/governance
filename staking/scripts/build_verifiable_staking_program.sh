@@ -37,5 +37,5 @@ docker run --platform linux/amd64 --rm -v "$REPO_ROOT"/staking/artifacts:/artifa
 echo "Successfully built the staking program."
 echo "The artifacts are available at $REPO_ROOT/staking/artifacts"
 
-CHECKSUM=$(sha256sum $REPO_ROOT/staking/artifacts/staking.so | awk '{print $1}')
+CHECKSUM=$(sha256sum $REPO_ROOT/staking/artifacts/target/deploy/staking.so | awk '{print $1}')
 echo "sha256sum of the staking program: $CHECKSUM"
