@@ -25,9 +25,17 @@ jobs:
       - name: Install Anchor
         working-directory: ./staking
         run: npm i -g @coral-xyz/anchor-cli@0.27.0
+      - name: Build anchor (verifiable)
+        working-directory: ./staking
+        run: |
+          npm run build_wasm
+          ./scripts/build-verifiable-staking-program.sh -t
+          anchor build -- --features mock-clock
+          cp ./artifacts/staking.so ./target/deploy/staking.so
+          npm run dump_governance
       - name: Anchor test
         working-directory: ./staking
-        run: npm run test
+        run: npm run test:ci
       - name: Check commited idl is up to date
         working-directory: ./staking
         run: git diff --exit-code target/*
