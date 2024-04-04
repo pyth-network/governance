@@ -25,7 +25,7 @@ If you want to create a verifiable build for testing, use the -t option:
 ./scripts/build_verifiable_staking_program.sh -t
 ```
 
-The result of the build will be `artifacts` folder.
+The result of the build will be `target` folder.
 
 ## Clone the required programs
 
