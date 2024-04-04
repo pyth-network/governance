@@ -13,4 +13,4 @@ WORKDIR /workspace
 COPY . .
 
 CMD ["bash", "-c", \
-        "if [ \"$TEST_ENV\" = \"true\" ]; then anchor build -- --features mock-clock; else anchor build; fi"]
+        "if [ \"$TEST_ENV\" = \"true\" ]; then anchor build -- --features mock-clock; else anchor build; fi && if [ \"$TEST_ENV\" = \"true\" ]; then chmod -R 777 target/;"]
