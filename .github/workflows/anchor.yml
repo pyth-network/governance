@@ -27,7 +27,7 @@ jobs:
         run: npm i -g @coral-xyz/anchor-cli@0.27.0
       - name: Anchor test
         working-directory: ./staking
-        run: npm run test
+        run: npm run test:ci
       - name: Check commited idl is up to date
         working-directory: ./staking
         run: git diff --exit-code target/*
