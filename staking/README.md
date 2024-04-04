@@ -46,7 +46,5 @@ npm run test
 To run the tests with verifiable builds:
 
 ```bash
-./scripts/build_verifiable_staking_program.sh -t
-cp -r artifacts/target/ target/
 npm run test:ci
 ```

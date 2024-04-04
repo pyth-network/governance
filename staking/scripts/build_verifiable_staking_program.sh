@@ -32,10 +32,10 @@ else
 fi
 
 echo "Building the staking program"
-docker run --platform linux/amd64 --rm -v "$REPO_ROOT"/staking/artifacts:/artifacts staking-build
+docker run --platform linux/amd64 --rm -v "$REPO_ROOT"/staking/target:/workspace/target staking-build
 
 echo "Successfully built the staking program."
-echo "The artifacts are available at $REPO_ROOT/staking/artifacts"
+echo "The artifacts are available at $REPO_ROOT/staking/target"
 
-CHECKSUM=$(sha256sum $REPO_ROOT/staking/artifacts/target/deploy/staking.so | awk '{print $1}')
+CHECKSUM=$(sha256sum $REPO_ROOT/staking/target/deploy/staking.so | awk '{print $1}')
 echo "sha256sum of the staking program: $CHECKSUM"
