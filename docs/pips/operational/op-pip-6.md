@@ -1,4 +1,4 @@
-# Operational PIP: Upgrade Entropy contracts on all the chains (Pythian Council)
+# Operational PIP: Upgrade Entropy contracts on all the testnet chains (Pythian Council)
 
 ## Abstract
 
@@ -13,8 +13,7 @@ The upgrade enhances the developer experience by reducing the interaction to a s
 The new feature implemented in the Entropy contracts enables users to register a callback when they request for a random number. This callback is automatically called by the Entropy contracts once the request is fulfilled, streamlining the process and improving the developer experience by necessitating only a single transaction.
 
 ## Implementation Plan
-* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5): `7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5` for upgrading testnet contracts.
-* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD): `7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD` for upgrading mainnet contracts.
+* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5): `7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5` with Pyth community.
 
 * Relevant commits:
     * https://github.com/pyth-network/pyth-crosschain/commit/e7bf47a18e2d9a9d983214342540691c1bada52e
@@ -22,8 +21,7 @@ The new feature implemented in the Entropy contracts enables users to register a
     * https://github.com/pyth-network/pyth-crosschain/commit/02e196e9242d258d43056f7f2c3762d95bf285d3
 
 * Proposal Ids:
-    * For mainnet contracts - [`7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD`](https://proposals.pyth.network/?tab=proposals&proposal=7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD)
-    * For testnet contracts - [`7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5`](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5)
+    * [`7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5`](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5)
 
 * Verify the implementation following the guide below:
 
