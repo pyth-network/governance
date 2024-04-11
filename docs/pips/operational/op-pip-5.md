@@ -1,4 +1,4 @@
-# Operational PIP: Improve usability of Pyth Solana Receiver
+# Operational PIP 5: Improve usability of Pyth Solana Receiver
 
 ## Abstract
 

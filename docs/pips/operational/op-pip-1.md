@@ -1,4 +1,4 @@
-# Operational PIP: Upgrade Blast Contract (Pythian Council)
+# Operational PIP 1: Upgrade Blast Contract (Pythian Council)
 
 ## Abstract
 

@@ -1,4 +1,4 @@
-# Operational PIP: Upgrade Mode Contract (Pythian Council)
+# Operational PIP 2: Upgrade Mode Contract (Pythian Council)
 
 ## Abstract
 
