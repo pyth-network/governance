@@ -13,16 +13,17 @@ The upgrade enhances the developer experience by reducing the interaction to a s
 The new feature implemented in the Entropy contracts enables users to register a callback when they request for a random number. This callback is automatically called by the Entropy contracts once the request is fulfilled, streamlining the process and improving the developer experience by necessitating only a single transaction.
 
 ## Implementation Plan
-<!-- TODO: update propsoal link -->
-* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su): `9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su` among the Pyth community
+* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5): `7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5` for upgrading testnet contracts.
+* Discuss [Proposal](https://proposals.pyth.network/?tab=proposals&proposal=7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD): `7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD` for upgrading mainnet contracts.
 
-<!-- TODO: update these commits -->
 * Relevant commits:
-https://github.com/pyth-network/pyth-crosschain/commit/f79f205895de61ddec69ae3ed6d4bd1ca1c6542f
-https://github.com/pyth-network/pyth-crosschain/commit/1e5df8537adbecf300fa51a8b9330db754950a05
+    * https://github.com/pyth-network/pyth-crosschain/commit/e7bf47a18e2d9a9d983214342540691c1bada52e
+    * https://github.com/pyth-network/pyth-crosschain/commit/d821e01109df9bad1f17c8e4e7d3d76bd9131747
+    * https://github.com/pyth-network/pyth-crosschain/commit/02e196e9242d258d43056f7f2c3762d95bf285d3
 
-<!-- TODO: check if this is correct -->
-Proposal id: [`9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su`](https://proposals.pyth.network/?tab=proposals&proposal=9JFcL29kfJATziNqFSWgpPuTw82n3ZwiqM4DniFEs1su)
+* Proposal Ids:
+    * Mainnet - [`7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD`](https://proposals.pyth.network/?tab=proposals&proposal=7SK1LwYSxspoE8ub2x3PTi6JbEr3C6sa8gjutC4Mb3SD)
+    * Testnet - [`7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5`](https://proposals.pyth.network/?tab=proposals&proposal=7GtMSk193YaxCNjtiub4ksyip9ZwsFu2TD77rk3t7Be5)
 
 * Verify the implementation following the guide below:
 
