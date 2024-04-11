@@ -1,4 +1,4 @@
-# Operational PIP: Deactivate stake accounts (Pythian Council)
+# Operational PIP 3: Deactivate stake accounts (Pythian Council)
 
 ## Abstract
 
