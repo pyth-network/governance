@@ -1,4 +1,4 @@
-# Operational PIP: Upgrade Entropy contracts on all the testnet chains (Pythian Council)
+# Operational PIP 6: Upgrade Entropy contracts on all the testnet chains (Pythian Council)
 
 ## Abstract
 
