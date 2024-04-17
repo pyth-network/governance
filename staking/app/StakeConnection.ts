@@ -427,7 +427,7 @@ export class StakeConnection {
     const toClose: ClosingItem[] = [];
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
-      if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
+      if (sortPositions[i].value.amount.gt(amountBeforeFinishing)) {
         if (!maxCapacity) {
           toClose.push({
             index: sortPositions[i].index,
@@ -445,6 +445,14 @@ export class StakeConnection {
         );
       }
       i++;
+    }
+
+    if (toClose.length == 0 && maxCapacity) {
+      throw new Error(
+        `Your account has attained full capacity. The minimum amount you can unstake is: ${new PythBalance(
+          sortPositions[0].value.amount
+        ).toString()}`
+      );
     }
 
     const instructions = await Promise.all(
