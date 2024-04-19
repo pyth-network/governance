@@ -17,7 +17,6 @@ import {
   OptionalBalanceSummary,
 } from "./utils/api_utils";
 import assert from "assert";
-import { expectFailWithCode } from "./utils/utils";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
@@ -283,14 +282,16 @@ describe("split vesting account", async () => {
       aliceConnection.userPublicKey()
     );
 
-    await expectFailWithCode(
-      pdaConnection.acceptSplit(
+    try {
+      await pdaConnection.acceptSplit(
         stakeAccount,
         PythBalance.fromString("33"),
         aliceConnection.userPublicKey()
-      ),
-      "SplitWithStake"
-    );
+      );
+      assert.fail("Sending the transaction should throw an exception");
+    } catch (e) {
+      assert.match(e.message, new RegExp("6033")); // SplitWithStake
+    }
 
     await assertMainAccountBalance(
       samConnection,
@@ -318,34 +319,40 @@ describe("split vesting account", async () => {
     );
 
     // wrong balance
-    await expectFailWithCode(
-      pdaConnection.acceptSplit(
+    try {
+      await pdaConnection.acceptSplit(
         stakeAccount,
         PythBalance.fromString("34"),
         aliceConnection.userPublicKey()
-      ),
-      "InvalidApproval"
-    );
+      );
+      assert.fail("Sending the transaction should throw an exception");
+    } catch (e) {
+      assert.match(e.message, new RegExp("6034")); // InvalidApproval
+    }
 
     // wrong recipient
-    await expectFailWithCode(
-      pdaConnection.acceptSplit(
+    try {
+      await pdaConnection.acceptSplit(
         stakeAccount,
         PythBalance.fromString("33"),
         samConnection.userPublicKey()
-      ),
-      "InvalidApproval"
-    );
+      );
+      assert.fail("Sending the transaction should throw an exception");
+    } catch (e) {
+      assert.match(e.message, new RegExp("6034")); // InvalidApproval
+    }
 
     // wrong signer
-    await expectFailWithCode(
-      aliceConnection.acceptSplit(
+    try {
+      await aliceConnection.acceptSplit(
         stakeAccount,
         PythBalance.fromString("33"),
         aliceConnection.userPublicKey()
       ),
-      "ConstraintAddress"
-    );
+        assert.fail("Sending the transaction should throw an exception");
+    } catch (e) {
+      assert.match(e.message, new RegExp("2012")); // ConstraintAddress
+    }
 
     // Passing the correct arguments should succeed
     await pdaConnection.acceptSplit(
