@@ -51,7 +51,6 @@ import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
 import * as crypto from "crypto";
 import {
-  InstructionWithEphemeralSigners,
   PriorityFeeConfig,
   TransactionBuilder,
   sendTransactions,
@@ -176,7 +175,7 @@ export class StakeConnection {
   }
 
   private async sendAndConfirmAsVersionedTransaction(
-    instructions: InstructionWithEphemeralSigners[]
+    instructions: TransactionInstruction[]
   ) {
     const addressLookupTableAccount = this.addressLookupTable
       ? (
@@ -189,7 +188,9 @@ export class StakeConnection {
       await TransactionBuilder.batchIntoVersionedTransactions(
         this.userPublicKey(),
         this.provider.connection,
-        instructions,
+        instructions.map((instruction) => {
+          return { instruction, signers: [] };
+        }),
         this.priorityFeeConfig,
         addressLookupTableAccount
       );
@@ -470,11 +471,7 @@ export class StakeConnection {
       )
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async withUpdateVoterWeight(
@@ -680,11 +677,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async setupVestingAccount(
@@ -720,11 +713,7 @@ export class StakeConnection {
       );
     }
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async depositTokens(
@@ -762,11 +751,7 @@ export class StakeConnection {
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
@@ -883,11 +868,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async buildCleanupUnlockedPositions(
@@ -975,11 +956,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async requestSplit(
@@ -1002,11 +979,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async getSplitRequest(
@@ -1072,11 +1045,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   /**
@@ -1101,11 +1070,7 @@ export class StakeConnection {
     );
 
     const instructions = [await walletTester.methods.test().instruction()];
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async walletHasTested(wallet: PublicKey): Promise<boolean> {
@@ -1221,11 +1186,7 @@ export class StakeConnection {
       voterWeightAccount
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      instructions.map((instruction) => {
-        return { instruction, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async buildRecoverAccountInstruction(
