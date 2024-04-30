@@ -13,13 +13,8 @@ import {
   Keypair,
   TransactionInstruction,
   Signer,
-  Transaction,
   SYSVAR_CLOCK_PUBKEY,
-  ComputeBudgetProgram,
   SystemProgram,
-  TransactionMessage,
-  VersionedTransaction,
-  AddressLookupTableAccount,
 } from "@solana/web3.js";
 import * as wasm2 from "@pythnetwork/staking-wasm";
 import {
@@ -33,7 +28,6 @@ import * as idljs from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import IDL from "../target/idl/staking.json";
 import * as WalletTesterIDL from "../target/idl/wallet_tester.json";
-import { batchInstructions } from "./transaction";
 import { PythBalance } from "./pythBalance";
 import {
   getTokenOwnerRecordAddress,
@@ -56,6 +50,12 @@ import {
 import assert from "assert";
 import { PositionAccountJs } from "./PositionAccountJs";
 import * as crypto from "crypto";
+import {
+  PriorityFeeConfig,
+  TransactionBuilder,
+  sendTransactions,
+} from "@pythnetwork/solana-utils";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 let wasm = wasm2;
 export { wasm };
 
@@ -80,6 +80,7 @@ export class StakeConnection {
   votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
   addressLookupTable: PublicKey | undefined;
+  priorityFeeConfig: PriorityFeeConfig;
 
   private constructor(
     program: Program<Staking>,
@@ -88,7 +89,8 @@ export class StakeConnection {
     configAddress: PublicKey,
     votingProductMetadataAccount: PublicKey,
     votingAccountMetadataWasm: any,
-    addressLookupTable: PublicKey | undefined
+    addressLookupTable: PublicKey | undefined,
+    priorityFeeConfig: PriorityFeeConfig | undefined
   ) {
     this.program = program;
     this.provider = provider;
@@ -98,6 +100,7 @@ export class StakeConnection {
     this.governanceAddress = GOVERNANCE_ADDRESS();
     this.votingAccountMetadataWasm = votingAccountMetadataWasm;
     this.addressLookupTable = addressLookupTable;
+    this.priorityFeeConfig = priorityFeeConfig ?? {};
   }
 
   public static async connect(
@@ -117,7 +120,8 @@ export class StakeConnection {
     connection: Connection,
     wallet: Wallet,
     stakingProgramAddress: PublicKey,
-    addressLookupTable?: PublicKey
+    addressLookupTable?: PublicKey,
+    priorityFeeConfig?: PriorityFeeConfig
   ): Promise<StakeConnection> {
     const provider = new AnchorProvider(connection, wallet, {});
     const program = new Program(
@@ -165,36 +169,36 @@ export class StakeConnection {
       configAddress,
       votingProductMetadataAccount,
       votingAccountMetadataWasm,
-      addressLookupTable
+      addressLookupTable,
+      priorityFeeConfig
     );
   }
 
   private async sendAndConfirmAsVersionedTransaction(
-    instructions: TransactionInstruction[],
-    signers: Signer[]
+    instructions: TransactionInstruction[]
   ) {
-    const addressLookupTables: AddressLookupTableAccount[] | undefined = this
-      .addressLookupTable
-      ? [
-          (
-            await this.program.provider.connection.getAddressLookupTable(
-              new PublicKey(this.addressLookupTable)
-            )
-          ).value,
-        ]
-      : [];
-    const message = new TransactionMessage({
-      instructions: instructions,
-      recentBlockhash: (await this.provider.connection.getLatestBlockhash())
-        .blockhash,
-      payerKey: this.provider.wallet.publicKey,
-    });
-    const versionedTransaction = new VersionedTransaction(
-      message.compileToV0Message(addressLookupTables)
+    const addressLookupTableAccount = this.addressLookupTable
+      ? (
+          await this.provider.connection.getAddressLookupTable(
+            this.addressLookupTable
+          )
+        ).value
+      : undefined;
+    const transactions =
+      await TransactionBuilder.batchIntoVersionedTransactions(
+        this.userPublicKey(),
+        this.provider.connection,
+        instructions.map((instruction) => {
+          return { instruction, signers: [] };
+        }),
+        this.priorityFeeConfig,
+        addressLookupTableAccount
+      );
+    return sendTransactions(
+      transactions,
+      this.provider.connection,
+      this.provider.wallet as NodeWallet
     );
-    return await this.provider.sendAndConfirm(versionedTransaction, signers, {
-      skipPreflight: true,
-    });
   }
 
   /** The public key of the user of the staking program. This connection sends transactions as this user. */
@@ -467,17 +471,9 @@ export class StakeConnection {
       )
     );
 
-    const transactions = await batchInstructions(
-      instructions,
-      this.program.provider
-    );
-
-    await this.program.provider.sendAll(
-      transactions.map((tx) => {
-        return { tx, signers: [] };
-      })
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
+
   public async withUpdateVoterWeight(
     instructions: TransactionInstruction[],
     stakeAccount: StakeAccount,
@@ -653,11 +649,11 @@ export class StakeConnection {
     const owner: PublicKey = stakeAccount.stakeAccountMetadata.owner;
     const amountBN = amount.toBN();
 
-    const transaction: Transaction = new Transaction();
+    const instructions: TransactionInstruction[] = [];
 
     if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
-        transaction.instructions,
+        instructions,
         this.governanceAddress,
         PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
@@ -668,10 +664,10 @@ export class StakeConnection {
     }
 
     if (!(await this.isLlcMember(stakeAccount))) {
-      await this.withJoinDaoLlc(transaction.instructions, stakeAccount.address);
+      await this.withJoinDaoLlc(instructions, stakeAccount.address);
     }
 
-    transaction.instructions.push(
+    instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amountBN)
         .accounts({
@@ -681,18 +677,16 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(
-      transaction.instructions,
-      []
-    );
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
+
   public async setupVestingAccount(
     amount: PythBalance,
     owner: PublicKey,
     vestingSchedule,
     transfer: boolean = true
   ) {
-    const transaction: Transaction = new Transaction();
+    const instructions: TransactionInstruction[] = [];
 
     //Forgive me, I didn't find a better way to check the enum variant
     if (vestingSchedule.periodicVestingAfterListing) {
@@ -708,18 +702,18 @@ export class StakeConnection {
     }
 
     const stakeAccountAddress = await this.withCreateAccount(
-      transaction.instructions,
+      instructions,
       owner,
       vestingSchedule
     );
 
     if (transfer) {
-      transaction.instructions.push(
+      instructions.push(
         await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
       );
     }
 
-    await this.provider.sendAndConfirm(transaction, []);
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async depositTokens(
@@ -729,18 +723,17 @@ export class StakeConnection {
     let stakeAccountAddress: PublicKey;
     const owner = this.provider.wallet.publicKey;
 
-    const ixs: TransactionInstruction[] = [];
-    const signers: Signer[] = [];
+    const instructions: TransactionInstruction[] = [];
 
     if (!stakeAccount) {
-      stakeAccountAddress = await this.withCreateAccount(ixs, owner);
+      stakeAccountAddress = await this.withCreateAccount(instructions, owner);
     } else {
       stakeAccountAddress = stakeAccount.address;
     }
 
     if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
-        ixs,
+        instructions,
         this.governanceAddress,
         PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
@@ -751,16 +744,14 @@ export class StakeConnection {
     }
 
     if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
-      await this.withJoinDaoLlc(ixs, stakeAccountAddress);
+      await this.withJoinDaoLlc(instructions, stakeAccountAddress);
     }
 
-    ixs.push(
+    instructions.push(
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
-    const tx = new Transaction();
-    tx.add(...ixs);
-    await this.provider.sendAndConfirm(tx, signers);
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async getTokenOwnerRecordAddress(user: PublicKey) {
@@ -823,11 +814,11 @@ export class StakeConnection {
     let stakeAccountAddress: PublicKey;
     const owner = this.provider.wallet.publicKey;
 
-    const ixs: TransactionInstruction[] = [];
+    const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
 
     if (!stakeAccount) {
-      stakeAccountAddress = await this.withCreateAccount(ixs, owner);
+      stakeAccountAddress = await this.withCreateAccount(instructions, owner);
     } else {
       stakeAccountAddress = stakeAccount.address;
       const vestingAccountState = stakeAccount.getVestingAccountState(
@@ -843,7 +834,7 @@ export class StakeConnection {
 
     if (!(await this.hasGovernanceRecord(owner))) {
       await withCreateTokenOwnerRecord(
-        ixs,
+        instructions,
         this.governanceAddress,
         PROGRAM_VERSION_V2,
         this.config.pythGovernanceRealm,
@@ -854,18 +845,20 @@ export class StakeConnection {
     }
 
     if (!stakeAccount || !(await this.isLlcMember(stakeAccount))) {
-      await this.withJoinDaoLlc(ixs, stakeAccountAddress);
+      await this.withJoinDaoLlc(instructions, stakeAccountAddress);
     }
 
-    ixs.push(
+    instructions.push(
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
     if (stakeAccount) {
       // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we fit in the transaction
-      ixs.push(...(await this.buildCleanupUnlockedPositions(stakeAccount))); // Try to make room by closing unlocked positions
+      instructions.push(
+        ...(await this.buildCleanupUnlockedPositions(stakeAccount))
+      ); // Try to make room by closing unlocked positions
     }
-    ixs.push(
+    instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amount.toBN())
         .accounts({
@@ -875,7 +868,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(ixs, signers);
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async buildCleanupUnlockedPositions(
@@ -939,9 +932,9 @@ export class StakeConnection {
       true
     );
 
-    const preIxs: TransactionInstruction[] = [];
+    const instructions: TransactionInstruction[] = [];
     if ((await this.provider.connection.getAccountInfo(toAccount)) == null) {
-      preIxs.push(
+      instructions.push(
         Token.createAssociatedTokenAccountInstruction(
           ASSOCIATED_TOKEN_PROGRAM_ID,
           TOKEN_PROGRAM_ID,
@@ -953,14 +946,17 @@ export class StakeConnection {
       );
     }
 
-    await this.program.methods
-      .withdrawStake(amount.toBN())
-      .preInstructions(preIxs)
-      .accounts({
-        stakeAccountPositions: stakeAccount.address,
-        destination: toAccount,
-      })
-      .rpc();
+    instructions.push(
+      await this.program.methods
+        .withdrawStake(amount.toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          destination: toAccount,
+        })
+        .instruction()
+    );
+
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async requestSplit(
@@ -968,21 +964,22 @@ export class StakeConnection {
     amount: PythBalance,
     recipient: PublicKey
   ) {
-    const preInstructions = [
-      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1000 }),
-    ];
+    const instructions = [];
 
-    preInstructions.push(
+    instructions.push(
       ...(await this.buildCleanupUnlockedPositions(stakeAccount))
     );
 
-    await this.program.methods
-      .requestSplit(amount.toBN(), recipient)
-      .preInstructions(preInstructions)
-      .accounts({
-        stakeAccountPositions: stakeAccount.address,
-      })
-      .rpc();
+    instructions.push(
+      await this.program.methods
+        .requestSplit(amount.toBN(), recipient)
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+        })
+        .instruction()
+    );
+
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async getSplitRequest(
@@ -1014,17 +1011,14 @@ export class StakeConnection {
     amount: PythBalance,
     recipient: PublicKey
   ) {
-    const preInstructions = [
-      ComputeBudgetProgram.setComputeUnitLimit({ units: 120000 }),
-      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 30101 }),
-    ];
+    const instructions = [];
     const nonce = crypto.randomBytes(16).toString("hex");
     const ephemeralAccount = await PublicKey.createWithSeed(
       this.userPublicKey(),
       nonce,
       this.program.programId
     );
-    preInstructions.push(
+    instructions.push(
       SystemProgram.createAccountWithSeed({
         fromPubkey: this.userPublicKey(),
         newAccountPubkey: ephemeralAccount,
@@ -1039,16 +1033,19 @@ export class StakeConnection {
       })
     );
 
-    await this.program.methods
-      .acceptSplit(amount.toBN(), recipient)
-      .accounts({
-        sourceStakeAccountPositions: stakeAccount.address,
-        newStakeAccountPositions: ephemeralAccount,
-        mint: this.config.pythTokenMint,
-      })
-      .signers([])
-      .preInstructions(preInstructions)
-      .rpc();
+    instructions.push(
+      await this.program.methods
+        .acceptSplit(amount.toBN(), recipient)
+        .accounts({
+          sourceStakeAccountPositions: stakeAccount.address,
+          newStakeAccountPositions: ephemeralAccount,
+          mint: this.config.pythTokenMint,
+        })
+        .signers([])
+        .instruction()
+    );
+
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   /**
@@ -1071,7 +1068,9 @@ export class StakeConnection {
       WALLET_TESTER_ADDRESS,
       this.provider
     );
-    await walletTester.methods.test().rpc();
+
+    const instructions = [await walletTester.methods.test().instruction()];
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async walletHasTested(wallet: PublicKey): Promise<boolean> {
@@ -1163,14 +1162,14 @@ export class StakeConnection {
       depositExemptProposalCount: 100,
     });
 
-    const tx = new Transaction();
+    const instructions = [];
 
     const { voterWeightAccount, maxVoterWeightRecord } =
-      await this.withUpdateVoterWeight(tx.instructions, stakeAccount, {
+      await this.withUpdateVoterWeight(instructions, stakeAccount, {
         createGovernance: {},
       });
     await withCreateGovernance(
-      tx.instructions,
+      instructions,
       GOVERNANCE_ADDRESS(),
       PROGRAM_VERSION,
       REALM_ID,
@@ -1187,7 +1186,7 @@ export class StakeConnection {
       voterWeightAccount
     );
 
-    await this.provider.sendAndConfirm(tx);
+    await this.sendAndConfirmAsVersionedTransaction(instructions);
   }
 
   public async buildRecoverAccountInstruction(
