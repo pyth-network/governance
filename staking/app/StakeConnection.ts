@@ -80,7 +80,7 @@ export class StakeConnection {
   votingAccountMetadataWasm: any;
   governanceAddress: PublicKey;
   addressLookupTable: PublicKey | undefined;
-  priorityFeeConfig: PriorityFeeConfig | undefined;
+  priorityFeeConfig: PriorityFeeConfig;
 
   private constructor(
     program: Program<Staking>,
