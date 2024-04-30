@@ -1,12 +1,12 @@
 # PIP-2 Rectify the Owner Field for Three Bricked Locked Token Accounts.
 
-- Title 
+- Title
     - Update the Pyth Staking Program (PSP) to rectify the owner field from Token Addresses to vanilla Solana Wallet Addresses (System Program Addresses) for three Token Holders.
 
 - Abstract
     - During the initial distribution of Pyth locked tokens, incorrect addresses (Token Addresses) were used instead of Solana Wallet Addresses for three Token Holders due to a clerical error.
-    - This PIP would update the Staking Program to enable replacement of these Token Addresses with the Solana Wallet Addresses which own them. This would recover funds for three locked Pyth Token Holders (PTH) who have been affected by this error. This does not affect unlocked Token Holders or other Locked addresses other than those explicitly listed in this PIP. 
-    - Both the upgrade of the Staking program and the recovery of the affected Token Addresses are part of this governance vote. Any future use of this new Staking Program functionality will only be possible via governance vote. 
+    - This PIP would update the Staking Program to enable replacement of these Token Addresses with the Solana Wallet Addresses which own them. This would recover funds for three locked Pyth Token Holders (PTH) who have been affected by this error. This does not affect unlocked Token Holders or other Locked addresses other than those explicitly listed in this PIP.
+    - Both the upgrade of the Staking program and the recovery of the affected Token Addresses are part of this governance vote. Any future use of this new Staking Program functionality will only be possible via governance vote.
 
 - Rationale
     - The PSP requires a PTH supplied Solana Wallet Address so that the PTH can interact with the PSP to stake, vote and withdraw - once tokens have vested according to the schedule in the contract. Transactions signed by the private key of this Solana Wallet Address allow the PTH to operate these functions through the PSP.
