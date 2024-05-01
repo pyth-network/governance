@@ -13,6 +13,7 @@
   "repository": "https://github.com/pyth-network/governance/tree/main/staking",
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@pythnetwork/solana-utils": "^0.4.1",
     "@pythnetwork/staking-wasm": "*",
     "@solana/spl-governance": "0.3.26",
     "@solana/spl-token": "^0.1.8",

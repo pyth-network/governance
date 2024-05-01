@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { parseIdlErrors, Program, Spl } from "@coral-xyz/anchor";
+import { parseIdlErrors, Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
