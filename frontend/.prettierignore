@@ -3,3 +3,5 @@ package.json
 package-lock.json
 public
 staking/target
+.next/
+node_modules/

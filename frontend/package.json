@@ -2,10 +2,12 @@
   "name": "pyth-staking-frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build && next export",
+    "dev": "next dev",
+    "fix:format": "prettier --write .",
     "serve": "serve out",
-    "start": "next start"
+    "start": "next start",
+    "test:format": "prettier --check .",
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
