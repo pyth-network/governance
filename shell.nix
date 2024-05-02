@@ -42,6 +42,7 @@
         format = "${pkgs.alejandra}/bin/alejandra --exclude ./node_modules --check .";
       };
       frontend = {
+        lint = "${pkgs.nodejs}/bin/npm run -w frontend test:lint";
         format = "${pkgs.nodejs}/bin/npm run -w frontend test:format";
       };
     };
@@ -53,6 +54,7 @@
         format = "${pkgs.alejandra}/bin/alejandra --exclude ./node_modules .";
       };
       frontend = {
+        lint = "${pkgs.nodejs}/bin/npm run -w frontend fix:lint";
         format = "${pkgs.nodejs}/bin/npm run -w frontend fix:format";
       };
     };
