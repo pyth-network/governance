@@ -1,0 +1,81 @@
+name: Test Frontend
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  Test_Lint:
+    name: Test Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install node packages
+        run: npm ci
+
+      - name: Run lint tests
+        run: npm run -w frontend test:lint
+
+  Test_Format:
+    name: Test Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install node packages
+        run: npm ci
+
+      - name: Run format checks
+        run: npm run -w frontend test:format
+
+  Check_Types:
+    name: Check Types
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Install node packages
+        run: npm ci
+
+      - name: Check typescript types
+        run: npm run -w frontend test:types
+
+  Test_Nix:
+    name: Test (nix)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out codebase
+        uses: actions/checkout@v4
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v26
+        with:
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+
+      - name: Install node packages
+        run: nix-shell --run "cli install"
+
+      - name: Test
+        run: nix-shell --run "cli test"

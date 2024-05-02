@@ -10,6 +10,7 @@
     "start": "next start",
     "test:format": "prettier --check .",
     "test:lint": "next lint",
+    "test:types": "tsc --noEmit"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",

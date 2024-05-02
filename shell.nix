@@ -43,6 +43,7 @@
       };
       frontend = {
         lint = "${pkgs.nodejs}/bin/npm run -w frontend test:lint";
+        types = "${pkgs.nodejs}/bin/npm run -w frontend test:types";
         format = "${pkgs.nodejs}/bin/npm run -w frontend test:format";
       };
     };
