@@ -2,10 +2,15 @@
   "name": "pyth-staking-frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build && next export",
+    "dev": "next dev",
+    "fix:format": "prettier --write .",
+    "fix:lint": "next lint --fix",
     "serve": "serve out",
-    "start": "next start"
+    "start": "next start",
+    "test:format": "prettier --check .",
+    "test:lint": "next lint",
+    "test:types": "tsc --noEmit"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
@@ -36,6 +41,8 @@
     "@types/node": "20.3.1",
     "@types/react": "^18.0.1",
     "autoprefixer": "^10.4.0",
+    "eslint": "^8",
+    "eslint-config-next": "^14.2.3",
     "postcss": "^8.4.5",
     "prettier": "^2.5.1",
     "prettier-plugin-tailwindcss": "^0.1.1",

@@ -41,6 +41,11 @@
         dead-code = "${pkgs.deadnix}/bin/deadnix --exclude ./node_modules .";
         format = "${pkgs.alejandra}/bin/alejandra --exclude ./node_modules --check .";
       };
+      frontend = {
+        lint = "${pkgs.nodejs}/bin/npm run -w frontend test:lint";
+        types = "${pkgs.nodejs}/bin/npm run -w frontend test:types";
+        format = "${pkgs.nodejs}/bin/npm run -w frontend test:format";
+      };
     };
 
     fix = {
@@ -48,6 +53,10 @@
         lint = "${pkgs.statix}/bin/statix fix --ignore node_modules .";
         dead-code = "${pkgs.deadnix}/bin/deadnix --exclude ./node_modules -e .";
         format = "${pkgs.alejandra}/bin/alejandra --exclude ./node_modules .";
+      };
+      frontend = {
+        lint = "${pkgs.nodejs}/bin/npm run -w frontend fix:lint";
+        format = "${pkgs.nodejs}/bin/npm run -w frontend fix:format";
       };
     };
   };
