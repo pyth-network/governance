@@ -174,6 +174,23 @@ export class StakeConnection {
     );
   }
 
+  private async sendAndConfirmAsLegacyTransaction(
+    instructions: TransactionInstruction[]
+  ) {
+    const transactions = TransactionBuilder.batchIntoLegacyTransactions(
+      instructions,
+      this.priorityFeeConfig
+    );
+
+    return sendTransactions(
+      transactions.map((transaction) => {
+        return { tx: transaction, signers: [] };
+      }),
+      this.provider.connection,
+      this.provider.wallet as NodeWallet
+    );
+  }
+
   private async sendAndConfirmAsVersionedTransaction(
     instructions: TransactionInstruction[]
   ) {
@@ -979,7 +996,7 @@ export class StakeConnection {
         .instruction()
     );
 
-    await this.sendAndConfirmAsVersionedTransaction(instructions);
+    await this.sendAndConfirmAsLegacyTransaction(instructions);
   }
 
   public async getSplitRequest(
