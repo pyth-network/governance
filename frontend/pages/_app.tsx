@@ -27,7 +27,7 @@ require('@solana/wallet-adapter-react-ui/styles.css')
 require('../styles/globals.css')
 
 const walletConnectConfig: WalletConnectWalletAdapterConfig = {
-  network: WalletAdapterNetwork.Mainnet,
+  network: process.env.CLUSTER === 'devnet' ? WalletAdapterNetwork.Devnet : WalletAdapterNetwork.Mainnet,
   options: {
     relayUrl: 'wss://relay.walletconnect.com',
     projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
