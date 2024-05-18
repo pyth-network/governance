@@ -3,3 +3,4 @@ staking/lib
 wasm
 staking/app/keypairs
 docs/
+frontend/
