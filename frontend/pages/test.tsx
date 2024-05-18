@@ -44,15 +44,17 @@ const Test: NextPage = () => {
       <PanelLayout>
         {stakeConnection ? (
           <p>
-            { !hasTested ? (
-            <Description>
-              Please click the button below and accept the transaction in your
-              wallet to test the browser wallet compatibility. You will need
-              0.001 SOL.
-            </Description> )
-            : <Description>
-              Your wallet has already been tested succesfully.
-              </Description> }
+            {!hasTested ? (
+              <Description>
+                Please click the button below and accept the transaction in your
+                wallet to test the browser wallet compatibility. You will need
+                0.001 SOL.
+              </Description>
+            ) : (
+              <Description>
+                Your wallet has already been tested succesfully.
+              </Description>
+            )}
             <button
               className="action-btn text-base"
               onClick={() => testWallet()}
