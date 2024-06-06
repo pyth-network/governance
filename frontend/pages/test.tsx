@@ -42,13 +42,19 @@ const Test: NextPage = () => {
       <SEO title={'Wallet Compatiblity Test'} />
 
       <PanelLayout>
-        {stakeConnection && !hasTested ? (
+        {stakeConnection ? (
           <p>
-            <Description>
-              Please click the button below and accept the transaction in your
-              wallet to test the browser wallet compatibility. You will need
-              0.001 SOL.
-            </Description>
+            {hasTested ? (
+              <Description>
+                Your wallet has already been tested succesfully.
+              </Description>
+            ) : (
+              <Description>
+                Please click the button below and accept the transaction in your
+                wallet to test the browser wallet compatibility. You will need
+                0.001 SOL.
+              </Description>
+            )}
             <button
               className="action-btn text-base"
               onClick={() => testWallet()}
@@ -56,10 +62,6 @@ const Test: NextPage = () => {
               Click to test
             </button>
           </p>
-        ) : stakeConnection && hasTested ? (
-          <Description>
-            Your wallet has already been tested succesfully.
-          </Description>
         ) : (
           <p className="p-2 hover:bg-hoverGray"> Please connect your wallet</p>
         )}

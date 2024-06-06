@@ -21,7 +21,8 @@ export function useStakeConnection() {
         STAKING_ADDRESS,
         process.env.ADDRESS_LOOKUP_TABLE
           ? new PublicKey(process.env.ADDRESS_LOOKUP_TABLE)
-          : undefined
+          : undefined,
+        { computeUnitPriceMicroLamports: 50000 }
       )
     },
     {
