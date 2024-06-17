@@ -113,7 +113,7 @@ pub struct CreateStakeAccount<'info> {
         token::mint = mint,
         token::authority = custody_authority,
     )]
-    pub stake_account_custody:   Account<'info, TokenAccount>,
+    pub stake_account_custody:   Box<Account<'info, TokenAccount>>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority:       AccountInfo<'info>,
@@ -123,12 +123,12 @@ pub struct CreateStakeAccount<'info> {
         space = voter_weight_record::VoterWeightRecord::LEN,
         seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump)]
-    pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
+    pub voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:                  Account<'info, global_config::GlobalConfig>,
+    pub config:                  Box<Account<'info, global_config::GlobalConfig>>,
     // Pyth token mint:
     #[account(address = config.pyth_token_mint)]
-    pub mint:                    Account<'info, Mint>,
+    pub mint:                    Box<Account<'info, Mint>>,
     // Primitive accounts :
     pub rent:                    Sysvar<'info, Rent>,
     pub token_program:           Program<'info, Token>,

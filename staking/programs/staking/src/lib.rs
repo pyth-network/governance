@@ -56,7 +56,7 @@ pub mod staking {
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
-        config_account.bump = *ctx.bumps.get("config_account").unwrap();
+        config_account.bump = ctx.bumps.config_account;
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
@@ -129,10 +129,10 @@ pub mod staking {
 
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.initialize(
-            *ctx.bumps.get("stake_account_metadata").unwrap(),
-            *ctx.bumps.get("stake_account_custody").unwrap(),
-            *ctx.bumps.get("custody_authority").unwrap(),
-            *ctx.bumps.get("voter_record").unwrap(),
+            ctx.bumps.stake_account_metadata,
+            ctx.bumps.stake_account_custody,
+            ctx.bumps.custody_authority,
+            ctx.bumps.voter_record,
             &owner,
         );
         stake_account_metadata.set_lock(lock);
@@ -463,7 +463,7 @@ pub mod staking {
                     &config.pyth_governance_realm,
                 )?;
 
-                if config.epoch_duration < governance_data.config.max_voting_time.into() {
+                if config.epoch_duration < governance_data.config.voting_base_time.into() {
                     return Err(error!(ErrorCode::ProposalTooLong));
                 }
 
@@ -523,7 +523,7 @@ pub mod staking {
             return Err(error!(ErrorCode::NotImplemented));
         }
 
-        target_account.bump = *ctx.bumps.get("target_account").unwrap();
+        target_account.bump = ctx.bumps.target_account;
         target_account.last_update_at = get_current_epoch(config).unwrap();
         target_account.prev_epoch_locked = 0;
         target_account.locked = 0;
@@ -587,10 +587,10 @@ pub mod staking {
 
         // Initialize new accounts
         ctx.accounts.new_stake_account_metadata.initialize(
-            *ctx.bumps.get("new_stake_account_metadata").unwrap(),
-            *ctx.bumps.get("new_stake_account_custody").unwrap(),
-            *ctx.bumps.get("new_custody_authority").unwrap(),
-            *ctx.bumps.get("new_voter_record").unwrap(),
+            ctx.bumps.new_stake_account_metadata,
+            ctx.bumps.new_stake_account_custody,
+            ctx.bumps.new_custody_authority,
+            ctx.bumps.new_voter_record,
             &split_request.recipient,
         );
 

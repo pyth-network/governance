@@ -10,6 +10,10 @@ use {
             wasm_bindgen,
         },
     },
+    bytemuck::{
+        Pod,
+        Zeroable,
+    },
     std::fmt::{
         self,
         Debug,
@@ -35,6 +39,7 @@ pub struct PositionData {
 impl PositionData {
     pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
 }
+
 
 #[cfg(test)]
 impl Default for PositionData {

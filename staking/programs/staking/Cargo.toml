@@ -18,14 +18,15 @@ wasm = ["no-entrypoint", "js-sys", "bincode"]
 default = []
 
 [dependencies]
-borsh = {version = "0.9.3", features = ["const-generics"]}
-anchor-lang = {version ="0.24.2", features = ["init-if-needed"]}
-anchor-spl = "0.24.2"
-wasm-bindgen = "0.2.79"
-spl-governance = {version = "2.2.4", features = ["no-entrypoint"]}
+anchor-lang = {workspace = true, features = ["init-if-needed"]}
+anchor-spl = {workspace = true}
+wasm-bindgen = "0.2.91"
+spl-governance = {version = "4.0.0", features = ["no-entrypoint"]}
 js-sys = { version = "0.3.56", optional = true }
 bincode = { version = "1.3.3", optional = true }
-solana-program = "*"
+solana-program = "1.18.16"
+bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
+
 
 
 [dev-dependencies]
