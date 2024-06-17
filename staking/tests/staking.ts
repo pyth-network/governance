@@ -120,14 +120,6 @@ describe("staking", async () => {
         ],
         program.programId
       );
-    let voterBump: number;
-    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
-      [
-        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
-        stakeAccountPositionsSecret.publicKey.toBuffer(),
-      ],
-      program.programId
-    );
 
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
@@ -155,7 +147,7 @@ describe("staking", async () => {
         metadataBump,
         custodyBump,
         authorityBump,
-        voterBump,
+        voterBump: 0,
         owner,
         lock: { fullyVested: {} },
         nextIndex: 0,

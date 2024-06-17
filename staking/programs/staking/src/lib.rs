@@ -53,6 +53,7 @@ declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
 pub mod staking {
     /// Creates a global config for the program
     use super::*;
+    use spl_governance::state::governance;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -132,16 +133,13 @@ pub mod staking {
             ctx.bumps.stake_account_metadata,
             ctx.bumps.stake_account_custody,
             ctx.bumps.custody_authority,
-            ctx.bumps.voter_record,
+            0,
             &owner,
         );
         stake_account_metadata.set_lock(lock);
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.initialize(&owner);
-
-        let voter_record = &mut ctx.accounts.voter_record;
-        voter_record.initialize(config, &owner);
 
         Ok(())
     }
@@ -396,9 +394,12 @@ pub mod staking {
     ) -> Result<()> {
         let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let stake_account_metadata = &ctx.accounts.stake_account_metadata;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
         let governance_target = &mut ctx.accounts.governance_target;
+
+        voter_record.initialize(config, &stake_account_metadata.owner);
 
         ctx.accounts
             .stake_account_metadata
@@ -574,6 +575,7 @@ pub mod staking {
      * The `pda_authority` must explicitly approve both the amount of tokens and recipient, and
      * these parameters must match the request (in the `split_request` account).
      */
+    #[inline(never)]
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
 
@@ -590,16 +592,13 @@ pub mod staking {
             ctx.bumps.new_stake_account_metadata,
             ctx.bumps.new_stake_account_custody,
             ctx.bumps.new_custody_authority,
-            ctx.bumps.new_voter_record,
+            0,
             &split_request.recipient,
         );
 
         let new_stake_account_positions =
             &mut ctx.accounts.new_stake_account_positions.load_init()?;
         new_stake_account_positions.initialize(&split_request.recipient);
-
-        let new_voter_record = &mut ctx.accounts.new_voter_record;
-        new_voter_record.initialize(config, &split_request.recipient);
 
         // Pre-check invariants
         // Note that the accept operation requires the positions account to be empty, which should trivially
@@ -726,7 +725,6 @@ pub mod staking {
         ctx.accounts.stake_account_metadata.owner = new_owner;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         stake_account_positions.owner = new_owner;
-        ctx.accounts.voter_record.governing_token_owner = new_owner;
 
         Ok(())
     }

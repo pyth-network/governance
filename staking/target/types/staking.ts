@@ -250,25 +250,6 @@ export type Staking = {
           }
         },
         {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -603,7 +584,7 @@ export type Staking = {
       "accounts": [
         {
           "name": "payer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -700,6 +681,11 @@ export type Staking = {
               }
             ]
           }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1073,25 +1059,6 @@ export type Staking = {
           }
         },
         {
-          "name": "newVoterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "new_stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -1230,25 +1197,6 @@ export type Staking = {
                 "kind": "const",
                 "type": "string",
                 "value": "stake_metadata"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
               },
               {
                 "kind": "account",
@@ -2302,25 +2250,6 @@ export const IDL: Staking = {
           }
         },
         {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -2655,7 +2584,7 @@ export const IDL: Staking = {
       "accounts": [
         {
           "name": "payer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -2752,6 +2681,11 @@ export const IDL: Staking = {
               }
             ]
           }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3125,25 +3059,6 @@ export const IDL: Staking = {
           }
         },
         {
-          "name": "newVoterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "new_stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -3282,25 +3197,6 @@ export const IDL: Staking = {
                 "kind": "const",
                 "type": "string",
                 "value": "stake_metadata"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
               },
               {
                 "kind": "account",

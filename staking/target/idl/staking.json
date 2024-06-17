@@ -250,25 +250,6 @@
           }
         },
         {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -603,7 +584,7 @@
       "accounts": [
         {
           "name": "payer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -700,6 +681,11 @@
               }
             ]
           }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1073,25 +1059,6 @@
           }
         },
         {
-          "name": "newVoterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "new_stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -1230,25 +1197,6 @@
                 "kind": "const",
                 "type": "string",
                 "value": "stake_metadata"
-              },
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
-          "name": "voterRecord",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "type": "string",
-                "value": "voter_weight"
               },
               {
                 "kind": "account",
