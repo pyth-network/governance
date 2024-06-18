@@ -10,10 +10,6 @@ use {
             wasm_bindgen,
         },
     },
-    bytemuck::{
-        Pod,
-        Zeroable,
-    },
     std::fmt::{
         self,
         Debug,
