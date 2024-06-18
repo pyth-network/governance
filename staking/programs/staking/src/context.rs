@@ -117,13 +117,8 @@ pub struct CreateStakeAccount<'info> {
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority:       AccountInfo<'info>,
-    // #[account(
-    //     init,
-    //     payer = payer,
-    //     space = voter_weight_record::VoterWeightRecord::LEN,
-    //     seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
-    //     bump)]
-    // pub voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
+    /// CHECK : Unused
+    pub voter_record:            AccountInfo<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Box<Account<'info, global_config::GlobalConfig>>,
     // Pyth token mint:
@@ -132,6 +127,27 @@ pub struct CreateStakeAccount<'info> {
     // Primitive accounts :
     pub rent:                    Sysvar<'info, Rent>,
     pub token_program:           Program<'info, Token>,
+    pub system_program:          Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct CreateVoterRecord<'info> {
+    // Native payer:
+    #[account(mut)]
+    pub payer:                   Signer<'info>,
+    // Stake program accounts:
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
+    #[account(
+        init,
+        payer = payer,
+        space = voter_weight_record::VoterWeightRecord::LEN,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump)]
+    pub voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:                  Account<'info, global_config::GlobalConfig>,
     pub system_program:          Program<'info, System>,
 }
 
@@ -351,6 +367,8 @@ pub struct AcceptSplit<'info> {
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_custody_authority:       AccountInfo<'info>,
+    /// CHECK : Unused
+    pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                      Box<Account<'info, global_config::GlobalConfig>>,
 

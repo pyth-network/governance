@@ -47,13 +47,12 @@ impl StakeAccountMetadataV2 {
         metadata_bump: u8,
         custody_bump: u8,
         authority_bump: u8,
-        voter_bump: u8,
         owner: &Pubkey,
     ) {
         self.metadata_bump = metadata_bump;
         self.custody_bump = custody_bump;
         self.authority_bump = authority_bump;
-        self.voter_bump = voter_bump;
+        self.voter_bump = 0;
         self.owner = *owner;
         self.next_index = 0;
         self.transfer_epoch = None;
