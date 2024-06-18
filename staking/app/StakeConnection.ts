@@ -623,6 +623,21 @@ export class StakeConnection {
 
     return Boolean(voterAccountInfo);
   }
+
+  public async hasVoterRecord(
+    stakeAccountPositions: PublicKey
+  ): Promise<boolean> {
+    const voterRecordAddress = (
+      await this.program.methods
+        .createVoterRecord()
+        .accounts({ stakeAccountPositions })
+        .pubkeys()
+    ).voterRecord;
+    const voterAccountInfo =
+      await this.program.provider.connection.getAccountInfo(voterRecordAddress);
+
+    return Boolean(voterAccountInfo);
+  }
   /**
    * Locks all unvested tokens in governance
    */
@@ -660,6 +675,15 @@ export class StakeConnection {
         owner,
         this.config.pythTokenMint,
         owner
+      );
+    }
+
+    if (!(await this.hasVoterRecord(stakeAccount.address))) {
+      instructions.push(
+        await this.program.methods
+          .createVoterRecord()
+          .accounts({ stakeAccountPositions: stakeAccount.address })
+          .instruction()
       );
     }
 
@@ -740,6 +764,15 @@ export class StakeConnection {
         owner,
         this.config.pythTokenMint,
         owner
+      );
+    }
+
+    if (!(await this.hasVoterRecord(stakeAccountAddress))) {
+      instructions.push(
+        await this.program.methods
+          .createVoterRecord()
+          .accounts({ stakeAccountPositions: stakeAccountAddress })
+          .instruction()
       );
     }
 
@@ -841,6 +874,15 @@ export class StakeConnection {
         owner,
         this.config.pythTokenMint,
         owner
+      );
+    }
+
+    if (!(await this.hasVoterRecord(stakeAccountAddress))) {
+      instructions.push(
+        await this.program.methods
+          .createVoterRecord()
+          .accounts({ stakeAccountPositions: stakeAccountAddress })
+          .instruction()
       );
     }
 
