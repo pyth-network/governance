@@ -250,6 +250,14 @@
           }
         },
         {
+          "name": "voterRecord",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : Unused"
+          ]
+        },
+        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -296,6 +304,79 @@
           }
         }
       ]
+    },
+    {
+      "name": "createVoterRecord",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "stakeAccountPositions",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "createPosition",
@@ -584,7 +665,7 @@
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -681,11 +762,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -1059,6 +1135,14 @@
           }
         },
         {
+          "name": "newVoterRecord",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "CHECK : Unused"
+          ]
+        },
+        {
           "name": "config",
           "isMut": false,
           "isSigner": false,
@@ -1197,6 +1281,25 @@
                 "kind": "const",
                 "type": "string",
                 "value": "stake_metadata"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voterRecord",
+          "isMut": true,
+          "isSigner": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
               },
               {
                 "kind": "account",
