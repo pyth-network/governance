@@ -255,7 +255,21 @@ export type Staking = {
           "isSigner": false,
           "docs": [
             "CHECK : Unused"
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
         },
         {
           "name": "config",
@@ -1140,7 +1154,21 @@ export type Staking = {
           "isSigner": false,
           "docs": [
             "CHECK : Unused"
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
         },
         {
           "name": "config",
@@ -2358,7 +2386,21 @@ export const IDL: Staking = {
           "isSigner": false,
           "docs": [
             "CHECK : Unused"
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
         },
         {
           "name": "config",
@@ -3243,7 +3285,21 @@ export const IDL: Staking = {
           "isSigner": false,
           "docs": [
             "CHECK : Unused"
-          ]
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "type": "string",
+                "value": "voter_weight"
+              },
+              {
+                "kind": "account",
+                "type": "publicKey",
+                "path": "new_stake_account_positions"
+              }
+            ]
+          }
         },
         {
           "name": "config",

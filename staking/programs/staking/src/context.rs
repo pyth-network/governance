@@ -118,6 +118,9 @@ pub struct CreateStakeAccount<'info> {
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority:       AccountInfo<'info>,
     /// CHECK : Unused
+    #[account(
+    seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+    bump)]
     pub voter_record:            AccountInfo<'info>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Box<Account<'info, global_config::GlobalConfig>>,
@@ -366,6 +369,9 @@ pub struct AcceptSplit<'info> {
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_custody_authority:       AccountInfo<'info>,
     /// CHECK : Unused
+    #[account(
+        seeds = [VOTER_RECORD_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
+        bump)]
     pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                      Box<Account<'info, global_config::GlobalConfig>>,
