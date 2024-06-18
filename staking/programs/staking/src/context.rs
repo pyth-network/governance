@@ -421,16 +421,13 @@ pub struct AdvanceClock<'info> {
 pub struct RecoverAccount<'info> {
     // Native payer:
     #[account(address = config.governance_authority)]
-    pub payer: Signer<'info>,
-
+    pub payer:                   Signer<'info>,
     // Token account:
     #[account(address = stake_account_metadata.owner)]
-    pub payer_token_account: Account<'info, TokenAccount>,
-
+    pub payer_token_account:     Account<'info, TokenAccount>,
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-
     #[account(
         mut,
         seeds = [
@@ -439,7 +436,15 @@ pub struct RecoverAccount<'info> {
         ],
         bump = stake_account_metadata.metadata_bump
     )]
-    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+        mut,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.voter_bump
+    )]
+    pub voter_record: Account<'info, voter_weight_record::VoterWeightRecord>,
+
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:                 Account<'info, global_config::GlobalConfig>,
+    pub config: Account<'info, global_config::GlobalConfig>,
 }
