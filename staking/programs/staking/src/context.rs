@@ -95,7 +95,7 @@ pub struct UpdateAgreementHash<'info> {
 }
 
 #[derive(Accounts)]
-// #[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
+#[instruction(owner : Pubkey, lock : vesting::VestingSchedule)]
 pub struct CreateStakeAccount<'info> {
     // Native payer:
     #[account(mut)]
@@ -250,7 +250,7 @@ pub struct ClosePosition<'info> {
 #[instruction(action : voter_weight_record::VoterWeightAction)]
 pub struct UpdateVoterWeight<'info> {
     // Native payer:
-    #[account(mut, address = stake_account_metadata.owner)]
+    #[account(address = stake_account_metadata.owner)]
     pub payer:                   Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
@@ -262,10 +262,9 @@ pub struct UpdateVoterWeight<'info> {
     )]
     pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(
-        init_if_needed,
-        payer = payer,
-        space = voter_weight_record::VoterWeightRecord::LEN,
-        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+        mut,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.voter_bump)]
     pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
