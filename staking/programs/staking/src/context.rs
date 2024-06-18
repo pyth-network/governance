@@ -274,7 +274,6 @@ pub struct UpdateVoterWeight<'info> {
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_target.bump)]
     pub governance_target:       Account<'info, target::TargetMetadata>,
-    pub system_program:          Program<'info, System>,
 }
 #[derive(Accounts)]
 pub struct UpdateMaxVoterWeight<'info> {
