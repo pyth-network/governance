@@ -36,7 +36,6 @@ impl PositionData {
     pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
 }
 
-
 #[cfg(test)]
 impl Default for PositionData {
     // Only used for testing, so unwrap is acceptable
