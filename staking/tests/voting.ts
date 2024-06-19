@@ -139,22 +139,22 @@ describe("voting", async () => {
     );
   });
 
-  // it("tries to create a proposal without updating", async () => {
-  //   const tx = new Transaction();
-  //   await withDefaultCreateProposal(
-  //     tx,
-  //     realm,
-  //     governanceProgram,
-  //     governance,
-  //     stakeConnection,
-  //     false,
-  //     false
-  //   );
-  //   await expectFailGovernance(
-  //     provider.simulate(tx),
-  //     "Owner doesn't have enough governing tokens to create Proposal"
-  //   );
-  // });
+  it("tries to create a proposal without updating", async () => {
+    const tx = new Transaction();
+    await withDefaultCreateProposal(
+      tx,
+      realm,
+      governanceProgram,
+      governance,
+      stakeConnection,
+      false,
+      false
+    );
+    await expectFailGovernance(
+      provider.simulate(tx),
+      "Owner doesn't have enough governing tokens to create Proposal"
+    );
+  });
 
   it("updates voter weight", async () => {
     // Haven't locked anything, so no voter weight
