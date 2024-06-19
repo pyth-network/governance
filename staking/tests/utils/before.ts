@@ -209,6 +209,7 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     provider
   );
 
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   shell.exec(
     `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${
       connection.rpcEndpoint
