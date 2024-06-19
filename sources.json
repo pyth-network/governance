@@ -1,0 +1,38 @@
+{
+  "mkCli": {
+    "branch": "main",
+    "description": "Simple development environment cli generator for nix",
+    "homepage": null,
+    "owner": "cprussin",
+    "repo": "mkCli",
+    "rev": "3d356fd26d59dcfdccf47160e78f9389f150fc2c",
+    "sha256": "1d3cy916sayj00v0gqvb0w49kdy05w1nl3pl81f6rp7gr9k6svl1",
+    "type": "tarball",
+    "url": "https://github.com/cprussin/mkCli/archive/3d356fd26d59dcfdccf47160e78f9389f150fc2c.tar.gz",
+    "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  },
+  "nixpkgs": {
+    "branch": "nixpkgs-unstable",
+    "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
+    "homepage": "https://github.com/NixOS/nixpkgs",
+    "owner": "NixOS",
+    "repo": "nixpkgs",
+    "rev": "cf8cc1201be8bc71b7cbbbdaf349b22f4f99c7ae",
+    "sha256": "1x7nca1ij9snsb2pqqzfawzgpc1b1d5js9m7b78lmql54ayixl68",
+    "type": "tarball",
+    "url": "https://github.com/NixOS/nixpkgs/archive/cf8cc1201be8bc71b7cbbbdaf349b22f4f99c7ae.tar.gz",
+    "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  },
+  "rust-overlay": {
+    "branch": "master",
+    "description": "Pure and reproducible nix overlay of binary distributed rust toolchains",
+    "homepage": "",
+    "owner": "oxalica",
+    "repo": "rust-overlay",
+    "rev": "3e416d5067ba31ff8ac31eeb763e4388bdf45089",
+    "sha256": "1bgdds28warwmybf95w16y8jhz3qlr3j6j7s2cdivpp5h2681i95",
+    "type": "tarball",
+    "url": "https://github.com/oxalica/rust-overlay/archive/3e416d5067ba31ff8ac31eeb763e4388bdf45089.tar.gz",
+    "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  }
+}
