@@ -20,6 +20,7 @@ import assert from "assert";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
+console.log(portNumber);
 
 describe("split vesting account", async () => {
   const pythMintAccount = new Keypair();
@@ -363,6 +364,7 @@ describe("split vesting account", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    // while(true){
+    // }
   });
 });

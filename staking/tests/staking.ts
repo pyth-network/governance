@@ -121,6 +121,15 @@ describe("staking", async () => {
         program.programId
       );
 
+    let voterBump: number;
+    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+      [
+        anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
+        stakeAccountPositionsSecret.publicKey.toBuffer(),
+      ],
+      program.programId
+    );
+
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
@@ -128,6 +137,14 @@ describe("staking", async () => {
           stakeAccountPositionsSecret,
           wasm.Constants.POSITIONS_ACCOUNT_SIZE()
         ),
+      ])
+      .postInstructions([
+        await program.methods
+          .createVoterRecord()
+          .accounts({
+            stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+          })
+          .instruction(),
       ])
       .accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
@@ -147,7 +164,7 @@ describe("staking", async () => {
         metadataBump,
         custodyBump,
         authorityBump,
-        voterBump: 0,
+        voterBump,
         owner,
         lock: { fullyVested: {} },
         nextIndex: 0,
