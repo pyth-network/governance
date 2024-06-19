@@ -120,7 +120,6 @@ describe("staking", async () => {
         ],
         program.programId
       );
-
     let voterBump: number;
     [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
