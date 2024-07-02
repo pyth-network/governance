@@ -5,12 +5,14 @@
 - **Votable Token:** PYTH tokens staked in the staking contract at the following address: `pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
 - **PIP:** Pyth Improvement Proposal
 - **Pyth DAO Treasury:** all tokens held in the wallets at the following addresses: `Gx4MBPb1vqZLJajZmsKLg8fGw9ErhoKsR8LeKcCKFyak` for the native SOL token and `9HKkxg5dpqjUEW1U2r76SpQCH7uvDMciytNYxrpwMVNc` for the SPL Token, that is directly governed by the Pyth DAO via on-chain voting
-- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://discord.com/invite/pythnetwork](https://discord.com/invite/pythnetwork)
+- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://forum.pyth.network/](https://forum.pyth.network/)
 - **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
 - **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
+- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to liquidations
+- **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
 
@@ -47,6 +49,9 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
         - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
+        - the upgrade of the ER program for each of the blockchain where ER is available
+        - the assignment of the relayer function and monitoring of the performance of such assignment
+        - the setting of the ER fee distribution
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
