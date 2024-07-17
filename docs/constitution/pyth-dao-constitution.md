@@ -12,6 +12,7 @@
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to liquidations
+- **Pyth Entropy (Entropy):** protocol instance that provide applications with provably random numbers
 - **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
@@ -49,9 +50,11 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
         - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
-        - the upgrade of the ER program for each of the blockchain where ER is available
+        - the upgrade of the ER program for each of the blockchains where ER is available
         - the assignment of the relayer function and monitoring of the performance of such assignment
         - the setting of the ER fee distribution
+        - the upgrade of the Entropy program for each of the blockchains where Entropy is available
+        - the setting of Entropy request fees for each of the blockchains where Entropy is available and for each of the providers available
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
