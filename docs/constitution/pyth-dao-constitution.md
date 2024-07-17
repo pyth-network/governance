@@ -12,7 +12,7 @@
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to liquidations
-- **Pyth Entropy (Entropy):** protocol instance that provide applications with provably random numbers
+- **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
