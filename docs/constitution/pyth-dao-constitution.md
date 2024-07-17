@@ -54,7 +54,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the assignment of the relayer function and monitoring of the performance of such assignment
         - the setting of the ER fee distribution
         - the upgrade of the Entropy program for each of the blockchains where Entropy is available
-        - the setting of Entropy request fees for each of the blockchains where Entropy is available and for each of the providers available
+        - the setting of Entropy request fees for each of the blockchains where Entropy is available
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
