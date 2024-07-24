@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 #[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ErrorCode {
-    #[msg("Too much exposure to product")] //6000
-    TooMuchExposureToProduct,
+    #[msg("Too much exposure to integrity pool")] //6000
+    TooMuchExposureToIntegrityPool,
     #[msg("Too much exposure to governance")] //6001
     TooMuchExposureToGovernance,
     #[msg("Tokens not yet vested")] //6002
@@ -76,6 +76,8 @@ pub enum ErrorCode {
     InvalidApproval,
     #[msg("Can't recover account with staking positions. Unstake your tokens first.")] // 6035
     RecoverWithStake,
-    #[msg("Other")] //6036
+    #[msg("The pool authority hasn't been passed or doesn't match the target")] // 6036
+    InvalidPoolAuthority,
+    #[msg("Other")] //6037
     Other,
 }

@@ -1,49 +1,31 @@
-import { Keypair } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import { StakeConnection } from "../app/StakeConnection";
 import {
   standardSetup,
-  readAnchorConfig,
   getPortNumber,
-  ANCHOR_CONFIG_PATH,
-  makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
-import {} from "../../staking/tests/utils/before";
-import BN from "bn.js";
 import path from "path";
 import { expectFailApi } from "./utils/utils";
 import { assertBalanceMatches } from "./utils/api_utils";
 import { PythBalance } from "../app";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("api", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-
   let stakeConnection: StakeConnection;
-
-  let controller;
-
-  let EPOCH_DURATION;
-  let owner;
+  let controller: CustomAbortController;
+  let owner: PublicKey;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey),
-      PythBalance.fromString("1000")
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
 
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
     owner = stakeConnection.provider.wallet.publicKey;
   });
 

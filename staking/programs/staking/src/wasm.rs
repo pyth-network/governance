@@ -143,23 +143,6 @@ impl WasmPositionData {
         })
     }
 
-    #[wasm_bindgen(js_name=getWithdrawable)]
-    pub fn get_withdrawable(
-        &self,
-        total_balance: u64,
-        unvested_balance: u64,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<u64, JsValue> {
-        convert_error(crate::utils::risk::validate(
-            &self.wrapped,
-            total_balance,
-            unvested_balance,
-            current_epoch,
-            unlocking_duration,
-        ))
-    }
-
     #[wasm_bindgen(js_name=getVoterWeight)]
     pub fn get_voter_weight(
         &self,
@@ -296,7 +279,7 @@ reexport_seed_const!(VOTER_RECORD_SEED);
 reexport_seed_const!(TARGET_SEED);
 reexport_seed_const!(MAX_VOTER_RECORD_SEED);
 reexport_seed_const!(VOTING_TARGET_SEED);
-reexport_seed_const!(DATA_TARGET_SEED);
+reexport_seed_const!(INTEGRITY_POOL_TARGET_SEED);
 reexport_seed_const!(SPLIT_REQUEST);
 
 #[wasm_bindgen]

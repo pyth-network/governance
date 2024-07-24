@@ -1,76 +1,58 @@
-import { parseIdlErrors } from "@coral-xyz/anchor";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
-  readAnchorConfig,
+  CustomAbortController,
   getPortNumber,
   standardSetup,
-  ANCHOR_CONFIG_PATH,
-  makeDefaultConfig,
 } from "./utils/before";
 import { assertBalanceMatches } from "./utils/api_utils";
-import { PublicKey, Keypair } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import assert from "assert";
 import { StakeConnection, PythBalance } from "../app";
 import path from "path";
 import { expectFail, getTargetAccount } from "./utils/utils";
+import { Program } from "@coral-xyz/anchor";
+import { Staking } from "../target/types/staking";
+import { TargetWithParameters } from "../app/StakeConnection";
+import { abortUnlessDetached } from "./utils/after";
 
-const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("position_lifecycle", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
+  const votingProduct: TargetWithParameters = { voting: {} };
 
-  let errMap: Map<number, string>;
-
-  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-
-  let EPOCH_DURATION: BN;
-  let stakeAccountAddress;
-
-  let program;
-  let controller;
-
+  let epochDuration: BN;
+  let stakeAccountAddress: PublicKey;
+  let program: Program<Staking>;
+  let controller: CustomAbortController;
   let owner: PublicKey;
   let ownerAta: PublicKey;
-
   let stakeConnection: StakeConnection;
-
-  let votingProductMetadataAccount;
-  let votingProduct;
+  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
+
     program = stakeConnection.program;
     owner = stakeConnection.provider.wallet.publicKey;
 
     ownerAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      pythMintAccount.publicKey,
-      program.provider.wallet.publicKey,
+      stakeConnection.config.pythTokenMint,
+      program.provider.publicKey,
       true
     );
 
-    errMap = parseIdlErrors(program.idl);
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
+    epochDuration = stakeConnection.config.epochDuration;
 
-    votingProduct = stakeConnection.votingProduct;
     votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
@@ -94,39 +76,38 @@ describe("position_lifecycle", async () => {
   });
 
   it("try to withdraw", async () => {
-    expectFail(
-      await program.methods
+    await expectFail(
+      program.methods
         .withdrawStake(PythBalance.fromString("101").toBN())
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           destination: ownerAta,
         }),
-      "Insufficient balance to cover the withdrawal",
-      errMap
+      "Insufficient balance to cover the withdrawal"
     );
   });
 
   it("try closing a position for more than the position's principal", async () => {
-    expectFail(
-      await program.methods
+    await expectFail(
+      program.methods
         .closePosition(0, PythBalance.fromString("201").toBN(), votingProduct)
         .accounts({
+          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
-      "Amount to unlock bigger than position",
-      errMap
+      "Amount to unlock bigger than position"
     );
   });
 
   it("close null position", async () => {
-    expectFail(
-      await program.methods
+    await expectFail(
+      program.methods
         .closePosition(1, PythBalance.fromString("200").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
+          targetAccount: votingProductMetadataAccount,
         }),
-      "Position not in use",
-      errMap
+      "Position not in use"
     );
   });
 
@@ -152,7 +133,6 @@ describe("position_lifecycle", async () => {
       .createPosition(votingProduct, PythBalance.fromString("200").toBN())
       .accounts({
         targetAccount: votingProductMetadataAccount,
-        payer: owner,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -186,7 +166,7 @@ describe("position_lifecycle", async () => {
   });
 
   it("one epoch passes, try closing", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION).rpc();
+    await program.methods.advanceClock(epochDuration).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -222,7 +202,7 @@ describe("position_lifecycle", async () => {
   });
 
   it("one epoch pass, still locked", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+    await program.methods.advanceClock(epochDuration.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -237,20 +217,19 @@ describe("position_lifecycle", async () => {
       await stakeConnection.getTime()
     );
 
-    expectFail(
-      await program.methods
+    await expectFail(
+      program.methods
         .withdrawStake(PythBalance.fromString("11").toBN())
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           destination: ownerAta,
         }),
-      "Insufficient balance to cover the withdrawal",
-      errMap
+      "Insufficient balance to cover the withdrawal"
     );
   });
 
   it("one epoch pass, try withdrawing", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+    await program.methods.advanceClock(epochDuration.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -280,14 +259,13 @@ describe("position_lifecycle", async () => {
 
     // Make sure than closing a position twice fails
     await expectFail(
-      await program.methods
+      program.methods
         .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
         .accounts({
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
-      "Position already unlocking",
-      errMap
+      "Position already unlocking"
     );
 
     await assertBalanceMatches(
@@ -300,20 +278,19 @@ describe("position_lifecycle", async () => {
       await stakeConnection.getTime()
     );
 
-    expectFail(
-      await program.methods
+    await expectFail(
+      program.methods
         .withdrawStake(PythBalance.fromString("61").toBN())
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
           destination: ownerAta,
         }),
-      "Insufficient balance to cover the withdrawal",
-      errMap
+      "Insufficient balance to cover the withdrawal"
     );
   });
 
   it("three epoch pass, complete unlock", async () => {
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(3))).rpc();
+    await program.methods.advanceClock(epochDuration.mul(new BN(3))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -343,7 +320,6 @@ describe("position_lifecycle", async () => {
       .createPosition(votingProduct, PythBalance.fromString("100").toBN())
       .accounts({
         targetAccount: votingProductMetadataAccount,
-        payer: owner,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -358,7 +334,7 @@ describe("position_lifecycle", async () => {
       await stakeConnection.getTime()
     );
 
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(1))).rpc();
+    await program.methods.advanceClock(epochDuration.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -378,7 +354,7 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
-    await program.methods.advanceClock(EPOCH_DURATION.mul(new BN(2))).rpc();
+    await program.methods.advanceClock(epochDuration.mul(new BN(2))).rpc();
 
     await assertBalanceMatches(
       stakeConnection,
@@ -389,13 +365,22 @@ describe("position_lifecycle", async () => {
   });
 
   it("withdraws everything", async () => {
-    await program.methods
-      .withdrawStake(PythBalance.fromString("200").toBN())
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-        destination: ownerAta,
-      })
-      .rpc();
+    const stakeAccount = await stakeConnection.getMainAccount(owner);
+
+    await expectFail(
+      stakeConnection.program.methods
+        .withdrawStake(PythBalance.fromString("200").toBN())
+        .accounts({
+          stakeAccountPositions: stakeAccount.address,
+          destination: ownerAta,
+        }),
+      "Insufficient balance to cover the withdrawal"
+    ); // This will fail because we need to clean up the unlocked position first
+
+    await stakeConnection.withdrawTokens(
+      stakeAccount,
+      PythBalance.fromString("200")
+    );
 
     await assertBalanceMatches(
       stakeConnection,

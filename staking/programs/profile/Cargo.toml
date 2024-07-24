@@ -6,10 +6,11 @@ edition = "2018"
 
 [features]
 mock-clock = []
+idl-build = ["anchor-lang/idl-build"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "profile"
 
 [dependencies]
-anchor-lang = {version ="0.24.2", features = ["init-if-needed"]}
+anchor-lang = {workspace = true, features = ["init-if-needed"]}

@@ -1,5 +1,3 @@
-#![allow(clippy::unused_unit)]
-
 use {
     crate::error::ErrorCode,
     anchor_lang::{
@@ -167,7 +165,8 @@ impl VestingSchedule {
                 // Additionally 0 <= initial_balance <= u64::MAX, so
                 // 0 <= unvested <= initial_balance <= u64::MAX
                 // therefore the unwrap can't fail.
-                // We round the unvested amount down, this makes the arithmetic for splitting accounts simpler.
+                // We round the unvested amount down, this makes the arithmetic for splitting
+                // accounts simpler.
                 let remaining_periods = num_periods.saturating_sub(periods_passed);
 
                 (((remaining_periods as u128) * (initial_balance as u128)) / (num_periods as u128))

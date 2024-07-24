@@ -4,7 +4,7 @@ anchor_version = "0.24.1"
 seeds = true
 
 [workspace]
-members = ["programs/staking", "programs/wallet-tester", "programs/profile"]
+members = ["programs/staking", "programs/wallet-tester", "programs/profile", "programs/integrity-pool", "programs/publisher-caps"]
 
 [programs.localnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
@@ -12,6 +12,7 @@ governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
+integrity_pool = "BiJszJY5BfRKkvt818SAbY9z9cJLp2jYDPgG2BzsufiE"
 
 [programs.devnet]
 staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
@@ -46,3 +47,4 @@ governance_path = "./target/deploy/governance.so"
 chat_path = "./target/deploy/chat.so"
 wallet_tester_path = "./target/deploy/wallet_tester.so"
 profile_path = "./target/deploy/profile.so"
+integrity_pool_path = "./target/deploy/integrity_pool.so"
