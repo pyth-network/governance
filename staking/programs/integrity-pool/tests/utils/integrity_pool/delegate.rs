@@ -9,6 +9,7 @@ use {
             init_config::get_config_address,
         },
         pool_data::get_pool_config_address,
+        reward_program::get_pool_reward_custody_address,
     },
     anchor_lang::{
         system_program,
@@ -18,6 +19,7 @@ use {
     integrity_pool::utils::constants::DELEGATION_RECORD,
     litesvm::types::TransactionResult,
     solana_sdk::{
+        compute_budget::ComputeBudgetInstruction,
         instruction::Instruction,
         pubkey::Pubkey,
         signature::Keypair,
@@ -46,15 +48,26 @@ pub fn advance_delegation_record(
     payer: &Keypair,
     publisher: Pubkey,
     stake_account_positions: Pubkey,
+    pyth_token_mint: Pubkey,
+    pool_data: Pubkey,
 ) -> TransactionResult {
     let (delegation_record, _) = get_delegation_record_address(publisher, stake_account_positions);
+    let custody_addess = get_pool_reward_custody_address(pyth_token_mint);
+    let (pool_config_pubkey, _) = get_pool_config_address();
+    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+
     let data = integrity_pool::instruction::AdvanceDelegationRecord {};
 
     let accs = integrity_pool::accounts::AdvanceDelegationRecord {
-        signer: payer.pubkey(),
+        payer: payer.pubkey(),
+        pool_config: pool_config_pubkey,
+        pool_reward_custody: custody_addess,
+        pool_data,
+        stake_account_custody,
         publisher,
         delegation_record,
         stake_account_positions,
+        token_program: spl_token::ID,
         system_program: system_program::ID,
     };
     let ix = Instruction::new_with_bytes(
@@ -63,7 +76,10 @@ pub fn advance_delegation_record(
         accs.to_account_metas(None),
     );
     let tx = Transaction::new_signed_with_payer(
-        &[ix],
+        &[
+            ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[&payer],
         svm.latest_blockhash(),

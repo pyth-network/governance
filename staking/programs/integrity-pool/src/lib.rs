@@ -9,6 +9,10 @@ use {
             UNLOCKING_DURATION,
         },
         constants::POOL_CONFIG,
+        types::{
+            frac64,
+            FRAC_64_MULTIPLIER,
+        },
     },
 };
 
@@ -213,6 +217,41 @@ pub mod integrity_pool {
 
     pub fn advance_delegation_record(ctx: Context<AdvanceDelegationRecord>) -> Result<()> {
         let delegation_record = &mut ctx.accounts.delegation_record;
+        let pool_data = &ctx.accounts.pool_data.load()?;
+        let pool_config = &ctx.accounts.pool_config;
+        let stake_account_positions = ctx.accounts.stake_account_positions.clone();
+        let positions = stake_account_positions.load()?;
+        let pool_reward_custody = &ctx.accounts.pool_reward_custody;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let token_program = &ctx.accounts.token_program;
+        let publisher = &ctx.accounts.publisher;
+
+        let reward_amount_frac: frac64 = pool_data.calculate_reward(
+            delegation_record.last_epoch,
+            &stake_account_positions.key(),
+            positions,
+            &publisher.key(),
+        )?;
+
+        let reward_amount: u64 = reward_amount_frac / FRAC_64_MULTIPLIER;
+        // reward is less than a unit, no need to transfer
+        if reward_amount == 0 {
+            delegation_record.advance()?;
+            return Ok(());
+        }
+
+        // transfer reward from pool_reward_custody to stake_account_custody
+        let cpi_accounts = anchor_spl::token::Transfer {
+            from:      pool_reward_custody.to_account_info(),
+            to:        stake_account_custody.to_account_info(),
+            authority: pool_config.to_account_info(),
+        };
+        let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
+
+        let ctx = CpiContext::new(token_program.to_account_info(), cpi_accounts)
+            .with_signer(signer_seeds);
+        anchor_spl::token::transfer(ctx, reward_amount)?;
+
         delegation_record.advance()?;
         Ok(())
     }

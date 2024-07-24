@@ -1,8 +1,12 @@
 use {
     super::init_config::get_config_address,
-    crate::utils::account::{
-        create_account,
-        fetch_account_data,
+    crate::utils::{
+        account::{
+            create_account,
+            fetch_account_data,
+        },
+        constants::STAKED_TOKENS,
+        mint::airdrop_spl,
     },
     anchor_lang::{
         InstructionData,
@@ -129,22 +133,13 @@ pub fn create_stake_account(
     }
 
     if airdrop {
-        let mint_to_ix = spl_token::instruction::mint_to(
-            &spl_token::id(),
-            &pyth_token_mint.pubkey(),
-            &stake_account_custody,
-            &payer.pubkey(),
-            &[&payer.pubkey(), &pyth_token_mint.pubkey()],
-            100,
-        )
-        .unwrap();
-        let mint_to_tx = Transaction::new_signed_with_payer(
-            &[mint_to_ix],
-            Some(&payer.pubkey()),
-            &[&payer, &pyth_token_mint],
-            svm.latest_blockhash(),
+        airdrop_spl(
+            svm,
+            payer,
+            stake_account_custody,
+            pyth_token_mint.pubkey(),
+            STAKED_TOKENS,
         );
-        svm.send_transaction(mint_to_tx).unwrap();
     }
 
     stake_account_positions

@@ -76,11 +76,11 @@ pub fn setup(props: SetupProps) -> SetupResult {
     advance_n_epochs(&mut svm, &payer, 1);
 
     if init_target {
-        create_target_account(&mut svm, &payer)
+        create_target_account(&mut svm, &payer);
     }
 
     if init_mint {
-        init_mint_account(&mut svm, &payer, &pyth_token_mint)
+        init_mint_account(&mut svm, &payer, &pyth_token_mint);
     }
 
     if init_pool_data {
@@ -96,7 +96,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
 
     advance_n_epochs(&mut svm, &payer, 1);
     if init_publishers {
-        initialize_pool_reward_custody(&mut svm, &payer, pyth_token_mint.pubkey()).unwrap();
+        initialize_pool_reward_custody(&mut svm, &payer, pyth_token_mint.pubkey());
         let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 100);
         advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
     }

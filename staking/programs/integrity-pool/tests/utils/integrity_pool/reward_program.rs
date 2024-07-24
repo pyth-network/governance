@@ -1,9 +1,11 @@
 use {
     super::pool_data::get_pool_config_address,
+    crate::utils::mint::airdrop_spl,
     anchor_spl::associated_token::{
         get_associated_token_address,
         spl_associated_token_account,
     },
+    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     litesvm::types::TransactionResult,
     solana_program::pubkey::Pubkey,
     solana_sdk::{
@@ -20,18 +22,17 @@ pub fn get_pool_reward_custody_address(pyth_token_mint: Pubkey) -> Pubkey {
     get_associated_token_address(&pool_config_pubkey, &pyth_token_mint)
 }
 
-pub fn initialize_pool_reward_custody(
+pub fn initialize_ata(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
-    pyth_token_mint: Pubkey,
+    mint: Pubkey,
+    authority: Pubkey,
 ) -> TransactionResult {
-    let (pool_config_pubkey, _) = get_pool_config_address();
-
     // Create the ATA for the pool_config_pubkey if it doesn't exist
     let create_ata_ix = spl_associated_token_account::instruction::create_associated_token_account(
         &payer.pubkey(),
-        &pool_config_pubkey,
-        &pyth_token_mint,
+        &authority,
+        &mint,
         &spl_token::ID,
     );
 
@@ -43,4 +44,24 @@ pub fn initialize_pool_reward_custody(
     );
 
     svm.send_transaction(create_ata_tx)
+}
+
+
+pub fn initialize_pool_reward_custody(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    pyth_token_mint: Pubkey,
+) {
+    let (pool_config_pubkey, _) = get_pool_config_address();
+
+    // Create the ATA for the pool_config_pubkey if it doesn't exist
+    initialize_ata(svm, payer, pyth_token_mint, pool_config_pubkey).unwrap();
+
+    airdrop_spl(
+        svm,
+        payer,
+        get_pool_reward_custody_address(pyth_token_mint),
+        pyth_token_mint,
+        1_000_000 * FRAC_64_MULTIPLIER,
+    );
 }

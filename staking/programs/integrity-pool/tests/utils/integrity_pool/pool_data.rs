@@ -1,4 +1,5 @@
 use {
+    crate::utils::constants::YIELD,
     anchor_lang::{
         system_program,
         InstructionData,
@@ -50,7 +51,7 @@ pub fn create_pool_data_account(
     let initialize_pool_data = integrity_pool::instruction::InitializePool {
         pyth_token_mint,
         reward_program_authority,
-        y: 10,
+        y: YIELD,
     };
 
     let initialize_pool_accs = integrity_pool::accounts::InitializePool {

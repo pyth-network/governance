@@ -7,12 +7,16 @@ use {
             clock::{
                 get_current_epoch,
                 time_to_epoch,
+                UNLOCKING_DURATION,
             },
             constants::{
                 MAX_EVENTS,
                 MAX_PUBLISHERS,
             },
-            types::frac64,
+            types::{
+                frac64,
+                FRAC_64_MULTIPLIER_U128,
+            },
         },
     },
     anchor_lang::prelude::*,
@@ -22,8 +26,13 @@ use {
         Zeroable,
     },
     publisher_caps::PublisherCaps,
-    staking::state::positions::PositionState,
+    staking::state::positions::{
+        PositionState,
+        TargetWithParameters,
+        MAX_POSITIONS,
+    },
     std::{
+        cell::Ref,
         cmp::min,
         convert::TryInto,
     },
@@ -68,9 +77,88 @@ impl PoolData {
     // Allow 2 MB of data
     pub const LEN: usize = 2 * 1024 * 1024;
 
-    pub fn get_event(&mut self, index: usize) -> &mut Event {
+    pub fn get_event_mut(&mut self, index: usize) -> &mut Event {
         // unwrap is safe because index is always in bounds
         self.events.get_mut(index % MAX_EVENTS).unwrap()
+    }
+
+    pub fn get_event(&self, index: usize) -> &Event {
+        // unwrap is safe because index is always in bounds
+        self.events.get(index % MAX_EVENTS).unwrap()
+    }
+
+    pub fn calculate_reward_for_event(
+        &self,
+        event: &Event,
+        amount: u64,
+        stake_account_positions_key: &Pubkey,
+        publisher_index: usize,
+    ) -> Result<frac64> {
+        let reward_ratio =
+            if &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key {
+                event.event_data[publisher_index].self_reward_ratio
+            } else {
+                event.event_data[publisher_index].other_reward_ratio
+            };
+        let reward_rate = u128::from(event.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
+        let reward_amount: frac64 = (u128::from(amount) * reward_rate).try_into()?;
+        Ok(reward_amount)
+    }
+
+    pub fn calculate_reward(
+        &self,
+        from_epoch: u64,
+        stake_account_positions_key: &Pubkey,
+        positions: Ref<staking::state::positions::PositionData>,
+        publisher: &Pubkey,
+    ) -> Result<frac64> {
+        self.assert_up_to_date()?;
+
+
+        let publisher_index = self.get_publisher_index(publisher)?;
+        let mut last_event_index: usize = self.num_events as usize;
+        let mut reward: frac64 = 0;
+        loop {
+            // prevent infinite loop and double counting events
+            // by breaking the loop when visiting all events
+            if self.num_events as usize == last_event_index + MAX_EVENTS {
+                break;
+            }
+
+            match last_event_index {
+                0 => break,
+                _ => last_event_index -= 1,
+            }
+
+            let event = self.get_event(last_event_index);
+            if event.epoch < from_epoch {
+                break;
+            }
+
+            let mut amount = 0_u64;
+            for i in 0..MAX_POSITIONS {
+                let position = positions.read_position(i)?;
+                if let Some(position) = position {
+                    let position_state =
+                        position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
+                    if matches!(
+                        position.target_with_parameters,
+                        TargetWithParameters::IntegrityPool { .. }
+                    ) && matches!(position_state, PositionState::LOCKED)
+                    {
+                        amount += position.amount;
+                    }
+                }
+            }
+
+            reward += self.calculate_reward_for_event(
+                event,
+                amount,
+                stake_account_positions_key,
+                publisher_index,
+            )?;
+        }
+        Ok(reward)
     }
 
     pub fn advance(&mut self, publisher_caps: &PublisherCaps, y: frac64) -> Result<()> {
@@ -148,7 +236,8 @@ impl PoolData {
         y: frac64,
         epoch: u64,
     ) -> Result<()> {
-        let event = self.get_event((self.num_events + epoch - self.last_updated_epoch) as usize);
+        let event =
+            self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize);
         event.epoch = epoch;
         event.y = y;
 
@@ -158,20 +247,25 @@ impl PoolData {
             let self_delegation = self.self_del_state[publisher_index].total_delegation;
             let self_eligible_delegation = min(publisher_cap.cap, self_delegation);
             // the order of the operation matters to avoid floating point precision issues
-            let self_reward_ratio: frac64 = (1_000_000_u128 * self_eligible_delegation as u128)
-                .checked_div(self_delegation as u128)
-                .unwrap_or(0)
-                .try_into()?;
+            let self_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
+                * u128::from(self_eligible_delegation))
+            .checked_div(u128::from(self_delegation))
+            .unwrap_or(0)
+            .try_into()?;
 
             let other_delegation = self.del_state[publisher_index].total_delegation;
-            let other_eligible_delegation = publisher_cap.cap - self_eligible_delegation;
+            let other_eligible_delegation = min(
+                publisher_cap.cap - self_eligible_delegation,
+                other_delegation,
+            );
             // the order of the operation matters to avoid floating point precision issues
-            let other_reward_ratio: frac64 = (1_000_000_u128 * other_eligible_delegation as u128)
-                .checked_div(other_delegation as u128)
-                .unwrap_or(0)
-                .try_into()?;
+            let other_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
+                * u128::from(other_eligible_delegation))
+            .checked_div(u128::from(other_delegation))
+            .unwrap_or(0)
+            .try_into()?;
 
-            self.get_event((self.num_events + epoch - self.last_updated_epoch) as usize)
+            self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize)
                 .event_data[publisher_index] = PublisherEventData {
                 self_reward_ratio,
                 other_reward_ratio,
@@ -206,11 +300,7 @@ impl PoolData {
         amount: u64,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        require_eq!(
-            self.last_updated_epoch,
-            get_current_epoch()?,
-            IntegrityPoolError::OutdatedPublisherAccounting
-        );
+        self.assert_up_to_date()?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             self.self_del_state[index].positive_delta_delegation += amount;
@@ -228,11 +318,7 @@ impl PoolData {
         position_state: PositionState,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        require_eq!(
-            self.last_updated_epoch,
-            get_current_epoch()?,
-            IntegrityPoolError::OutdatedPublisherAccounting
-        );
+        self.assert_up_to_date()?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             match position_state {
@@ -257,6 +343,15 @@ impl PoolData {
                 _ => return err!(IntegrityPoolError::UnexpectedPositionState),
             }
         }
+        Ok(())
+    }
+
+    pub fn assert_up_to_date(&self) -> Result<()> {
+        require_eq!(
+            self.last_updated_epoch,
+            get_current_epoch()?,
+            IntegrityPoolError::OutdatedPublisherAccounting
+        );
         Ok(())
     }
 }
@@ -311,7 +406,7 @@ mod tests {
             num_events:               0,
         };
 
-        pool_data.get_event(1).epoch = 123;
+        pool_data.get_event_mut(1).epoch = 123;
         assert_eq!(pool_data.get_event(1 + MAX_EVENTS).epoch, 123);
         assert_eq!(pool_data.get_event(2 + MAX_EVENTS).epoch, 0);
         assert_eq!(pool_data.get_event(1 + 2 * MAX_EVENTS).epoch, 123);

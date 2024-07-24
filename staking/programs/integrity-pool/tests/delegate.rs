@@ -111,13 +111,16 @@ fn test_delegate() {
     let pos1 = positions.read_position(1).unwrap();
     assert!(pos1.is_none());
 
-    assert!(advance_delegation_record(
+    advance_delegation_record(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
-        stake_account_positions
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
     )
-    .is_ok());
+    .unwrap();
+
     let delegation_record: DelegationRecord = fetch_account_data(
         &mut svm,
         &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
@@ -125,10 +128,19 @@ fn test_delegate() {
     assert_eq!(delegation_record.last_epoch, 2);
 
     let fake_publisher = Pubkey::new_unique();
-    assert!(
-        advance_delegation_record(&mut svm, &payer, fake_publisher, stake_account_positions)
-            .is_ok()
+    assert_anchor_program_error(
+        advance_delegation_record(
+            &mut svm,
+            &payer,
+            fake_publisher,
+            stake_account_positions,
+            pyth_token_mint.pubkey(),
+            pool_data_pubkey,
+        ),
+        anchor_lang::error::Error::from(IntegrityPoolError::PublisherNotFound),
+        0,
     );
+
     assert_anchor_program_error(
         undelegate(
             &mut svm,
@@ -139,11 +151,11 @@ fn test_delegate() {
             0,
             50,
         ),
-        anchor_lang::error::Error::from(IntegrityPoolError::PublisherNotFound),
+        anchor_lang::error::ErrorCode::AccountNotInitialized.into(),
         0,
     );
 
-    assert!(undelegate(
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -152,7 +164,7 @@ fn test_delegate() {
         0,
         50,
     )
-    .is_ok());
+    .unwrap();
 
     let positions: staking::state::positions::PositionData =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
@@ -202,38 +214,22 @@ fn test_delegate() {
         0,
     );
 
-
-    assert!(advance_delegation_record(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        stake_account_positions
-    )
-    .is_ok());
-
-    let delegation_record: DelegationRecord = fetch_account_data(
-        &mut svm,
-        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
-    );
-    assert_eq!(delegation_record.last_epoch, 3);
-
+    svm.expire_blockhash();
     assert_anchor_program_error(
-        undelegate(
+        advance_delegation_record(
             &mut svm,
             &payer,
             publisher_keypair.pubkey(),
-            pool_data_pubkey,
             stake_account_positions,
-            0,
-            20,
+            pyth_token_mint.pubkey(),
+            pool_data_pubkey,
         ),
         anchor_lang::error::Error::from(IntegrityPoolError::OutdatedPublisherAccounting),
         0,
     );
 
-
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    assert!(advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).is_ok());
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -262,7 +258,24 @@ fn test_delegate() {
         assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
-    assert!(undelegate(
+    svm.expire_blockhash();
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    let delegation_record: DelegationRecord = fetch_account_data(
+        &mut svm,
+        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
+    );
+    assert_eq!(delegation_record.last_epoch, 3);
+
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -271,7 +284,7 @@ fn test_delegate() {
         0,
         30,
     )
-    .is_ok());
+    .unwrap();
 
     let positions: staking::state::positions::PositionData =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
@@ -318,7 +331,7 @@ fn test_delegate() {
 
     advance_n_epochs(&mut svm, &payer, 2); // two epochs at a time
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    assert!(advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).is_ok());
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
@@ -348,16 +361,18 @@ fn test_delegate() {
         assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
-    assert!(advance_delegation_record(
+    advance_delegation_record(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
-        stake_account_positions
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
     )
-    .is_ok());
+    .unwrap();
 
 
-    assert!(undelegate(
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -366,7 +381,7 @@ fn test_delegate() {
         1,
         30,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -407,7 +422,7 @@ fn test_delegate() {
     let pos1 = positions.read_position(1).unwrap();
     assert!(pos1.is_none());
 
-    assert!(undelegate(
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -416,7 +431,7 @@ fn test_delegate() {
         0,
         20,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(

@@ -25,6 +25,7 @@ use {
             advance_n_epochs,
             get_current_epoch,
         },
+        constants::YIELD,
         error::assert_anchor_program_error,
         integrity_pool::{
             advance::advance,
@@ -148,15 +149,15 @@ fn test_advance_reward_events() {
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
     assert_eq!(pool_data.events[0].epoch, 1);
-    assert_eq!(pool_data.events[0].y, 10);
+    assert_eq!(pool_data.events[0].y, YIELD);
     assert_eq!(pool_data.events[0].event_data[0].other_reward_ratio, 0);
     assert_eq!(pool_data.events[0].event_data[0].self_reward_ratio, 0);
     assert_eq!(pool_data.events[1].epoch, 2);
-    assert_eq!(pool_data.events[1].y, 10);
+    assert_eq!(pool_data.events[1].y, YIELD);
     assert_eq!(pool_data.events[1].event_data[0].other_reward_ratio, 0);
     assert_eq!(pool_data.events[1].event_data[0].self_reward_ratio, 0);
     assert_eq!(pool_data.events[2].epoch, 3);
-    assert_eq!(pool_data.events[2].y, 10);
+    assert_eq!(pool_data.events[2].y, YIELD);
     assert_eq!(
         pool_data.events[2].event_data[0].other_reward_ratio,
         1_000_000
@@ -169,7 +170,7 @@ fn test_advance_reward_events() {
         );
         assert_eq!(pool_data.events[i].event_data[0].self_reward_ratio, 0);
         assert_eq!(pool_data.events[i].epoch, 1 + i as u64);
-        assert_eq!(pool_data.events[i].y, 10);
+        assert_eq!(pool_data.events[i].y, YIELD);
     }
     for i in 11..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())

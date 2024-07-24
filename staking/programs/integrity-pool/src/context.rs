@@ -13,7 +13,10 @@ use {
         },
     },
     anchor_lang::prelude::*,
-    anchor_spl::token::TokenAccount,
+    anchor_spl::token::{
+        Token,
+        TokenAccount,
+    },
     publisher_caps::PublisherCaps,
     staking::program::Staking,
 };
@@ -178,13 +181,36 @@ pub struct Advance<'info> {
 #[derive(Accounts)]
 pub struct AdvanceDelegationRecord<'info> {
     #[account(mut)]
-    pub signer:                  Signer<'info>,
+    pub payer: Signer<'info>,
+
     pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+
+    pub pool_data: AccountLoader<'info, PoolData>,
+
+    #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    #[account(
+        mut,
+        associated_token::mint = pool_config.pyth_token_mint,
+        associated_token::authority = pool_config.key(),
+    )]
+    pub pool_reward_custody: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [staking::context::CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump,
+        seeds::program = staking::id(),
+    )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
     /// CHECK : The publisher will be checked against data in the pool_data
-    pub publisher:               AccountInfo<'info>,
+    pub publisher: AccountInfo<'info>,
+
     #[account(
         init_if_needed,
-        payer = signer,
+        payer = payer,
         space = DelegationRecord::LEN,
         seeds = [
             DELEGATION_RECORD.as_bytes(),
@@ -193,6 +219,8 @@ pub struct AdvanceDelegationRecord<'info> {
         ],
         bump,
     )]
-    pub delegation_record:       Account<'info, DelegationRecord>,
-    pub system_program:          Program<'info, System>,
+    pub delegation_record: Account<'info, DelegationRecord>,
+
+    pub token_program:  Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }

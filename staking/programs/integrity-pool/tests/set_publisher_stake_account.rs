@@ -247,7 +247,9 @@ fn test_set_publisher_stake_account() {
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
-        stake_account_positions_2
+        stake_account_positions_2,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
     )
     .is_ok());
     assert!(undelegate(
@@ -297,7 +299,9 @@ fn test_set_publisher_stake_account() {
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
-        stake_account_positions_2
+        stake_account_positions_2,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
     )
     .is_ok());
     assert!(undelegate(
