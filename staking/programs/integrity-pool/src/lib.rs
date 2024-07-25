@@ -231,6 +231,7 @@ pub mod integrity_pool {
             &stake_account_positions.key(),
             positions,
             &publisher.key(),
+            &pool_config.key(),
         )?;
 
         let reward_amount: u64 = reward_amount_frac / FRAC_64_MULTIPLIER;

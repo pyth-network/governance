@@ -111,6 +111,7 @@ impl PoolData {
         stake_account_positions_key: &Pubkey,
         positions: Ref<staking::state::positions::PositionData>,
         publisher: &Pubkey,
+        pool_authority: &Pubkey,
     ) -> Result<frac64> {
         self.assert_up_to_date()?;
 
@@ -143,7 +144,10 @@ impl PoolData {
                         position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
                     if matches!(
                         position.target_with_parameters,
-                        TargetWithParameters::IntegrityPool { .. }
+                        TargetWithParameters::IntegrityPool {
+                            pool_authority: ref position_pool_authority,
+                            publisher: ref position_publisher
+                        } if position_publisher == publisher && position_pool_authority == pool_authority
                     ) && matches!(position_state, PositionState::LOCKED)
                     {
                         amount += position.amount;
