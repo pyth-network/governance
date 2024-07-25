@@ -7,6 +7,7 @@ use {
     litesvm::LiteSVM,
     publisher_caps::PublisherCaps,
     solana_sdk::{
+        compute_budget::ComputeBudgetInstruction,
         instruction::Instruction,
         pubkey::Pubkey,
         signature::Keypair,
@@ -40,7 +41,10 @@ pub fn post_publisher_caps(
     };
 
     let transaction = Transaction::new_signed_with_payer(
-        &[instruction],
+        &[
+            instruction,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[payer],
         svm.latest_blockhash(),

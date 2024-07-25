@@ -8,8 +8,7 @@ use {
 
 declare_id!("BZ1jqX41oh3NaF7FmkrCWUrd4eQZQqid1edPLGxzJMc2");
 
-// TODO - change this to 1024
-pub const MAX_CAPS: usize = 100;
+pub const MAX_CAPS: usize = 1024;
 
 pub fn get_dummy_publisher(i: usize) -> Pubkey {
     let mut bytes = [0u8; 32];
@@ -39,6 +38,10 @@ pub mod publisher_caps {
             publisher_caps.caps[i].pubkey = get_dummy_publisher(i);
             publisher_caps.caps[i].cap = i as u64;
         }
+
+        // publisher caps should always be sorted
+        publisher_caps.caps.sort();
+
         Ok(())
     }
 }
@@ -52,6 +55,18 @@ pub struct PublisherCap {
 
 impl PublisherCap {
     pub const LEN: usize = 32 + 8;
+}
+
+impl PartialOrd for PublisherCap {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for PublisherCap {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.pubkey.cmp(&other.pubkey)
+    }
 }
 
 #[account(zero_copy)]

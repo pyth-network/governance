@@ -208,8 +208,8 @@ fn test_lost_reward() {
     );
 
     // advance 200 epochs
-    for _ in 0..10 {
-        advance_n_epochs(&mut svm, &payer, 20);
+    for _ in 0..20 {
+        advance_n_epochs(&mut svm, &payer, 10);
 
         let publisher_caps = post_publisher_caps(
             &mut svm,
