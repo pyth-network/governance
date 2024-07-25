@@ -6,6 +6,7 @@ import {
   IdlAccounts,
   IdlTypes,
   AnchorProvider,
+  BorshCoder,
 } from "@coral-xyz/anchor";
 import {
   PublicKey,
@@ -24,7 +25,6 @@ import {
   u64,
 } from "@solana/spl-token";
 import BN from "bn.js";
-import * as idljs from "@coral-xyz/anchor/dist/cjs/coder/borsh/idl";
 import { Staking } from "../target/types/staking";
 import IDL from "../target/idl/staking.json";
 import * as WalletTesterIDL from "../target/idl/wallet_tester.json";
@@ -65,10 +65,14 @@ interface ClosingItem {
 }
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
-type PositionData = IdlAccounts<Staking>["positionData"];
-type StakeAccountMetadata = IdlAccounts<Staking>["stakeAccountMetadataV2"];
-type VestingSchedule = IdlTypes<Staking>["VestingSchedule"];
-type VoterWeightAction = IdlTypes<Staking>["VoterWeightAction"];
+export type PositionData = IdlAccounts<Staking>["positionData"];
+export type StakeAccountMetadata =
+  IdlAccounts<Staking>["stakeAccountMetadataV2"];
+export type VestingSchedule = IdlTypes<Staking>["vestingSchedule"];
+export type VoterWeightAction = IdlTypes<Staking>["voterWeightAction"];
+export type Target = IdlTypes<Staking>["target"];
+export type Position = IdlTypes<Staking>["position"];
+export type TargetWithParameters = IdlTypes<Staking>["targetWithParameters"];
 
 export class StakeConnection {
   program: Program<Staking>;
@@ -123,12 +127,10 @@ export class StakeConnection {
     addressLookupTable?: PublicKey,
     priorityFeeConfig?: PriorityFeeConfig
   ): Promise<StakeConnection> {
-    const provider = new AnchorProvider(connection, wallet, {});
-    const program = new Program(
-      IDL as Idl,
-      stakingProgramAddress,
-      provider
-    ) as unknown as Program<Staking>;
+    const provider = new AnchorProvider(connection, wallet, {
+      skipPreflight: true,
+    });
+    const program = new Program(IDL as Staking, provider);
     // Sometimes in the browser, the import returns a promise.
     // Don't fully understand, but this workaround is not terrible
     if (wasm.hasOwnProperty("default")) {
@@ -213,7 +215,7 @@ export class StakeConnection {
       {
         encoding: "base64",
         filters: [
-          { memcmp: this.program.coder.accounts.memcmp("PositionData") },
+          { memcmp: this.program.coder.accounts.memcmp("positionData") },
         ],
       }
     );
@@ -228,7 +230,7 @@ export class StakeConnection {
         encoding: "base64",
         filters: [
           {
-            memcmp: this.program.coder.accounts.memcmp("PositionData"),
+            memcmp: this.program.coder.accounts.memcmp("positionData"),
           },
           {
             memcmp: {
@@ -538,8 +540,14 @@ export class StakeConnection {
         .createStakeAccount(owner, vesting)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          mint: this.config.pythTokenMint,
         })
+        .instruction()
+    );
+
+    instructions.push(
+      await this.program.methods
+        .createVoterRecord()
+        .accounts({ stakeAccountPositions: stakeAccountAddress })
         .instruction()
     );
 
@@ -666,6 +674,10 @@ export class StakeConnection {
     if (!(await this.isLlcMember(stakeAccount))) {
       await this.withJoinDaoLlc(instructions, stakeAccount.address);
     }
+
+    instructions.push(
+      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
+    ); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -853,10 +865,9 @@ export class StakeConnection {
     );
 
     if (stakeAccount) {
-      // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we fit in the transaction
       instructions.push(
         ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-      ); // Try to make room by closing unlocked positions
+      ); // Need to cleanup unlocked positions first
     }
     instructions.push(
       await this.program.methods
@@ -899,6 +910,7 @@ export class StakeConnection {
       )
       .reverse(); // reverse so that earlier deletions don't affect later ones
 
+    // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we return
     return await Promise.all(
       unlockedPositions.map((position) =>
         this.buildCloseInstruction(
@@ -945,6 +957,10 @@ export class StakeConnection {
         )
       );
     }
+
+    instructions.push(
+      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
+    ); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -1039,9 +1055,15 @@ export class StakeConnection {
         .accounts({
           sourceStakeAccountPositions: stakeAccount.address,
           newStakeAccountPositions: ephemeralAccount,
-          mint: this.config.pythTokenMint,
         })
         .signers([])
+        .instruction()
+    );
+
+    instructions.push(
+      await this.program.methods
+        .createVoterRecord()
+        .accounts({ stakeAccountPositions: ephemeralAccount })
         .instruction()
     );
 
@@ -1063,11 +1085,7 @@ export class StakeConnection {
   }
 
   public async testWallet(): Promise<void> {
-    const walletTester = new Program(
-      WalletTesterIDL as Idl,
-      WALLET_TESTER_ADDRESS,
-      this.provider
-    );
+    const walletTester = new Program(WalletTesterIDL as Idl, this.provider);
 
     const instructions = [await walletTester.methods.test().instruction()];
     await this.sendAndConfirmAsVersionedTransaction(instructions);
@@ -1089,7 +1107,7 @@ export class StakeConnection {
   ): { owner: PublicKey; stakedAmount: BN; timeOfFirstStake: BN } {
     const positionAccountJs = new PositionAccountJs(
       Buffer.from(positionAccountData),
-      IDL as Idl
+      IDL as Staking
     );
     const positionAccountWasm = new wasm.WasmPositionData(positionAccountData);
 
@@ -1190,15 +1208,12 @@ export class StakeConnection {
   }
 
   public async buildRecoverAccountInstruction(
-    stakeAccountAddress: PublicKey,
-    governanceAuthorityAddress: PublicKey
+    stakeAccountAddress: PublicKey
   ): Promise<TransactionInstruction> {
     const stakeAccount = await this.loadStakeAccount(stakeAccountAddress);
     return await this.program.methods
       .recoverAccount()
       .accounts({
-        payer: governanceAuthorityAddress,
-        payerTokenAccount: stakeAccount.stakeAccountPositionsJs.owner,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -1279,7 +1294,7 @@ export class StakeAccount {
   // Unvested
 
   public getBalanceSummary(unixTime: BN): BalanceSummary {
-    let unvestedBalance = wasm.getUnvestedBalance(
+    const unvestedBalance = wasm.getUnvestedBalance(
       this.vestingSchedule,
       BigInt(unixTime.toString()),
       this.config.pythTokenListTime
@@ -1287,25 +1302,10 @@ export class StakeAccount {
         : undefined
     );
 
-    let currentEpoch = unixTime.div(this.config.epochDuration);
-    let unlockingDuration = this.config.unlockingDuration;
-    let currentEpochBI = BigInt(currentEpoch.toString());
+    const currentEpoch = unixTime.div(this.config.epochDuration);
+    const unlockingDuration = this.config.unlockingDuration;
+    const currentEpochBI = BigInt(currentEpoch.toString());
 
-    let withdrawable: BigInt;
-    try {
-      withdrawable = this.stakeAccountPositionsWasm.getWithdrawable(
-        BigInt(this.tokenBalance.toString()),
-        unvestedBalance,
-        currentEpochBI,
-        unlockingDuration
-      );
-    } catch (e) {
-      throw Error(
-        "This account has less tokens than the unlocking schedule or your staking position requires. Please contact support."
-      );
-    }
-
-    const withdrawableBN = new BN(withdrawable.toString());
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI =
       this.stakeAccountPositionsWasm.getLockedBalanceSummary(
@@ -1317,6 +1317,20 @@ export class StakeAccount {
     let lockedBN = new BN(lockedSummaryBI.locked.toString());
     let preunlockingBN = new BN(lockedSummaryBI.preunlocking.toString());
     let unlockingBN = new BN(lockedSummaryBI.unlocking.toString());
+
+    const withdrawableBN = BN.min(
+      this.tokenBalance.sub(unvestedBN),
+      this.tokenBalance
+        .sub(lockedBN)
+        .sub(lockingBN)
+        .sub(preunlockingBN)
+        .sub(unlockingBN)
+    );
+    if (withdrawableBN.isNeg()) {
+      throw new Error(
+        "This account has less tokens than the unlocking schedule or your staking position requires. Please contact support."
+      );
+    }
 
     // For the user it makes sense that all the categories add up to the number of tokens in their custody account
     // This sections corrects the locked balances to achieve this invariant
@@ -1436,17 +1450,9 @@ export class StakeAccount {
     );
   }
 
-  static serializeVesting(lock: VestingSchedule, idl: Idl): Buffer {
-    const VESTING_SCHED_MAX_BORSH_LEN = 4 * 8 + 1;
-    let buffer = Buffer.alloc(VESTING_SCHED_MAX_BORSH_LEN);
-
-    let idltype = idl?.types?.find((v) => v.name === "VestingSchedule");
-    const vestingSchedLayout = idljs.IdlCoder.typeDefLayout(
-      idltype!,
-      idl.types
-    );
-    const length = vestingSchedLayout.encode(lock, buffer, 0);
-    return buffer.slice(0, length);
+  static serializeVesting(lock: VestingSchedule, idl: Staking): Buffer {
+    const coder = new BorshCoder(idl);
+    return coder.types.encode("vestingSchedule", lock);
   }
 
   public getVestingAccountState(unixTime: BN): VestingAccountState {

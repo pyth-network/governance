@@ -1,40 +1,25 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
 import assert from "assert";
 import { StakeConnection } from "../app/StakeConnection";
 import {
   standardSetup,
-  readAnchorConfig,
   getPortNumber,
-  ANCHOR_CONFIG_PATH,
-  makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
-import {} from "../../staking/tests/utils/before";
 import path from "path";
-import { PythBalance, WALLET_TESTER_ADDRESS } from "../app";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("wallet tester", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-
   let stakeConnection: StakeConnection;
-  let controller;
+  let controller: CustomAbortController;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey),
-      PythBalance.fromString("1000")
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
   });
 
   it("tests a wallet", async () => {

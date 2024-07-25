@@ -1,61 +1,43 @@
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/wallet_tester.json`.
+ */
 export type WalletTester = {
-  "version": "1.0.0",
-  "name": "wallet_tester",
+  "address": "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz",
+  "metadata": {
+    "name": "walletTester",
+    "version": "1.0.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
   "instructions": [
     {
       "name": "test",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "testReceipt",
-          "isMut": true,
-          "isSigner": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "account",
-                "type": "publicKey",
-                "path": "payer"
-              }
-            ]
-          }
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
+      "discriminator": [
+        163,
+        36,
+        134,
+        53,
+        232,
+        223,
+        146,
+        222
       ],
-      "args": []
-    }
-  ]
-};
-
-export const IDL: WalletTester = {
-  "version": "1.0.0",
-  "name": "wallet_tester",
-  "instructions": [
-    {
-      "name": "test",
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "testReceipt",
-          "isMut": true,
-          "isSigner": false,
+          "writable": true,
           "pda": {
             "seeds": [
               {
                 "kind": "account",
-                "type": "publicKey",
                 "path": "payer"
               }
             ]
@@ -63,8 +45,7 @@ export const IDL: WalletTester = {
         },
         {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": []

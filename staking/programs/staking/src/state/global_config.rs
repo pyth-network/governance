@@ -13,7 +13,8 @@ pub struct GlobalConfig {
     pub unlocking_duration:    u8,
     pub epoch_duration:        u64, // epoch duration in seconds
     pub freeze:                bool,
-    pub pda_authority:         Pubkey, // Authority that can authorize the transfer of locked tokens
+    pub pda_authority:         Pubkey, /* Authority that can authorize the transfer of locked
+                                        * tokens */
     pub governance_program:    Pubkey, // Governance program id
 
     /// Once the pyth token is listed, governance can update the config to set this value.
@@ -22,7 +23,6 @@ pub struct GlobalConfig {
     pub pyth_token_list_time: Option<i64>,
     pub agreement_hash:       [u8; 32],
 
-    #[cfg(feature = "mock-clock")]
     pub mock_clock_time: i64, /* this field needs to be greater than 0 otherwise the API
                                * will use real time */
 }
@@ -36,6 +36,7 @@ pub mod tests {
     use crate::state::global_config::GlobalConfig;
 
     #[test]
+    #[allow(deprecated)]
     fn check_size() {
         assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<GlobalConfig>()

@@ -1,44 +1,29 @@
-import { Keypair } from "@solana/web3.js";
 import assert from "assert";
 import { StakeConnection } from "../app/StakeConnection";
 import {
   standardSetup,
-  readAnchorConfig,
   getPortNumber,
-  ANCHOR_CONFIG_PATH,
-  makeDefaultConfig,
+  CustomAbortController,
 } from "./utils/before";
-import {} from "../../staking/tests/utils/before";
 import path from "path";
-import { PythBalance } from "../app";
 import { ProfileConnection } from "../app/ProfileConnection";
 import { expectFailApi } from "./utils/utils";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 const EVM_TEST_ADDRESS: string = "0xb80Eb09f118ca9Df95b2DF575F68E41aC7B9E2f8";
 
 describe("profile", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-
   let stakeConnection: StakeConnection;
-  let controller;
+  let controller: CustomAbortController;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey),
-      PythBalance.fromString("1000")
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
   });
 
   it("sets up profile", async () => {

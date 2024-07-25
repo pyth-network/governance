@@ -23,7 +23,8 @@ pub struct StakeAccountMetadataV2 {
     pub owner:                 Pubkey,
     pub lock:                  VestingSchedule,
     pub next_index:            u8,
-    pub transfer_epoch:        Option<u64>, // null if the account was created, some epoch if the account received a transfer
+    pub transfer_epoch:        Option<u64>, /* null if the account was created, some epoch if
+                                             * the account received a transfer */
     pub signed_agreement_hash: Option<[u8; 32]>,
 }
 
@@ -47,13 +48,12 @@ impl StakeAccountMetadataV2 {
         metadata_bump: u8,
         custody_bump: u8,
         authority_bump: u8,
-        voter_bump: u8,
         owner: &Pubkey,
     ) {
         self.metadata_bump = metadata_bump;
         self.custody_bump = custody_bump;
         self.authority_bump = authority_bump;
-        self.voter_bump = voter_bump;
+        self.voter_bump = 0;
         self.owner = *owner;
         self.next_index = 0;
         self.transfer_epoch = None;
@@ -77,6 +77,7 @@ pub mod tests {
     };
 
     #[test]
+    #[allow(deprecated)]
     fn check_size() {
         assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<StakeAccountMetadataV2>()

@@ -21,7 +21,6 @@ export class ProfileConnection {
   constructor(connection: Connection, wallet: Wallet) {
     this.program = new Program(
       IDL as Profile,
-      PROFILE_ADDRESS,
       new AnchorProvider(connection, wallet, {})
     );
   }
@@ -40,7 +39,7 @@ export class ProfileConnection {
   async getEcosystemIdentity(
     user: PublicKey,
     ecosystem: Ecosystem
-  ): Promise<IdlTypes<Profile>["Identity"] | undefined> {
+  ): Promise<IdlTypes<Profile>["identity"] | undefined> {
     const identityAccountAddress = getIdentityAccountAddress(user, ecosystem);
     return (
       await this.program.account.identityAccount.fetchNullable(
@@ -104,7 +103,7 @@ export function getIdentityAccountAddress(
 }
 
 function getIdentityAsString(
-  identity: IdlTypes<Profile>["Identity"]
+  identity: IdlTypes<Profile>["identity"]
 ): string | undefined {
   if (identity.evm) {
     if (!identity.evm.pubkey) {
@@ -120,7 +119,7 @@ function getIdentityAsString(
 function getIdentityFromString(
   string: string | undefined,
   ecosystem: Ecosystem
-): IdlTypes<Profile>["Identity"] {
+): IdlTypes<Profile>["identity"] {
   if (!string) {
     return { [ecosystem]: { pubkey: null } };
   }

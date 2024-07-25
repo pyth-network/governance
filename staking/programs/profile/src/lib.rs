@@ -1,8 +1,6 @@
 //! Profile program
 //!
 //! This program allows a Solana user to map their Solana address to their addresses on other chains
-
-#![allow(clippy::result_large_err)]
 use anchor_lang::prelude::*;
 
 declare_id!("prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ");
@@ -51,7 +49,6 @@ impl Identity {
             }
     }
 }
-
 
 #[cfg(test)]
 pub mod tests {

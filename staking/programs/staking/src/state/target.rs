@@ -264,6 +264,7 @@ pub mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn check_size() {
         assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<TargetMetadata>()

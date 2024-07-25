@@ -6,9 +6,9 @@ This repository contains the Staking Program.
 
 Before you begin, ensure you have met the following requirements:
 
-- Node.js v16.13
-- Solana CLI v1.14.20
-- Anchor v0.27.0
+- Node.js v18.19.1
+- Solana CLI v1.18.16
+- Anchor v0.30.1
 - Docker
 
 ## Building the Project
@@ -40,7 +40,13 @@ npm run dump_governance
 To run the tests locally use the following command:
 
 ```bash
-npm run test
+npm run test -- tests/*.ts
+```
+
+It's useful sometimes to keep the validator running after the tests are done. To do that, you can use the `DETACH` environment variable:
+
+```bash
+DETACH=1 npm run test -- tests/staking.ts
 ```
 
 To run the tests with verifiable builds:

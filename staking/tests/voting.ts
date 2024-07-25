@@ -1,15 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
 import { expectFail } from "./utils/utils";
 import {
-  readAnchorConfig,
-  ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
-  makeDefaultConfig,
   CustomAbortController,
   withCreateDefaultGovernance,
 } from "./utils/before";
@@ -27,52 +24,29 @@ import {
   expectFailGovernance,
   computeGovernanceAccounts,
 } from "./utils/governance_utils";
+import { abortUnlessDetached } from "./utils/after";
 
-// When DEBUG is turned on, we turn preflight transaction checking off
-// That way failed transactions show up in the explorer, which makes them
-// easier to debug.
-const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("voting", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  let EPOCH_DURATION: BN;
-
+  let epochDuration: BN;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let governanceProgram: PublicKey;
   let realm: PublicKey;
   let governance: PublicKey;
-
   let owner: PublicKey;
   let provider: anchor.AnchorProvider;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    governanceProgram = new PublicKey(config.programs.localnet.governance);
-
-    let defaultConfig = makeDefaultConfig(
-      pythMintAccount.publicKey,
-      governanceProgram
-    );
-    defaultConfig.epochDuration = new BN(60);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      defaultConfig
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
 
     const globalConfig = stakeConnection.config;
 
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
+    epochDuration = stakeConnection.config.epochDuration;
 
     provider = stakeConnection.provider;
     owner = provider.wallet.publicKey;
@@ -93,7 +67,7 @@ describe("voting", async () => {
   it("check plugins are activated", async () => {
     const realmConfig = await tryGetRealmConfig(
       stakeConnection.provider.connection,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       realm
     );
     assert(
@@ -110,7 +84,7 @@ describe("voting", async () => {
     await stakeConnection.program.methods
       .updateMaxVoterWeight()
       .accounts({})
-      .rpc({ skipPreflight: DEBUG });
+      .rpc();
 
     const maxVoterWeightRecordAccount = (
       await PublicKey.findProgramAddress(
@@ -144,7 +118,7 @@ describe("voting", async () => {
     await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       false,
@@ -162,7 +136,7 @@ describe("voting", async () => {
     await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       true,
@@ -184,7 +158,7 @@ describe("voting", async () => {
     await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       true,
@@ -196,9 +170,9 @@ describe("voting", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION)
+      .advanceClock(epochDuration)
       .accounts({})
-      .rpc({ skipPreflight: DEBUG });
+      .rpc();
     await syncronizeClock(realm, stakeConnection);
 
     // Now it should succeed
@@ -211,7 +185,7 @@ describe("voting", async () => {
     await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       false,
@@ -228,7 +202,7 @@ describe("voting", async () => {
     const proposalAddress = await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       true,
@@ -237,7 +211,7 @@ describe("voting", async () => {
     await withDefaultCastVote(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       proposalAddress,
       stakeConnection,
@@ -260,7 +234,7 @@ describe("voting", async () => {
     const proposalAddress = await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       true,
@@ -269,7 +243,7 @@ describe("voting", async () => {
     await withDefaultCastVote(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       proposalAddress,
       stakeConnection,
@@ -286,7 +260,7 @@ describe("voting", async () => {
     const proposalAddress = await withDefaultCreateProposal(
       tx,
       realm,
-      governanceProgram,
+      stakeConnection.config.governanceProgram,
       governance,
       stakeConnection,
       true,
@@ -295,9 +269,9 @@ describe("voting", async () => {
     await provider.sendAndConfirm(tx);
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.muln(3))
+      .advanceClock(epochDuration.muln(3))
       .accounts({})
-      .rpc({ skipPreflight: DEBUG });
+      .rpc();
     await syncronizeClock(realm, stakeConnection);
 
     const stakeAccount = await stakeConnection.getMainAccount(owner);
@@ -311,8 +285,7 @@ describe("voting", async () => {
         .remainingAccounts([
           { pubkey: proposalAddress, isWritable: false, isSigner: false },
         ]),
-      "Voting epoch is either too old or hasn't started",
-      anchor.parseIdlErrors(stakeConnection.program.idl)
+      "Voting epoch is either too old or hasn't started"
     );
 
     await expectFail(
@@ -322,8 +295,7 @@ describe("voting", async () => {
           stakeAccountPositions: stakeAccount.address,
         })
         .remainingAccounts([]),
-      "Extra governance account required",
-      anchor.parseIdlErrors(stakeConnection.program.idl)
+      "Extra governance account required"
     );
   });
 
@@ -338,11 +310,11 @@ describe("voting", async () => {
     const { voterWeightRecordAccount, tokenOwnerRecord } =
       await computeGovernanceAccounts(stakeConnection);
 
-    // 600 > 60, so no one should be able to create proposals
+    // 7200 > 3600, so no one should be able to create proposals
     const longGovernance = await withCreateDefaultGovernance(
       tx,
-      600,
-      governanceProgram,
+      7200,
+      stakeConnection.config.governanceProgram,
       realm,
       tokenOwnerRecord,
       owner,
@@ -360,8 +332,7 @@ describe("voting", async () => {
           { pubkey: longGovernance, isWritable: false, isSigner: false },
         ])
         .preInstructions(tx.instructions),
-      "Proposal too long",
-      anchor.parseIdlErrors(stakeConnection.program.idl)
+      "Proposal too long"
     );
   });
 });

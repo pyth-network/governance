@@ -1,15 +1,13 @@
 import {
-  ANCHOR_CONFIG_PATH,
+  Authorities,
   CustomAbortController,
   getDummyAgreementHash,
   getPortNumber,
-  makeDefaultConfig,
-  readAnchorConfig,
   requestPythAirdrop,
   standardSetup,
 } from "./utils/before";
 import path from "path";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, Transaction } from "@solana/web3.js";
 import { StakeConnection, PythBalance, VestingAccountState } from "../app";
 import { BN, Wallet } from "@coral-xyz/anchor";
 import {
@@ -17,34 +15,24 @@ import {
   OptionalBalanceSummary,
 } from "./utils/api_utils";
 import assert from "assert";
+import { abortUnlessDetached } from "./utils/after";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("split vesting account", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let pdaAuthority = new Keypair();
+  let pdaAuthority: Keypair;
   let pdaConnection: StakeConnection;
+  let authorities: Authorities;
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(
-        pythMintAccount.publicKey,
-        PublicKey.unique(),
-        pdaAuthority.publicKey
-      )
+    ({ controller, stakeConnection, authorities } = await standardSetup(
+      portNumber
     ));
 
+    pdaAuthority = authorities.pdaAuthority;
     pdaConnection = await connect(pdaAuthority);
   });
 
@@ -77,8 +65,8 @@ describe("split vesting account", async () => {
     );
     await requestPythAirdrop(
       samConnection.userPublicKey(),
-      pythMintAccount.publicKey,
-      pythMintAuthority,
+      stakeConnection.config.pythTokenMint,
+      authorities.pythMintAuthority,
       PythBalance.fromString(totalBalance),
       samConnection.provider.connection
     );
@@ -110,9 +98,7 @@ describe("split vesting account", async () => {
       )
     );
 
-    await samConnection.provider.sendAndConfirm(transaction, [], {
-      skipPreflight: true,
-    });
+    await samConnection.provider.sendAndConfirm(transaction, [], {});
 
     let stakeAccount = await samConnection.getMainAccount(
       samConnection.userPublicKey()
@@ -351,7 +337,7 @@ describe("split vesting account", async () => {
       ),
         assert.fail("Sending the transaction should throw an exception");
     } catch (e) {
-      assert.match(e.message, new RegExp("2012")); // ConstraintAddress
+      assert.match(e.message, new RegExp("2001")); // ConstraintHasOne
     }
 
     // Passing the correct arguments should succeed
@@ -363,6 +349,6 @@ describe("split vesting account", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 });
