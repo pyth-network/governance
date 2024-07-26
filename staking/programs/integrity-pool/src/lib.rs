@@ -105,7 +105,7 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
 
         // assert delegator record is up to date
-        delegation_record.assert_up_to_date()?;
+        delegation_record.assert_up_to_date(get_current_epoch()?)?;
 
         // update publisher accounting
         let position = stake_account_positions
@@ -237,7 +237,7 @@ pub mod integrity_pool {
         let reward_amount: u64 = reward_amount_frac / FRAC_64_MULTIPLIER;
         // reward is less than a unit, no need to transfer
         if reward_amount == 0 {
-            delegation_record.advance()?;
+            delegation_record.advance(get_current_epoch()?)?;
             return Ok(());
         }
 
@@ -253,7 +253,7 @@ pub mod integrity_pool {
             .with_signer(signer_seeds);
         anchor_spl::token::transfer(ctx, reward_amount)?;
 
-        delegation_record.advance()?;
+        delegation_record.advance(get_current_epoch()?)?;
         Ok(())
     }
 }
