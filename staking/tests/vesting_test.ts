@@ -1,56 +1,39 @@
 import {
-  ANCHOR_CONFIG_PATH,
   CustomAbortController,
   getPortNumber,
-  makeDefaultConfig,
-  readAnchorConfig,
   requestPythAirdrop,
   standardSetup,
+  Authorities,
 } from "./utils/before";
 import path from "path";
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import {
-  StakeConnection,
-  PythBalance,
-  VestingAccountState,
-  StakeAccount,
-} from "../app";
+import { StakeConnection, PythBalance, VestingAccountState } from "../app";
 import { BN, Wallet } from "@coral-xyz/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
 import assert from "assert";
 import { expectFailApi } from "./utils/utils";
-import { expectFailGovernance } from "./utils/governance_utils";
+import { abortUnlessDetached } from "./utils/after";
 
 const ONE_MONTH = new BN(3600 * 24 * 30.5);
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("vesting", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  let EPOCH_DURATION: BN;
-
+  let epochDuration: BN;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
   let owner: PublicKey;
-
   let sam = new Keypair();
   let samConnection: StakeConnection;
-
   let alice = new Keypair();
   let aliceConnection: StakeConnection;
+  let authorities: Authorities;
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
+    ({ controller, stakeConnection, authorities } = await standardSetup(
+      portNumber
     ));
 
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
+    epochDuration = stakeConnection.config.epochDuration;
     owner = stakeConnection.provider.wallet.publicKey;
 
     samConnection = await StakeConnection.createStakeConnection(
@@ -73,8 +56,8 @@ describe("vesting", async () => {
     );
     await requestPythAirdrop(
       sam.publicKey,
-      pythMintAccount.publicKey,
-      pythMintAuthority,
+      stakeConnection.config.pythTokenMint,
+      authorities.pythMintAuthority,
       PythBalance.fromString("200"),
       samConnection.provider.connection
     );
@@ -106,9 +89,7 @@ describe("vesting", async () => {
       )
     );
 
-    await samConnection.provider.sendAndConfirm(transaction, [], {
-      skipPreflight: true,
-    });
+    await samConnection.provider.sendAndConfirm(transaction, [], {});
 
     let stakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -156,7 +137,7 @@ describe("vesting", async () => {
 
   it("one month minus 1 later", async () => {
     await samConnection.program.methods
-      .advanceClock(ONE_MONTH.sub(EPOCH_DURATION))
+      .advanceClock(ONE_MONTH.sub(epochDuration))
       .rpc();
 
     await assertBalanceMatches(
@@ -201,7 +182,7 @@ describe("vesting", async () => {
   });
 
   it("one month later", async () => {
-    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+    await samConnection.program.methods.advanceClock(epochDuration).rpc();
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -318,7 +299,7 @@ describe("vesting", async () => {
     );
 
     await samConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .advanceClock(epochDuration.mul(new BN(2)))
       .rpc();
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -346,7 +327,7 @@ describe("vesting", async () => {
     );
 
     await samConnection.program.methods
-      .advanceClock(ONE_MONTH.sub(EPOCH_DURATION.mul(new BN(2))))
+      .advanceClock(ONE_MONTH.sub(epochDuration.mul(new BN(2))))
       .rpc();
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -370,7 +351,7 @@ describe("vesting", async () => {
 
   it("unlock before vesting but during the last epoch", async () => {
     await samConnection.program.methods
-      .advanceClock(ONE_MONTH.sub(EPOCH_DURATION))
+      .advanceClock(ONE_MONTH.sub(epochDuration))
       .rpc();
 
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -410,7 +391,7 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+    await samConnection.program.methods.advanceClock(epochDuration).rpc();
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -463,7 +444,7 @@ describe("vesting", async () => {
       await samConnection.getTime()
     );
 
-    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+    await samConnection.program.methods.advanceClock(epochDuration).rpc();
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     assert(
@@ -520,7 +501,7 @@ describe("vesting", async () => {
     let samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     // UnvestedTokensFullyUnlockedExceptCooldown -> UnvestedTokensFullyUnlocked
     await samConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .advanceClock(epochDuration.mul(new BN(2)))
       .rpc();
 
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
@@ -582,7 +563,7 @@ describe("vesting", async () => {
         VestingAccountState.UnvestedTokensPartiallyLocked
     );
 
-    await samConnection.program.methods.advanceClock(EPOCH_DURATION).rpc();
+    await samConnection.program.methods.advanceClock(epochDuration).rpc();
 
     await assertBalanceMatches(
       samConnection,
@@ -648,7 +629,7 @@ describe("vesting", async () => {
 
     // UnvestedTokensFullyLockedExceptCooldown -> UnvestedTokensPartiallyLocked
     await samConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .advanceClock(epochDuration.mul(new BN(2)))
       .rpc();
 
     await assertBalanceMatches(
@@ -703,12 +684,12 @@ describe("vesting", async () => {
     );
 
     await samConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(2)))
+      .advanceClock(epochDuration.mul(new BN(2)))
       .rpc();
     await samConnection.lockAllUnvested(samStakeAccount);
     samStakeAccount = await samConnection.getMainAccount(sam.publicKey);
     await samConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
     await samConnection.unlockBeforeVestingEvent(samStakeAccount);
 
@@ -760,8 +741,8 @@ describe("vesting", async () => {
     );
     await requestPythAirdrop(
       alice.publicKey,
-      pythMintAccount.publicKey,
-      pythMintAuthority,
+      stakeConnection.config.pythTokenMint,
+      authorities.pythMintAuthority,
       PythBalance.fromString("200"),
       aliceConnection.provider.connection
     );
@@ -788,9 +769,7 @@ describe("vesting", async () => {
       )
     );
 
-    await aliceConnection.provider.sendAndConfirm(transaction, [], {
-      skipPreflight: true,
-    });
+    await aliceConnection.provider.sendAndConfirm(transaction, [], {});
 
     let stakeAccount = await aliceConnection.getMainAccount(alice.publicKey);
 
@@ -890,6 +869,6 @@ describe("vesting", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 });

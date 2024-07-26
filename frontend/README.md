@@ -5,9 +5,9 @@
 The versions are the ones that work for me locally.
 
 - [Rust](https://www.rust-lang.org/tools/install)
-- [Solana CLI tools](https://docs.solana.com/cli/install-solana-cli-tools) (`v1.14.20`)
-- [Anchor CLI](https://www.anchor-lang.com/docs/installation) (`v0.27.0`)
-- [Node](https://github.com/nvm-sh/nvm)(`v16.19.1`)
+- [Solana CLI tools](https://docs.solana.com/cli/install-solana-cli-tools) (`v1.18.16`)
+- [Anchor CLI](https://www.anchor-lang.com/docs/installation) (`v0.29.0`)
+- [Node](https://github.com/nvm-sh/nvm)(`v18.19.1`)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)(`v0.12.1`)
 
 ### 1. Install and build

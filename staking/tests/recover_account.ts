@@ -19,38 +19,34 @@ import {
   requestPythAirdrop,
   startValidator,
 } from "./utils/before";
-import { createMint, getTargetAccount, StakeTarget } from "./utils/utils";
+import { createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import path from "path";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
+import { Target } from "../app/StakeConnection";
+import { Staking } from "../target/types/staking";
+import { abortUnlessDetached } from "./utils/after";
 
-// When DEBUG is turned on, we turn preflight transaction checking off
-// That way failed transactions show up in the explorer, which makes them
-// easier to debug.
-const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("recover account", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-
   const pdaAuthorityKeypair = new Keypair();
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
+  const votingProduct: Target = { voting: {} };
 
-  let program: Program<any>;
+  let program: Program<Staking>;
   let provider: AnchorProvider;
   let controller: CustomAbortController;
-
   let votingProductMetadataAccount: PublicKey;
 
-  const votingProduct: StakeTarget = { voting: {} };
-
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
@@ -74,8 +70,10 @@ describe("recover account", async () => {
 
     await program.methods
       .initConfig({
+        bump: 0,
         governanceAuthority: provider.wallet.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm: PublicKey.unique(),
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -85,15 +83,12 @@ describe("recover account", async () => {
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
       })
-      .rpc({
-        skipPreflight: DEBUG,
-      });
+      .rpc();
 
     await program.methods
       .createTarget(votingProduct)
       .accounts({
         targetAccount: votingProductMetadataAccount,
-        governanceSigner: provider.wallet.publicKey,
       })
       .rpc();
 
@@ -167,8 +162,7 @@ describe("recover account", async () => {
     // The fix
     const recoverAccountInstruction =
       await governanceConnection.buildRecoverAccountInstruction(
-        badStakeAccountAddress,
-        provider.wallet.publicKey
+        badStakeAccountAddress
       );
     const recoverAccountTransaction = new Transaction();
     recoverAccountTransaction.instructions.push(recoverAccountInstruction);
@@ -250,8 +244,7 @@ describe("recover account", async () => {
 
     const recoverAccountInstruction =
       await aliceConnection.buildRecoverAccountInstruction(
-        badStakeAccountAddress,
-        alice.publicKey
+        badStakeAccountAddress
       );
     const recoverAccountTransaction = new Transaction();
     recoverAccountTransaction.instructions.push(recoverAccountInstruction);
@@ -259,14 +252,11 @@ describe("recover account", async () => {
     try {
       await aliceConnection.program.provider.sendAndConfirm(
         recoverAccountTransaction,
-        undefined,
-        {
-          skipPreflight: DEBUG,
-        }
+        undefined
       );
       assert.fail("Sending the transaction should throw an exception");
     } catch (e) {
-      assert.match(e.message, new RegExp("2012"));
+      assert.match(e.message, new RegExp("2001"));
     }
   });
 });

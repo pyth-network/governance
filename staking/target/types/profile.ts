@@ -1,31 +1,52 @@
+/**
+ * Program IDL in camelCase format in order to be used in JS/TS.
+ *
+ * Note that this is only a type helper and is not the actual IDL. The original
+ * IDL can be found at `target/idl/profile.json`.
+ */
 export type Profile = {
-  "version": "1.0.0",
-  "name": "profile",
+  "address": "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ",
+  "metadata": {
+    "name": "profile",
+    "version": "1.0.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
   "instructions": [
     {
       "name": "updateIdentity",
+      "discriminator": [
+        130,
+        54,
+        88,
+        104,
+        222,
+        124,
+        238,
+        252
+      ],
       "accounts": [
         {
           "name": "payer",
-          "isMut": true,
-          "isSigner": true
+          "writable": true,
+          "signer": true
         },
         {
           "name": "identityAccount",
-          "isMut": true,
-          "isSigner": false
+          "writable": true
         },
         {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
         {
           "name": "identity",
           "type": {
-            "defined": "Identity"
+            "defined": {
+              "name": "identity"
+            }
           }
         }
       ]
@@ -34,27 +55,26 @@ export type Profile = {
   "accounts": [
     {
       "name": "identityAccount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "identity",
-            "type": {
-              "defined": "Identity"
-            }
-          }
-        ]
-      }
+      "discriminator": [
+        194,
+        90,
+        181,
+        160,
+        182,
+        206,
+        116,
+        158
+      ]
     }
   ],
   "types": [
     {
-      "name": "Identity",
+      "name": "identity",
       "type": {
         "kind": "enum",
         "variants": [
           {
-            "name": "Evm",
+            "name": "evm",
             "fields": [
               {
                 "name": "pubkey",
@@ -71,44 +91,7 @@ export type Profile = {
           }
         ]
       }
-    }
-  ]
-};
-
-export const IDL: Profile = {
-  "version": "1.0.0",
-  "name": "profile",
-  "instructions": [
-    {
-      "name": "updateIdentity",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "identityAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "identity",
-          "type": {
-            "defined": "Identity"
-          }
-        }
-      ]
-    }
-  ],
-  "accounts": [
+    },
     {
       "name": "identityAccount",
       "type": {
@@ -117,34 +100,10 @@ export const IDL: Profile = {
           {
             "name": "identity",
             "type": {
-              "defined": "Identity"
-            }
-          }
-        ]
-      }
-    }
-  ],
-  "types": [
-    {
-      "name": "Identity",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Evm",
-            "fields": [
-              {
-                "name": "pubkey",
-                "type": {
-                  "option": {
-                    "array": [
-                      "u8",
-                      20
-                    ]
-                  }
-                }
+              "defined": {
+                "name": "identity"
               }
-            ]
+            }
           }
         ]
       }

@@ -1,52 +1,28 @@
 import {
-  ANCHOR_CONFIG_PATH,
   CustomAbortController,
   getPortNumber,
-  makeDefaultConfig,
-  readAnchorConfig,
   standardSetup,
 } from "./utils/before";
 import path from "path";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { StakeConnection } from "../app";
 import { BN, Program, utils } from "@coral-xyz/anchor";
 import * as wasm from "@pythnetwork/staking-wasm";
 import assert from "assert";
 import { Staking } from "../target/types/staking";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("create_product", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  // Governance has to sign for these instructions, but that's a lot to add to this test,
-  // so we'll just fake it with a keypair
-  const fakeGovernance = new Keypair();
-  let EPOCH_DURATION: BN;
-
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
   let program: Program<Staking>;
   let targetAccount: PublicKey;
-  let bump;
-
-  let owner: PublicKey;
+  let bump: number;
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    let globalConfig = makeDefaultConfig(pythMintAccount.publicKey);
-
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      globalConfig
-    ));
-
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.provider.wallet.publicKey;
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
 
     program = stakeConnection.program;
   });
@@ -79,6 +55,6 @@ describe("create_product", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 });

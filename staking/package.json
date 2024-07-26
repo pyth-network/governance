@@ -12,7 +12,7 @@
   ],
   "repository": "https://github.com/pyth-network/governance/tree/main/staking",
   "dependencies": {
-    "@coral-xyz/anchor": "^0.29.0",
+    "@coral-xyz/anchor": "^0.30.1",
     "@pythnetwork/solana-utils": "^0.4.1",
     "@pythnetwork/staking-wasm": "*",
     "@solana/spl-governance": "0.3.26",
@@ -44,7 +44,7 @@
     "wasm-pack": "^0.10.2"
   },
   "scripts": {
-    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000",
     "test:ci": "npm run build_wasm && ./scripts/build_verifiable_staking_program.sh -t && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
     "build": "npm run build_wasm && tsc -p tsconfig.api.json",
     "build_wasm": "./scripts/build_wasm.sh",

@@ -1,9 +1,7 @@
 import {
-  ANCHOR_CONFIG_PATH,
+  Authorities,
   CustomAbortController,
   getPortNumber,
-  makeDefaultConfig,
-  readAnchorConfig,
   requestPythAirdrop,
   standardSetup,
 } from "./utils/before";
@@ -12,35 +10,23 @@ import { Keypair, PublicKey } from "@solana/web3.js";
 import { StakeConnection, PythBalance } from "../app";
 import { BN, Wallet } from "@coral-xyz/anchor";
 import { assertVoterWeightEquals, loadAndUnlock } from "./utils/api_utils";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("voter_weight_test", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  let EPOCH_DURATION: BN;
-
+  let epochDuration: BN;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let stakeAccountAddress;
-
   let owner: PublicKey;
+  let authorities: Authorities;
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    const governanceProgram = new PublicKey(
-      config.programs.localnet.governance
-    );
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey, governanceProgram)
+    ({ controller, stakeConnection, authorities } = await standardSetup(
+      portNumber
     ));
 
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
+    epochDuration = stakeConnection.config.epochDuration;
     owner = stakeConnection.provider.wallet.publicKey;
   });
 
@@ -78,7 +64,7 @@ describe("voter_weight_test", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
 
     await assertVoterWeightEquals(
@@ -112,7 +98,7 @@ describe("voter_weight_test", async () => {
 
     // end the epoch so that the tokens start unlocking
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
 
     const stakeAccount = await stakeConnection.getMainAccount(owner);
@@ -148,7 +134,7 @@ describe("voter_weight_test", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
 
     await assertVoterWeightEquals(
@@ -165,7 +151,7 @@ describe("voter_weight_test", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .advanceClock(epochDuration.mul(new BN(3)))
       .rpc();
 
     await assertVoterWeightEquals(
@@ -198,8 +184,8 @@ describe("voter_weight_test", async () => {
 
     await requestPythAirdrop(
       bob.publicKey,
-      pythMintAccount.publicKey,
-      pythMintAuthority,
+      stakeConnection.config.pythTokenMint,
+      authorities.pythMintAuthority,
       PythBalance.fromString("1000"),
       stakeConnection.program.provider.connection
     );
@@ -210,7 +196,7 @@ describe("voter_weight_test", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .advanceClock(epochDuration.mul(new BN(3)))
       .rpc();
 
     await assertVoterWeightEquals(
@@ -274,7 +260,7 @@ describe("voter_weight_test", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
 
     await assertVoterWeightEquals(
@@ -305,6 +291,6 @@ describe("voter_weight_test", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 });

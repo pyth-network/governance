@@ -1,0 +1,18 @@
+[package]
+name = "publisher-caps"
+version = "1.0.0"
+description = "Created with Anchor"
+edition = "2018"
+
+[features]
+mock-clock = []
+no-entrypoint = []
+idl-build = ["anchor-lang/idl-build"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "publisher_caps"
+
+[dependencies]
+anchor-lang = {workspace = true, features = ["init-if-needed"]}
+bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}

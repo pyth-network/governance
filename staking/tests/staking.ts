@@ -1,94 +1,61 @@
 import * as anchor from "@coral-xyz/anchor";
-import { IdlTypes, parseIdlErrors, Program } from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
 import {
   TOKEN_PROGRAM_ID,
   Token,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  SystemProgram,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { expectFail, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
 import assert from "assert";
 import * as wasm from "@pythnetwork/staking-wasm";
 import path from "path";
 import {
-  readAnchorConfig,
-  ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
-  makeDefaultConfig,
   CustomAbortController,
   getDummyAgreementHash,
 } from "./utils/before";
 import { StakeConnection, PythBalance } from "../app";
 import { PositionAccountJs } from "../app/PositionAccountJs";
+import { TargetWithParameters } from "../app/StakeConnection";
+import { abortUnlessDetached } from "./utils/after";
 
-// When DEBUG is turned on, we turn preflight transaction checking off
-// That way failed transactions show up in the explorer, which makes them
-// easier to debug.
-const DEBUG = true;
-type Position = IdlTypes<Staking>["Position"];
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("staking", async () => {
-  let program: Program<Staking>;
-
-  let voterAccount: PublicKey;
-  let errMap: Map<number, string>;
-
-  let provider: anchor.AnchorProvider;
-
   const stakeAccountPositionsSecret = new Keypair();
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  const zeroPubkey = new PublicKey(0);
-  let EPOCH_DURATION: BN;
+  const votingProduct: TargetWithParameters = { voting: {} };
 
+  let program: Program<Staking>;
+  let provider: anchor.AnchorProvider;
   let userAta: PublicKey;
-  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-
   let controller: CustomAbortController;
   let stakeConnection: StakeConnection;
-
   let votingProductMetadataAccount: PublicKey;
-  let votingProduct;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
   before(async () => {
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
+
     program = stakeConnection.program;
     provider = stakeConnection.provider;
     userAta = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
-      pythMintAccount.publicKey,
+      stakeConnection.config.pythTokenMint,
       provider.wallet.publicKey,
       true
     );
-
-    votingProduct = stakeConnection.votingProduct;
 
     votingProductMetadataAccount = await getTargetAccount(
       votingProduct,
       program.programId
     );
-
-    errMap = parseIdlErrors(program.idl);
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
   });
 
   it("creates vested staking account", async () => {
@@ -120,8 +87,8 @@ describe("staking", async () => {
         ],
         program.programId
       );
-    let voterBump: number;
-    [voterAccount, voterBump] = await PublicKey.findProgramAddress(
+
+    const [voterAccount, voterBump] = await PublicKey.findProgramAddress(
       [
         anchor.utils.bytes.utf8.encode(wasm.Constants.VOTER_RECORD_SEED()),
         stakeAccountPositionsSecret.publicKey.toBuffer(),
@@ -137,14 +104,19 @@ describe("staking", async () => {
           wasm.Constants.POSITIONS_ACCOUNT_SIZE()
         ),
       ])
+      .postInstructions([
+        await program.methods
+          .createVoterRecord()
+          .accounts({
+            stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+          })
+          .instruction(),
+      ])
       .accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        mint: pythMintAccount.publicKey,
       })
       .signers([stakeAccountPositionsSecret])
-      .rpc({
-        skipPreflight: DEBUG,
-      });
+      .rpc();
 
     const stake_account_metadata_data =
       await program.account.stakeAccountMetadataV2.fetch(metadataAccount);
@@ -189,9 +161,7 @@ describe("staking", async () => {
     );
     transaction.add(ix);
 
-    const tx = await provider.sendAndConfirm(transaction, [], {
-      skipPreflight: DEBUG,
-    });
+    const tx = await provider.sendAndConfirm(transaction, [], {});
   });
 
   it("stakes before accepting LLC agreement", async () => {
@@ -202,18 +172,14 @@ describe("staking", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "You need to be an LLC member to perform this action",
-      errMap
+      "You need to be an LLC member to perform this action"
     );
 
     await expectFail(
-      stakeConnection.program.methods
-        .updateVoterWeight({ castVote: {} })
-        .accounts({
-          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        }),
-      "You need to be an LLC member to perform this action",
-      errMap
+      program.methods.updateVoterWeight({ castVote: {} }).accounts({
+        stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
+      }),
+      "You need to be an LLC member to perform this action"
     );
   });
 
@@ -222,8 +188,7 @@ describe("staking", async () => {
       program.methods.joinDaoLlc(Array.from(new Uint8Array(32))).accounts({
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       }),
-      "Invalid LLC agreement",
-      errMap
+      "Invalid LLC agreement"
     );
 
     await program.methods
@@ -243,7 +208,7 @@ describe("staking", async () => {
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         destination: toAccount,
       })
-      .rpc({ skipPreflight: DEBUG });
+      .rpc();
   });
 
   it("parses positions", async () => {
@@ -264,8 +229,7 @@ describe("staking", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Too much exposure to governance",
-      errMap
+      "Too much exposure to governance"
     );
   });
 
@@ -276,9 +240,7 @@ describe("staking", async () => {
         targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
-      .rpc({
-        skipPreflight: DEBUG,
-      });
+      .rpc();
   });
 
   it("validates position", async () => {
@@ -308,8 +270,7 @@ describe("staking", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "New position needs to have positive balance",
-      errMap
+      "New position needs to have positive balance"
     );
   });
 
@@ -321,16 +282,15 @@ describe("staking", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "Closing a position of 0 is not allowed",
-      errMap
+      "Closing a position of 0 is not allowed"
     );
   });
 
   it("creates a non-voting position", async () => {
-    const nonVotingStakeTarget = {
-      staking: {
-        product: zeroPubkey,
-        publisher: { some: { address: zeroPubkey } },
+    const nonVotingStakeTarget: TargetWithParameters = {
+      integrityPool: {
+        poolAuthority: PublicKey.unique(),
+        publisher: PublicKey.unique(),
       },
     };
 
@@ -347,8 +307,7 @@ describe("staking", async () => {
           ),
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
-      "The program expected this account to be already initialized",
-      errMap
+      "The program expected this account to be already initialized"
     );
   });
 });

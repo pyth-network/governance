@@ -5,10 +5,7 @@ use {
             borsh::BorshSchema,
             *,
         },
-        solana_program::{
-            borsh::try_from_slice_unchecked,
-            wasm_bindgen,
-        },
+        solana_program::wasm_bindgen,
     },
     std::fmt::{
         self,
@@ -83,6 +80,20 @@ impl PositionData {
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
     }
+
+    pub fn has_target_with_parameters_exposure(
+        &self,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<bool> {
+        for i in 0..MAX_POSITIONS {
+            if let Some(position) = self.read_position(i)? {
+                if position.target_with_parameters == target_with_parameters {
+                    return Ok(true);
+                }
+            }
+        }
+        Ok(false)
+    }
 }
 
 pub trait TryBorsh {
@@ -97,7 +108,8 @@ where
     T: AnchorDeserialize + AnchorSerialize,
 {
     fn try_read(slice: &[u8]) -> Result<Self> {
-        try_from_slice_unchecked(slice).map_err(|_| error!(ErrorCode::PositionSerDe))
+        let mut slice_mut = slice;
+        T::deserialize(&mut slice_mut).map_err(|_| error!(ErrorCode::PositionSerDe))
     }
 
     fn try_write(self, slice: &mut [u8]) -> Result<()> {
@@ -136,34 +148,27 @@ pub struct Position {
 )]
 pub enum Target {
     Voting,
-    Staking { product: Pubkey },
+    IntegrityPool { pool_authority: Pubkey },
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
 #[cfg_attr(test, derive(Hash))]
 pub enum TargetWithParameters {
     Voting,
-    Staking {
-        product:   Pubkey,
-        publisher: Publisher,
+    IntegrityPool {
+        pool_authority: Pubkey,
+        publisher:      Pubkey,
     },
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
-#[cfg_attr(test, derive(Hash))]
-pub enum Publisher {
-    DEFAULT,
-    SOME { address: Pubkey },
 }
 
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
         match *self {
             TargetWithParameters::Voting => Target::Voting,
-            TargetWithParameters::Staking {
-                product,
+            TargetWithParameters::IntegrityPool {
+                pool_authority,
                 publisher: _,
-            } => Target::Staking { product },
+            } => Target::IntegrityPool { pool_authority },
         }
     }
 }
@@ -232,16 +237,12 @@ pub mod tests {
             Position,
             PositionData,
             PositionState,
-            Publisher,
             TargetWithParameters,
             TryBorsh,
             MAX_POSITIONS,
             POSITION_BUFFER_SIZE,
         },
-        anchor_lang::{
-            prelude::*,
-            solana_program::borsh::get_packed_len,
-        },
+        anchor_lang::prelude::*,
         quickcheck::{
             Arbitrary,
             Gen,
@@ -311,6 +312,7 @@ pub mod tests {
         );
     }
     #[test]
+    #[allow(deprecated)]
     fn test_serialized_size() {
         assert_eq!(
             std::mem::size_of::<PositionData>(),
@@ -321,7 +323,9 @@ pub mod tests {
             8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
         // Checks that the position struct fits in the individual position buffer
-        assert!(get_packed_len::<Position>() < POSITION_BUFFER_SIZE);
+        assert!(
+            anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
+        );
     }
 
     #[test]
@@ -329,6 +333,41 @@ pub mod tests {
         // Checks that it's fine to initialize a position buffer with zeros
         let buffer = [0u8; POSITION_BUFFER_SIZE];
         assert!(Option::<Position>::try_read(&buffer).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_has_target_with_parameters_exposure() {
+        let mut position_data = PositionData::default();
+        let position = Position {
+            activation_epoch:       8,
+            unlocking_start:        Some(12),
+            target_with_parameters: TargetWithParameters::Voting,
+            amount:                 10,
+        };
+        let target_with_parameters = TargetWithParameters::IntegrityPool {
+            pool_authority: Pubkey::new_unique(),
+            publisher:      Pubkey::new_unique(),
+        };
+        let position_2 = Position {
+            activation_epoch: 4,
+            unlocking_start: Some(6),
+            target_with_parameters,
+            amount: 20,
+        };
+        position_data.write_position(0, &position).unwrap();
+        position_data.write_position(1, &position_2).unwrap();
+        assert!(position_data
+            .has_target_with_parameters_exposure(TargetWithParameters::Voting)
+            .unwrap());
+        assert!(position_data
+            .has_target_with_parameters_exposure(target_with_parameters)
+            .unwrap());
+        assert!(!position_data
+            .has_target_with_parameters_exposure(TargetWithParameters::IntegrityPool {
+                pool_authority: Pubkey::new_unique(),
+                publisher:      Pubkey::new_unique(),
+            })
+            .unwrap());
     }
 
     // A vector of DataOperation will be tested on both our struct and on a HashSet
@@ -342,22 +381,20 @@ pub mod tests {
     // Boiler plate to generate random instances
     impl Arbitrary for Position {
         fn arbitrary(g: &mut Gen) -> Self {
-            return Position {
+            Position {
                 activation_epoch:       u64::arbitrary(g),
                 unlocking_start:        Option::<u64>::arbitrary(g),
                 target_with_parameters: TargetWithParameters::Voting,
                 amount:                 u64::arbitrary(g),
-            };
+            }
         }
     }
     impl Arbitrary for TargetWithParameters {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
-                TargetWithParameters::Staking {
-                    product:   Pubkey::new_unique(),
-                    publisher: Publisher::SOME {
-                        address: Pubkey::new_unique(),
-                    },
+                TargetWithParameters::IntegrityPool {
+                    pool_authority: Pubkey::new_unique(),
+                    publisher:      Pubkey::new_unique(),
                 }
             } else {
                 TargetWithParameters::Voting
@@ -368,15 +405,9 @@ pub mod tests {
         fn arbitrary(g: &mut Gen) -> Self {
             let sample = u8::arbitrary(g);
             match sample % 3 {
-                0 => {
-                    return DataOperation::Add(Position::arbitrary(g));
-                }
-                1 => {
-                    return DataOperation::Modify(Position::arbitrary(g));
-                }
-                2 => {
-                    return DataOperation::Delete;
-                }
+                0 => DataOperation::Add(Position::arbitrary(g)),
+                1 => DataOperation::Modify(Position::arbitrary(g)),
+                2 => DataOperation::Delete,
                 _ => panic!(),
             }
         }
@@ -403,7 +434,7 @@ pub mod tests {
                     self.read_position(i as usize).unwrap()
                 )
             }
-            return res;
+            res
         }
     }
 
@@ -434,7 +465,7 @@ pub mod tests {
                         set.remove(&current_position);
                         set.insert(position);
                     } else {
-                        assert!(set.len() == 0);
+                        assert!(set.is_empty());
                     }
                 }
                 DataOperation::Delete => {
@@ -444,7 +475,7 @@ pub mod tests {
                         position_data.make_none(i, &mut next_index).unwrap();
                         set.remove(&current_position);
                     } else {
-                        assert!(set.len() == 0);
+                        assert!(set.is_empty());
                     }
                 }
             }
@@ -453,6 +484,6 @@ pub mod tests {
                 return false;
             };
         }
-        return set == position_data.to_set(next_index);
+        set == position_data.to_set(next_index)
     }
 }

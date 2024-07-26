@@ -15,8 +15,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2023-07-23
+          toolchain: nightly-2024-02-01
           components: clippy
       - name: Run clippy check
         working-directory: ./staking
-        run: cargo +nightly-2023-07-23 clippy -- -D warnings
+        run: cargo +nightly-2024-02-01 clippy --tests -- -D warnings

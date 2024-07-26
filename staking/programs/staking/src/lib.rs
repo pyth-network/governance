@@ -1,8 +1,5 @@
 #![deny(unused_must_use)]
 #![allow(dead_code)]
-#![allow(clippy::upper_case_acronyms)]
-#![allow(clippy::result_large_err)]
-#![allow(clippy::too_many_arguments)]
 // Objects of type Result must be used, otherwise we might
 // call a function that returns a Result and not handle the error
 
@@ -31,7 +28,6 @@ use {
         vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
     },
-    std::convert::TryInto,
     utils::{
         clock::{
             get_current_epoch,
@@ -41,9 +37,9 @@ use {
     },
 };
 
-mod context;
-mod error;
-mod state;
+pub mod context;
+pub mod error;
+pub mod state;
 mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
@@ -51,12 +47,13 @@ pub mod wasm;
 declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
 #[program]
 pub mod staking {
+
     /// Creates a global config for the program
     use super::*;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
-        config_account.bump = *ctx.bumps.get("config_account").unwrap();
+        config_account.bump = ctx.bumps.config_account;
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
@@ -124,15 +121,11 @@ pub mod staking {
         owner: Pubkey,
         lock: VestingSchedule,
     ) -> Result<()> {
-        let config = &ctx.accounts.config;
-
-
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
         stake_account_metadata.initialize(
-            *ctx.bumps.get("stake_account_metadata").unwrap(),
-            *ctx.bumps.get("stake_account_custody").unwrap(),
-            *ctx.bumps.get("custody_authority").unwrap(),
-            *ctx.bumps.get("voter_record").unwrap(),
+            ctx.bumps.stake_account_metadata,
+            ctx.bumps.stake_account_custody,
+            ctx.bumps.custody_authority,
             &owner,
         );
         stake_account_metadata.set_lock(lock);
@@ -140,8 +133,16 @@ pub mod staking {
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
         stake_account_positions.initialize(&owner);
 
+        Ok(())
+    }
+
+    pub fn create_voter_record(ctx: Context<CreateVoterRecord>) -> Result<()> {
+        let config = &ctx.accounts.config;
         let voter_record = &mut ctx.accounts.voter_record;
-        voter_record.initialize(config, &owner);
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+
+        stake_account_metadata.voter_bump = ctx.bumps.voter_record;
+        voter_record.initialize(config, &stake_account_metadata.owner);
 
         Ok(())
     }
@@ -166,6 +167,15 @@ pub mod staking {
         let current_epoch = get_current_epoch(config)?;
         let target_account = &mut ctx.accounts.target_account;
 
+        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+            require!(
+                ctx.accounts
+                    .pool_authority
+                    .as_ref()
+                    .map_or(false, |x| x.key() == pool_authority),
+                ErrorCode::InvalidPoolAuthority
+            )
+        }
 
         ctx.accounts
             .stake_account_metadata
@@ -197,8 +207,6 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
-            current_epoch,
-            config.unlocking_duration,
         )?;
 
         target_account.add_locking(amount, current_epoch)?;
@@ -216,13 +224,21 @@ pub mod staking {
             return Err(error!(ErrorCode::ClosePositionWithZero));
         }
 
-        let i: usize = index.try_into().or(Err(ErrorCode::GenericOverflow))?;
+        let i: usize = index.into();
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
-
+        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+            require!(
+                ctx.accounts
+                    .pool_authority
+                    .as_ref()
+                    .map_or(false, |x| x.key() == pool_authority),
+                ErrorCode::InvalidPoolAuthority
+            )
+        }
         let mut current_position: Position = stake_account_positions
             .read_position(i)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?;
@@ -328,9 +344,8 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
 
         let destination_account = &ctx.accounts.destination;
-        let signer = &ctx.accounts.payer;
+        let signer = &ctx.accounts.owner;
         let config = &ctx.accounts.config;
-        let current_epoch = get_current_epoch(config).unwrap();
 
 
         let unvested_balance = ctx
@@ -352,14 +367,8 @@ pub mod staking {
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
-        if utils::risk::validate(
-            stake_account_positions,
-            remaining_balance,
-            unvested_balance,
-            current_epoch,
-            config.unlocking_duration,
-        )
-        .is_err()
+        if utils::risk::validate(stake_account_positions, remaining_balance, unvested_balance)
+            .is_err()
         {
             return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
@@ -379,8 +388,6 @@ pub mod staking {
             stake_account_positions,
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
-            current_epoch,
-            config.unlocking_duration,
         )
         .is_err()
         {
@@ -421,8 +428,6 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
-            current_epoch,
-            config.unlocking_duration,
         )?;
 
         let epoch_of_snapshot: u64;
@@ -432,7 +437,7 @@ pub mod staking {
             VoterWeightAction::CastVote => {
                 let proposal_account: &AccountInfo = ctx
                     .remaining_accounts
-                    .get(0)
+                    .first()
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let proposal_data: ProposalV2 =
@@ -454,7 +459,7 @@ pub mod staking {
             VoterWeightAction::CreateProposal => {
                 let governance_account: &AccountInfo = ctx
                     .remaining_accounts
-                    .get(0)
+                    .first()
                     .ok_or_else(|| error!(ErrorCode::NoRemainingAccount))?;
 
                 let governance_data = get_governance_data_for_realm(
@@ -463,7 +468,7 @@ pub mod staking {
                     &config.pyth_governance_realm,
                 )?;
 
-                if config.epoch_duration < governance_data.config.max_voting_time.into() {
+                if config.epoch_duration < governance_data.config.voting_base_time.into() {
                     return Err(error!(ErrorCode::ProposalTooLong));
                 }
 
@@ -515,15 +520,11 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_target(ctx: Context<CreateTarget>, target: Target) -> Result<()> {
+    pub fn create_target(ctx: Context<CreateTarget>, _target: Target) -> Result<()> {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 
-        if !(matches!(target, Target::Voting)) {
-            return Err(error!(ErrorCode::NotImplemented));
-        }
-
-        target_account.bump = *ctx.bumps.get("target_account").unwrap();
+        target_account.bump = ctx.bumps.target_account;
         target_account.last_update_at = get_current_epoch(config).unwrap();
         target_account.prev_epoch_locked = 0;
         target_account.locked = 0;
@@ -577,8 +578,6 @@ pub mod staking {
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
 
-        let current_epoch = get_current_epoch(config)?;
-
         let split_request = &ctx.accounts.source_stake_account_split_request;
         require!(
             split_request.amount == amount && split_request.recipient == recipient,
@@ -587,10 +586,9 @@ pub mod staking {
 
         // Initialize new accounts
         ctx.accounts.new_stake_account_metadata.initialize(
-            *ctx.bumps.get("new_stake_account_metadata").unwrap(),
-            *ctx.bumps.get("new_stake_account_custody").unwrap(),
-            *ctx.bumps.get("new_custody_authority").unwrap(),
-            *ctx.bumps.get("new_voter_record").unwrap(),
+            ctx.bumps.new_stake_account_metadata,
+            ctx.bumps.new_stake_account_custody,
+            ctx.bumps.new_custody_authority,
             &split_request.recipient,
         );
 
@@ -598,13 +596,10 @@ pub mod staking {
             &mut ctx.accounts.new_stake_account_positions.load_init()?;
         new_stake_account_positions.initialize(&split_request.recipient);
 
-        let new_voter_record = &mut ctx.accounts.new_voter_record;
-        new_voter_record.initialize(config, &split_request.recipient);
-
         // Pre-check invariants
-        // Note that the accept operation requires the positions account to be empty, which should trivially
-        // pass this invariant check. However, we explicitly check invariants everywhere else, so may
-        // as well check in this operation also.
+        // Note that the accept operation requires the positions account to be empty, which should
+        // trivially pass this invariant check. However, we explicitly check invariants
+        // everywhere else, so may as well check in this operation also.
         let source_stake_account_positions =
             &mut ctx.accounts.source_stake_account_positions.load_mut()?;
         utils::risk::validate(
@@ -617,8 +612,6 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
-            current_epoch,
-            config.unlocking_duration,
         )?;
 
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
@@ -672,8 +665,6 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
-            current_epoch,
-            config.unlocking_duration,
         )?;
 
         utils::risk::validate(
@@ -686,8 +677,6 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
-            current_epoch,
-            config.unlocking_duration,
         )?;
 
         // Delete current request
@@ -699,7 +688,8 @@ pub mod staking {
     /**
      * Accept to join the DAO LLC
      * This must happen before create_position or update_voter_weight
-     * The user signs a hash of the agreement and the program checks that the hash matches the agreement
+     * The user signs a hash of the agreement and the program checks that the hash matches the
+     * agreement
      */
     pub fn join_dao_llc(ctx: Context<JoinDaoLlc>, _agreement_hash: [u8; 32]) -> Result<()> {
         ctx.accounts.stake_account_metadata.signed_agreement_hash =
@@ -721,13 +711,18 @@ pub mod staking {
             ErrorCode::RecoverWithStake
         );
 
-        let new_owner = ctx.accounts.payer_token_account.owner;
+        let new_owner = ctx.accounts.owner.owner;
 
         ctx.accounts.stake_account_metadata.owner = new_owner;
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         stake_account_positions.owner = new_owner;
         ctx.accounts.voter_record.governing_token_owner = new_owner;
 
+        Ok(())
+    }
+
+    // Hack to allow exporting the Position type in the IDL
+    pub fn export_position_type(_ctx: Context<InitConfig>, _position: Position) -> Result<()> {
         Ok(())
     }
 }
