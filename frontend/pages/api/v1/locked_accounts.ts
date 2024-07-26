@@ -9,7 +9,7 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getStakeAccountDetails,
   getStakeAccountsByOwner,
-} from '@pythnetwork/staking/app/api_utils'
+} from '@pythnetwork/staking'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(

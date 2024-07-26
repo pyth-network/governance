@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PythBalance } from '@pythnetwork/staking/app/pythBalance'
-import { STAKING_ADDRESS } from '@pythnetwork/staking/app/constants'
+import { PythBalance } from '@pythnetwork/staking'
+import { STAKING_ADDRESS } from '@pythnetwork/staking'
 import { Connection, Keypair } from '@solana/web3.js'
 import { Program, AnchorProvider, IdlTypes, BN } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
@@ -13,7 +13,7 @@ import {
   ONE_YEAR,
   getConfig,
   getCurrentlyLockedAmount,
-} from '@pythnetwork/staking/app/api_utils'
+} from '@pythnetwork/staking'
 
 const RPC_URL = process.env.BACKEND_ENDPOINT!
 const connection = new Connection(RPC_URL)
