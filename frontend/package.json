@@ -2,7 +2,7 @@
   "name": "pyth-staking-frontend",
   "private": true,
   "scripts": {
-    "build": "next build && next export",
+    "build": "next build",
     "dev": "next dev",
     "fix:format": "prettier --write .",
     "fix:lint": "next lint --fix",
