@@ -3,8 +3,7 @@
   "private": true,
   "workspaces": [
     "staking",
-    "wasm",
-    "frontend"
+    "wasm"
   ],
   "dependencies": {},
   "devDependencies": {
