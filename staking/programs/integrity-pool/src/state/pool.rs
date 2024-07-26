@@ -5,7 +5,6 @@ use {
         state::event::PublisherEventData,
         utils::{
             clock::{
-                get_current_epoch,
                 time_to_epoch,
                 UNLOCKING_DURATION,
             },
@@ -116,9 +115,9 @@ impl PoolData {
         positions: Ref<staking::state::positions::PositionData>,
         publisher: &Pubkey,
         pool_authority: &Pubkey,
+        current_epoch: u64,
     ) -> Result<frac64> {
-        self.assert_up_to_date()?;
-
+        self.assert_up_to_date(current_epoch)?;
 
         let publisher_index = self.get_publisher_index(publisher)?;
         let mut last_event_index: usize = self.num_events as usize;
@@ -170,9 +169,13 @@ impl PoolData {
     }
 
 
-    pub fn advance(&mut self, publisher_caps: &PublisherCaps, y: frac64) -> Result<()> {
+    pub fn advance(
+        &mut self,
+        publisher_caps: &PublisherCaps,
+        y: frac64,
+        current_epoch: u64,
+    ) -> Result<()> {
         let mut existing_publishers = BoolArray::new(MAX_CAPS);
-        let current_epoch = get_current_epoch()?;
 
         require_gt!(
             current_epoch,
@@ -334,9 +337,10 @@ impl PoolData {
         publisher: &Pubkey,
         stake_account_positions_key: &Pubkey,
         amount: u64,
+        current_epoch: u64,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        self.assert_up_to_date()?;
+        self.assert_up_to_date(current_epoch)?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             self.self_del_state[index].positive_delta_delegation += amount;
@@ -352,9 +356,10 @@ impl PoolData {
         stake_account_positions_key: &Pubkey,
         amount: u64,
         position_state: PositionState,
+        current_epoch: u64,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        self.assert_up_to_date()?;
+        self.assert_up_to_date(current_epoch)?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             match position_state {
@@ -382,10 +387,10 @@ impl PoolData {
         Ok(())
     }
 
-    pub fn assert_up_to_date(&self) -> Result<()> {
+    pub fn assert_up_to_date(&self, current_epoch: u64) -> Result<()> {
         require_eq!(
             self.last_updated_epoch,
-            get_current_epoch()?,
+            current_epoch,
             IntegrityPoolError::OutdatedPublisherAccounting
         );
         Ok(())

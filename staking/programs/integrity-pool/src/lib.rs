@@ -85,6 +85,7 @@ pub mod integrity_pool {
             publisher.key,
             &ctx.accounts.stake_account_positions.key(),
             amount,
+            get_current_epoch()?,
         )?;
 
         Ok(())
@@ -120,6 +121,7 @@ pub mod integrity_pool {
             &ctx.accounts.stake_account_positions.key(),
             amount,
             position_state,
+            get_current_epoch()?,
         )?;
 
         //cpi
@@ -210,7 +212,7 @@ pub mod integrity_pool {
         let publisher_caps = &ctx.accounts.publisher_caps.load()?;
         let pool_config = &ctx.accounts.pool_config;
 
-        pool_data.advance(publisher_caps, pool_config.y)?;
+        pool_data.advance(publisher_caps, pool_config.y, get_current_epoch()?)?;
 
         Ok(())
     }
@@ -232,6 +234,7 @@ pub mod integrity_pool {
             positions,
             &publisher.key(),
             &pool_config.key(),
+            get_current_epoch()?,
         )?;
 
         let reward_amount: u64 = reward_amount_frac / FRAC_64_MULTIPLIER;
