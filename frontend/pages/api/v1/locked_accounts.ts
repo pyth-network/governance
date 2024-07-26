@@ -1,8 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { STAKING_ADDRESS } from '@pythnetwork/staking'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
-import { Staking } from '@pythnetwork/staking/target/types/staking'
+import { Staking } from '@pythnetwork/staking/lib/target/types/staking'
 import idl from '@pythnetwork/staking/target/idl/staking.json'
 import { splTokenProgram } from '@coral-xyz/spl-token'
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
@@ -17,7 +18,11 @@ const provider = new AnchorProvider(
   new NodeWallet(new Keypair()),
   {}
 )
-const stakingProgram = new Program<Staking>(idl as Staking, provider)
+const stakingProgram = new Program<Staking>(
+  idl as Staking,
+  STAKING_ADDRESS,
+  provider
+)
 const tokenProgram = splTokenProgram({
   programId: TOKEN_PROGRAM_ID,
   provider: provider as any,
