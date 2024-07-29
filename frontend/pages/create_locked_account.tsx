@@ -152,7 +152,7 @@ const CreateLockedAccount: NextPage = () => {
     <Layout>
       <SEO title={'Create Locked Account'} />
       <p className=" p-2 ">
-        Create a locked account with the standard unlock schedule
+        Create a locked account with any unlock schedule
       </p>
       <p className=" text-sm ">Owner</p>
       <input
