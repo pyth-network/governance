@@ -309,7 +309,6 @@ impl PoolData {
                 other_reward_ratio,
             };
         }
-
         Ok(())
     }
 

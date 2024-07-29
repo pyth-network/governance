@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { STAKING_ADDRESS } from '@pythnetwork/staking'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet'
@@ -9,7 +10,7 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import {
   getStakeAccountDetails,
   getStakeAccountsByOwner,
-} from '@pythnetwork/staking/app/api_utils'
+} from '@pythnetwork/staking'
 
 const connection = new Connection(process.env.BACKEND_ENDPOINT!)
 const provider = new AnchorProvider(
