@@ -201,7 +201,7 @@ const CreateLockedAccount: NextPage = () => {
       )}
       {owner && !hasTested && (
           <p style={{ color: 'red' }}>
-          `Warning, this owner hasn't tested`
+          {`Warning, this owner hasn't tested`}
         </p>
       )}
       {stakeConnection && owner && amount ? (
