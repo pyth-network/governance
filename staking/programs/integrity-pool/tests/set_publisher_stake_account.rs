@@ -47,6 +47,7 @@ fn test_set_publisher_stake_account() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -88,12 +89,6 @@ fn test_set_publisher_stake_account() {
     .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
-
-    let publisher_index = pool_data
-        .publishers
-        .iter()
-        .position(|&x| x == publisher_keypair.pubkey())
-        .unwrap();
 
     assert_eq!(
         pool_data.publisher_stake_accounts[publisher_index],

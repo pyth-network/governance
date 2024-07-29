@@ -32,6 +32,7 @@ fn initialize_pool() {
         publisher_keypair: _,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,

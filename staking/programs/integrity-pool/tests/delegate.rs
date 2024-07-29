@@ -53,6 +53,7 @@ fn test_delegate() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -89,11 +90,6 @@ fn test_delegate() {
     assert_eq!(pos0.unlocking_start, None);
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
-    let publisher_index = pool_data
-        .publishers
-        .iter()
-        .position(|&x| x == publisher_keypair.pubkey())
-        .unwrap();
 
     assert_eq!(
         pool_data.del_state[publisher_index],

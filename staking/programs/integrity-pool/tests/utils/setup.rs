@@ -13,6 +13,8 @@ use {
             init_config::init_config_account,
         },
     },
+    crate::utils::account::fetch_account_data_bytemuck,
+    integrity_pool::state::pool::PoolData,
     solana_sdk::{
         pubkey::Pubkey,
         signature::Keypair,
@@ -28,6 +30,7 @@ pub struct SetupResult {
     pub publisher_keypair:        Keypair,
     pub pool_data_pubkey:         Pubkey,
     pub reward_program_authority: Keypair,
+    pub publisher_index:          usize,
 }
 
 pub struct SetupProps {
@@ -101,6 +104,14 @@ pub fn setup(props: SetupProps) -> SetupResult {
         advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
     }
 
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_keypair.pubkey());
+
+    let publisher_index = pool_data
+        .publishers
+        .iter()
+        .position(|&x| x == publisher_keypair.pubkey())
+        .unwrap();
+
     SetupResult {
         svm,
         payer,
@@ -108,5 +119,6 @@ pub fn setup(props: SetupProps) -> SetupResult {
         publisher_keypair,
         pool_data_pubkey: pool_data_keypair.pubkey(),
         reward_program_authority,
+        publisher_index,
     }
 }

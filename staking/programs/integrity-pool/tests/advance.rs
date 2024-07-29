@@ -49,6 +49,7 @@ fn test_advance() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -58,12 +59,6 @@ fn test_advance() {
     });
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
-
-    let publisher_index = pool_data
-        .publishers
-        .iter()
-        .position(|&x| x == publisher_keypair.pubkey())
-        .unwrap();
 
     let mut publisher_pubkeys = (1..MAX_PUBLISHERS)
         .map(get_dummy_publisher)
@@ -108,6 +103,7 @@ fn test_advance_reward_events() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -156,12 +152,6 @@ fn test_advance_reward_events() {
     advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
-
-    let publisher_index = pool_data
-        .publishers
-        .iter()
-        .position(|&x| x == publisher_keypair.pubkey())
-        .unwrap();
 
     assert_eq!(pool_data.events[0].epoch, 1);
     assert_eq!(pool_data.events[0].y, YIELD);
