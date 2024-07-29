@@ -62,7 +62,6 @@ const CreateLockedAccount: NextPage = () => {
 
   useEffect(() => {
     if (amount && startDate && firstUnlock && numPeriods) {
-      console.log(firstUnlock)
       setLock({
         periodicVesting: {
           initialBalance: amount.toBN(),
@@ -71,7 +70,6 @@ const CreateLockedAccount: NextPage = () => {
           numPeriods
         }
       })
-      console.log(lock)
     }
     else {
       setLock(undefined)
@@ -201,7 +199,7 @@ const CreateLockedAccount: NextPage = () => {
           Warning, this account already has a locked account
         </a>
       )}
-            {!hasTested && (
+      {!hasTested && (
         <a
           className="rounded-full p-2"
           style={{ color: 'red', textDecoration: 'underline' }}
