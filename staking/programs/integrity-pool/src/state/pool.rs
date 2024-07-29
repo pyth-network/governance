@@ -15,6 +15,7 @@ use {
             },
             types::{
                 frac64,
+                BoolArray,
                 FRAC_64_MULTIPLIER_U128,
             },
         },
@@ -170,7 +171,7 @@ impl PoolData {
 
 
     pub fn advance(&mut self, publisher_caps: &PublisherCaps, y: frac64) -> Result<()> {
-        let mut existing_publishers = [0_u8; MAX_CAPS / 8];
+        let mut existing_publishers = BoolArray::new(MAX_CAPS);
         let current_epoch = get_current_epoch()?;
 
         require_gt!(
@@ -195,8 +196,15 @@ impl PoolData {
         let mut i = 0;
 
         while i < MAX_PUBLISHERS && self.publishers[i] != Pubkey::default() {
-            let cap_index = Self::get_publisher_cap_index(&self.publishers[i], publisher_caps)?;
-            existing_publishers[cap_index / 8] |= 1 << (cap_index % 8);
+            let cap_index = Self::get_publisher_cap_index(&self.publishers[i], publisher_caps);
+
+            let publisher_cap = match cap_index {
+                Ok(cap_index) => {
+                    existing_publishers.set(cap_index, true);
+                    publisher_caps.caps[cap_index].cap
+                }
+                Err(_) => 0,
+            };
 
             // create the reward event for last_updated_epoch using current del_state before
             // updating which corresponds to del_state at the last_updated_epoch
@@ -204,7 +212,7 @@ impl PoolData {
                 self.last_updated_epoch,
                 self.last_updated_epoch + 1,
                 i,
-                publisher_caps.caps[cap_index].cap,
+                publisher_cap,
             )?;
 
             let (next_del_state, next_self_del_state) = (
@@ -243,15 +251,15 @@ impl PoolData {
                 self.last_updated_epoch + 1,
                 current_epoch,
                 i,
-                publisher_caps.caps[cap_index].cap,
+                publisher_cap,
             )?;
 
             i += 1;
         }
 
         for j in 0..(publisher_caps.num_publishers as usize) {
-            if existing_publishers[j / 8] & (1 << (j % 8)) == 0 {
-                require_gt!(MAX_PUBLISHERS, i, IntegrityPoolError::TooManyPublishers);
+            // Silently ignore if there are more publishers than MAX_PUBLISHERS
+            if !existing_publishers.get(j) && i < MAX_PUBLISHERS {
                 self.publishers[i] = publisher_caps.caps[j].pubkey;
                 i += 1;
             }
@@ -268,7 +276,7 @@ impl PoolData {
         publisher_caps: &PublisherCaps,
     ) -> Result<usize> {
         if *publisher == Pubkey::default() {
-            return Ok(0);
+            return Err(IntegrityPoolError::PublisherNotFound.into());
         }
         publisher_caps
             .caps
