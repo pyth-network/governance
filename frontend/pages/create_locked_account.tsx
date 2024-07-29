@@ -186,7 +186,7 @@ const CreateLockedAccount: NextPage = () => {
         onChange={handleSetNumPeriods} />
       <p className=" text-sm ">
         Schedule: {lock ? formatLockSummary(lock).map(
-          (x) => <p>{x}</p>
+          (x) => <p key="0">{x}</p>
         ) : 'Invalid schedule'}
       </p>
       {stakeAccounts && stakeAccounts.length > 0 && (
@@ -199,14 +199,10 @@ const CreateLockedAccount: NextPage = () => {
           Warning, this account already has a locked account
         </a>
       )}
-      {!hasTested && (
-        <a
-          className="rounded-full p-2"
-          style={{ color: 'red', textDecoration: 'underline' }}
-        >
-          {' '}
-          Warning, this owner hasn't tested
-        </a>
+      {owner && !hasTested && (
+          <p style={{ color: 'red' }}>
+          `Warning, this owner hasn't tested`
+        </p>
       )}
       {stakeConnection && owner && amount ? (
         <p>
