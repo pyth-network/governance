@@ -49,6 +49,18 @@ const CreateLockedAccount: NextPage = () => {
     }
   }>();
 
+  const [hasTested, setHasTested] = useState<boolean>()
+
+  useEffect(() => {
+    const loadWalletHasTested = async () => {
+      if (stakeConnection && owner) {
+        const tested = await stakeConnection.walletHasTested(owner)
+        setHasTested(tested)
+      }
+    }
+    loadWalletHasTested()
+  }, [owner])
+
   useEffect(() => {
     if (amount && startDate && firstUnlock && numPeriods) {
       console.log(firstUnlock)
@@ -130,14 +142,7 @@ const CreateLockedAccount: NextPage = () => {
         await stakeConnection.setupVestingAccount(
           amount,
           owner,
-          {
-            periodicVesting: {
-
-              initialBalance: amount.toBN(),
-              periodDuration: TWELVE_MONTHS,
-              numPeriods: NUM_PERIODS,
-            },
-          },
+          lock,
           false
         )
         toast.success('Successfully created locked account')
@@ -195,6 +200,15 @@ const CreateLockedAccount: NextPage = () => {
         >
           {' '}
           Warning, this account already has a locked account
+        </a>
+      )}
+            {!hasTested && (
+        <a
+          className="rounded-full p-2"
+          style={{ color: 'red', textDecoration: 'underline' }}
+        >
+          {' '}
+          Warning, this owner hasn't tested
         </a>
       )}
       {stakeConnection && owner && amount ? (
