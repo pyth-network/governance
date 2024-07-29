@@ -48,7 +48,6 @@ const CreateLockedAccount: NextPage = () => {
       numPeriods: BN
     }
   }>();
-
   const [hasTested, setHasTested] = useState<boolean>()
 
   useEffect(() => {
