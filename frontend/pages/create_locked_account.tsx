@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import Layout from '../components/Layout'
 import SEO from '../components/SEO'
-import { PythBalance, StakeAccount } from '@pythnetwork/staking'
+import { getLockSummary, PythBalance, StakeAccount } from '@pythnetwork/staking'
 import { useEffect, useState } from 'react'
 import { BN } from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
@@ -12,9 +12,60 @@ import { useStakeConnection } from 'hooks/useStakeConnection'
 const TWELVE_MONTHS = new BN(3600 * 24 * 365)
 const NUM_PERIODS = new BN(4)
 
+function formatLockSummary(lock: {
+  periodicVesting:
+  {
+    initialBalance: BN,
+    periodDuration: BN,
+    startDate: BN,
+    numPeriods: BN
+  }
+}): string[] {
+  const lockSummary = getLockSummary(lock, null);
+  if (lockSummary.schedule) {
+    const rows = lockSummary.schedule.map((x) => {
+      return ` - ${x.amount.toString()} on ${new Date(Number(x.date) * 1000).toDateString()}`
+    })
+    return rows
+  }
+  else {
+    return ['Invalid schedule']
+  }
+}
+
 const CreateLockedAccount: NextPage = () => {
   const [owner, setOwner] = useState<PublicKey>()
   const [amount, setAmount] = useState<PythBalance>()
+  const [startDate, setStartDate] = useState<Date>()
+  const [firstUnlock, setFirstUnlock] = useState<Date>()
+  const [numPeriods, setNumPeriods] = useState<BN>()
+  const [lock, setLock] = useState<{
+    periodicVesting:
+    {
+      initialBalance: BN,
+      periodDuration: BN,
+      startDate: BN,
+      numPeriods: BN
+    }
+  }>();
+
+  useEffect(() => {
+    if (amount && startDate && firstUnlock && numPeriods) {
+      console.log(firstUnlock)
+      setLock({
+        periodicVesting: {
+          initialBalance: amount.toBN(),
+          periodDuration: new BN(firstUnlock.getTime() / 1000).sub(new BN(startDate.getTime() / 1000)),
+          startDate: new BN(startDate.getTime() / 1000),
+          numPeriods
+        }
+      })
+      console.log(lock)
+    }
+    else {
+      setLock(undefined)
+    }
+  }, [amount, startDate, firstUnlock, numPeriods])
 
   const handleSetOwner = (event: any) => {
     try {
@@ -30,6 +81,33 @@ const CreateLockedAccount: NextPage = () => {
       setAmount(undefined)
     }
   }
+
+  const handleSetDate = (event: any) => {
+    try {
+      setStartDate(new Date(event.target.value))
+    }
+    catch (e) {
+      setStartDate(undefined)
+    }
+  }
+
+  const handleSetFirstUnlock = (event: any) => {
+    try {
+      setFirstUnlock(new Date(event.target.value))
+    }
+    catch (e) {
+      setFirstUnlock(undefined)
+    }
+  }
+
+  const handleSetNumPeriods = (event: any) => {
+    try {
+      setNumPeriods(new BN(event.target.value))
+    } catch (e) {
+      setNumPeriods(undefined)
+    }
+  }
+
 
   const { data: stakeConnection } = useStakeConnection()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>()
@@ -53,7 +131,8 @@ const CreateLockedAccount: NextPage = () => {
           amount,
           owner,
           {
-            periodicVestingAfterListing: {
+            periodicVesting: {
+
               initialBalance: amount.toBN(),
               periodDuration: TWELVE_MONTHS,
               numPeriods: NUM_PERIODS,
@@ -87,11 +166,26 @@ const CreateLockedAccount: NextPage = () => {
         value={amount ? amount.toString() : ''}
         onChange={handleSetAmount}
       />
+      <p className=" text-sm ">Start date</p>
+      <input
+        type="date"
+        style={{ color: 'black' }}
+        onChange={handleSetDate} />
+      <p className=" text-sm ">First unlock date</p>
+      <input
+        type="date"
+        style={{ color: 'black' }}
+        onChange={handleSetFirstUnlock} />
+      <p className=" text-sm ">Number of unlocks</p>
+      <input
+        type="number"
+        style={{ color: 'black' }}
+        value={numPeriods ? numPeriods.toString() : ''}
+        onChange={handleSetNumPeriods} />
       <p className=" text-sm ">
-        Owner : {owner ? owner.toString() : 'Invalid owner'}
-      </p>
-      <p className=" text-sm ">
-        Amount : {amount ? amount.toString() : 'Invalid amount'}
+        Schedule: {lock ? formatLockSummary(lock).map(
+          (x) => <p>{x}</p>
+        ) : 'Invalid schedule'}
       </p>
       {stakeAccounts && stakeAccounts.length > 0 && (
         <a
