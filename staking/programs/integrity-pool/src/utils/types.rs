@@ -24,14 +24,10 @@ impl BoolArray {
         self.data[byte] & (1 << bit) != 0
     }
 
-    pub fn set(&mut self, i: usize, value: bool) {
+    pub fn set(&mut self, i: usize) {
         let byte = i / 8;
         let bit = i % 8;
-        if value {
-            self.data[byte] |= 1 << bit;
-        } else {
-            self.data[byte] &= !(1 << bit);
-        }
+        self.data[byte] |= 1 << bit;
     }
 }
 
@@ -47,19 +43,15 @@ mod tests {
         let mut arr = BoolArray::new(10);
         for i in 0..10 {
             assert!(!arr.get(i));
-            arr.set(i, true);
+            arr.set(i);
             assert!(arr.get(i));
-            arr.set(i, false);
-            assert!(!arr.get(i));
         }
 
         let mut arr = BoolArray::new(MAX_CAPS);
         for i in 0..MAX_CAPS {
             assert!(!arr.get(i));
-            arr.set(i, true);
+            arr.set(i);
             assert!(arr.get(i));
-            arr.set(i, false);
-            assert!(!arr.get(i));
         }
     }
 }

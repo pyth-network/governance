@@ -206,7 +206,7 @@ impl PoolData {
 
             let publisher_cap = match cap_index {
                 Ok(cap_index) => {
-                    existing_publishers.set(cap_index, true);
+                    existing_publishers.set(cap_index);
                     publisher_caps.caps[cap_index].cap
                 }
                 Err(_) => 0,
@@ -282,7 +282,7 @@ impl PoolData {
         publisher_caps: &PublisherCaps,
     ) -> Result<usize> {
         if *publisher == Pubkey::default() {
-            return Err(IntegrityPoolError::PublisherNotFound.into());
+            return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
         }
         publisher_caps
             .caps
