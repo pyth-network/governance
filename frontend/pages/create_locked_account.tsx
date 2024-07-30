@@ -23,9 +23,7 @@ function formatLockSummary(lock: {
 }): string[] {
   const lockSummary = getLockSummary(lock, null);
   if (lockSummary.schedule) {
-    const rows = lockSummary.schedule.map((x) => {
-      return ` - ${x.amount.toString()} on ${new Date(Number(x.date) * 1000).toDateString()}`
-    })
+    const rows = lockSummary.schedule.map((x) => ` - ${x.amount.toString()} on ${new Date(Number(x.date) * 1000).toDateString()}`)
     return rows
   }
   else {
