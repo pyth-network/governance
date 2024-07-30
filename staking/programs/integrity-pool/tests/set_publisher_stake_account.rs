@@ -47,6 +47,7 @@ fn test_set_publisher_stake_account() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -77,19 +78,20 @@ fn test_set_publisher_stake_account() {
     );
 
     // now the actual publisher signs
-    assert!(set_publisher_stake_account(
+    set_publisher_stake_account(
         &mut svm,
         &payer,
         &publisher_keypair,
         publisher_keypair.pubkey(),
         None,
-        stake_account_positions
+        stake_account_positions,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
     assert_eq!(
-        pool_data.publisher_stake_accounts[0],
+        pool_data.publisher_stake_accounts[publisher_index],
         stake_account_positions,
     );
 
@@ -160,19 +162,19 @@ fn test_set_publisher_stake_account() {
 
 
     // owner can change it
-    assert!(set_publisher_stake_account(
+    set_publisher_stake_account(
         &mut svm,
         &payer,
         &payer,
         publisher_keypair.pubkey(),
         Some(stake_account_positions),
-        stake_account_positions_2
+        stake_account_positions_2,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.publisher_stake_accounts[0],
+        pool_data.publisher_stake_accounts[publisher_index],
         stake_account_positions_2,
     );
 
@@ -217,25 +219,34 @@ fn test_set_publisher_stake_account() {
     // test the interactions between set_publisher_stake_account and delegate/undelegate
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 100,
             negative_delta_delegation: 0,
         }
     ); // stake_account_positions_3
-    assert_eq!(pool_data.prev_del_state[0], DelegationState::default());
     assert_eq!(
-        pool_data.self_del_state[0],
+        pool_data.prev_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 90,
             negative_delta_delegation: 0,
         }
     ); // stake_account_positions_2
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -243,7 +254,7 @@ fn test_set_publisher_stake_account() {
     }
 
     // now the self delegated account undelegates
-    assert!(advance_delegation_record(
+    advance_delegation_record(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -251,39 +262,49 @@ fn test_set_publisher_stake_account() {
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
     )
-    .is_ok());
-    assert!(undelegate(
+    .unwrap();
+
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
         pool_data_pubkey,
         stake_account_positions_2,
         0,
-        1
+        1,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 100,
             negative_delta_delegation: 0,
         }
     ); // stake_account_positions_3
-    assert_eq!(pool_data.prev_del_state[0], DelegationState::default());
     assert_eq!(
-        pool_data.self_del_state[0],
+        pool_data.prev_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 89,
             negative_delta_delegation: 0,
         }
     ); // stake_account_positions_2
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -293,9 +314,9 @@ fn test_set_publisher_stake_account() {
     // new epoch
     advance_n_epochs(&mut svm, &payer, 1);
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    assert!(advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).is_ok());
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
-    assert!(advance_delegation_record(
+    advance_delegation_record(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -303,21 +324,22 @@ fn test_set_publisher_stake_account() {
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
     )
-    .is_ok());
-    assert!(undelegate(
+    .unwrap();
+
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
         pool_data_pubkey,
         stake_account_positions_2,
         0,
-        9
+        9,
     )
-    .is_ok());
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          100,
             positive_delta_delegation: 0,
@@ -325,7 +347,7 @@ fn test_set_publisher_stake_account() {
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 100,
@@ -333,7 +355,7 @@ fn test_set_publisher_stake_account() {
         }
     );
     assert_eq!(
-        pool_data.self_del_state[0],
+        pool_data.self_del_state[publisher_index],
         DelegationState {
             total_delegation:          89,
             positive_delta_delegation: 0,
@@ -341,7 +363,7 @@ fn test_set_publisher_stake_account() {
         }
     ); // stake_account_positions_2
     assert_eq!(
-        pool_data.prev_self_del_state[0],
+        pool_data.prev_self_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 89,
@@ -349,7 +371,10 @@ fn test_set_publisher_stake_account() {
         }
     );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -360,11 +385,11 @@ fn test_set_publisher_stake_account() {
     // new epoch
     advance_n_epochs(&mut svm, &payer, 1);
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    assert!(advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).is_ok());
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          100,
             positive_delta_delegation: 0,
@@ -372,7 +397,7 @@ fn test_set_publisher_stake_account() {
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          100,
             positive_delta_delegation: 0,
@@ -380,7 +405,7 @@ fn test_set_publisher_stake_account() {
         }
     );
     assert_eq!(
-        pool_data.self_del_state[0],
+        pool_data.self_del_state[publisher_index],
         DelegationState {
             total_delegation:          80,
             positive_delta_delegation: 0,
@@ -388,7 +413,7 @@ fn test_set_publisher_stake_account() {
         }
     ); // stake_account_positions_2
     assert_eq!(
-        pool_data.prev_self_del_state[0],
+        pool_data.prev_self_del_state[publisher_index],
         DelegationState {
             total_delegation:          89,
             positive_delta_delegation: 0,
@@ -396,7 +421,10 @@ fn test_set_publisher_stake_account() {
         }
     );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());

@@ -53,6 +53,7 @@ fn test_delegate() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -89,19 +90,32 @@ fn test_delegate() {
     assert_eq!(pos0.unlocking_start, None);
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 100,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.prev_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.prev_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -180,18 +194,30 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 50,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.prev_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.prev_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -233,7 +259,7 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          50,
             positive_delta_delegation: 0,
@@ -241,17 +267,26 @@ fn test_delegate() {
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 50,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -304,7 +339,7 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          50,
             positive_delta_delegation: 0,
@@ -312,17 +347,26 @@ fn test_delegate() {
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          0,
             positive_delta_delegation: 50,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -336,7 +380,7 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
@@ -344,17 +388,26 @@ fn test_delegate() {
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -385,7 +438,7 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
@@ -393,17 +446,26 @@ fn test_delegate() {
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
@@ -435,7 +497,7 @@ fn test_delegate() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
-        pool_data.del_state[0],
+        pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
@@ -443,17 +505,26 @@ fn test_delegate() {
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[0],
+        pool_data.prev_del_state[publisher_index],
         DelegationState {
             total_delegation:          20,
             positive_delta_delegation: 0,
             negative_delta_delegation: 0,
         }
     );
-    assert_eq!(pool_data.self_del_state[0], DelegationState::default());
-    assert_eq!(pool_data.prev_self_del_state[0], DelegationState::default());
+    assert_eq!(
+        pool_data.self_del_state[publisher_index],
+        DelegationState::default()
+    );
+    assert_eq!(
+        pool_data.prev_self_del_state[publisher_index],
+        DelegationState::default()
+    );
 
-    for i in 1..MAX_PUBLISHERS {
+    for i in 0..MAX_PUBLISHERS {
+        if i == publisher_index {
+            continue;
+        }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());

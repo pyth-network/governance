@@ -5,7 +5,6 @@ use {
         state::event::PublisherEventData,
         utils::{
             clock::{
-                get_current_epoch,
                 time_to_epoch,
                 UNLOCKING_DURATION,
             },
@@ -15,6 +14,7 @@ use {
             },
             types::{
                 frac64,
+                BoolArray,
                 FRAC_64_MULTIPLIER_U128,
             },
         },
@@ -25,7 +25,10 @@ use {
         Pod,
         Zeroable,
     },
-    publisher_caps::PublisherCaps,
+    publisher_caps::{
+        PublisherCaps,
+        MAX_CAPS,
+    },
     staking::state::positions::{
         PositionState,
         TargetWithParameters,
@@ -87,10 +90,11 @@ impl PoolData {
         self.events.get(index % MAX_EVENTS).unwrap()
     }
 
+    // calculate the reward in pyth with decimals
     pub fn calculate_reward_for_event(
         &self,
         event: &Event,
-        amount: u64,
+        amount: frac64, // in pyth with decimals
         stake_account_positions_key: &Pubkey,
         publisher_index: usize,
     ) -> Result<frac64> {
@@ -101,10 +105,12 @@ impl PoolData {
                 event.event_data[publisher_index].other_reward_ratio
             };
         let reward_rate = u128::from(event.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
-        let reward_amount: frac64 = (u128::from(amount) * reward_rate).try_into()?;
+        let reward_amount: frac64 =
+            (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
         Ok(reward_amount)
     }
 
+    // calculate the reward in pyth with decimals
     pub fn calculate_reward(
         &self,
         from_epoch: u64,
@@ -112,9 +118,9 @@ impl PoolData {
         positions: Ref<staking::state::positions::PositionData>,
         publisher: &Pubkey,
         pool_authority: &Pubkey,
+        current_epoch: u64,
     ) -> Result<frac64> {
-        self.assert_up_to_date()?;
-
+        self.assert_up_to_date(current_epoch)?;
 
         let publisher_index = self.get_publisher_index(publisher)?;
         let mut last_event_index: usize = self.num_events as usize;
@@ -165,8 +171,14 @@ impl PoolData {
         Ok(reward)
     }
 
-    pub fn advance(&mut self, publisher_caps: &PublisherCaps, y: frac64) -> Result<()> {
-        let current_epoch = get_current_epoch()?;
+
+    pub fn advance(
+        &mut self,
+        publisher_caps: &PublisherCaps,
+        y: frac64,
+        current_epoch: u64,
+    ) -> Result<()> {
+        let mut existing_publishers = BoolArray::new(MAX_CAPS);
 
         require_gt!(
             current_epoch,
@@ -179,19 +191,36 @@ impl PoolData {
             IntegrityPoolError::OutdatedPublisherCaps
         );
 
-        for publisher_cap in publisher_caps.caps.iter() {
-            if self.get_publisher_index(&publisher_cap.pubkey).is_err() {
-                self.add_publisher(&publisher_cap.pubkey)?;
-            }
+        for epoch in self.last_updated_epoch..current_epoch {
+            let event =
+                self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize);
+            event.epoch = epoch;
+            event.y = y;
         }
 
-        // create the reward event for last_updated_epoch using current del_state before updating
-        // which corresponds to del_state at the last_updated_epoch
-        self.create_reward_event(publisher_caps, y, self.last_updated_epoch)?;
-
         let epochs_passed = current_epoch - self.last_updated_epoch;
+        let mut i = 0;
 
-        for i in 0..MAX_PUBLISHERS {
+        while i < MAX_PUBLISHERS && self.publishers[i] != Pubkey::default() {
+            let cap_index = Self::get_publisher_cap_index(&self.publishers[i], publisher_caps);
+
+            let publisher_cap = match cap_index {
+                Ok(cap_index) => {
+                    existing_publishers.set(cap_index);
+                    publisher_caps.caps[cap_index].cap
+                }
+                Err(_) => 0,
+            };
+
+            // create the reward event for last_updated_epoch using current del_state before
+            // updating which corresponds to del_state at the last_updated_epoch
+            self.create_reward_events_for_publisher(
+                self.last_updated_epoch,
+                self.last_updated_epoch + 1,
+                i,
+                publisher_cap,
+            )?;
+
             let (next_del_state, next_self_del_state) = (
                 DelegationState {
                     total_delegation:          self.del_state[i].total_delegation
@@ -221,35 +250,56 @@ impl PoolData {
             }
             self.del_state[i] = next_del_state;
             self.self_del_state[i] = next_self_del_state;
+
+            // for every event that was missed, create a reward event using del_state after update
+            // which corresponds to the del_state of all the epochs after last_updated_epoch
+            self.create_reward_events_for_publisher(
+                self.last_updated_epoch + 1,
+                current_epoch,
+                i,
+                publisher_cap,
+            )?;
+
+            i += 1;
         }
 
-        // for every event that was missed, create a reward event using del_state after update
-        // which corresponds to the del_state of all the epochs after last_updated_epoch
-        for epoch in self.last_updated_epoch + 1..current_epoch {
-            self.create_reward_event(publisher_caps, y, epoch)?;
+        for j in 0..(publisher_caps.num_publishers as usize) {
+            // Silently ignore if there are more publishers than MAX_PUBLISHERS
+            if !existing_publishers.get(j) && i < MAX_PUBLISHERS {
+                self.publishers[i] = publisher_caps.caps[j].pubkey;
+                i += 1;
+            }
         }
+
         self.num_events += epochs_passed;
         self.last_updated_epoch = current_epoch;
 
         Ok(())
     }
 
-    pub fn create_reward_event(
-        &mut self,
+    fn get_publisher_cap_index(
+        publisher: &Pubkey,
         publisher_caps: &PublisherCaps,
-        y: frac64,
-        epoch: u64,
+    ) -> Result<usize> {
+        if *publisher == Pubkey::default() {
+            return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
+        }
+        publisher_caps
+            .caps
+            .binary_search_by_key(&publisher, |cap| &cap.pubkey)
+            .map_err(|_| IntegrityPoolError::PublisherNotFound.into())
+    }
+
+    pub fn create_reward_events_for_publisher(
+        &mut self,
+        epoch_from: u64,
+        epoch_to: u64,
+        publisher_index: usize,
+        publisher_cap: u64,
     ) -> Result<()> {
-        let event =
-            self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize);
-        event.epoch = epoch;
-        event.y = y;
-
-        for publisher_cap in publisher_caps.caps.iter() {
-            let publisher_index = self.get_publisher_index(&publisher_cap.pubkey)?;
-
+        for epoch in epoch_from..epoch_to {
             let self_delegation = self.self_del_state[publisher_index].total_delegation;
-            let self_eligible_delegation = min(publisher_cap.cap, self_delegation);
+            let self_eligible_delegation = min(publisher_cap, self_delegation);
             // the order of the operation matters to avoid floating point precision issues
             let self_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
                 * u128::from(self_eligible_delegation))
@@ -258,10 +308,8 @@ impl PoolData {
             .try_into()?;
 
             let other_delegation = self.del_state[publisher_index].total_delegation;
-            let other_eligible_delegation = min(
-                publisher_cap.cap - self_eligible_delegation,
-                other_delegation,
-            );
+            let other_eligible_delegation =
+                min(publisher_cap - self_eligible_delegation, other_delegation);
             // the order of the operation matters to avoid floating point precision issues
             let other_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
                 * u128::from(other_eligible_delegation))
@@ -287,24 +335,15 @@ impl PoolData {
         err!(IntegrityPoolError::PublisherNotFound)
     }
 
-    pub fn add_publisher(&mut self, publisher: &Pubkey) -> Result<()> {
-        for i in 0..MAX_PUBLISHERS {
-            if self.publishers[i] == Pubkey::default() {
-                self.publishers[i] = *publisher;
-                return Ok(());
-            }
-        }
-        Err(IntegrityPoolError::TooManyPublishers.into())
-    }
-
     pub fn add_delegation(
         &mut self,
         publisher: &Pubkey,
         stake_account_positions_key: &Pubkey,
         amount: u64,
+        current_epoch: u64,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        self.assert_up_to_date()?;
+        self.assert_up_to_date(current_epoch)?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             self.self_del_state[index].positive_delta_delegation += amount;
@@ -320,9 +359,10 @@ impl PoolData {
         stake_account_positions_key: &Pubkey,
         amount: u64,
         position_state: PositionState,
+        current_epoch: u64,
     ) -> Result<()> {
         let index = self.get_publisher_index(publisher)?;
-        self.assert_up_to_date()?;
+        self.assert_up_to_date(current_epoch)?;
 
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             match position_state {
@@ -350,10 +390,10 @@ impl PoolData {
         Ok(())
     }
 
-    pub fn assert_up_to_date(&self) -> Result<()> {
+    pub fn assert_up_to_date(&self, current_epoch: u64) -> Result<()> {
         require_eq!(
             self.last_updated_epoch,
-            get_current_epoch()?,
+            current_epoch,
             IntegrityPoolError::OutdatedPublisherAccounting
         );
         Ok(())
@@ -377,11 +417,13 @@ impl PoolConfig {
 mod tests {
     use {
         super::*,
+        crate::utils::types::FRAC_64_MULTIPLIER,
         anchor_lang::Discriminator,
         publisher_caps::{
             PublisherCap,
             MAX_CAPS,
         },
+        std::cell::RefCell,
     };
 
     #[test]
@@ -417,6 +459,242 @@ mod tests {
     }
 
     #[test]
+    fn test_calculate_reward_for_event() {
+        let mut pool_data = PoolData {
+            last_updated_epoch:       2,
+            publishers:               [Pubkey::default(); MAX_PUBLISHERS],
+            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
+            del_state:                [DelegationState::default(); MAX_PUBLISHERS],
+            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
+            self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
+            publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
+            events:                   [Event::default(); MAX_EVENTS],
+            num_events:               0,
+        };
+
+        let event = Event {
+            epoch:      1,
+            y:          FRAC_64_MULTIPLIER / 10, // 10%
+            event_data: [PublisherEventData {
+                self_reward_ratio:  FRAC_64_MULTIPLIER,     // 1
+                other_reward_ratio: FRAC_64_MULTIPLIER / 2, // 1/2
+            }; MAX_PUBLISHERS],
+        };
+
+        let publisher_key = Pubkey::new_unique();
+        pool_data.publisher_stake_accounts[0] = publisher_key;
+
+        let reward_publisher: frac64 = pool_data
+            .calculate_reward_for_event(&event, 100 * FRAC_64_MULTIPLIER, &publisher_key, 0)
+            .unwrap();
+
+        // 100 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 10 PYTH
+        assert_eq!(reward_publisher, 10 * FRAC_64_MULTIPLIER);
+
+
+        let reward_other: frac64 = pool_data
+            .calculate_reward_for_event(&event, 100 * FRAC_64_MULTIPLIER, &Pubkey::new_unique(), 0)
+            .unwrap();
+
+        // 100 PYTH (amount) * 1/2 (other_reward_ratio) * 10% (y) = 5 PYTH
+        assert_eq!(reward_other, 5 * FRAC_64_MULTIPLIER);
+
+        // check for overflow
+        let max_pyth = 1e16 as u64;
+        let reward_publisher: frac64 = pool_data
+            .calculate_reward_for_event(&event, max_pyth, &publisher_key, 0)
+            .unwrap();
+
+        assert_eq!(reward_publisher, max_pyth / 10);
+    }
+
+    #[test]
+    fn test_calculate_reward() {
+        let mut pool_data = PoolData {
+            last_updated_epoch:       2,
+            publishers:               [Pubkey::default(); MAX_PUBLISHERS],
+            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
+            del_state:                [DelegationState::default(); MAX_PUBLISHERS],
+            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
+            self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
+            publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
+            events:                   [Event::default(); MAX_EVENTS],
+            num_events:               0,
+        };
+
+        let pool_authority = Pubkey::new_unique();
+        let publisher_key = Pubkey::new_unique();
+        let publisher_index = 123;
+        pool_data.publisher_stake_accounts[publisher_index] = publisher_key;
+        pool_data.publishers[publisher_index] = publisher_key;
+
+
+        let mut event = Event {
+            epoch:      1,
+            y:          FRAC_64_MULTIPLIER / 10, // 10%
+            event_data: [PublisherEventData::default(); MAX_PUBLISHERS],
+        };
+
+        event.event_data[publisher_index] = PublisherEventData {
+            self_reward_ratio:  FRAC_64_MULTIPLIER,     // 1
+            other_reward_ratio: FRAC_64_MULTIPLIER / 2, // 1/2
+        };
+
+        for i in 0..10 {
+            pool_data.events[i] = event;
+            pool_data.events[i].epoch = (i + 1) as u64;
+        }
+
+        let mut positions = staking::state::positions::PositionData::default();
+        // this position should be ignored (wrong target)
+        positions
+            .write_position(
+                0,
+                &staking::state::positions::Position {
+                    activation_epoch:       1,
+                    amount:                 12 * FRAC_64_MULTIPLIER,
+                    target_with_parameters: TargetWithParameters::Voting,
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
+        // this position should be ignored (wrong publisher)
+        positions
+            .write_position(
+                1,
+                &staking::state::positions::Position {
+                    activation_epoch:       1,
+                    amount:                 23 * FRAC_64_MULTIPLIER,
+                    target_with_parameters: TargetWithParameters::IntegrityPool {
+                        pool_authority,
+                        publisher: Pubkey::new_unique(),
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
+        // this position should be ignored (wrong pool_authority)
+        positions
+            .write_position(
+                2,
+                &staking::state::positions::Position {
+                    activation_epoch:       1,
+                    amount:                 34 * FRAC_64_MULTIPLIER,
+                    target_with_parameters: TargetWithParameters::IntegrityPool {
+                        pool_authority: Pubkey::new_unique(),
+                        publisher:      publisher_key,
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
+        // this position should be included from epoch 1
+        positions
+            .write_position(
+                3,
+                &staking::state::positions::Position {
+                    activation_epoch:       1,
+                    amount:                 40 * FRAC_64_MULTIPLIER,
+                    target_with_parameters: TargetWithParameters::IntegrityPool {
+                        pool_authority,
+                        publisher: publisher_key,
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
+        // this position should be included from epoch 2
+        positions
+            .write_position(
+                4,
+                &staking::state::positions::Position {
+                    activation_epoch:       2,
+                    amount:                 60 * FRAC_64_MULTIPLIER,
+                    target_with_parameters: TargetWithParameters::IntegrityPool {
+                        pool_authority,
+                        publisher: publisher_key,
+                    },
+                    unlocking_start:        None,
+                },
+            )
+            .unwrap();
+
+        pool_data.last_updated_epoch = 2;
+        pool_data.num_events = 1;
+        let publisher_reward = pool_data
+            .calculate_reward(
+                1,
+                &publisher_key,
+                RefCell::new(positions).borrow(),
+                &publisher_key,
+                &pool_authority,
+                2,
+            )
+            .unwrap();
+
+        // 40 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 4 PYTH
+        assert_eq!(publisher_reward, 4 * FRAC_64_MULTIPLIER);
+
+        pool_data.num_events = 2;
+        pool_data.last_updated_epoch = 3;
+        let publisher_reward = pool_data
+            .calculate_reward(
+                2,
+                &publisher_key,
+                RefCell::new(positions).borrow(),
+                &publisher_key,
+                &pool_authority,
+                3,
+            )
+            .unwrap();
+
+        // 40 + 60 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 10 PYTH
+        assert_eq!(publisher_reward, 10 * FRAC_64_MULTIPLIER);
+
+        pool_data.num_events = 10;
+        pool_data.last_updated_epoch = 11;
+        let publisher_reward = pool_data
+            .calculate_reward(
+                1,
+                &publisher_key,
+                RefCell::new(positions).borrow(),
+                &publisher_key,
+                &pool_authority,
+                11,
+            )
+            .unwrap();
+
+        assert_eq!(publisher_reward, 94 * FRAC_64_MULTIPLIER);
+
+
+        // test many events
+        pool_data.num_events = 100;
+        pool_data.last_updated_epoch = 101;
+        for i in 0..MAX_EVENTS {
+            pool_data.events[i] = event;
+        }
+        for i in 0..100 {
+            pool_data.get_event_mut(i).epoch = (i + 1) as u64;
+        }
+
+        let publisher_reward = pool_data
+            .calculate_reward(
+                1,
+                &publisher_key,
+                RefCell::new(positions).borrow(),
+                &publisher_key,
+                &pool_authority,
+                101,
+            )
+            .unwrap();
+
+        assert_eq!(
+            publisher_reward,
+            (MAX_EVENTS as u64) * 10 * FRAC_64_MULTIPLIER
+        );
+    }
+
+    #[test]
     fn test_reward_events() {
         let publisher_1 = Pubkey::new_unique();
         let mut pool_data = PoolData {
@@ -439,24 +717,16 @@ mod tests {
         caps[0].pubkey = publisher_1;
         caps[0].cap = 150;
 
-        for cap in caps.iter() {
-            pool_data.add_publisher(&cap.pubkey).unwrap();
-        }
-
         pool_data.self_del_state[0].total_delegation = 100;
         pool_data.del_state[0].total_delegation = 100;
 
-        let publisher_caps = PublisherCaps {
-            timestamp: 0,
-            num_publishers: 1,
-            caps,
-        };
-        pool_data
-            .create_reward_event(&publisher_caps, 10, 1)
-            .unwrap();
+        for (index, cap) in caps.iter().enumerate() {
+            pool_data.publishers[index] = cap.pubkey;
+            pool_data
+                .create_reward_events_for_publisher(1, 2, index, cap.cap)
+                .unwrap();
+        }
 
-        assert_eq!(pool_data.events[0].epoch, 1);
-        assert_eq!(pool_data.events[0].y, 10);
         assert_eq!(
             pool_data.events[0].event_data[0].self_reward_ratio,
             1_000_000
@@ -489,25 +759,16 @@ mod tests {
 
         caps[0].pubkey = publisher_1;
         caps[0].cap = 2e18 as u64;
-
-        for cap in caps.iter() {
-            pool_data.add_publisher(&cap.pubkey).unwrap();
-        }
-
         pool_data.self_del_state[0].total_delegation = 1e18 as u64;
         pool_data.del_state[0].total_delegation = 2e18 as u64;
 
-        let publisher_caps = PublisherCaps {
-            timestamp: 0,
-            num_publishers: 1,
-            caps,
-        };
-        pool_data
-            .create_reward_event(&publisher_caps, 10, 1)
-            .unwrap();
+        for (index, cap) in caps.iter().enumerate() {
+            pool_data.publishers[index] = cap.pubkey;
+            pool_data
+                .create_reward_events_for_publisher(1, 2, index, cap.cap)
+                .unwrap();
+        }
 
-        assert_eq!(pool_data.events[0].epoch, 1);
-        assert_eq!(pool_data.events[0].y, 10);
         assert_eq!(
             pool_data.events[0].event_data[0].self_reward_ratio,
             1_000_000

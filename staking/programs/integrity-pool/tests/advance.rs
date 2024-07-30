@@ -12,10 +12,7 @@ use {
             MAX_PUBLISHERS,
         },
     },
-    publisher_caps::{
-        get_dummy_publisher,
-        MAX_CAPS,
-    },
+    publisher_caps::get_dummy_publisher,
     solana_sdk::{
         pubkey::Pubkey,
         signer::Signer,
@@ -52,6 +49,7 @@ fn test_advance() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -62,12 +60,18 @@ fn test_advance() {
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
-    assert_eq!(pool_data.publishers[0], publisher_keypair.pubkey());
-    for i in 1..MAX_PUBLISHERS {
-        if i < MAX_CAPS {
-            assert_eq!(pool_data.publishers[i], get_dummy_publisher(i));
-        } else {
-            assert_eq!(pool_data.publishers[i], Pubkey::default());
+    let mut publisher_pubkeys = (1..MAX_PUBLISHERS)
+        .map(get_dummy_publisher)
+        .collect::<Vec<Pubkey>>();
+    publisher_pubkeys.sort();
+
+    for i in 0..MAX_PUBLISHERS {
+        match i {
+            i if i < publisher_index => assert_eq!(pool_data.publishers[i], publisher_pubkeys[i]),
+            i if i > publisher_index => {
+                assert_eq!(pool_data.publishers[i], publisher_pubkeys[i - 1])
+            }
+            _ => (),
         }
     }
     assert_eq!(pool_data.last_updated_epoch, 2);
@@ -99,6 +103,7 @@ fn test_advance_reward_events() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
+        publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -159,16 +164,22 @@ fn test_advance_reward_events() {
     assert_eq!(pool_data.events[2].epoch, 3);
     assert_eq!(pool_data.events[2].y, YIELD);
     assert_eq!(
-        pool_data.events[2].event_data[0].other_reward_ratio,
+        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
         1_000_000
     );
-    assert_eq!(pool_data.events[2].event_data[0].self_reward_ratio, 0);
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
+        0
+    );
     for i in 3..11 {
         assert_eq!(
-            pool_data.events[i].event_data[0].other_reward_ratio,
+            pool_data.events[i].event_data[publisher_index].other_reward_ratio,
             500_000,
         );
-        assert_eq!(pool_data.events[i].event_data[0].self_reward_ratio, 0);
+        assert_eq!(
+            pool_data.events[i].event_data[publisher_index].self_reward_ratio,
+            0
+        );
         assert_eq!(pool_data.events[i].epoch, 1 + i as u64);
         assert_eq!(pool_data.events[i].y, YIELD);
     }
