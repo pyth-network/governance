@@ -9,9 +9,6 @@ import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
-const TWELVE_MONTHS = new BN(3600 * 24 * 365)
-const NUM_PERIODS = new BN(4)
-
 function formatLockSummary(lock: {
   periodicVesting:
   {
@@ -59,7 +56,7 @@ const CreateLockedAccount: NextPage = () => {
   }, [owner])
 
   useEffect(() => {
-    if (amount && startDate && firstUnlock && numPeriods) {
+    if (amount && startDate && firstUnlock && numPeriods && firstUnlock.getTime() > startDate.getTime()) {
       setLock({
         periodicVesting: {
           initialBalance: amount.toBN(),
@@ -89,27 +86,23 @@ const CreateLockedAccount: NextPage = () => {
     }
   }
 
-  const handleSetDate = (event: any) => {
-    try {
+  const handleSetStartDate = (event: any) => {
       setStartDate(new Date(event.target.value))
-    }
-    catch (e) {
-      setStartDate(undefined)
-    }
   }
 
   const handleSetFirstUnlock = (event: any) => {
-    try {
       setFirstUnlock(new Date(event.target.value))
-    }
-    catch (e) {
-      setFirstUnlock(undefined)
-    }
   }
 
   const handleSetNumPeriods = (event: any) => {
     try {
-      setNumPeriods(new BN(event.target.value))
+      const numPeriods = new BN(event.target.value)
+      if (numPeriods.gte(new BN(1))){
+        setNumPeriods(new BN(event.target.value))
+      } else{
+        setNumPeriods(undefined)
+      }
+
     } catch (e) {
       setNumPeriods(undefined)
     }
@@ -170,7 +163,7 @@ const CreateLockedAccount: NextPage = () => {
       <input
         type="date"
         style={{ color: 'black' }}
-        onChange={handleSetDate} />
+        onChange={handleSetStartDate} />
       <p className=" text-sm ">First unlock date</p>
       <input
         type="date"
