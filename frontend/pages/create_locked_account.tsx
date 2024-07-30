@@ -98,7 +98,7 @@ const CreateLockedAccount: NextPage = () => {
     try {
       const numPeriods = new BN(event.target.value)
       if (numPeriods.gte(new BN(1))){
-        setNumPeriods(new BN(event.target.value))
+        setNumPeriods(numPeriods)
       } else{
         setNumPeriods(undefined)
       }
