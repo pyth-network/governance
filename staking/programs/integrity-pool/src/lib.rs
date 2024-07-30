@@ -9,10 +9,7 @@ use {
             UNLOCKING_DURATION,
         },
         constants::POOL_CONFIG,
-        types::{
-            frac64,
-            FRAC_64_MULTIPLIER,
-        },
+        types::frac64,
     },
 };
 
@@ -228,7 +225,8 @@ pub mod integrity_pool {
         let token_program = &ctx.accounts.token_program;
         let publisher = &ctx.accounts.publisher;
 
-        let reward_amount_frac: frac64 = pool_data.calculate_reward(
+        // reward amount in PYTH with decimals
+        let reward_amount: frac64 = pool_data.calculate_reward(
             delegation_record.last_epoch,
             &stake_account_positions.key(),
             positions,
@@ -237,7 +235,6 @@ pub mod integrity_pool {
             get_current_epoch()?,
         )?;
 
-        let reward_amount: u64 = reward_amount_frac / FRAC_64_MULTIPLIER;
         // reward is less than a unit, no need to transfer
         if reward_amount == 0 {
             delegation_record.advance(get_current_epoch()?)?;
