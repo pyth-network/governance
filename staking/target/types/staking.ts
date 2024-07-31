@@ -1349,6 +1349,119 @@ export type Staking = {
       ]
     },
     {
+      "name": "slashAccount",
+      "discriminator": [
+        185,
+        97,
+        8,
+        208,
+        118,
+        205,
+        166,
+        2
+      ],
+      "accounts": [
+        {
+          "name": "poolAuthority"
+        },
+        {
+          "name": "stakeAccountPositions",
+          "writable": true
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakeAccountCustody",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "targetAccount",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "targetWithParameters",
+          "type": {
+            "defined": {
+              "name": "targetWithParameters"
+            }
+          }
+        },
+        {
+          "name": "slashRatio",
+          "type": "u64"
+        }
+      ],
+      "returns": "u64"
+    },
+    {
       "name": "updateAgreementHash",
       "discriminator": [
         86,

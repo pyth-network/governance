@@ -436,3 +436,39 @@ pub struct RecoverAccount<'info> {
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
 }
+
+#[derive(Accounts)]
+#[instruction(target_with_parameters: positions::TargetWithParameters, slash_ratio: u64)]
+pub struct SlashAccount<'info> {
+    /// CHECK: TODO make this signer
+    pool_authority: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.metadata_bump,
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+            seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+            bump = stake_account_metadata.custody_bump,
+        )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
+        bump = target_account.bump
+    )]
+    pub target_account: Account<'info, target::TargetMetadata>,
+    // transfer the slashed amount to this account
+    // #[account(mut)]
+    // pub destination: Account<'info, TokenAccount>,
+}
