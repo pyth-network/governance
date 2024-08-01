@@ -49,7 +49,7 @@ fn test_staking_slash() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index,
+        publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
