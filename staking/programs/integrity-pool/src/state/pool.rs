@@ -284,8 +284,7 @@ impl PoolData {
         if *publisher == Pubkey::default() {
             return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
         }
-        publisher_caps
-            .get_caps()
+        publisher_caps.get_caps()[..publisher_caps.num_publishers() as usize]
             .binary_search_by_key(&publisher, |cap| &cap.pubkey)
             .map_err(|_| IntegrityPoolError::PublisherNotFound.into())
     }
