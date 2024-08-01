@@ -51,6 +51,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use utils::risk::calculate_governance_exposure;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -728,27 +729,52 @@ pub mod staking {
         // a number between 0 and 1 with 6 decimals of precision
         // TODO: use fract64 instead of u64
         slash_ratio: u64,
-    ) -> Result<u64> {
+    ) -> Result<(u64, u64, u64)> {
+        require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
+
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
 
-        let mut total_slashed = 0;
+        let current_epoch = get_current_epoch(&ctx.accounts.config)?;
+        let unlocking_duration = ctx.accounts.config.unlocking_duration;
+
+        let mut locked_slashed = 0;
+        let mut unlocking_slashed = 0;
+        let mut preunlocking_slashed = 0;
 
         let mut i: usize = 0;
         while i < usize::from(*next_index) {
-            msg!("i: {}", i);
             let position = stake_account_positions.read_position(i)?;
 
             if let Some(position_data) = position {
-                if position_data.target_with_parameters == target_with_parameters {
+                let prev_state =
+                    position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
+                let current_state =
+                    position_data.get_current_position(current_epoch, unlocking_duration)?;
+                if position_data.target_with_parameters == target_with_parameters
+                    && (prev_state == PositionState::LOCKED
+                        || prev_state == PositionState::PREUNLOCKING)
+                {
                     let amount = position_data.amount;
                     // TODO: use constants
                     let to_slash: u64 =
-                        ((u128::from(amount) * u128::from(slash_ratio) + 1_000_000 - 1)
-                            / 1_000_000)
-                            .try_into()?;
+                        ((u128::from(amount) * u128::from(slash_ratio)) / 1_000_000).try_into()?;
                     let remaining = amount - to_slash;
-                    total_slashed += to_slash;
+
+                    match current_state {
+                        PositionState::LOCKED => {
+                            locked_slashed += to_slash;
+                        }
+                        PositionState::UNLOCKING => {
+                            unlocking_slashed += to_slash;
+                        }
+                        PositionState::PREUNLOCKING => {
+                            preunlocking_slashed += to_slash;
+                        }
+                        _ => {
+                            return Err(error!(ErrorCode::InvalidPosition));
+                        }
+                    }
 
                     if remaining == 0 {
                         stake_account_positions.make_none(i, next_index)?;
@@ -770,44 +796,29 @@ pub mod staking {
         }
 
         let total_amount = ctx.accounts.stake_account_custody.amount;
-        let mut governance_exposure: u64 = 0;
+        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
 
-        for i in 0..(*next_index as usize) {
-            msg!("2i: {}", i);
-            if let Some(position) = stake_account_positions.read_position(i)? {
-                if matches!(
-                    position.target_with_parameters,
-                    TargetWithParameters::Voting
-                ) {
-                    governance_exposure = governance_exposure
-                        .checked_add(position.amount)
-                        .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
-                }
-            }
-        }
-
-        if governance_exposure + total_slashed > total_amount {
-            let mut remaining = governance_exposure + total_slashed - total_amount;
+        let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
+        if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
+        {
             let mut i = 0;
             while i < usize::from(*next_index) && remaining > 0 {
-                msg!("3i: {}", i);
                 if let Some(position) = stake_account_positions.read_position(i)? {
                     if matches!(
                         position.target_with_parameters,
                         TargetWithParameters::Voting
                     ) {
-                        let amount = position.amount;
-                        let to_slash = remaining.min(amount);
+                        let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
 
-                        if to_slash == amount {
+                        if to_slash == position.amount {
                             stake_account_positions.make_none(i, next_index)?;
                             continue;
                         } else {
                             stake_account_positions.write_position(
                                 i,
                                 &Position {
-                                    amount:                 amount - to_slash,
+                                    amount:                 position.amount - to_slash,
                                     target_with_parameters: position.target_with_parameters,
                                     activation_epoch:       position.activation_epoch,
                                     unlocking_start:        position.unlocking_start,
@@ -821,7 +832,7 @@ pub mod staking {
         }
 
 
-        Ok(total_slashed)
+        Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
     }
 
     // Hack to allow exporting the Position type in the IDL

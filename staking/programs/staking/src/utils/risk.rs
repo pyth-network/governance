@@ -3,6 +3,7 @@ use {
         state::positions::{
             PositionData,
             Target,
+            TargetWithParameters,
             MAX_POSITIONS,
         },
         ErrorCode::{
@@ -15,6 +16,23 @@ use {
     anchor_lang::prelude::*,
     std::cmp,
 };
+
+pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
+    let mut governance_exposure: u64 = 0;
+    for i in 0..MAX_POSITIONS {
+        if let Some(position) = positions.read_position(i)? {
+            if matches!(
+                position.target_with_parameters,
+                TargetWithParameters::Voting
+            ) {
+                governance_exposure = governance_exposure
+                    .checked_add(position.amount)
+                    .ok_or_else(|| error!(GenericOverflow))?;
+            }
+        }
+    }
+    Ok(governance_exposure)
+}
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted

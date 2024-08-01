@@ -16,6 +16,7 @@ use {
         TargetWithParameters,
     },
     utils::{
+        clock::advance_n_epochs,
         integrity_pool::{
             delegate::delegate,
             pool_data::get_pool_config_address,
@@ -105,6 +106,10 @@ fn test_staking_slash() {
 
     svm.send_transaction(create_position_tx).unwrap();
 
+    // initiate delegate at epoch N
+    // position will become LOCKED at epoch N+1
+    // at epoch N+2, we can slash epoch N+1
+    advance_n_epochs(&mut svm, &payer, 2);
 
     let slash_account_data = staking::instruction::SlashAccount {
         slash_ratio:            FRAC_64_MULTIPLIER / 2,

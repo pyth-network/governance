@@ -1458,8 +1458,7 @@ export type Staking = {
           "name": "slashRatio",
           "type": "u64"
         }
-      ],
-      "returns": "u64"
+      ]
     },
     {
       "name": "updateAgreementHash",
@@ -2307,6 +2306,11 @@ export type Staking = {
     },
     {
       "code": 6037,
+      "name": "invalidSlashRatio",
+      "msg": "The slash ratio should be between 0 and 1"
+    },
+    {
+      "code": 6038,
       "name": "other",
       "msg": "other"
     }
