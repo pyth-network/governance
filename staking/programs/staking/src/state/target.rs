@@ -85,6 +85,48 @@ impl TargetMetadata {
         Ok(x)
     }
 
+    // Subtracts the amount from locked immediately. This method is called when a governance
+    // position is reduced due to slashing.
+    pub fn sub_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.locked = self
+            .locked
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::NegativeBalance))?;
+        Ok(())
+    }
+
+    pub fn add_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.locked = self
+            .locked
+            .checked_add(amount)
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+        Ok(())
+    }
+
+    pub fn sub_locking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.delta_locked = self
+            .delta_locked
+            .checked_sub(amount.try_into().or(Err(ErrorCode::GenericOverflow))?)
+            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+        Ok(())
+    }
+
+    pub fn sub_prev_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.prev_epoch_locked = self
+            .prev_epoch_locked
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::NegativeBalance))?;
+        Ok(())
+    }
+
     // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
     // subtracts amount to delta_locked. This method needs to be called everytime a user requests to
     // create a new position.

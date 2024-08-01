@@ -733,6 +733,8 @@ pub mod staking {
         require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let governance_target_account = &mut ctx.accounts.governance_target_account;
+
         let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
 
         let current_epoch = get_current_epoch(&ctx.accounts.config)?;
@@ -804,12 +806,41 @@ pub mod staking {
             let mut i = 0;
             while i < usize::from(*next_index) && remaining > 0 {
                 if let Some(position) = stake_account_positions.read_position(i)? {
-                    if matches!(
-                        position.target_with_parameters,
-                        TargetWithParameters::Voting
-                    ) {
+                    let prev_state =
+                        position.get_current_position(current_epoch - 1, unlocking_duration)?;
+                    let current_state =
+                        position.get_current_position(current_epoch, unlocking_duration)?;
+
+                    if position.target_with_parameters == TargetWithParameters::Voting {
                         let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
+
+                        match prev_state {
+                            PositionState::LOCKED | PositionState::PREUNLOCKING => {
+                                governance_target_account
+                                    .sub_prev_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::LOCKING
+                            | PositionState::UNLOCKING
+                            | PositionState::UNLOCKED => {}
+                        }
+
+                        match current_state {
+                            PositionState::LOCKING => {
+                                governance_target_account.sub_locking(to_slash, current_epoch)?;
+                            }
+                            PositionState::LOCKED => {
+                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::PREUNLOCKING => {
+                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::UNLOCKING => {
+                                governance_target_account.add_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::UNLOCKED => {}
+                        }
+                        {}
 
                         if to_slash == position.amount {
                             stake_account_positions.make_none(i, next_index)?;

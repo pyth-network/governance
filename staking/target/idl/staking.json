@@ -1435,7 +1435,7 @@
           }
         },
         {
-          "name": "target_account",
+          "name": "governance_target_account",
           "writable": true
         }
       ],

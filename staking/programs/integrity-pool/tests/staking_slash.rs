@@ -119,9 +119,7 @@ fn test_staking_slash() {
         },
     };
 
-    let (cip_target_account, _) = get_target_address(Target::IntegrityPool {
-        pool_authority: pool_config,
-    });
+    let (target_account, _) = get_target_address(Target::Voting);
 
     let slash_account_accs = staking::accounts::SlashAccount {
         config: config_pubkey,
@@ -129,7 +127,7 @@ fn test_staking_slash() {
         stake_account_metadata,
         stake_account_custody,
         pool_authority: pool_config,
-        target_account: cip_target_account,
+        governance_target_account: target_account,
     };
 
     let slash_account_ix = Instruction::new_with_bytes(

@@ -10,6 +10,7 @@ use {
         TokenAccount,
         Transfer,
     },
+    positions::Target,
     std::iter::Iterator,
 };
 
@@ -464,10 +465,10 @@ pub struct SlashAccount<'info> {
 
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
-        bump = target_account.bump
+        seeds = [TARGET_SEED.as_bytes(), &Target::Voting.get_seed()[..]],
+        bump = governance_target_account.bump
     )]
-    pub target_account: Account<'info, target::TargetMetadata>,
+    pub governance_target_account: Account<'info, target::TargetMetadata>,
     // transfer the slashed amount to this account
     // #[account(mut)]
     // pub destination: Account<'info, TokenAccount>,

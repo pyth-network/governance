@@ -1441,7 +1441,7 @@ export type Staking = {
           }
         },
         {
-          "name": "targetAccount",
+          "name": "governanceTargetAccount",
           "writable": true
         }
       ],
