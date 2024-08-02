@@ -778,11 +778,10 @@ pub mod staking {
                     && (prev_state == PositionState::LOCKED
                         || prev_state == PositionState::PREUNLOCKING)
                 {
-                    let amount = position_data.amount;
                     // TODO: use constants
                     let to_slash: u64 =
-                        ((u128::from(amount) * u128::from(slash_ratio)) / 1_000_000).try_into()?;
-                    let remaining = amount - to_slash;
+                        ((u128::from(position_data.amount) * u128::from(slash_ratio)) / 1_000_000)
+                            .try_into()?;
 
                     match current_state {
                         PositionState::LOCKED => {
@@ -799,14 +798,15 @@ pub mod staking {
                         }
                     }
 
-                    if remaining == 0 {
+                    // position_data.amount >= to_slash since slash_ratio is between 0 and 1
+                    if position_data.amount - to_slash == 0 {
                         stake_account_positions.make_none(i, next_index)?;
                         continue;
                     } else {
                         stake_account_positions.write_position(
                             i,
                             &Position {
-                                amount: remaining,
+                                amount: position_data.amount - to_slash,
                                 target_with_parameters,
                                 activation_epoch: position_data.activation_epoch,
                                 unlocking_start: position_data.unlocking_start,
@@ -854,7 +854,7 @@ pub mod staking {
                                 governance_target_account.sub_locked(to_slash, current_epoch)?;
                             }
                             PositionState::PREUNLOCKING => {
-                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                                governance_target_account.add_locking(to_slash, current_epoch)?;
                             }
                             PositionState::UNLOCKING => {
                                 governance_target_account.add_locked(to_slash, current_epoch)?;
