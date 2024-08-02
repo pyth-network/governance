@@ -52,10 +52,7 @@ describe("staking", async () => {
       true
     );
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("creates vested staking account", async () => {
@@ -283,31 +280,6 @@ describe("staking", async () => {
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Closing a position of 0 is not allowed"
-    );
-  });
-
-  it("creates a non-voting position", async () => {
-    const nonVotingStakeTarget: TargetWithParameters = {
-      integrityPool: {
-        poolAuthority: PublicKey.unique(),
-        publisher: PublicKey.unique(),
-      },
-    };
-
-    await expectFail(
-      program.methods
-        .createPosition(
-          nonVotingStakeTarget,
-          PythBalance.fromString("10").toBN()
-        )
-        .accounts({
-          targetAccount: await getTargetAccount(
-            nonVotingStakeTarget,
-            program.programId
-          ),
-          stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
-        }),
-      "The program expected this account to be already initialized"
     );
   });
 });

@@ -32,6 +32,7 @@ describe("config", async () => {
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
   const votingProduct: Target = { voting: {} };
+  const poolAuthority = PublicKey.unique();
 
   let program: Program<Staking>;
   let controller: CustomAbortController;
@@ -55,10 +56,7 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("initializes config", async () => {
@@ -81,6 +79,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority,
       })
       .rpc();
 
@@ -118,6 +117,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority,
       })
     );
   });
@@ -144,6 +144,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(15),
+        poolAuthority,
       })
     );
 
@@ -166,6 +167,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -192,6 +194,7 @@ describe("config", async () => {
         pythTokenListTime: new BN(5),
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -214,6 +217,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -238,6 +242,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -340,6 +345,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -363,6 +369,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -393,6 +400,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash2(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });

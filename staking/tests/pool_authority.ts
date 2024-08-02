@@ -34,17 +34,6 @@ describe("pool authority", async () => {
     program = stakeConnection.program;
   });
 
-  it("attempts to create target account", async () => {
-    const target = { integrityPool: { poolAuthority: PublicKey.unique() } };
-
-    await expectFail(
-      program.methods.createTarget(target).accounts({
-        targetAccount: await getTargetAccount(target, program.programId),
-      }),
-      "A has one constraint was violated"
-    );
-  });
-
   it("creates vested staking account", async () => {
     await stakeConnection.depositAndLockTokens(
       undefined,
@@ -59,7 +48,6 @@ describe("pool authority", async () => {
 
     const targetWithParameters: TargetWithParameters = {
       integrityPool: {
-        poolAuthority: authorities.poolAuthority.publicKey,
         publisher,
       },
     };
@@ -73,10 +61,7 @@ describe("pool authority", async () => {
         .accounts({
           stakeAccountPositions: stakeAccount.address,
           poolAuthority: stakeConnection.userPublicKey(),
-          targetAccount: await getTargetAccount(
-            targetWithParameters,
-            program.programId
-          ),
+          targetAccount: null,
         }),
       "The pool authority hasn't been passed or doesn't match the target"
     );
@@ -89,10 +74,7 @@ describe("pool authority", async () => {
         )
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: await getTargetAccount(
-            targetWithParameters,
-            program.programId
-          ),
+          targetAccount: null,
         }),
       "The pool authority hasn't been passed or doesn't match the target"
     );
@@ -104,11 +86,8 @@ describe("pool authority", async () => {
       )
       .accounts({
         stakeAccountPositions: stakeAccount.address,
-        targetAccount: await getTargetAccount(
-          targetWithParameters,
-          program.programId
-        ),
         poolAuthority: authorities.poolAuthority.publicKey,
+        targetAccount: null,
       })
       .signers([authorities.poolAuthority])
       .rpc();
@@ -117,7 +96,6 @@ describe("pool authority", async () => {
   it("attempts to close the position", async () => {
     const targetWithParameters: TargetWithParameters = {
       integrityPool: {
-        poolAuthority: authorities.poolAuthority.publicKey,
         publisher,
       },
     };
@@ -181,10 +159,7 @@ describe("pool authority", async () => {
         .accounts({
           stakeAccountPositions: stakeAccount.address,
           poolAuthority: stakeConnection.userPublicKey(),
-          targetAccount: await getTargetAccount(
-            targetWithParameters,
-            program.programId
-          ),
+          targetAccount: null,
         }),
       "The pool authority hasn't been passed or doesn't match the target"
     );
@@ -198,10 +173,7 @@ describe("pool authority", async () => {
         )
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: await getTargetAccount(
-            targetWithParameters,
-            program.programId
-          ),
+          targetAccount: null,
         }),
       "The pool authority hasn't been passed or doesn't match the target"
     );
@@ -211,10 +183,7 @@ describe("pool authority", async () => {
         .closePosition(1, PythBalance.fromString("100").toBN(), votingTarget)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: await getTargetAccount(
-            votingTarget,
-            program.programId
-          ),
+          targetAccount: await getTargetAccount(program.programId),
           poolAuthority: authorities.poolAuthority.publicKey,
         })
         .signers([authorities.poolAuthority]),
@@ -229,10 +198,7 @@ describe("pool authority", async () => {
       )
       .accounts({
         stakeAccountPositions: stakeAccount.address,
-        targetAccount: await getTargetAccount(
-          targetWithParameters,
-          program.programId
-        ),
+        targetAccount: null,
         poolAuthority: authorities.poolAuthority.publicKey,
       })
       .signers([authorities.poolAuthority])
