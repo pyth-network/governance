@@ -13,6 +13,7 @@ use {
         ToAccountMetas,
     },
     integrity_pool::utils::types::frac64,
+    litesvm::types::TransactionResult,
     solana_sdk::{
         compute_budget::ComputeBudgetInstruction,
         instruction::Instruction,
@@ -32,7 +33,7 @@ pub fn slash_staking(
     slash_ratio: frac64,
     publisher: Pubkey,
     destination: Pubkey,
-) {
+) -> TransactionResult {
     let slash_account_data = staking::instruction::SlashAccount { slash_ratio };
 
     let (target_account, _) = get_target_address();
@@ -71,5 +72,5 @@ pub fn slash_staking(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(slash_account_tx).unwrap();
+    svm.send_transaction(slash_account_tx)
 }

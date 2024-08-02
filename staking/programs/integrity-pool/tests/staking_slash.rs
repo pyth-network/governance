@@ -7,14 +7,18 @@ use {
         signature::Keypair,
         signer::Signer,
     },
-    staking::state::{
-        positions::TargetWithParameters,
-        stake_account::StakeAccountMetadataV2,
-        target::TargetMetadata,
+    staking::{
+        error::ErrorCode,
+        state::{
+            positions::TargetWithParameters,
+            stake_account::StakeAccountMetadataV2,
+            target::TargetMetadata,
+        },
     },
     utils::{
         account::fetch_account_data,
         clock::advance_n_epochs,
+        error::assert_anchor_program_error,
         setup::{
             setup,
             SetupProps,
@@ -98,6 +102,20 @@ fn test_staking_slash() {
     // at epoch N+2, we can slash epoch N+1
     advance_n_epochs(&mut svm, &payer, 2);
 
+    assert_anchor_program_error(
+        slash_staking(
+            &mut svm,
+            &payer,
+            stake_account_positions,
+            &pool_authority,
+            FRAC_64_MULTIPLIER + 1,
+            publisher_keypair.pubkey(),
+            slash_token_account.pubkey(),
+        ),
+        ErrorCode::InvalidSlashRatio.into(),
+        0,
+    );
+
     slash_staking(
         &mut svm,
         &payer,
@@ -106,7 +124,8 @@ fn test_staking_slash() {
         FRAC_64_MULTIPLIER / 2,
         publisher_keypair.pubkey(),
         slash_token_account.pubkey(),
-    );
+    )
+    .unwrap();
 
     let positions: staking::state::positions::PositionData =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
