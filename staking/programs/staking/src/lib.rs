@@ -871,7 +871,6 @@ pub mod staking {
                             }
                             PositionState::UNLOCKING | PositionState::UNLOCKED => {}
                         }
-                        {}
 
                         if to_slash == position.amount {
                             stake_account_positions.make_none(i, next_index)?;
