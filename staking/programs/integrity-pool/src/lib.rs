@@ -54,7 +54,6 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
@@ -68,7 +67,7 @@ pub mod integrity_pool {
             stake_account_metadata,
             stake_account_custody,
             owner: payer.to_account_info(),
-            target_account,
+            target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
         };
 
@@ -99,7 +98,7 @@ pub mod integrity_pool {
         let staking_program = &ctx.accounts.staking_program;
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
+
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
 
         // assert delegator record is up to date
@@ -134,7 +133,7 @@ pub mod integrity_pool {
             stake_account_positions: ctx.accounts.stake_account_positions.to_account_info(),
             stake_account_metadata:  stake_account_metadata.clone(),
             stake_account_custody:   stake_account_custody.clone(),
-            target_account:          target_account.clone(),
+            target_account:          None,
             pool_authority:          Some(pool_config.to_account_info()),
         };
 

@@ -33,10 +33,7 @@ use {
                 get_stake_account_custory_authority_address,
                 get_stake_account_metadata_address,
             },
-            create_target::{
-                create_target_account,
-                get_target_address,
-            },
+            create_target::get_target_address,
             create_token_account::create_token_account,
             init_config::get_config_address,
         },
@@ -73,14 +70,6 @@ fn test_staking_slash() {
     let pool_authority = Keypair::new();
 
     let slash_token_account = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey());
-
-    create_target_account(
-        &mut svm,
-        &payer,
-        Target::IntegrityPool {
-            pool_authority: pool_authority.pubkey(),
-        },
-    );
 
     create_position(
         &mut svm,

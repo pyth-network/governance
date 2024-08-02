@@ -209,7 +209,7 @@ pub struct CreatePosition<'info> {
         mut,
         seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
 }
 
@@ -236,7 +236,7 @@ pub struct ClosePosition<'info> {
         mut,
         seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
 }
 

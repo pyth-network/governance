@@ -9,7 +9,7 @@ use {
         mint::init_mint_account,
         publisher_caps::post_publisher_caps::post_publisher_caps,
         staking::{
-            create_target::create_target_accounts,
+            create_target::create_target_account,
             init_config::init_config_account,
         },
     },
@@ -79,7 +79,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
     advance_n_epochs(&mut svm, &payer, 1);
 
     if init_target {
-        create_target_accounts(&mut svm, &payer);
+        create_target_account(&mut svm, &payer);
     }
 
     if init_mint {

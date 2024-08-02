@@ -421,7 +421,8 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "pool_authority",
@@ -551,7 +552,8 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "pool_authority",
@@ -2343,6 +2345,11 @@
     },
     {
       "code": 6038,
+      "name": "MissingTargetAccount",
+      "msg": "The target account is missing"
+    },
+    {
+      "code": 6039,
       "name": "Other",
       "msg": "Other"
     }

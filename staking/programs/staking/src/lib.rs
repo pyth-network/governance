@@ -34,9 +34,11 @@ use {
             get_current_epoch,
             time_to_epoch,
         },
+        risk::calculate_governance_exposure,
         voter_weight::compute_voter_weight,
     },
 };
+
 
 pub mod context;
 pub mod error;
@@ -51,7 +53,6 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use utils::risk::calculate_governance_exposure;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -167,7 +168,14 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
-        let target_account = &mut ctx.accounts.target_account;
+        let maybe_target_account = &mut ctx.accounts.target_account;
+
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
 
         if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
             require!(
@@ -211,7 +219,9 @@ pub mod staking {
             unvested_balance,
         )?;
 
-        target_account.add_locking(amount, current_epoch)?;
+        if let Some(target_account) = maybe_target_account {
+            target_account.add_locking(amount, current_epoch)?;
+        }
 
         Ok(())
     }
@@ -226,11 +236,19 @@ pub mod staking {
             return Err(error!(ErrorCode::ClosePositionWithZero));
         }
 
+
         let i: usize = index.into();
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let target_account = &mut ctx.accounts.target_account;
+        let maybe_target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
 
         if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
             require!(
@@ -307,8 +325,9 @@ pub mod staking {
                             .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                     );
                 }
-
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
 
             // For this case, we don't need to create new positions because the "closed"
@@ -330,7 +349,9 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
                 }
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
             PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));

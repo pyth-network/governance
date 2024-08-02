@@ -427,7 +427,8 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "poolAuthority",
@@ -557,7 +558,8 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "poolAuthority",
@@ -2349,6 +2351,11 @@ export type Staking = {
     },
     {
       "code": 6038,
+      "name": "missingTargetAccount",
+      "msg": "The target account is missing"
+    },
+    {
+      "code": 6039,
       "name": "other",
       "msg": "other"
     }

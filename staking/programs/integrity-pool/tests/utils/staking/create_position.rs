@@ -40,8 +40,11 @@ pub fn create_position(
         amount,
     };
 
-    let (target_account, _) = get_target_address(target_with_parameters.get_target());
-
+    let (target_account_pubkey, _) = get_target_address(target_with_parameters.get_target());
+    let target_account = match target_with_parameters {
+        TargetWithParameters::Voting => Some(target_account_pubkey),
+        TargetWithParameters::IntegrityPool { .. } => None,
+    };
 
     let create_position_accs = staking::accounts::CreatePosition {
         config: config_pubkey,
