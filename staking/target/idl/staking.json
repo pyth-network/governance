@@ -1706,6 +1706,53 @@
       ]
     },
     {
+      "name": "update_pool_authority",
+      "discriminator": [
+        160,
+        162,
+        113,
+        9,
+        99,
+        187,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "governance_authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "pool_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "update_token_list_time",
       "discriminator": [
         38,
@@ -2340,16 +2387,11 @@
     },
     {
       "code": 6037,
-      "name": "InvalidSlashRatio",
-      "msg": "The slash ratio should be between 0 and 1"
-    },
-    {
-      "code": 6038,
       "name": "MissingTargetAccount",
       "msg": "The target account is missing"
     },
     {
-      "code": 6039,
+      "code": 6038,
       "name": "Other",
       "msg": "Other"
     }
@@ -2419,6 +2461,10 @@
           {
             "name": "mock_clock_time",
             "type": "i64"
+          },
+          {
+            "name": "pool_authority",
+            "type": "pubkey"
           }
         ]
       }
@@ -2643,13 +2689,7 @@
             "name": "Voting"
           },
           {
-            "name": "IntegrityPool",
-            "fields": [
-              {
-                "name": "pool_authority",
-                "type": "pubkey"
-              }
-            ]
+            "name": "IntegrityPool"
           }
         ]
       }
@@ -2698,10 +2738,6 @@
           {
             "name": "IntegrityPool",
             "fields": [
-              {
-                "name": "pool_authority",
-                "type": "pubkey"
-              },
               {
                 "name": "publisher",
                 "type": "pubkey"

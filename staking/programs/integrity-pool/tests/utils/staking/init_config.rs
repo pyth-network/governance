@@ -1,4 +1,5 @@
 use {
+    crate::utils::integrity_pool::pool_data::get_pool_config_address,
     anchor_lang::{
         system_program,
         InstructionData,
@@ -23,6 +24,7 @@ pub fn get_config_address() -> (Pubkey, u8) {
 }
 
 pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
+    let (pool_config, _) = get_pool_config_address();
     let (config_account, config_bump) = get_config_address();
 
     let init_config_data = staking::instruction::InitConfig {
@@ -39,6 +41,7 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             pyth_token_list_time: None,
             agreement_hash: [0; 32],
             mock_clock_time: 30,
+            pool_authority: pool_config,
         },
     };
     let init_config_accs = staking::accounts::InitConfig {

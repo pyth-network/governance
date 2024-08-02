@@ -41,11 +41,7 @@ import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
 import { GlobalConfig, Target } from "../../app/StakeConnection";
-import {
-  createMint,
-  getTargetAccount as getTargetAccount,
-  initAddressLookupTable,
-} from "./utils";
+import { createMint, getTargetAccount, initAddressLookupTable } from "./utils";
 import { loadKeypair } from "./keys";
 import { sendTransactions } from "@pythnetwork/solana-utils";
 import * as StakingIdl from "../../target/idl/staking.json";
@@ -384,13 +380,14 @@ export function makeDefaultConfig(
     governanceProgram,
     pdaAuthority,
     agreementHash: getDummyAgreementHash(),
+    poolAuthority: PublicKey.unique(),
   };
 }
 
-export async function createTarget(program: Program<Staking>, target: Target) {
-  const targetAccount = await getTargetAccount(target, program.programId);
+export async function createVotingTarget(program: Program<Staking>) {
+  const targetAccount = await getTargetAccount(program.programId);
   await program.methods
-    .createTarget(target)
+    .createTarget({ voting: {} })
     .accounts({
       targetAccount,
     })
@@ -515,13 +512,11 @@ export async function standardSetup(portNumber: number): Promise<{
   const temporaryConfig = { ...globalConfig };
   // User becomes a temporary dictator during setup
   temporaryConfig.governanceAuthority = user;
+  temporaryConfig.poolAuthority = poolAuthority.publicKey;
 
   await initConfig(program, temporaryConfig);
 
-  await createTarget(program, { voting: {} });
-  await createTarget(program, {
-    integrityPool: { poolAuthority: poolAuthority.publicKey },
-  });
+  await createVotingTarget(program);
 
   if (process.env.DETACH) {
     const lookupTableAddress = await initAddressLookupTable(

@@ -67,6 +67,7 @@ pub mod staking {
         config_account.governance_program = global_config.governance_program;
         config_account.pyth_token_list_time = None;
         config_account.agreement_hash = global_config.agreement_hash;
+        config_account.pool_authority = global_config.pool_authority;
 
         #[cfg(feature = "mock-clock")]
         {
@@ -112,6 +113,15 @@ pub mod staking {
     ) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.agreement_hash = agreement_hash;
+        Ok(())
+    }
+
+    pub fn update_pool_authority(
+        ctx: Context<UpdatePoolAuthority>,
+        pool_authority: Pubkey,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.pool_authority = pool_authority;
         Ok(())
     }
 
@@ -177,12 +187,12 @@ pub mod staking {
             )
         }
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }
@@ -239,9 +249,9 @@ pub mod staking {
 
         let i: usize = index.into();
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let maybe_target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+        let maybe_target_account = &mut ctx.accounts.target_account;
 
         if target_with_parameters == TargetWithParameters::Voting {
             require!(
@@ -250,12 +260,12 @@ pub mod staking {
             )
         }
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }

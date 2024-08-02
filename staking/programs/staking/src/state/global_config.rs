@@ -25,6 +25,7 @@ pub struct GlobalConfig {
 
     pub mock_clock_time: i64, /* this field needs to be greater than 0 otherwise the API
                                * will use real time */
+    pub pool_authority:  Pubkey,
 }
 
 impl GlobalConfig {
