@@ -10,7 +10,6 @@ use {
         TokenAccount,
         Transfer,
     },
-    positions::Target,
 };
 
 pub const AUTHORITY_SEED: &str = "authority";
@@ -22,17 +21,6 @@ pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
 pub const VOTING_TARGET_SEED: &str = "voting";
 pub const SPLIT_REQUEST: &str = "split_request";
-
-impl positions::Target {
-    pub fn get_seed(&self) -> Vec<u8> {
-        match *self {
-            positions::Target::Voting => VOTING_TARGET_SEED.as_bytes().to_vec(),
-            positions::Target::IntegrityPool { .. } => {
-                unimplemented!("Integrity pool target seed not implemented")
-            }
-        }
-    }
-}
 
 #[derive(Accounts)]
 pub struct InitConfig<'info> {
@@ -208,7 +196,7 @@ pub struct CreatePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
     pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
@@ -235,7 +223,7 @@ pub struct ClosePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
     pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
@@ -283,7 +271,6 @@ pub struct UpdateMaxVoterWeight<'info> {
 
 
 #[derive(Accounts)]
-#[instruction(_target : positions::Target)]
 pub struct CreateTarget<'info> {
     #[account(mut)]
     pub payer:                Signer<'info>,
@@ -293,7 +280,7 @@ pub struct CreateTarget<'info> {
     #[account(
         init,
         payer = payer,
-        seeds =  [TARGET_SEED.as_bytes(), &_target.get_seed()[..]],
+        seeds =  [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         space = target::TargetMetadata::LEN,
         bump)]
     pub target_account:       Account<'info, target::TargetMetadata>,
@@ -466,7 +453,7 @@ pub struct SlashAccount<'info> {
 
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), &Target::Voting.get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = governance_target_account.bump
     )]
     pub governance_target_account: Account<'info, target::TargetMetadata>,

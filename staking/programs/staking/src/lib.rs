@@ -22,7 +22,6 @@ use {
             Position,
             PositionData,
             PositionState,
-            Target,
             TargetWithParameters,
         },
         vesting::VestingSchedule,
@@ -335,6 +334,7 @@ pub mod staking {
                             .ok_or_else(|| error!(ErrorCode::GenericOverflow))?
                     );
                 }
+
                 if let Some(target_account) = maybe_target_account {
                     target_account.add_unlocking(amount, current_epoch)?;
                 }
@@ -553,7 +553,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_target(ctx: Context<CreateTarget>, _target: Target) -> Result<()> {
+    pub fn create_target(ctx: Context<CreateTarget>) -> Result<()> {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 

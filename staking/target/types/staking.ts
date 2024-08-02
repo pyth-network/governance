@@ -428,7 +428,33 @@ export type Staking = {
         {
           "name": "targetAccount",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -559,7 +585,33 @@ export type Staking = {
         {
           "name": "targetAccount",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -789,23 +841,40 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "target",
-          "type": {
-            "defined": {
-              "name": "target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "createVoterRecord",
@@ -2398,11 +2467,6 @@ export type Staking = {
     },
     {
       "code": 6038,
-      "name": "invalidSlashRatio",
-      "msg": "The slash ratio should be between 0 and 1"
-    },
-    {
-      "code": 6039,
       "name": "other",
       "msg": "other"
     }
@@ -2687,20 +2751,6 @@ export type Staking = {
                 ]
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "voting"
-          },
-          {
-            "name": "integrityPool"
           }
         ]
       }

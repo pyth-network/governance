@@ -385,13 +385,7 @@ export function makeDefaultConfig(
 }
 
 export async function createVotingTarget(program: Program<Staking>) {
-  const targetAccount = await getTargetAccount(program.programId);
-  await program.methods
-    .createTarget({ voting: {} })
-    .accounts({
-      targetAccount,
-    })
-    .rpc();
+  await program.methods.createTarget().rpc();
 }
 
 export async function withCreateDefaultGovernance(

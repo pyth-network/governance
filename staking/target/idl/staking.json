@@ -422,7 +422,33 @@
         {
           "name": "target_account",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pool_authority",
@@ -553,7 +579,33 @@
         {
           "name": "target_account",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pool_authority",
@@ -783,23 +835,40 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "_target",
-          "type": {
-            "defined": {
-              "name": "Target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "create_voter_record",
@@ -2392,11 +2461,6 @@
     },
     {
       "code": 6038,
-      "name": "InvalidSlashRatio",
-      "msg": "The slash ratio should be between 0 and 1"
-    },
-    {
-      "code": 6039,
       "name": "Other",
       "msg": "Other"
     }
@@ -2681,20 +2745,6 @@
                 ]
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "Target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Voting"
-          },
-          {
-            "name": "IntegrityPool"
           }
         ]
       }
