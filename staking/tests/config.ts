@@ -286,6 +286,11 @@ describe("config", async () => {
     );
 
     await expectFail(
+      samConnection.program.methods.updatePoolAuthority(new PublicKey(0)),
+      "A has one constraint was violated"
+    );
+
+    await expectFail(
       samConnection.program.methods.updateAgreementHash(
         Array.from(Buffer.alloc(32))
       ),
