@@ -1,18 +1,11 @@
 use {
     crate::utils::account::fetch_account_data_bytemuck,
-    anchor_lang::{
-        AccountDeserialize,
-        InstructionData,
-        ToAccountMetas,
-    },
+    anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     solana_sdk::{
-        compute_budget::ComputeBudgetInstruction,
-        instruction::Instruction,
         signature::Keypair,
         signer::Signer,
-        transaction::Transaction,
     },
     staking::state::positions::TargetWithParameters,
     utils::{
@@ -24,18 +17,10 @@ use {
         },
         staking::{
             create_position::create_position,
-            create_stake_account::{
-                create_stake_account,
-                get_stake_account_custody_address,
-                get_stake_account_custory_authority_address,
-                get_stake_account_metadata_address,
-            },
-            create_target::get_target_address,
+            create_stake_account::create_stake_account,
             create_token_account::create_token_account,
-            init_config::{
-                get_config_address,
-                update_pool_authority,
-            },
+            init_config::update_pool_authority,
+            slash::slash_staking,
         },
     },
 };
@@ -62,11 +47,7 @@ fn test_staking_slash() {
 
     let stake_account_positions =
         create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
-    let (config_pubkey, _) = get_config_address();
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
-    let (stake_account_authority, _) =
-        get_stake_account_custory_authority_address(stake_account_positions);
+
     let pool_authority = Keypair::new();
 
     let slash_token_account = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey());
@@ -108,42 +89,15 @@ fn test_staking_slash() {
     // at epoch N+2, we can slash epoch N+1
     advance_n_epochs(&mut svm, &payer, 2);
 
-    let slash_account_data = staking::instruction::SlashAccount {
-        slash_ratio: FRAC_64_MULTIPLIER / 2,
-    };
-
-    let (target_account, _) = get_target_address();
-
-    let slash_account_accs = staking::accounts::SlashAccount {
-        config: config_pubkey,
-        publisher: publisher_keypair.pubkey(),
+    slash_staking(
+        &mut svm,
+        &payer,
         stake_account_positions,
-        stake_account_metadata,
-        stake_account_custody,
-        pool_authority: pool_authority.pubkey(),
-        governance_target_account: target_account,
-        custody_authority: stake_account_authority,
-        token_program: spl_token::ID,
-        destination: slash_token_account.pubkey(),
-    };
-
-    let slash_account_ix = Instruction::new_with_bytes(
-        staking::ID,
-        &slash_account_data.data(),
-        slash_account_accs.to_account_metas(None),
+        &pool_authority,
+        FRAC_64_MULTIPLIER / 2,
+        publisher_keypair.pubkey(),
+        slash_token_account.pubkey(),
     );
-
-    let slash_account_tx = Transaction::new_signed_with_payer(
-        &[
-            slash_account_ix,
-            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
-        ],
-        Some(&payer.pubkey()),
-        &[&payer, &pool_authority],
-        svm.latest_blockhash(),
-    );
-
-    svm.send_transaction(slash_account_tx).unwrap();
 
     let positions: staking::state::positions::PositionData =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
