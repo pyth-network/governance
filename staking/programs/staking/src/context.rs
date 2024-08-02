@@ -425,3 +425,64 @@ pub struct RecoverAccount<'info> {
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
 }
+
+#[derive(Accounts)]
+#[instruction(slash_ratio: u64)]
+pub struct SlashAccount<'info> {
+    pool_authority: Signer<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's checked against target
+    pub publisher: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.metadata_bump,
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+        mut,
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.custody_bump,
+    )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one=pool_authority)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
+        bump = governance_target_account.bump
+    )]
+    pub governance_target_account: Account<'info, target::TargetMetadata>,
+
+    // transfer the slashed amount to this account
+    #[account(mut)]
+    pub destination: Account<'info, TokenAccount>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.authority_bump)]
+    pub custody_authority: AccountInfo<'info>,
+
+    // Primitive accounts :
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'a, 'b, 'c, 'info> From<&SlashAccount<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
+{
+    fn from(accounts: &SlashAccount<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from:      accounts.stake_account_custody.to_account_info(),
+            to:        accounts.destination.to_account_info(),
+            authority: accounts.custody_authority.to_account_info(),
+        };
+        let cpi_program = accounts.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}

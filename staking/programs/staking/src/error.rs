@@ -80,6 +80,8 @@ pub enum ErrorCode {
     InvalidPoolAuthority,
     #[msg("The target account is missing")] // 6037
     MissingTargetAccount,
-    #[msg("Other")] //6038
+    #[msg("The slash ratio should be between 0 and 1")] // 6038
+    InvalidSlashRatio,
+    #[msg("Other")] //6039
     Other,
 }
