@@ -97,16 +97,8 @@ impl TargetMetadata {
         Ok(())
     }
 
-    pub fn add_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
-        self.update(current_epoch)?;
-
-        self.locked = self
-            .locked
-            .checked_add(amount)
-            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
-        Ok(())
-    }
-
+    // Subtracts the amount from prev_locked immediately. This method is called when a governance
+    // position is reduced due to slashing.
     pub fn sub_prev_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
         self.update(current_epoch)?;
 
