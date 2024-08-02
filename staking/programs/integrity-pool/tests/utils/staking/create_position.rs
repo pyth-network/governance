@@ -40,9 +40,10 @@ pub fn create_position(
         amount,
     };
 
-    let (target_account_pubkey, _) = get_target_address(target_with_parameters.get_target());
     let target_account = match target_with_parameters {
-        TargetWithParameters::Voting => Some(target_account_pubkey),
+        TargetWithParameters::Voting => {
+            Some(get_target_address(target_with_parameters.get_target()).0)
+        }
         TargetWithParameters::IntegrityPool { .. } => None,
     };
 

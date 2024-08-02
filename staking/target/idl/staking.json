@@ -2392,6 +2392,11 @@
     },
     {
       "code": 6038,
+      "name": "InvalidSlashRatio",
+      "msg": "The slash ratio should be between 0 and 1"
+    },
+    {
+      "code": 6039,
       "name": "Other",
       "msg": "Other"
     }

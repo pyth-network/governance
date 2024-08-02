@@ -2398,6 +2398,11 @@ export type Staking = {
     },
     {
       "code": 6038,
+      "name": "invalidSlashRatio",
+      "msg": "The slash ratio should be between 0 and 1"
+    },
+    {
+      "code": 6039,
       "name": "other",
       "msg": "other"
     }

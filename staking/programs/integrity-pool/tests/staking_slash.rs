@@ -35,7 +35,10 @@ use {
             },
             create_target::get_target_address,
             create_token_account::create_token_account,
-            init_config::get_config_address,
+            init_config::{
+                get_config_address,
+                update_pool_authority,
+            },
         },
     },
 };
@@ -71,13 +74,14 @@ fn test_staking_slash() {
 
     let slash_token_account = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey());
 
+    update_pool_authority(&mut svm, &payer, pool_authority.pubkey());
+
     create_position(
         &mut svm,
         &payer,
         stake_account_positions,
         staking::state::positions::TargetWithParameters::IntegrityPool {
-            pool_authority: pool_authority.pubkey(),
-            publisher:      publisher_keypair.pubkey(),
+            publisher: publisher_keypair.pubkey(),
         },
         Some(&pool_authority),
         50 * FRAC_64_MULTIPLIER,
@@ -110,8 +114,7 @@ fn test_staking_slash() {
     let slash_account_data = staking::instruction::SlashAccount {
         slash_ratio:            FRAC_64_MULTIPLIER / 2,
         target_with_parameters: staking::state::positions::TargetWithParameters::IntegrityPool {
-            pool_authority: pool_authority.pubkey(),
-            publisher:      publisher_keypair.pubkey(),
+            publisher: publisher_keypair.pubkey(),
         },
     };
 
@@ -155,8 +158,7 @@ fn test_staking_slash() {
     assert_eq!(
         pos0.target_with_parameters,
         TargetWithParameters::IntegrityPool {
-            pool_authority: pool_authority.pubkey(),
-            publisher:      publisher_keypair.pubkey(),
+            publisher: publisher_keypair.pubkey(),
         }
     );
 

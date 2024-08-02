@@ -64,3 +64,27 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
 
     svm.send_transaction(init_config_tx).unwrap();
 }
+
+
+pub fn update_pool_authority(svm: &mut litesvm::LiteSVM, payer: &Keypair, pool_authority: Pubkey) {
+    let (config_account, _) = get_config_address();
+
+    let update_pool_authority_data = staking::instruction::UpdatePoolAuthority { pool_authority };
+    let update_pool_authority_accs = staking::accounts::UpdatePoolAuthority {
+        config:               config_account,
+        governance_authority: payer.pubkey(),
+    };
+    let update_pool_authority_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &update_pool_authority_data.data(),
+        update_pool_authority_accs.to_account_metas(None),
+    );
+    let update_pool_authority_tx = Transaction::new_signed_with_payer(
+        &[update_pool_authority_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(update_pool_authority_tx).unwrap();
+}
