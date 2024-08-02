@@ -12,19 +12,28 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::state::positions::Target,
+    staking::{
+        context::{
+            TARGET_SEED,
+            VOTING_TARGET_SEED,
+        },
+        state::positions::Target,
+    },
 };
 
-pub fn get_target_address(target: Target) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&["target".as_bytes(), &target.get_seed()[..]], &staking::ID)
+pub fn get_target_address() -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
+        &staking::ID,
+    )
 }
 
 pub fn create_target_account(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
-    let (target_account, _) = get_target_address(Target::Voting);
+    let (target_account, _) = get_target_address();
     let (config_account, _) = get_config_address();
 
     let target_data = staking::instruction::CreateTarget {
-        _target: staking::state::positions::Target::Voting,
+        _target: Target::Voting,
     };
     let target_accs = staking::accounts::CreateTarget {
         payer: payer.pubkey(),

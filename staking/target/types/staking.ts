@@ -428,7 +428,33 @@ export type Staking = {
         {
           "name": "targetAccount",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -559,7 +585,33 @@ export type Staking = {
         {
           "name": "targetAccount",
           "writable": true,
-          "optional": true
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -789,7 +841,33 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
