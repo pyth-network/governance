@@ -41,9 +41,7 @@ pub fn create_position(
     };
 
     let target_account = match target_with_parameters {
-        TargetWithParameters::Voting => {
-            Some(get_target_address(target_with_parameters.get_target()).0)
-        }
+        TargetWithParameters::Voting => Some(get_target_address().0),
         TargetWithParameters::IntegrityPool { .. } => None,
     };
 

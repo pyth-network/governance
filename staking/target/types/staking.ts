@@ -1515,7 +1515,33 @@ export type Staking = {
         },
         {
           "name": "governanceTargetAccount",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "destination",
@@ -2467,6 +2493,11 @@ export type Staking = {
     },
     {
       "code": 6038,
+      "name": "invalidSlashRatio",
+      "msg": "The slash ratio should be between 0 and 1"
+    },
+    {
+      "code": 6039,
       "name": "other",
       "msg": "other"
     }

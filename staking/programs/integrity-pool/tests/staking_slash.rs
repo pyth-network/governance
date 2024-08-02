@@ -14,10 +14,7 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::state::positions::{
-        Target,
-        TargetWithParameters,
-    },
+    staking::state::positions::TargetWithParameters,
     utils::{
         clock::advance_n_epochs,
         setup::{
@@ -118,7 +115,7 @@ fn test_staking_slash() {
         },
     };
 
-    let (target_account, _) = get_target_address(Target::Voting);
+    let (target_account, _) = get_target_address();
 
     let slash_account_accs = staking::accounts::SlashAccount {
         config: config_pubkey,
