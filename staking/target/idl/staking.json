@@ -1428,7 +1428,16 @@
       "accounts": [
         {
           "name": "pool_authority",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "publisher",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's checked against target"
+          ]
         },
         {
           "name": "stake_account_positions",
@@ -1575,14 +1584,6 @@
         }
       ],
       "args": [
-        {
-          "name": "target_with_parameters",
-          "type": {
-            "defined": {
-              "name": "TargetWithParameters"
-            }
-          }
-        },
         {
           "name": "slash_ratio",
           "type": "u64"

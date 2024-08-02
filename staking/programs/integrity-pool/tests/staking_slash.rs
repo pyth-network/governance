@@ -109,16 +109,14 @@ fn test_staking_slash() {
     advance_n_epochs(&mut svm, &payer, 2);
 
     let slash_account_data = staking::instruction::SlashAccount {
-        slash_ratio:            FRAC_64_MULTIPLIER / 2,
-        target_with_parameters: staking::state::positions::TargetWithParameters::IntegrityPool {
-            publisher: publisher_keypair.pubkey(),
-        },
+        slash_ratio: FRAC_64_MULTIPLIER / 2,
     };
 
     let (target_account, _) = get_target_address();
 
     let slash_account_accs = staking::accounts::SlashAccount {
         config: config_pubkey,
+        publisher: publisher_keypair.pubkey(),
         stake_account_positions,
         stake_account_metadata,
         stake_account_custody,

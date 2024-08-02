@@ -427,9 +427,12 @@ pub struct RecoverAccount<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(target_with_parameters: positions::TargetWithParameters, slash_ratio: u64)]
+#[instruction(slash_ratio: u64)]
 pub struct SlashAccount<'info> {
     pool_authority: Signer<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's checked against target
+    pub publisher: AccountInfo<'info>,
 
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
@@ -448,7 +451,7 @@ pub struct SlashAccount<'info> {
     )]
     pub stake_account_custody: Account<'info, TokenAccount>,
 
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one=pool_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
 
     #[account(

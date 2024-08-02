@@ -1434,7 +1434,16 @@ export type Staking = {
       "accounts": [
         {
           "name": "poolAuthority",
-          "signer": true
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "publisher",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's checked against target"
+          ]
         },
         {
           "name": "stakeAccountPositions",
@@ -1581,14 +1590,6 @@ export type Staking = {
         }
       ],
       "args": [
-        {
-          "name": "targetWithParameters",
-          "type": {
-            "defined": {
-              "name": "targetWithParameters"
-            }
-          }
-        },
         {
           "name": "slashRatio",
           "type": "u64"

@@ -756,7 +756,6 @@ pub mod staking {
 
     pub fn slash_account(
         ctx: Context<SlashAccount>,
-        target_with_parameters: TargetWithParameters,
         // a number between 0 and 1 with 6 decimals of precision
         // TODO: use fract64 instead of u64
         slash_ratio: u64,
@@ -765,6 +764,7 @@ pub mod staking {
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
         let governance_target_account = &mut ctx.accounts.governance_target_account;
+        let publisher = &ctx.accounts.publisher;
 
         let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
 
@@ -784,9 +784,11 @@ pub mod staking {
                     position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
                 let current_state =
                     position_data.get_current_position(current_epoch, unlocking_duration)?;
-                if position_data.target_with_parameters == target_with_parameters
-                    && (prev_state == PositionState::LOCKED
-                        || prev_state == PositionState::PREUNLOCKING)
+                if matches!(
+                    position_data.target_with_parameters,
+                    TargetWithParameters::IntegrityPool { publisher: publisher_pubkey } if publisher_pubkey == *publisher.key,
+                ) && (prev_state == PositionState::LOCKED
+                    || prev_state == PositionState::PREUNLOCKING)
                 {
                     // TODO: use constants
                     let to_slash: u64 =
@@ -816,10 +818,10 @@ pub mod staking {
                         stake_account_positions.write_position(
                             i,
                             &Position {
-                                amount: position_data.amount - to_slash,
-                                target_with_parameters,
-                                activation_epoch: position_data.activation_epoch,
-                                unlocking_start: position_data.unlocking_start,
+                                amount:                 position_data.amount - to_slash,
+                                target_with_parameters: position_data.target_with_parameters,
+                                activation_epoch:       position_data.activation_epoch,
+                                unlocking_start:        position_data.unlocking_start,
                             },
                         )?;
                     }
