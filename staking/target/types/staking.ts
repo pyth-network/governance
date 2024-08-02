@@ -1362,7 +1362,8 @@ export type Staking = {
       ],
       "accounts": [
         {
-          "name": "poolAuthority"
+          "name": "poolAuthority",
+          "signer": true
         },
         {
           "name": "stakeAccountPositions",

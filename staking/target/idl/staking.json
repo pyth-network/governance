@@ -1356,7 +1356,8 @@
       ],
       "accounts": [
         {
-          "name": "pool_authority"
+          "name": "pool_authority",
+          "signer": true
         },
         {
           "name": "stake_account_positions",

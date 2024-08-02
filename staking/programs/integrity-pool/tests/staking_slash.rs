@@ -8,6 +8,7 @@ use {
     solana_sdk::{
         compute_budget::ComputeBudgetInstruction,
         instruction::Instruction,
+        signature::Keypair,
         signer::Signer,
         transaction::Transaction,
     },
@@ -17,22 +18,22 @@ use {
     },
     utils::{
         clock::advance_n_epochs,
-        integrity_pool::{
-            delegate::delegate,
-            pool_data::get_pool_config_address,
-        },
         setup::{
             setup,
             SetupProps,
             SetupResult,
         },
         staking::{
+            create_position::create_position,
             create_stake_account::{
                 create_stake_account,
                 get_stake_account_custody_address,
                 get_stake_account_metadata_address,
             },
-            create_target::get_target_address,
+            create_target::{
+                create_target_account,
+                get_target_address,
+            },
             init_config::get_config_address,
         },
     },
@@ -47,7 +48,7 @@ fn test_staking_slash() {
         payer,
         pyth_token_mint,
         publisher_keypair,
-        pool_data_pubkey,
+        pool_data_pubkey: _,
         reward_program_authority: _,
         publisher_index: _,
     } = setup(SetupProps {
@@ -63,48 +64,46 @@ fn test_staking_slash() {
     let (config_pubkey, _) = get_config_address();
     let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
     let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
-    let (pool_config, _) = get_pool_config_address();
+    let pool_authority = Keypair::new();
 
-    delegate(
+    create_target_account(
         &mut svm,
         &payer,
-        publisher_keypair.pubkey(),
-        pool_data_pubkey,
+        Target::IntegrityPool {
+            pool_authority: pool_authority.pubkey(),
+        },
+    );
+
+    create_position(
+        &mut svm,
+        &payer,
         stake_account_positions,
+        staking::state::positions::TargetWithParameters::IntegrityPool {
+            pool_authority: pool_authority.pubkey(),
+            publisher:      publisher_keypair.pubkey(),
+        },
+        Some(&pool_authority),
         50 * FRAC_64_MULTIPLIER,
     );
-
-    let create_position_data = staking::instruction::CreatePosition {
-        target_with_parameters: staking::state::positions::TargetWithParameters::Voting,
-        amount:                 40 * FRAC_64_MULTIPLIER,
-    };
-
-    let (target_account, _) = get_target_address(Target::Voting);
-
-    let create_position_accs = staking::accounts::CreatePosition {
-        config: config_pubkey,
-        stake_account_metadata,
+    create_position(
+        &mut svm,
+        &payer,
         stake_account_positions,
-        stake_account_custody,
-        owner: payer.pubkey(),
-        target_account,
-        pool_authority: None,
-    };
+        staking::state::positions::TargetWithParameters::Voting,
+        None,
+        40 * FRAC_64_MULTIPLIER,
+    );
+    svm.expire_blockhash();
 
-    let create_position_ix = Instruction::new_with_bytes(
-        staking::ID,
-        &create_position_data.data(),
-        create_position_accs.to_account_metas(None),
+    create_position(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        staking::state::positions::TargetWithParameters::Voting,
+        None,
+        40 * FRAC_64_MULTIPLIER,
     );
 
-    let create_position_tx = Transaction::new_signed_with_payer(
-        &[create_position_ix.clone(), create_position_ix.clone()],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
-
-    svm.send_transaction(create_position_tx).unwrap();
 
     // initiate delegate at epoch N
     // position will become LOCKED at epoch N+1
@@ -114,7 +113,7 @@ fn test_staking_slash() {
     let slash_account_data = staking::instruction::SlashAccount {
         slash_ratio:            FRAC_64_MULTIPLIER / 2,
         target_with_parameters: staking::state::positions::TargetWithParameters::IntegrityPool {
-            pool_authority: pool_config,
+            pool_authority: pool_authority.pubkey(),
             publisher:      publisher_keypair.pubkey(),
         },
     };
@@ -126,7 +125,7 @@ fn test_staking_slash() {
         stake_account_positions,
         stake_account_metadata,
         stake_account_custody,
-        pool_authority: pool_config,
+        pool_authority: pool_authority.pubkey(),
         governance_target_account: target_account,
     };
 
@@ -142,7 +141,7 @@ fn test_staking_slash() {
             ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
         ],
         Some(&payer.pubkey()),
-        &[&payer],
+        &[&payer, &pool_authority],
         svm.latest_blockhash(),
     );
 
@@ -156,7 +155,7 @@ fn test_staking_slash() {
     assert_eq!(
         pos0.target_with_parameters,
         TargetWithParameters::IntegrityPool {
-            pool_authority: pool_config,
+            pool_authority: pool_authority.pubkey(),
             publisher:      publisher_keypair.pubkey(),
         }
     );

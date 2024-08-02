@@ -441,8 +441,7 @@ pub struct RecoverAccount<'info> {
 #[derive(Accounts)]
 #[instruction(target_with_parameters: positions::TargetWithParameters, slash_ratio: u64)]
 pub struct SlashAccount<'info> {
-    /// CHECK: TODO make this signer
-    pool_authority: AccountInfo<'info>,
+    pool_authority: Signer<'info>,
 
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
