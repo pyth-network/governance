@@ -83,12 +83,7 @@ describe("recover account", async () => {
       })
       .rpc();
 
-    await program.methods
-      .createTarget(votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-      })
-      .rpc();
+    await program.methods.createTarget().rpc();
 
     await requestPythAirdrop(
       provider.wallet.publicKey,

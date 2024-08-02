@@ -874,16 +874,7 @@ export type Staking = {
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "target",
-          "type": {
-            "defined": {
-              "name": "target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "createVoterRecord",
@@ -2610,20 +2601,6 @@ export type Staking = {
                 ]
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "voting"
-          },
-          {
-            "name": "integrityPool"
           }
         ]
       }

@@ -271,7 +271,6 @@ pub struct UpdateMaxVoterWeight<'info> {
 
 
 #[derive(Accounts)]
-#[instruction(_target : positions::Target)]
 pub struct CreateTarget<'info> {
     #[account(mut)]
     pub payer:                Signer<'info>,

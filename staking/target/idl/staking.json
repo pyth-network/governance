@@ -868,16 +868,7 @@
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "_target",
-          "type": {
-            "defined": {
-              "name": "Target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "create_voter_record",
@@ -2604,20 +2595,6 @@
                 ]
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "Target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Voting"
-          },
-          {
-            "name": "IntegrityPool"
           }
         ]
       }

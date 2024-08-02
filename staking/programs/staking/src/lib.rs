@@ -22,7 +22,6 @@ use {
             Position,
             PositionData,
             PositionState,
-            Target,
             TargetWithParameters,
         },
         vesting::VestingSchedule,
@@ -550,7 +549,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_target(ctx: Context<CreateTarget>, _target: Target) -> Result<()> {
+    pub fn create_target(ctx: Context<CreateTarget>) -> Result<()> {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 

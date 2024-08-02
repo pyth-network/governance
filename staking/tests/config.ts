@@ -17,7 +17,6 @@ import assert from "assert";
 import path from "path";
 import * as wasm from "@pythnetwork/staking-wasm";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
-import { Target } from "../app/StakeConnection";
 import { Staking } from "../target/types/staking";
 import { abortUnlessDetached } from "./utils/after";
 
@@ -31,7 +30,6 @@ describe("config", async () => {
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
-  const votingProduct: Target = { voting: {} };
   const poolAuthority = PublicKey.unique();
 
   let program: Program<Staking>;
@@ -83,12 +81,7 @@ describe("config", async () => {
       })
       .rpc();
 
-    await program.methods
-      .createTarget(votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-      })
-      .rpc();
+    await program.methods.createTarget().rpc();
 
     await requestPythAirdrop(
       program.provider.publicKey,

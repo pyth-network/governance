@@ -12,12 +12,9 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::{
-        context::{
-            TARGET_SEED,
-            VOTING_TARGET_SEED,
-        },
-        state::positions::Target,
+    staking::context::{
+        TARGET_SEED,
+        VOTING_TARGET_SEED,
     },
 };
 
@@ -32,9 +29,7 @@ pub fn create_target_account(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
     let (target_account, _) = get_target_address();
     let (config_account, _) = get_config_address();
 
-    let target_data = staking::instruction::CreateTarget {
-        _target: Target::Voting,
-    };
+    let target_data = staking::instruction::CreateTarget {};
     let target_accs = staking::accounts::CreateTarget {
         payer: payer.pubkey(),
         governance_authority: payer.pubkey(),
