@@ -7,8 +7,13 @@ use {
         signature::Keypair,
         signer::Signer,
     },
-    staking::state::positions::TargetWithParameters,
+    staking::state::{
+        positions::TargetWithParameters,
+        stake_account::StakeAccountMetadataV2,
+        target::TargetMetadata,
+    },
     utils::{
+        account::fetch_account_data,
         clock::advance_n_epochs,
         setup::{
             setup,
@@ -17,7 +22,11 @@ use {
         },
         staking::{
             create_position::create_position,
-            create_stake_account::create_stake_account,
+            create_stake_account::{
+                create_stake_account,
+                get_stake_account_metadata_address,
+            },
+            create_target::get_target_address,
             create_token_account::create_token_account,
             init_config::update_pool_authority,
             slash::slash_staking,
@@ -70,7 +79,7 @@ fn test_staking_slash() {
         stake_account_positions,
         staking::state::positions::TargetWithParameters::Voting,
         None,
-        40 * FRAC_64_MULTIPLIER,
+        10 * FRAC_64_MULTIPLIER,
     );
     svm.expire_blockhash();
 
@@ -80,7 +89,7 @@ fn test_staking_slash() {
         stake_account_positions,
         staking::state::positions::TargetWithParameters::Voting,
         None,
-        40 * FRAC_64_MULTIPLIER,
+        80 * FRAC_64_MULTIPLIER,
     );
 
 
@@ -112,7 +121,7 @@ fn test_staking_slash() {
     );
 
     let pos1 = positions.read_position(1).unwrap().unwrap();
-    assert_eq!(pos1.amount, 35 * FRAC_64_MULTIPLIER);
+    assert_eq!(pos1.amount, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(pos1.target_with_parameters, TargetWithParameters::Voting);
 
     let slash_account_data = svm.get_account(&slash_token_account.pubkey()).unwrap();
@@ -120,4 +129,16 @@ fn test_staking_slash() {
         TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
 
     assert_eq!(slash_account.amount, 25 * FRAC_64_MULTIPLIER);
+
+    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
+    let meta_data_account: StakeAccountMetadataV2 =
+        fetch_account_data(&mut svm, &stake_account_metadata);
+
+    assert_eq!(meta_data_account.next_index, 2);
+    assert!(positions.read_position(2).unwrap().is_none());
+
+    let target_account: TargetMetadata = fetch_account_data(&mut svm, &get_target_address().0);
+    assert_eq!(target_account.locked, 75 * FRAC_64_MULTIPLIER);
+    assert_eq!(target_account.prev_epoch_locked, 75 * FRAC_64_MULTIPLIER);
+    assert_eq!(target_account.delta_locked, 0);
 }
