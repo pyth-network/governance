@@ -374,6 +374,57 @@ describe("config", async () => {
     );
   });
 
+  it("updates pool authority", async () => {
+    const newPoolAuthority = PublicKey.unique();
+    await program.methods.updatePoolAuthority(newPoolAuthority).rpc();
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority: newPoolAuthority,
+      })
+    );
+
+    await program.methods.updatePoolAuthority(poolAuthority).rpc();
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority,
+      })
+    );
+  });
+
   it("updates agreement hash", async () => {
     assert.notEqual(
       JSON.stringify(getDummyAgreementHash()),
