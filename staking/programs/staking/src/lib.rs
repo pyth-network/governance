@@ -858,7 +858,7 @@ pub mod staking {
 
                         match current_state {
                             PositionState::LOCKING => {
-                                governance_target_account.sub_locking(to_slash, current_epoch)?;
+                                governance_target_account.add_unlocking(to_slash, current_epoch)?;
                             }
                             PositionState::LOCKED => {
                                 governance_target_account.sub_locked(to_slash, current_epoch)?;

@@ -107,16 +107,6 @@ impl TargetMetadata {
         Ok(())
     }
 
-    pub fn sub_locking(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
-        self.update(current_epoch)?;
-
-        self.delta_locked = self
-            .delta_locked
-            .checked_sub(amount.try_into().or(Err(ErrorCode::GenericOverflow))?)
-            .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
-        Ok(())
-    }
-
     pub fn sub_prev_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
         self.update(current_epoch)?;
 
