@@ -54,12 +54,10 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
-                pool_authority: pool_config.key(),
-                publisher:      publisher.key(),
+                publisher: publisher.key(),
             };
 
         let cpi_accounts = staking::cpi::accounts::CreatePosition {
@@ -68,7 +66,7 @@ pub mod integrity_pool {
             stake_account_metadata,
             stake_account_custody,
             owner: payer.to_account_info(),
-            target_account,
+            target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
         };
 
@@ -99,7 +97,6 @@ pub mod integrity_pool {
         let staking_program = &ctx.accounts.staking_program;
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
 
         // assert delegator record is up to date
@@ -124,8 +121,7 @@ pub mod integrity_pool {
         //cpi
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
-                pool_authority: pool_config.key(),
-                publisher:      publisher.key(),
+                publisher: publisher.key(),
             };
 
         let cpi_accounts = staking::cpi::accounts::ClosePosition {
@@ -134,7 +130,7 @@ pub mod integrity_pool {
             stake_account_positions: ctx.accounts.stake_account_positions.to_account_info(),
             stake_account_metadata:  stake_account_metadata.clone(),
             stake_account_custody:   stake_account_custody.clone(),
-            target_account:          target_account.clone(),
+            target_account:          None,
             pool_authority:          Some(pool_config.to_account_info()),
         };
 
@@ -154,8 +150,7 @@ pub mod integrity_pool {
         let new_stake_account = &ctx.accounts.new_stake_account_positions.load()?;
 
         let publisher_target = TargetWithParameters::IntegrityPool {
-            pool_authority: ctx.accounts.pool_config.key(),
-            publisher:      publisher.key(),
+            publisher: publisher.key(),
         };
 
         let publisher_index = pool_data.get_publisher_index(publisher.key)?;
@@ -231,7 +226,6 @@ pub mod integrity_pool {
             &stake_account_positions.key(),
             positions,
             &publisher.key(),
-            &pool_config.key(),
             get_current_epoch()?,
         )?;
 

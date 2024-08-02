@@ -27,22 +27,13 @@ export function getConfigAccount(programId: PublicKey): PublicKey {
 }
 
 export async function getTargetAccount(
-  stakeTarget: Target,
   programId: PublicKey
 ): Promise<PublicKey> {
   return (
     await PublicKey.findProgramAddressSync(
       [
         utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
-        stakeTarget.hasOwnProperty("voting")
-          ? utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED())
-          : utils.bytes.utf8.encode(
-              wasm.Constants.INTEGRITY_POOL_TARGET_SEED()
-            ),
-
-        stakeTarget.hasOwnProperty("voting")
-          ? Buffer.from("")
-          : stakeTarget.integrityPool.poolAuthority.toBuffer().slice(0, 16),
+        utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED()),
       ],
       programId
     )
@@ -94,7 +85,7 @@ export async function initAddressLookupTable(
   mint: PublicKey
 ) {
   const configAccount = getConfigAccount(STAKING_ADDRESS);
-  const targetAccount = await getTargetAccount({ voting: {} }, STAKING_ADDRESS);
+  const targetAccount = await getTargetAccount(STAKING_ADDRESS);
 
   const [loookupTableInstruction, lookupTableAddress] =
     AddressLookupTableProgram.createLookupTable({

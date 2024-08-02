@@ -34,10 +34,7 @@ describe("fills a stake account with positions", async () => {
     program = stakeConnection.program;
     provider = stakeConnection.provider;
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
 
     await stakeConnection.depositTokens(
       undefined,

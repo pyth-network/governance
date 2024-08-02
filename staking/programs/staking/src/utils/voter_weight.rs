@@ -98,8 +98,7 @@ pub mod tests {
                 activation_epoch:       0,
                 amount:                 10,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },

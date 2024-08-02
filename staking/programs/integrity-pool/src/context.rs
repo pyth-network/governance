@@ -79,10 +79,6 @@ pub struct Delegate<'info> {
     )]
     pub stake_account_custody: AccountInfo<'info>,
 
-    /// CHECK : This AccountInfo is safe because it will checked in staking program
-    #[account(mut)]
-    pub target_account: AccountInfo<'info>,
-
     pub staking_program: Program<'info, Staking>,
 }
 
@@ -137,10 +133,6 @@ pub struct Undelegate<'info> {
         seeds::program = staking_program.key(),
     )]
     pub stake_account_custody: AccountInfo<'info>,
-
-    /// CHECK : This AccountInfo is safe because it will checked in staking program
-    #[account(mut)]
-    pub target_account: AccountInfo<'info>,
 
     pub staking_program: Program<'info, Staking>,
 }

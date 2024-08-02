@@ -421,7 +421,34 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pool_authority",
@@ -551,7 +578,34 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "pool_authority",
@@ -781,23 +835,40 @@
         },
         {
           "name": "target_account",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "_target",
-          "type": {
-            "defined": {
-              "name": "Target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "create_voter_record",
@@ -1554,6 +1625,53 @@
       ]
     },
     {
+      "name": "update_pool_authority",
+      "discriminator": [
+        160,
+        162,
+        113,
+        9,
+        99,
+        187,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "governance_authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "pool_authority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "update_token_list_time",
       "discriminator": [
         38,
@@ -2188,6 +2306,11 @@
     },
     {
       "code": 6037,
+      "name": "MissingTargetAccount",
+      "msg": "The target account is missing"
+    },
+    {
+      "code": 6038,
       "name": "Other",
       "msg": "Other"
     }
@@ -2257,6 +2380,10 @@
           {
             "name": "mock_clock_time",
             "type": "i64"
+          },
+          {
+            "name": "pool_authority",
+            "type": "pubkey"
           }
         ]
       }
@@ -2473,26 +2600,6 @@
       }
     },
     {
-      "name": "Target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Voting"
-          },
-          {
-            "name": "IntegrityPool",
-            "fields": [
-              {
-                "name": "pool_authority",
-                "type": "pubkey"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "name": "TargetMetadata",
       "docs": [
         "This represents a target that users can stake to",
@@ -2536,10 +2643,6 @@
           {
             "name": "IntegrityPool",
             "fields": [
-              {
-                "name": "pool_authority",
-                "type": "pubkey"
-              },
               {
                 "name": "publisher",
                 "type": "pubkey"

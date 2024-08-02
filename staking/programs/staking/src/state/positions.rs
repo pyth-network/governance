@@ -147,27 +147,21 @@ pub struct Position {
 )]
 pub enum Target {
     Voting,
-    IntegrityPool { pool_authority: Pubkey },
+    IntegrityPool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
 #[cfg_attr(test, derive(Hash))]
 pub enum TargetWithParameters {
     Voting,
-    IntegrityPool {
-        pool_authority: Pubkey,
-        publisher:      Pubkey,
-    },
+    IntegrityPool { publisher: Pubkey },
 }
 
 impl TargetWithParameters {
     pub fn get_target(&self) -> Target {
         match *self {
             TargetWithParameters::Voting => Target::Voting,
-            TargetWithParameters::IntegrityPool {
-                pool_authority,
-                publisher: _,
-            } => Target::IntegrityPool { pool_authority },
+            TargetWithParameters::IntegrityPool { .. } => Target::IntegrityPool,
         }
     }
 }
@@ -344,8 +338,7 @@ pub mod tests {
             amount:                 10,
         };
         let target_with_parameters = TargetWithParameters::IntegrityPool {
-            pool_authority: Pubkey::new_unique(),
-            publisher:      Pubkey::new_unique(),
+            publisher: Pubkey::new_unique(),
         };
         let position_2 = Position {
             activation_epoch: 4,
@@ -363,8 +356,7 @@ pub mod tests {
             .unwrap());
         assert!(!position_data
             .has_target_with_parameters_exposure(TargetWithParameters::IntegrityPool {
-                pool_authority: Pubkey::new_unique(),
-                publisher:      Pubkey::new_unique(),
+                publisher: Pubkey::new_unique(),
             })
             .unwrap());
     }
@@ -392,8 +384,7 @@ pub mod tests {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
                 TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 }
             } else {
                 TargetWithParameters::Voting

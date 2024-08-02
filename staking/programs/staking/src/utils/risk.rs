@@ -105,8 +105,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 7,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        Some(50),
             },
@@ -118,8 +117,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        Some(50),
             },
@@ -168,8 +166,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },
@@ -185,7 +182,6 @@ pub mod tests {
     #[test]
     fn test_double_integrity_pool() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         // We need at least 10 vested to support these
         pd.write_position(
             0,
@@ -193,7 +189,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 7,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -206,7 +201,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -229,8 +223,7 @@ pub mod tests {
                     activation_epoch:       1,
                     amount:                 10,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority: Pubkey::new_unique(),
-                        publisher:      Pubkey::new_unique(),
+                        publisher: Pubkey::new_unique(),
                     },
                     unlocking_start:        None,
                 },
@@ -245,8 +238,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 10,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },
@@ -300,7 +292,6 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -308,7 +299,6 @@ pub mod tests {
                     activation_epoch:       1,
                     amount:                 u64::MAX / 3,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority,
                         publisher: Pubkey::new_unique(),
                     },
                     unlocking_start:        None,
@@ -323,7 +313,6 @@ pub mod tests {
     #[test]
     fn test_multiple_voting_and_integrity_pool() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         // We need at least 4 vested, 10 total
         pd.write_position(
             0,
@@ -331,7 +320,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 2,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -344,7 +332,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 2,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,

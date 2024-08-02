@@ -17,7 +17,6 @@ import assert from "assert";
 import path from "path";
 import * as wasm from "@pythnetwork/staking-wasm";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
-import { Target } from "../app/StakeConnection";
 import { Staking } from "../target/types/staking";
 import { abortUnlessDetached } from "./utils/after";
 
@@ -31,7 +30,7 @@ describe("config", async () => {
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
-  const votingProduct: Target = { voting: {} };
+  const poolAuthority = PublicKey.unique();
 
   let program: Program<Staking>;
   let controller: CustomAbortController;
@@ -55,10 +54,7 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("initializes config", async () => {
@@ -81,15 +77,11 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority,
       })
       .rpc();
 
-    await program.methods
-      .createTarget(votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-      })
-      .rpc();
+    await program.methods.createTarget().rpc();
 
     await requestPythAirdrop(
       program.provider.publicKey,
@@ -118,6 +110,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority,
       })
     );
   });
@@ -144,6 +137,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(15),
+        poolAuthority,
       })
     );
 
@@ -166,6 +160,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -192,6 +187,7 @@ describe("config", async () => {
         pythTokenListTime: new BN(5),
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -214,6 +210,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -238,6 +235,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -284,6 +282,11 @@ describe("config", async () => {
     );
     await expectFail(
       samConnection.program.methods.updateTokenListTime(new BN(7)),
+      "A has one constraint was violated"
+    );
+
+    await expectFail(
+      samConnection.program.methods.updatePoolAuthority(new PublicKey(0)),
       "A has one constraint was violated"
     );
 
@@ -340,6 +343,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -363,6 +367,58 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
+      })
+    );
+  });
+
+  it("updates pool authority", async () => {
+    const newPoolAuthority = PublicKey.unique();
+    await program.methods.updatePoolAuthority(newPoolAuthority).rpc();
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority: newPoolAuthority,
+      })
+    );
+
+    await program.methods.updatePoolAuthority(poolAuthority).rpc();
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -393,6 +449,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash2(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });

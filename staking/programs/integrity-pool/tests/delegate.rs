@@ -30,7 +30,6 @@ use {
                 get_delegation_record_address,
                 undelegate,
             },
-            pool_data::get_pool_config_address,
         },
         publisher_caps::post_publisher_caps::post_publisher_caps,
         setup::{
@@ -62,10 +61,8 @@ fn test_delegate() {
         init_publishers: true,
     });
 
-    let (pool_config, _) = get_pool_config_address();
     let target_with_parameters = TargetWithParameters::IntegrityPool {
-        pool_authority: pool_config,
-        publisher:      publisher_keypair.pubkey(),
+        publisher: publisher_keypair.pubkey(),
     };
 
     let stake_account_positions =
