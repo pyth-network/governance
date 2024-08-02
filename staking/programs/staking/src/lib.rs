@@ -860,8 +860,12 @@ pub mod staking {
                             PositionState::LOCKING => {
                                 governance_target_account.add_unlocking(to_slash, current_epoch)?;
                             }
-                            PositionState::LOCKED | PositionState::PREUNLOCKING => {
+                            PositionState::LOCKED => {
                                 governance_target_account.sub_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::PREUNLOCKING => {
+                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                                governance_target_account.add_locking(to_slash, current_epoch)?;
                             }
                             PositionState::UNLOCKING | PositionState::UNLOCKED => {}
                         }
