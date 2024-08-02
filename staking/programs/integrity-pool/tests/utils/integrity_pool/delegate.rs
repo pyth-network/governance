@@ -5,7 +5,6 @@ use {
                 get_stake_account_custody_address,
                 get_stake_account_metadata_address,
             },
-            create_target::get_target_address,
             init_config::get_config_address,
         },
         pool_data::get_pool_config_address,
@@ -26,7 +25,6 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::state::positions::Target,
 };
 
 pub fn get_delegation_record_address(
@@ -100,10 +98,6 @@ pub fn delegate(
     let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
     let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
 
-    let (target_account, _) = get_target_address(Target::IntegrityPool {
-        pool_authority: pool_config_pubkey,
-    });
-
     let delegate_data = integrity_pool::instruction::Delegate { amount };
     let delegate_accs = integrity_pool::accounts::Delegate {
         payer: payer.pubkey(),
@@ -114,7 +108,6 @@ pub fn delegate(
         stake_account_positions,
         stake_account_metadata,
         stake_account_custody,
-        target_account,
         staking_program: staking::ID,
     };
 
@@ -149,10 +142,6 @@ pub fn undelegate(
     let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
     let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
 
-    let (target_account, _) = get_target_address(Target::IntegrityPool {
-        pool_authority: pool_config_pubkey,
-    });
-
     let undelegate_data = integrity_pool::instruction::Undelegate {
         position_index,
         amount,
@@ -167,7 +156,6 @@ pub fn undelegate(
         stake_account_positions,
         stake_account_metadata,
         stake_account_custody,
-        target_account,
         staking_program: staking::ID,
     };
     let undelegate_ix = Instruction::new_with_bytes(

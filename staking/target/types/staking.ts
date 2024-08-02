@@ -427,7 +427,8 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "poolAuthority",
@@ -557,7 +558,8 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true
         },
         {
           "name": "poolAuthority",
@@ -1560,6 +1562,53 @@ export type Staking = {
       ]
     },
     {
+      "name": "updatePoolAuthority",
+      "discriminator": [
+        160,
+        162,
+        113,
+        9,
+        99,
+        187,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "governanceAuthority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "poolAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
       "name": "updateTokenListTime",
       "discriminator": [
         38,
@@ -2194,6 +2243,11 @@ export type Staking = {
     },
     {
       "code": 6037,
+      "name": "missingTargetAccount",
+      "msg": "The target account is missing"
+    },
+    {
+      "code": 6038,
       "name": "other",
       "msg": "other"
     }
@@ -2263,6 +2317,10 @@ export type Staking = {
           {
             "name": "mockClockTime",
             "type": "i64"
+          },
+          {
+            "name": "poolAuthority",
+            "type": "pubkey"
           }
         ]
       }
@@ -2487,13 +2545,7 @@ export type Staking = {
             "name": "voting"
           },
           {
-            "name": "integrityPool",
-            "fields": [
-              {
-                "name": "poolAuthority",
-                "type": "pubkey"
-              }
-            ]
+            "name": "integrityPool"
           }
         ]
       }
@@ -2542,10 +2594,6 @@ export type Staking = {
           {
             "name": "integrityPool",
             "fields": [
-              {
-                "name": "poolAuthority",
-                "type": "pubkey"
-              },
               {
                 "name": "publisher",
                 "type": "pubkey"

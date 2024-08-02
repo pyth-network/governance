@@ -64,6 +64,7 @@ pub mod staking {
         config_account.governance_program = global_config.governance_program;
         config_account.pyth_token_list_time = None;
         config_account.agreement_hash = global_config.agreement_hash;
+        config_account.pool_authority = global_config.pool_authority;
 
         #[cfg(feature = "mock-clock")]
         {
@@ -109,6 +110,15 @@ pub mod staking {
     ) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.agreement_hash = agreement_hash;
+        Ok(())
+    }
+
+    pub fn update_pool_authority(
+        ctx: Context<UpdatePoolAuthority>,
+        pool_authority: Pubkey,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.pool_authority = pool_authority;
         Ok(())
     }
 
@@ -165,14 +175,21 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
-        let target_account = &mut ctx.accounts.target_account;
+        let maybe_target_account = &mut ctx.accounts.target_account;
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }
@@ -209,7 +226,9 @@ pub mod staking {
             unvested_balance,
         )?;
 
-        target_account.add_locking(amount, current_epoch)?;
+        if let Some(target_account) = maybe_target_account {
+            target_account.add_locking(amount, current_epoch)?;
+        }
 
         Ok(())
     }
@@ -226,16 +245,23 @@ pub mod staking {
 
         let i: usize = index.into();
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+        let maybe_target_account = &mut ctx.accounts.target_account;
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }
@@ -306,7 +332,9 @@ pub mod staking {
                     );
                 }
 
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
 
             // For this case, we don't need to create new positions because the "closed"
@@ -328,7 +356,9 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
                 }
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
             PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));

@@ -1,6 +1,5 @@
 use {
     super::init_config::get_config_address,
-    crate::utils::integrity_pool::pool_data::get_pool_config_address,
     anchor_lang::{
         system_program,
         InstructionData,
@@ -21,18 +20,11 @@ pub fn get_target_address(target: Target) -> (Pubkey, u8) {
 }
 
 pub fn create_target_account(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
-    // create target
-    let (pool_config_pubkey, _) = get_pool_config_address();
-
-    let (target_account, _) = get_target_address(Target::IntegrityPool {
-        pool_authority: pool_config_pubkey,
-    });
+    let (target_account, _) = get_target_address(Target::Voting);
     let (config_account, _) = get_config_address();
 
     let target_data = staking::instruction::CreateTarget {
-        _target: staking::state::positions::Target::IntegrityPool {
-            pool_authority: pool_config_pubkey,
-        },
+        _target: staking::state::positions::Target::Voting,
     };
     let target_accs = staking::accounts::CreateTarget {
         payer: payer.pubkey(),
