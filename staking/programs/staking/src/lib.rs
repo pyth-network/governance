@@ -862,6 +862,14 @@ pub mod staking {
             }
         }
 
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.stake_account_positions.key().as_ref(),
+                &[ctx.accounts.stake_account_metadata.authority_bump],
+            ]]),
+            total_slashed,
+        )?;
 
         Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
     }

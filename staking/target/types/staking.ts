@@ -1402,6 +1402,7 @@ export type Staking = {
         },
         {
           "name": "stakeAccountCustody",
+          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -1444,6 +1445,42 @@ export type Staking = {
         {
           "name": "governanceTargetAccount",
           "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "custodyAuthority",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
       "args": [

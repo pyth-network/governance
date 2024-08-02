@@ -1,9 +1,11 @@
 use {
     crate::utils::account::fetch_account_data_bytemuck,
     anchor_lang::{
+        AccountDeserialize,
         InstructionData,
         ToAccountMetas,
     },
+    anchor_spl::token::TokenAccount,
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     solana_sdk::{
         compute_budget::ComputeBudgetInstruction,
@@ -28,12 +30,14 @@ use {
             create_stake_account::{
                 create_stake_account,
                 get_stake_account_custody_address,
+                get_stake_account_custory_authority_address,
                 get_stake_account_metadata_address,
             },
             create_target::{
                 create_target_account,
                 get_target_address,
             },
+            create_token_account::create_token_account,
             init_config::get_config_address,
         },
     },
@@ -64,7 +68,11 @@ fn test_staking_slash() {
     let (config_pubkey, _) = get_config_address();
     let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
     let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let (stake_account_authority, _) =
+        get_stake_account_custory_authority_address(stake_account_positions);
     let pool_authority = Keypair::new();
+
+    let slash_token_account = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey());
 
     create_target_account(
         &mut svm,
@@ -127,6 +135,9 @@ fn test_staking_slash() {
         stake_account_custody,
         pool_authority: pool_authority.pubkey(),
         governance_target_account: target_account,
+        custody_authority: stake_account_authority,
+        token_program: spl_token::ID,
+        destination: slash_token_account.pubkey(),
     };
 
     let slash_account_ix = Instruction::new_with_bytes(
@@ -163,4 +174,10 @@ fn test_staking_slash() {
     let pos1 = positions.read_position(1).unwrap().unwrap();
     assert_eq!(pos1.amount, 35 * FRAC_64_MULTIPLIER);
     assert_eq!(pos1.target_with_parameters, TargetWithParameters::Voting);
+
+    let slash_account_data = svm.get_account(&slash_token_account.pubkey()).unwrap();
+    let slash_account =
+        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+
+    assert_eq!(slash_account.amount, 25 * FRAC_64_MULTIPLIER);
 }
