@@ -47,13 +47,15 @@ pub mod publisher_caps {
         index: u32,
         data: Vec<u8>,
     ) -> Result<()> {
-        let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
+        {
+            let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
 
-        require_eq!(
-            publisher_caps.is_verified,
-            0,
-            PublisherCapsError::CantMutateVerifiedPublisherCaps
-        );
+            require_eq!(
+                publisher_caps.is_verified,
+                0,
+                PublisherCapsError::CantMutateVerifiedPublisherCaps
+            );
+        }
 
         require_gte!(
             PublisherCaps::LEN,
@@ -63,8 +65,9 @@ pub mod publisher_caps {
             PublisherCapsError::DataOverflow
         );
 
+        let mut account_info = ctx.accounts.publisher_caps.to_account_info();
         sol_memcpy(
-            &mut publisher_caps.publisher_caps_message_buffer
+            &mut account_info.try_borrow_mut_data().unwrap()
                 [PublisherCaps::HEADER_LEN + index as usize..],
             &data,
             data.len(),
@@ -109,7 +112,7 @@ pub mod publisher_caps {
         if !root.check(
             MerklePath::<Keccak160>::new(proof),
             &publisher_caps.publisher_caps_message_buffer
-                [..publisher_caps.num_publishers() as usize],
+                [..1 + 8 + 2 + publisher_caps.num_publishers() as usize * PublisherCap::LEN],
         ) {
             return err!(PublisherCapsError::InvalidMerkleProof);
         }
