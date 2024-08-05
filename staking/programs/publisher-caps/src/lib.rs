@@ -219,7 +219,6 @@ pub struct VerifyPublisherCaps<'info> {
 
 #[error_code]
 pub enum PublisherCapsError {
-    InvalidTimestamp,
     InvalidWormholeMessage,
     InvalidMerkleProof,
     CantMutateVerifiedPublisherCaps,
