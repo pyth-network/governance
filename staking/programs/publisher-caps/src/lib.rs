@@ -48,7 +48,7 @@ pub mod publisher_caps {
         data: Vec<u8>,
     ) -> Result<()> {
         {
-            let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
+            let publisher_caps = &mut ctx.accounts.publisher_caps.load()?;
 
             require_eq!(
                 publisher_caps.is_verified,
@@ -65,7 +65,7 @@ pub mod publisher_caps {
             PublisherCapsError::DataOverflow
         );
 
-        let mut account_info = ctx.accounts.publisher_caps.to_account_info();
+        let account_info = ctx.accounts.publisher_caps.to_account_info();
         sol_memcpy(
             &mut account_info.try_borrow_mut_data().unwrap()
                 [PublisherCaps::HEADER_LEN + index as usize..],
