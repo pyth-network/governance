@@ -220,6 +220,7 @@ pub struct AdvanceDelegationRecord<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(index: u8, slash_ratio: u64, slash_custody: Pubkey)]
 pub struct CreateSlashEvent<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -230,10 +231,10 @@ pub struct CreateSlashEvent<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = payer,
         space = SlashEvent::LEN,
-        seeds = [SLASH_EVENT.as_bytes()],
+        seeds = [SLASH_EVENT.as_bytes(), &[index]],
         bump,
     )]
     pub slash_event: Account<'info, SlashEvent>,
@@ -242,6 +243,7 @@ pub struct CreateSlashEvent<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(index: u8)]
 pub struct Slash<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -253,7 +255,7 @@ pub struct Slash<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     #[account(
-        seeds = [SLASH_EVENT.as_bytes()],
+        seeds = [SLASH_EVENT.as_bytes(), &[index]],
         bump,
         has_one = slash_custody,
     )]
