@@ -236,7 +236,7 @@ pub fn post_publisher_caps(
     };
 
     let instruction_data = publisher_caps::instruction::VerifyPublisherCaps {
-        proof: merkle_proofs[0].proof.0.clone(),
+        proof: merkle_proofs[0].proof.to_vec(),
     };
 
     let instruction = Instruction {
