@@ -187,7 +187,7 @@ impl PoolData {
         );
         require_eq!(
             current_epoch,
-            time_to_epoch(publisher_caps.timestamp())?,
+            time_to_epoch(publisher_caps.publish_time())?,
             IntegrityPoolError::OutdatedPublisherCaps
         );
 
@@ -284,7 +284,7 @@ impl PoolData {
         if *publisher == Pubkey::default() {
             return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
         }
-        publisher_caps.get_caps()[..publisher_caps.num_publishers() as usize]
+        publisher_caps.caps()[..publisher_caps.num_publishers() as usize]
             .binary_search_by_key(&publisher, |cap| &cap.pubkey)
             .map_err(|_| IntegrityPoolError::PublisherNotFound.into())
     }
