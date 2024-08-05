@@ -26,6 +26,9 @@ use {
 declare_id!("BZ1jqX41oh3NaF7FmkrCWUrd4eQZQqid1edPLGxzJMc2");
 
 pub const WORMHOLE_RECEIVER: Pubkey = pubkey!("HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ");
+pub const PRICE_FEEDS_EMITTER_ADDRESS: Pubkey =
+    pubkey!("G9LV2mp9ua1znRAfYwZz5cPiJMAbo1T6mbjdQsDZuMJg");
+pub const PRICE_FEEDS_EMITTER_CHAIN: u16 = 26; //pythnet
 pub const MAX_CAPS: usize = 1024;
 
 #[program]
@@ -44,28 +47,29 @@ pub mod publisher_caps {
         index: u32,
         data: Vec<u8>,
     ) -> Result<()> {
-        let publisher_caps = &ctx.accounts.publisher_caps.load()?;
+        let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
+
         require_eq!(
             publisher_caps.is_verified,
             0,
             PublisherCapsError::CantMutateVerifiedPublisherCaps
         );
 
-
-        let binding = &mut ctx.accounts.publisher_caps.to_account_info();
-        let account_data = &mut binding.try_borrow_mut_data()?;
         require_gte!(
-            PublisherCap::LEN,
+            PublisherCaps::LEN,
             PublisherCaps::HEADER_LEN
                 .saturating_add(index.try_into().unwrap())
                 .saturating_add(data.len()),
             PublisherCapsError::DataOverflow
         );
+
         sol_memcpy(
-            &mut account_data[PublisherCaps::HEADER_LEN + index as usize..],
+            &mut publisher_caps.publisher_caps_message_buffer
+                [PublisherCaps::HEADER_LEN + index as usize..],
             &data,
             data.len(),
         );
+
         Ok(())
     }
 
@@ -74,15 +78,29 @@ pub mod publisher_caps {
         proof: Vec<[u8; 20]>,
     ) -> Result<()> {
         let vaa = VaaAccount::load_unchecked(&ctx.accounts.encoded_vaa);
+        let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
 
-        let number_of_publishers: usize = {
-            let publisher_caps = &mut ctx.accounts.publisher_caps.load_mut()?;
-            publisher_caps.is_verified = 1;
-            publisher_caps.num_publishers() as usize
-        };
 
-        let vaa_payload = vaa.payload();
-        let wormhole_message = WormholeMessage::try_from_bytes(vaa_payload)
+        require_eq!(
+            Pubkey::from(vaa.emitter_address()),
+            PRICE_FEEDS_EMITTER_ADDRESS,
+            PublisherCapsError::WrongEmitterAddress
+        );
+        require_eq!(
+            vaa.emitter_chain(),
+            PRICE_FEEDS_EMITTER_CHAIN,
+            PublisherCapsError::WrongEmitterChain
+        );
+
+        publisher_caps.is_verified = 1;
+
+        require_eq!(
+            publisher_caps.discriminator(),
+            2,
+            PublisherCapsError::WrongDiscriminator // This is not a PublisherStakeCaps message
+        );
+
+        let wormhole_message = WormholeMessage::try_from_bytes(vaa.payload())
             .map_err(|_| PublisherCapsError::InvalidWormholeMessage)?;
         let root: MerkleRoot<Keccak160> = MerkleRoot::new(match wormhole_message.payload {
             WormholePayload::Merkle(merkle_root) => merkle_root.root,
@@ -90,11 +108,8 @@ pub mod publisher_caps {
 
         if !root.check(
             MerklePath::<Keccak160>::new(proof),
-            &ctx.accounts
-                .publisher_caps
-                .to_account_info()
-                .try_borrow_data()?[PublisherCaps::HEADER_LEN
-                ..PublisherCaps::HEADER_LEN + 1 + 8 + 2 + number_of_publishers * PublisherCap::LEN],
+            &publisher_caps.publisher_caps_message_buffer
+                [..publisher_caps.num_publishers() as usize],
         ) {
             return err!(PublisherCapsError::InvalidMerkleProof);
         }
@@ -208,6 +223,9 @@ pub enum PublisherCapsError {
     DataOverflow,
     WrongVaaOwner,
     WrongWriteAuthority,
+    WrongEmitterAddress,
+    WrongEmitterChain,
+    WrongDiscriminator,
 }
 
 #[cfg(test)]

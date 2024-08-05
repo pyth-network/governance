@@ -17,6 +17,7 @@ use {
     publisher_caps::{
         PublisherCaps,
         MAX_CAPS,
+        PRICE_FEEDS_EMITTER_ADDRESS,
         WORMHOLE_RECEIVER,
     },
     pythnet_sdk::{
@@ -28,6 +29,7 @@ use {
         test_utils::{
             create_accumulator_message,
             create_dummy_price_feed_message,
+            DataSource,
         },
         wire::v1::{
             AccumulatorUpdateData,
@@ -157,6 +159,10 @@ pub fn post_publisher_caps(
         &[&publisher_caps_message],
         false,
         false,
+        Some(DataSource {
+            address: wormhole_sdk::Address(PRICE_FEEDS_EMITTER_ADDRESS.to_bytes()),
+            chain:   wormhole_sdk::Chain::Pythnet,
+        }),
     );
     let (vaa, merkle_proofs) = deserialize_accumulator_update_data(message).unwrap();
 
