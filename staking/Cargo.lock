@@ -1582,6 +1582,7 @@ dependencies = [
  "solana-program",
  "solana-sdk",
  "spl-token",
+ "wormhole-solana-vaas",
  "wormhole-vaas-serde",
 ]
 
@@ -2186,7 +2187,8 @@ dependencies = [
 
 [[package]]
 name = "pythnet-sdk"
-version = "2.2.0"
+version = "2.3.0"
+source = "git+https://github.com/pyth-network/pyth-crosschain.git?branch=feat/publisher-caps-program#c275a46bc37e0b69d7d77f51df6bf82aa22c8099"
 dependencies = [
  "anchor-lang",
  "bincode",
