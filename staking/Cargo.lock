@@ -1582,7 +1582,6 @@ dependencies = [
  "solana-program",
  "solana-sdk",
  "spl-token",
- "wormhole-solana-vaas",
  "wormhole-vaas-serde",
 ]
 

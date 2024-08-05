@@ -12,7 +12,6 @@ use {
         ToAccountMetas,
     },
     byteorder::BigEndian,
-    core::time,
     litesvm::LiteSVM,
     publisher_caps::{
         PublisherCaps,
@@ -119,7 +118,6 @@ pub fn create_dummy_publisher_caps_message(
     first_publisher_cap: u64,
 ) -> Message {
     let timestamp = svm.get_sysvar::<Clock>().unix_timestamp;
-    println!("timestamp: {}", timestamp);
     let mut caps: Vec<PublisherStakeCap> = vec![];
 
     caps.push(PublisherStakeCap {
@@ -202,10 +200,6 @@ pub fn post_publisher_caps(
 
     let publisher_caps_message_bytes =
         pythnet_sdk::wire::to_vec::<_, BigEndian>(&publisher_caps_message).unwrap();
-    println!(
-        "publisher_caps_message_bytes: {:?}",
-        &publisher_caps_message_bytes[..50]
-    );
 
     for i in (0..publisher_caps_message_bytes.len()).step_by(1000) {
         let chunk =

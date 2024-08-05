@@ -18,4 +18,5 @@ pub enum IntegrityPoolError {
     InsufficientRewards,
     #[msg("Start epoch of the reward program is before the current epoch")]
     InvalidStartEpoch,
+    UnverifiedPublisherCaps,
 }
