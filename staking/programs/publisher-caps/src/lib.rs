@@ -95,8 +95,6 @@ pub mod publisher_caps {
             PublisherCapsError::WrongEmitterChain
         );
 
-        publisher_caps.is_verified = 1;
-
         require_eq!(
             publisher_caps.discriminator(),
             2,
@@ -116,6 +114,8 @@ pub mod publisher_caps {
         ) {
             return err!(PublisherCapsError::InvalidMerkleProof);
         }
+
+        publisher_caps.is_verified = 1;
 
         Ok(())
     }
