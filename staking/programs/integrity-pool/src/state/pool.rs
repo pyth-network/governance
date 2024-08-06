@@ -55,11 +55,10 @@ pub struct PublisherData {
 #[repr(C)]
 pub struct DelegationState {
     // total delegation at the beginning of the epoch
-    pub total_delegation:          u64,
+    pub total_delegation: u64,
     // amount of delegate/undelegate during the epoch
     // will take effect at the end of the epoch
-    pub positive_delta_delegation: u64,
-    pub negative_delta_delegation: u64,
+    pub delta_delegation: i64,
 }
 
 #[account(zero_copy)]
@@ -67,9 +66,7 @@ pub struct DelegationState {
 pub struct PoolData {
     pub last_updated_epoch:       u64,
     pub publishers:               [Pubkey; MAX_PUBLISHERS],
-    pub prev_del_state:           [DelegationState; MAX_PUBLISHERS],
     pub del_state:                [DelegationState; MAX_PUBLISHERS],
-    pub prev_self_del_state:      [DelegationState; MAX_PUBLISHERS],
     pub self_del_state:           [DelegationState; MAX_PUBLISHERS],
     pub publisher_stake_accounts: [Pubkey; MAX_PUBLISHERS],
     pub events:                   [Event; MAX_EVENTS],
@@ -219,35 +216,20 @@ impl PoolData {
                 publisher_cap,
             )?;
 
-            let (next_del_state, next_self_del_state) = (
-                DelegationState {
-                    total_delegation:          self.del_state[i].total_delegation
-                        + self.del_state[i].positive_delta_delegation
-                        - self.del_state[i].negative_delta_delegation,
-                    positive_delta_delegation: 0,
-                    negative_delta_delegation: 0,
-                },
-                DelegationState {
-                    total_delegation:          self.self_del_state[i].total_delegation
-                        + self.self_del_state[i].positive_delta_delegation
-                        - self.self_del_state[i].negative_delta_delegation,
-                    positive_delta_delegation: 0,
-                    negative_delta_delegation: 0,
-                },
-            );
-            match epochs_passed {
-                0 => return err!(IntegrityPoolError::ThisCodeShouldBeUnreachable),
-                1 => {
-                    self.prev_del_state[i] = self.del_state[i];
-                    self.prev_self_del_state[i] = self.self_del_state[i];
-                }
-                _ => {
-                    self.prev_del_state[i] = next_del_state;
-                    self.prev_self_del_state[i] = next_self_del_state;
-                }
-            }
-            self.del_state[i] = next_del_state;
-            self.self_del_state[i] = next_self_del_state;
+            self.del_state[i] = DelegationState {
+                total_delegation: (TryInto::<i64>::try_into(self.del_state[i].total_delegation)?
+                    + self.del_state[i].delta_delegation)
+                    .try_into()?,
+                delta_delegation: 0,
+            };
+
+            self.self_del_state[i] = DelegationState {
+                total_delegation: (TryInto::<i64>::try_into(
+                    self.self_del_state[i].total_delegation,
+                )? + self.self_del_state[i].delta_delegation)
+                    .try_into()?,
+                delta_delegation: 0,
+            };
 
             // for every event that was missed, create a reward event using del_state after update
             // which corresponds to the del_state of all the epochs after last_updated_epoch
@@ -343,10 +325,12 @@ impl PoolData {
         let index = self.get_publisher_index(publisher)?;
         self.assert_up_to_date(current_epoch)?;
 
+        let amount_i64: i64 = amount.try_into()?;
+
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
-            self.self_del_state[index].positive_delta_delegation += amount;
+            self.self_del_state[index].delta_delegation += amount_i64;
         } else {
-            self.del_state[index].positive_delta_delegation += amount;
+            self.del_state[index].delta_delegation += amount_i64;
         }
         Ok(())
     }
@@ -362,24 +346,20 @@ impl PoolData {
         let index = self.get_publisher_index(publisher)?;
         self.assert_up_to_date(current_epoch)?;
 
+        let amount_i64: i64 = amount.try_into()?;
+
         if stake_account_positions_key == &self.publisher_stake_accounts[index] {
             match position_state {
-                PositionState::LOCKED => {
-                    self.self_del_state[index].negative_delta_delegation += amount;
-                }
-                PositionState::LOCKING => {
-                    self.self_del_state[index].positive_delta_delegation -= amount;
+                PositionState::LOCKED | PositionState::LOCKING => {
+                    self.self_del_state[index].delta_delegation -= amount_i64;
                 }
                 PositionState::UNLOCKED => {}
                 _ => return err!(IntegrityPoolError::UnexpectedPositionState),
             }
         } else {
             match position_state {
-                PositionState::LOCKED => {
-                    self.del_state[index].negative_delta_delegation += amount;
-                }
-                PositionState::LOCKING => {
-                    self.del_state[index].positive_delta_delegation -= amount;
+                PositionState::LOCKED | PositionState::LOCKING => {
+                    self.del_state[index].delta_delegation -= amount_i64;
                 }
                 PositionState::UNLOCKED => {}
                 _ => return err!(IntegrityPoolError::UnexpectedPositionState),
@@ -442,9 +422,7 @@ mod tests {
         let mut pool_data = PoolData {
             last_updated_epoch:       0,
             publishers:               [Pubkey::default(); MAX_PUBLISHERS],
-            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             del_state:                [DelegationState::default(); MAX_PUBLISHERS],
-            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
             self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
@@ -462,9 +440,7 @@ mod tests {
         let mut pool_data = PoolData {
             last_updated_epoch:       2,
             publishers:               [Pubkey::default(); MAX_PUBLISHERS],
-            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             del_state:                [DelegationState::default(); MAX_PUBLISHERS],
-            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
             self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
@@ -512,9 +488,7 @@ mod tests {
         let mut pool_data = PoolData {
             last_updated_epoch:       2,
             publishers:               [Pubkey::default(); MAX_PUBLISHERS],
-            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             del_state:                [DelegationState::default(); MAX_PUBLISHERS],
-            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
             self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
@@ -676,9 +650,7 @@ mod tests {
         let mut pool_data = PoolData {
             last_updated_epoch:       1,
             publishers:               [Pubkey::default(); MAX_PUBLISHERS],
-            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             del_state:                [DelegationState::default(); MAX_PUBLISHERS],
-            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
             self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
@@ -719,9 +691,7 @@ mod tests {
         let mut pool_data = PoolData {
             last_updated_epoch:       1,
             publishers:               [Pubkey::default(); MAX_PUBLISHERS],
-            prev_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             del_state:                [DelegationState::default(); MAX_PUBLISHERS],
-            prev_self_del_state:      [DelegationState::default(); MAX_PUBLISHERS],
             self_del_state:           [DelegationState::default(); MAX_PUBLISHERS],
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
