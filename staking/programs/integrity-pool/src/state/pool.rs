@@ -180,6 +180,12 @@ impl PoolData {
     ) -> Result<()> {
         let mut existing_publishers = BoolArray::new(MAX_CAPS);
 
+        require_eq!(
+            publisher_caps.is_verified,
+            1,
+            IntegrityPoolError::UnverifiedPublisherCaps
+        );
+
         require_gt!(
             current_epoch,
             self.last_updated_epoch,
