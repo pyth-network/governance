@@ -2188,7 +2188,8 @@ dependencies = [
 [[package]]
 name = "pythnet-sdk"
 version = "2.3.0"
-source = "git+https://github.com/pyth-network/pyth-crosschain.git?branch=feat/publisher-caps-program#c275a46bc37e0b69d7d77f51df6bf82aa22c8099"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d674382ba4798254178b47c8a4cdd9ace09cb8d1554a6de180f8ab326c4d5c41"
 dependencies = [
  "anchor-lang",
  "bincode",

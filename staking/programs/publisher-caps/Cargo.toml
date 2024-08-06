@@ -17,5 +17,5 @@ name = "publisher_caps"
 anchor-lang = {workspace = true, features = ["init-if-needed"]}
 arrayref = "0.3.8"
 bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
-pythnet-sdk = {git= "https://github.com/pyth-network/pyth-crosschain.git", branch = "feat/publisher-caps-program" , features = ["solana-program"]}
+pythnet-sdk = {version = "2.3.0", features = ["solana-program"]}
 wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}

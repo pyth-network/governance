@@ -28,5 +28,5 @@ spl-token = "4.0.1"
 wormhole-vaas-serde =  "0.1.0"
 wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}
 serde_wormhole = "0.1.0"
-pythnet-sdk = {git= "https://github.com/pyth-network/pyth-crosschain.git", branch = "feat/publisher-caps-program" , features = ["test-utils"]}
+pythnet-sdk = {version = "2.3.0", features = ["test-utils"]}
 byteorder = "1.4.3"
