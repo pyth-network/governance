@@ -1,44 +1,29 @@
 import {
-  ANCHOR_CONFIG_PATH,
   CustomAbortController,
   getPortNumber,
-  makeDefaultConfig,
-  readAnchorConfig,
   standardSetup,
 } from "./utils/before";
 import path from "path";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { StakeConnection, PythBalance } from "../app";
-import assert from "assert";
 import { BN } from "@coral-xyz/anchor";
 import { assertBalanceMatches, loadAndUnlock } from "./utils/api_utils";
+import { abortUnlessDetached } from "./utils/after";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("unlock_api", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-  let EPOCH_DURATION: BN;
-
+  let epochDuration: BN;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let stakeAccountAddress;
-
+  let stakeAccountAddress: PublicKey;
   let owner: PublicKey;
 
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
 
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
-    owner = stakeConnection.program.provider.wallet.publicKey;
+    epochDuration = stakeConnection.config.epochDuration;
+    owner = stakeConnection.program.provider.publicKey;
   });
 
   it("deposit, lock, unlock, same epoch", async () => {
@@ -69,7 +54,7 @@ describe("unlock_api", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .advanceClock(epochDuration.mul(new BN(3)))
       .rpc();
 
     await assertBalanceMatches(
@@ -124,7 +109,7 @@ describe("unlock_api", async () => {
 
   it("time passes, first position becomes unlocked, now unlock targets second position", async () => {
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(1)))
+      .advanceClock(epochDuration.mul(new BN(1)))
       .rpc();
 
     await assertBalanceMatches(
@@ -141,7 +126,7 @@ describe("unlock_api", async () => {
     );
 
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .advanceClock(epochDuration.mul(new BN(3)))
       .rpc();
 
     await assertBalanceMatches(
@@ -169,7 +154,7 @@ describe("unlock_api", async () => {
 
   it("time passes, all is withdrawable now", async () => {
     await stakeConnection.program.methods
-      .advanceClock(EPOCH_DURATION.mul(new BN(3)))
+      .advanceClock(epochDuration.mul(new BN(3)))
       .rpc();
 
     await assertBalanceMatches(
@@ -181,6 +166,6 @@ describe("unlock_api", async () => {
   });
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 });

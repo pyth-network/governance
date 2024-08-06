@@ -10,37 +10,30 @@ import {
   VersionedTransaction,
   TransactionMessage,
 } from "@solana/web3.js";
-import * as anchor from "@coral-xyz/anchor";
-import { AnchorError } from "@coral-xyz/anchor";
+import { AnchorError, ProgramError, Provider, utils } from "@coral-xyz/anchor";
 import assert from "assert";
 import * as wasm from "@pythnetwork/staking-wasm";
-import { Staking } from "../../target/types/staking";
 import { GOVERNANCE_ADDRESS, REALM_ID, STAKING_ADDRESS } from "../../app";
-
-export type StakeTarget = anchor.IdlTypes<Staking>["Target"];
+import { Target } from "../../app/StakeConnection";
+import { AllInstructions } from "@coral-xyz/anchor/dist/cjs/program/namespace/types";
+import { Staking } from "../../target/types/staking";
+import { MethodsBuilder } from "@coral-xyz/anchor/dist/cjs/program/namespace/methods";
 
 export function getConfigAccount(programId: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [anchor.utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
+    [utils.bytes.utf8.encode(wasm.Constants.CONFIG_SEED())],
     programId
   )[0];
 }
 
 export async function getTargetAccount(
-  stakeTarget: StakeTarget,
   programId: PublicKey
 ): Promise<PublicKey> {
   return (
-    await PublicKey.findProgramAddress(
+    await PublicKey.findProgramAddressSync(
       [
-        anchor.utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
-        stakeTarget.hasOwnProperty("voting")
-          ? anchor.utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED())
-          : anchor.utils.bytes.utf8.encode(wasm.Constants.DATA_TARGET_SEED()),
-
-        stakeTarget.hasOwnProperty("voting")
-          ? Buffer.from("")
-          : (stakeTarget as any).staking.product.toBuffer(),
+        utils.bytes.utf8.encode(wasm.Constants.TARGET_SEED()),
+        utils.bytes.utf8.encode(wasm.Constants.VOTING_TARGET_SEED()),
       ],
       programId
     )
@@ -50,7 +43,7 @@ export async function getTargetAccount(
  * Creates new spl-token at a random keypair
  */
 export async function createMint(
-  provider: anchor.AnchorProvider,
+  provider: Provider,
   mintAccount: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey | null,
@@ -65,7 +58,7 @@ export async function createMint(
   const transaction = new Transaction();
   transaction.add(
     SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
+      fromPubkey: provider.publicKey,
       newAccountPubkey: mintAccount.publicKey,
       lamports: balanceNeeded,
       space: MintLayout.span,
@@ -84,17 +77,15 @@ export async function createMint(
   );
 
   // Send the two instructions
-  const tx = await provider.sendAndConfirm(transaction, [mintAccount], {
-    skipPreflight: true,
-  });
+  const tx = await provider.sendAndConfirm(transaction, [mintAccount]);
 }
 
 export async function initAddressLookupTable(
-  provider: anchor.AnchorProvider,
+  provider: Provider,
   mint: PublicKey
 ) {
   const configAccount = getConfigAccount(STAKING_ADDRESS);
-  const targetAccount = await getTargetAccount({ voting: {} }, STAKING_ADDRESS);
+  const targetAccount = await getTargetAccount(STAKING_ADDRESS);
 
   const [loookupTableInstruction, lookupTableAddress] =
     AddressLookupTableProgram.createLookupTable({
@@ -127,9 +118,7 @@ export async function initAddressLookupTable(
         .blockhash,
     }).compileToV0Message()
   );
-  await provider.sendAndConfirm(createLookupTableTx, [], {
-    skipPreflight: true,
-  });
+  await provider.sendAndConfirm(createLookupTableTx, []);
   return lookupTableAddress;
 }
 
@@ -139,17 +128,19 @@ export async function initAddressLookupTable(
  * @param error : expected string
  * @param idlErrors : mapping from error code to error message
  */
-export async function expectFail(
-  rpcCall,
-  error: string,
-  idlErrors: Map<number, string>
-) {
+export async function expectFail<
+  I extends AllInstructions<Staking>,
+  A extends I["accounts"][number] = I["accounts"][number]
+>(rpcCall: MethodsBuilder<Staking, I, A>, expectedMessage: string) {
   try {
-    const tx = await rpcCall.rpc();
+    await rpcCall.rpc();
     assert(false, "Transaction should fail");
   } catch (err) {
     if (err instanceof AnchorError) {
-      assert.equal(err.error.errorMessage, error);
+      assert.equal(err.error.errorMessage, expectedMessage);
+    } else if (err instanceof ProgramError) {
+      // Sometimes it becomes ProgramError, I don't know why
+      assert.equal(err.msg, expectedMessage);
     } else {
       throw err;
     }

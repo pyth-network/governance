@@ -8,7 +8,13 @@ import {
   LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import fs from "fs";
-import { Program, Wallet, utils, AnchorProvider } from "@coral-xyz/anchor";
+import {
+  Program,
+  Wallet,
+  utils,
+  AnchorProvider,
+  Provider,
+} from "@coral-xyz/anchor";
 import * as wasm from "@pythnetwork/staking-wasm";
 import {
   TOKEN_PROGRAM_ID,
@@ -34,13 +40,12 @@ import toml from "toml";
 import path from "path";
 import os from "os";
 import { StakeConnection, PythBalance, PYTH_DECIMALS } from "../../app";
-import { GlobalConfig } from "../../app/StakeConnection";
-import {
-  createMint,
-  getTargetAccount as getTargetAccount,
-  initAddressLookupTable,
-} from "./utils";
+import { GlobalConfig, Target } from "../../app/StakeConnection";
+import { createMint, getTargetAccount, initAddressLookupTable } from "./utils";
 import { loadKeypair } from "./keys";
+import { sendTransactions } from "@pythnetwork/solana-utils";
+import * as StakingIdl from "../../target/idl/staking.json";
+import { Staking } from "../../target/types/staking";
 
 export const ANCHOR_CONFIG_PATH = "./Anchor.toml";
 export interface AnchorConfig {
@@ -172,11 +177,14 @@ export async function startValidatorRaw(portNumber: number, otherArgs: string) {
  *
  * ```const config = readAnchorConfig(ANCHOR_CONFIG_PATH)```
  *
- * returns a `{controller, program, provider}` struct. Users of this method have to terminate the
+ * returns a `{controller, program}` struct. Users of this method have to terminate the
  * validator by calling :
  * ```controller.abort()```
  */
-export async function startValidator(portNumber: number, config: AnchorConfig) {
+export async function startValidator(
+  portNumber: number,
+  config: AnchorConfig
+): Promise<{ controller: CustomAbortController; program: Program<Staking> }> {
   const programAddress = new PublicKey(config.programs.localnet.staking);
   const idlPath = config.path.idl_path;
   const binaryPath = config.path.binary_path;
@@ -202,20 +210,21 @@ export async function startValidator(portNumber: number, config: AnchorConfig) {
     otherArgs
   );
 
-  const provider = new AnchorProvider(connection, new Wallet(user), {});
-  const program = new Program(
-    JSON.parse(fs.readFileSync(idlPath).toString()),
-    programAddress,
-    provider
-  );
+  const provider = new AnchorProvider(connection, new Wallet(user), {
+    skipPreflight: true,
+  });
+  const program = new Program(StakingIdl as Staking, provider);
 
-  shell.exec(
-    `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${
-      connection.rpcEndpoint
-    }`
-  );
+  if (process.env.DETACH) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    shell.exec(
+      `anchor idl init -f ${idlPath} ${programAddress.toBase58()}  --provider.cluster ${
+        connection.rpcEndpoint
+      }`
+    );
+  }
 
-  return { controller, program, provider };
+  return { controller, program };
 }
 
 export function getConnection(portNumber: number): Connection {
@@ -270,9 +279,11 @@ export async function requestPythAirdrop(
   );
   transaction.add(mintIx);
 
-  await connection.sendTransaction(transaction, [pythMintAuthority], {
-    skipPreflight: true,
-  });
+  await sendTransactions(
+    [{ tx: transaction }],
+    connection,
+    new Wallet(pythMintAuthority)
+  );
 }
 
 interface GovernanceIds {
@@ -284,7 +295,7 @@ interface GovernanceIds {
   Creates an account governance with a 20% vote threshold that can sign using the PDA this function returns.
 */
 export async function createDefaultRealm(
-  provider: AnchorProvider,
+  provider: Provider,
   config: AnchorConfig,
   maxVotingTime: number, // in seconds
   pythMint: PublicKey
@@ -300,7 +311,7 @@ export async function createDefaultRealm(
     "Pyth Governance",
     realmAuthority.publicKey,
     pythMint,
-    provider.wallet.publicKey,
+    provider.publicKey,
     undefined, // no council mint
     MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION,
     new BN(200), // 200 required so we can create governances during tests
@@ -318,7 +329,7 @@ export async function createDefaultRealm(
     govProgramId,
     realm,
     new PublicKey(0),
-    provider.wallet.publicKey,
+    provider.publicKey,
     realmAuthority.publicKey,
     null
   );
@@ -328,10 +339,10 @@ export async function createDefaultRealm(
     govProgramId,
     PROGRAM_VERSION_V2,
     governance,
-    provider.wallet.publicKey
+    provider.publicKey
   );
 
-  await provider.sendAndConfirm(tx, [realmAuthority], { skipPreflight: true });
+  await provider.sendAndConfirm(tx, [realmAuthority]);
 
   // Give governance 100 SOL to play with
   await provider.connection.requestAirdrop(mintGov, LAMPORTS_PER_SOL * 100);
@@ -340,8 +351,7 @@ export async function createDefaultRealm(
 }
 
 export async function initConfig(
-  program: Program,
-  pythMintAccount: PublicKey,
+  program: Program<Staking>,
   globalConfig: GlobalConfig
 ) {
   const [configAccount, bump] = await PublicKey.findProgramAddress(
@@ -349,20 +359,18 @@ export async function initConfig(
     program.programId
   );
 
-  await program.methods.initConfig(globalConfig).rpc({
-    skipPreflight: true,
-  });
+  await program.methods.initConfig(globalConfig).rpc();
 }
 
 export function makeDefaultConfig(
-  pythMint: PublicKey,
-  governanceProgram: PublicKey = PublicKey.unique(),
-  pdaAuthority: PublicKey = PublicKey.unique()
+  pythTokenMint: PublicKey,
+  governanceProgram: PublicKey,
+  pdaAuthority: PublicKey
 ): GlobalConfig {
   return {
     governanceAuthority: null,
     pythGovernanceRealm: null,
-    pythTokenMint: pythMint,
+    pythTokenMint,
     unlockingDuration: 1,
     epochDuration: new BN(3600),
     freeze: true,
@@ -372,25 +380,12 @@ export function makeDefaultConfig(
     governanceProgram,
     pdaAuthority,
     agreementHash: getDummyAgreementHash(),
+    poolAuthority: PublicKey.unique(),
   };
 }
 
-export async function initGovernanceProduct(
-  program: Program,
-  governanceSigner: PublicKey
-) {
-  const votingProduct = { voting: {} };
-  const targetAccount = await getTargetAccount(
-    votingProduct,
-    program.programId
-  );
-  await program.methods
-    .createTarget(votingProduct)
-    .accounts({
-      targetAccount,
-      governanceSigner: governanceSigner,
-    })
-    .rpc();
+export async function createVotingTarget(program: Program<Staking>) {
+  await program.methods.createTarget().rpc();
 }
 
 export async function withCreateDefaultGovernance(
@@ -443,6 +438,13 @@ export async function withCreateDefaultGovernance(
 
   return governance;
 }
+
+export interface Authorities {
+  pythMintAuthority: Keypair;
+  pdaAuthority: Keypair;
+  poolAuthority: Keypair;
+}
+
 /**
  * Standard setup for test, this function :
  * - Launches at validator at `portNumber`
@@ -452,21 +454,27 @@ export async function withCreateDefaultGovernance(
  * - Initializes the global config of the Pyth staking program to some default values
  * - Creates a connection to the localnet Pyth staking program
  * */
-export async function standardSetup(
-  portNumber: number,
-  config: AnchorConfig,
-  pythMintAccount: Keypair,
-  pythMintAuthority: Keypair,
-  globalConfig: GlobalConfig,
-  amount?: PythBalance
-) {
-  const { controller, program, provider } = await startValidator(
-    portNumber,
-    config
+export async function standardSetup(portNumber: number): Promise<{
+  controller: CustomAbortController;
+  stakeConnection: StakeConnection;
+  authorities: Authorities;
+}> {
+  const pythMintAccount = new Keypair();
+  const pythMintAuthority = new Keypair();
+  const pdaAuthority = new Keypair();
+  const poolAuthority = new Keypair();
+
+  const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
+  const globalConfig = makeDefaultConfig(
+    pythMintAccount.publicKey,
+    new PublicKey(config.programs.localnet.governance),
+    pdaAuthority.publicKey
   );
 
+  const { controller, program } = await startValidator(portNumber, config);
+
   await createMint(
-    provider,
+    program.provider,
     pythMintAccount,
     pythMintAuthority.publicKey,
     null,
@@ -474,19 +482,19 @@ export async function standardSetup(
     TOKEN_PROGRAM_ID
   );
 
-  const user = provider.wallet.publicKey;
+  const user = program.provider.publicKey;
 
   await requestPythAirdrop(
     user,
     pythMintAccount.publicKey,
     pythMintAuthority,
-    amount ? amount : PythBalance.fromString("200"),
+    PythBalance.fromString("1000"),
     program.provider.connection
   );
 
   if (globalConfig.pythGovernanceRealm == null) {
     const { realm, governance } = await createDefaultRealm(
-      provider,
+      program.provider,
       config,
       Math.max(globalConfig.epochDuration.toNumber(), 60), // at least one minute
       pythMintAccount.publicKey
@@ -495,23 +503,22 @@ export async function standardSetup(
     globalConfig.pythGovernanceRealm = realm;
   }
 
-  if (globalConfig.pdaAuthority == null) {
-    globalConfig.pdaAuthority = user;
-  }
-
   const temporaryConfig = { ...globalConfig };
   // User becomes a temporary dictator during setup
   temporaryConfig.governanceAuthority = user;
+  temporaryConfig.poolAuthority = poolAuthority.publicKey;
 
-  await initConfig(program, pythMintAccount.publicKey, temporaryConfig);
+  await initConfig(program, temporaryConfig);
 
-  await initGovernanceProduct(program, user);
+  await createVotingTarget(program);
 
-  const lookupTableAddress = await initAddressLookupTable(
-    provider,
-    pythMintAccount.publicKey
-  );
-  console.log("Lookup table address: ", lookupTableAddress.toBase58());
+  if (process.env.DETACH) {
+    const lookupTableAddress = await initAddressLookupTable(
+      program.provider,
+      pythMintAccount.publicKey
+    );
+    console.log("Lookup table address: ", lookupTableAddress.toBase58());
+  }
 
   // Give the power back to the people
   await program.methods
@@ -526,9 +533,13 @@ export async function standardSetup(
 
   const stakeConnection = await StakeConnection.createStakeConnection(
     connection,
-    provider.wallet as Wallet,
+    (program.provider as AnchorProvider).wallet as Wallet,
     new PublicKey(config.programs.localnet.staking)
   );
 
-  return { controller, stakeConnection };
+  return {
+    controller,
+    stakeConnection,
+    authorities: { pdaAuthority, pythMintAuthority, poolAuthority },
+  };
 }

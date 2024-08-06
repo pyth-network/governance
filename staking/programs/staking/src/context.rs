@@ -10,7 +10,6 @@ use {
         TokenAccount,
         Transfer,
     },
-    std::iter::Iterator,
 };
 
 pub const AUTHORITY_SEED: &str = "authority";
@@ -21,25 +20,9 @@ pub const VOTER_RECORD_SEED: &str = "voter_weight";
 pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
 pub const VOTING_TARGET_SEED: &str = "voting";
-pub const DATA_TARGET_SEED: &str = "staking";
 pub const SPLIT_REQUEST: &str = "split_request";
 
-impl positions::Target {
-    pub fn get_seed(&self) -> Vec<u8> {
-        match *self {
-            positions::Target::Voting => VOTING_TARGET_SEED.as_bytes().to_vec(),
-            positions::Target::Staking { ref product } => DATA_TARGET_SEED
-                .as_bytes()
-                .iter()
-                .chain(product.as_ref().iter())
-                .cloned()
-                .collect(),
-        }
-    }
-}
-
 #[derive(Accounts)]
-#[instruction(config_data : global_config::GlobalConfig)]
 pub struct InitConfig<'info> {
     // Native payer
     #[account(mut)]
@@ -59,39 +42,43 @@ pub struct InitConfig<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(new_authority : Pubkey)]
+#[instruction(new_authority: Pubkey)]
 pub struct UpdateGovernanceAuthority<'info> {
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
-    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:            Account<'info, global_config::GlobalConfig>,
+    pub governance_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
-#[instruction(new_authority : Pubkey)]
+#[instruction(new_authority: Pubkey)]
 pub struct UpdatePdaAuthority<'info> {
-    #[account(address = config.pda_authority)]
-    pub governance_signer: Signer<'info>,
-    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:            Account<'info, global_config::GlobalConfig>,
+    pub pda_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = pda_authority)]
+    pub config:        Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
-#[instruction(token_list_time : Option<i64>)]
+#[instruction(token_list_time: Option<i64>)]
 pub struct UpdateTokenListTime<'info> {
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
-    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:            Account<'info, global_config::GlobalConfig>,
+    pub governance_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
-#[instruction(agreement_hash : [u8; 32])]
+#[instruction(agreement_hash: [u8; 32])]
 pub struct UpdateAgreementHash<'info> {
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
-    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:            Account<'info, global_config::GlobalConfig>,
+    pub governance_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(pool_authority: Pubkey)]
+pub struct UpdatePoolAuthority<'info> {
+    pub governance_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
 }
 
 #[derive(Accounts)]
@@ -110,25 +97,17 @@ pub struct CreateStakeAccount<'info> {
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
         bump,
         payer = payer,
-        token::mint = mint,
+        token::mint = pyth_token_mint,
         token::authority = custody_authority,
     )]
-    pub stake_account_custody:   Account<'info, TokenAccount>,
+    pub stake_account_custody:   Box<Account<'info, TokenAccount>>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub custody_authority:       AccountInfo<'info>,
-    #[account(
-        init,
-        payer = payer,
-        space = voter_weight_record::VoterWeightRecord::LEN,
-        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
-        bump)]
-    pub voter_record:            Account<'info, voter_weight_record::VoterWeightRecord>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:                  Account<'info, global_config::GlobalConfig>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = pyth_token_mint)]
+    pub config:                  Box<Account<'info, global_config::GlobalConfig>>,
     // Pyth token mint:
-    #[account(address = config.pyth_token_mint)]
-    pub mint:                    Account<'info, Mint>,
+    pub pyth_token_mint:         Box<Account<'info, Mint>>,
     // Primitive accounts :
     pub rent:                    Sysvar<'info, Rent>,
     pub token_program:           Program<'info, Token>,
@@ -136,17 +115,37 @@ pub struct CreateStakeAccount<'info> {
 }
 
 #[derive(Accounts)]
+pub struct CreateVoterRecord<'info> {
+    // Native payer:
+    #[account(mut)]
+    pub payer:                   Signer<'info>,
+    // Stake program accounts:
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
+    #[account(
+        init,
+        payer = payer,
+        space = voter_weight_record::VoterWeightRecord::LEN,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump)]
+    pub voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:                  Account<'info, global_config::GlobalConfig>,
+    pub system_program:          Program<'info, System>,
+}
+
+#[derive(Accounts)]
 #[instruction(amount : u64)]
 pub struct WithdrawStake<'info> {
     // Native payer:
-    #[account( address = stake_account_metadata.owner)]
-    pub payer:                   Signer<'info>,
+    pub owner:                   Signer<'info>,
     // Destination
     #[account(mut)]
     pub destination:             Account<'info, TokenAccount>,
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         mut,
@@ -181,12 +180,11 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>>
 #[instruction(target_with_parameters:   positions::TargetWithParameters, amount : u64)]
 pub struct CreatePosition<'info> {
     // Native payer:
-    #[account( address = stake_account_metadata.owner)]
-    pub payer:                   Signer<'info>,
+    pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -198,9 +196,10 @@ pub struct CreatePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
+    pub pool_authority:          Option<Signer<'info>>,
 }
 
 #[derive(Accounts)]
@@ -208,12 +207,11 @@ pub struct CreatePosition<'info> {
                                                                                                   // checks
 pub struct ClosePosition<'info> {
     // Native payer:
-    #[account( address = stake_account_metadata.owner)]
-    pub payer:                   Signer<'info>,
+    pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -225,20 +223,20 @@ pub struct ClosePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
+    pub pool_authority:          Option<Signer<'info>>,
 }
 
 #[derive(Accounts)]
 #[instruction(action : voter_weight_record::VoterWeightAction)]
 pub struct UpdateVoterWeight<'info> {
     // Native payer:
-    #[account(address = stake_account_metadata.owner)]
-    pub payer:                   Signer<'info>,
+    pub owner:                   Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
         seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
@@ -273,35 +271,33 @@ pub struct UpdateMaxVoterWeight<'info> {
 
 
 #[derive(Accounts)]
-#[instruction(target : positions::Target)]
 pub struct CreateTarget<'info> {
     #[account(mut)]
-    pub payer:             Signer<'info>,
-    #[account(address = config.governance_authority)]
-    pub governance_signer: Signer<'info>,
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config:            Account<'info, global_config::GlobalConfig>,
+    pub payer:                Signer<'info>,
+    pub governance_authority: Signer<'info>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
     #[account(
         init,
         payer = payer,
-        seeds =  [TARGET_SEED.as_bytes(), &target.get_seed()[..]],
+        seeds =  [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         space = target::TargetMetadata::LEN,
         bump)]
-    pub target_account:    Account<'info, target::TargetMetadata>,
-    pub system_program:    Program<'info, System>,
+    pub target_account:       Account<'info, target::TargetMetadata>,
+    pub system_program:       Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction(amount : u64, recipient : Pubkey)]
 pub struct RequestSplit<'info> {
     // Native payer:
-    #[account(mut, address = stake_account_metadata.owner)]
-    pub payer:                       Signer<'info>,
+    #[account(mut)]
+    pub owner:                       Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions:     AccountLoader<'info, positions::PositionData>,
-    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:      Account<'info, stake_account::StakeAccountMetadataV2>,
-    #[account(init_if_needed, payer = payer, space=split_request::SplitRequest::LEN ,  seeds = [SPLIT_REQUEST.as_bytes(), stake_account_positions.key().as_ref()], bump)]
+    #[account(init_if_needed, payer = owner, space=split_request::SplitRequest::LEN ,  seeds = [SPLIT_REQUEST.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub stake_account_split_request: Account<'info, split_request::SplitRequest>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                      Account<'info, global_config::GlobalConfig>,
@@ -313,8 +309,8 @@ pub struct RequestSplit<'info> {
 #[instruction(amount: u64, recipient: Pubkey)]
 pub struct AcceptSplit<'info> {
     // Native payer:
-    #[account(mut, address = config.pda_authority)]
-    pub payer:                              Signer<'info>,
+    #[account(mut)]
+    pub pda_authority:                      Signer<'info>,
     // Current stake accounts:
     #[account(mut)]
     pub source_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
@@ -335,38 +331,29 @@ pub struct AcceptSplit<'info> {
     // New stake accounts :
     #[account(zero)]
     pub new_stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(init, payer = payer, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
+    #[account(init, payer = pda_authority, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
         init,
         seeds = [CUSTODY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
         bump,
-        payer = payer,
-        token::mint = mint,
+        payer = pda_authority,
+        token::mint = pyth_token_mint,
         token::authority = new_custody_authority,
     )]
     pub new_stake_account_custody:   Box<Account<'info, TokenAccount>>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(seeds = [AUTHORITY_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_custody_authority:       AccountInfo<'info>,
-    #[account(
-        init,
-        payer = payer,
-        space = voter_weight_record::VoterWeightRecord::LEN,
-        seeds = [VOTER_RECORD_SEED.as_bytes(), new_stake_account_positions.key().as_ref()],
-        bump)]
-    pub new_voter_record:            Box<Account<'info, voter_weight_record::VoterWeightRecord>>,
-
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
-    pub config: Box<Account<'info, global_config::GlobalConfig>>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = pda_authority, has_one = pyth_token_mint)]
+    pub config:                      Box<Account<'info, global_config::GlobalConfig>>,
 
     // Pyth token mint:
-    #[account(address = config.pyth_token_mint)]
-    pub mint:           Box<Account<'info, Mint>>,
+    pub pyth_token_mint: Box<Account<'info, Mint>>,
     // Primitive accounts :
-    pub rent:           Sysvar<'info, Rent>,
-    pub token_program:  Program<'info, Token>,
-    pub system_program: Program<'info, System>,
+    pub rent:            Sysvar<'info, Rent>,
+    pub token_program:   Program<'info, Token>,
+    pub system_program:  Program<'info, System>,
 }
 
 impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
@@ -387,11 +374,10 @@ impl<'a, 'b, 'c, 'info> From<&AcceptSplit<'info>>
 #[instruction(agreement_hash : [u8; 32])]
 pub struct JoinDaoLlc<'info> {
     // Native payer:
-    #[account(mut, address = stake_account_metadata.owner)]
-    pub payer:                   Signer<'info>,
+    pub owner:                   Signer<'info>,
     // Stake program accounts:
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
-    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, constraint = config.agreement_hash == agreement_hash @ ErrorCode::InvalidLlcAgreement)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
@@ -409,12 +395,10 @@ pub struct AdvanceClock<'info> {
 #[derive(Accounts)]
 pub struct RecoverAccount<'info> {
     // Native payer:
-    #[account(address = config.governance_authority)]
-    pub payer: Signer<'info>,
+    pub governance_authority: Signer<'info>,
 
     // Token account:
-    #[account(address = stake_account_metadata.owner)]
-    pub payer_token_account: Account<'info, TokenAccount>,
+    pub owner: Account<'info, TokenAccount>,
 
     // Stake program accounts:
     #[account(mut)]
@@ -426,7 +410,8 @@ pub struct RecoverAccount<'info> {
             STAKE_ACCOUNT_METADATA_SEED.as_bytes(),
             stake_account_positions.key().as_ref()
         ],
-        bump = stake_account_metadata.metadata_bump
+        bump = stake_account_metadata.metadata_bump,
+        has_one = owner
     )]
     pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
 
@@ -437,6 +422,67 @@ pub struct RecoverAccount<'info> {
     )]
     pub voter_record: Account<'info, voter_weight_record::VoterWeightRecord>,
 
-    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(slash_ratio: u64)]
+pub struct SlashAccount<'info> {
+    pool_authority: Signer<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's checked against target
+    pub publisher: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.metadata_bump,
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+        mut,
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.custody_bump,
+    )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one=pool_authority)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
+        bump = governance_target_account.bump
+    )]
+    pub governance_target_account: Account<'info, target::TargetMetadata>,
+
+    // transfer the slashed amount to this account
+    #[account(mut)]
+    pub destination: Account<'info, TokenAccount>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.authority_bump)]
+    pub custody_authority: AccountInfo<'info>,
+
+    // Primitive accounts :
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'a, 'b, 'c, 'info> From<&SlashAccount<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
+{
+    fn from(accounts: &SlashAccount<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from:      accounts.stake_account_custody.to_account_info(),
+            to:        accounts.destination.to_account_info(),
+            authority: accounts.custody_authority.to_account_info(),
+        };
+        let cpi_program = accounts.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }

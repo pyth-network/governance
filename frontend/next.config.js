@@ -24,12 +24,6 @@ module.exports = {
     }
     config.optimization.moduleIds = 'named'
     // End of hack
-
-    // Import the browser version of wasm instead of the node version
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@pythnetwork/staking-wasm$': path.resolve(__dirname, '../wasm/bundle'),
-    }
     return config
   },
 }

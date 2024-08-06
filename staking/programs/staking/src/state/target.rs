@@ -85,6 +85,30 @@ impl TargetMetadata {
         Ok(x)
     }
 
+    // Subtracts the amount from locked immediately. This method is called when a governance
+    // position is reduced due to slashing.
+    pub fn sub_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.locked = self
+            .locked
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::NegativeBalance))?;
+        Ok(())
+    }
+
+    // Subtracts the amount from prev_locked immediately. This method is called when a governance
+    // position is reduced due to slashing.
+    pub fn sub_prev_locked(&mut self, amount: u64, current_epoch: u64) -> Result<()> {
+        self.update(current_epoch)?;
+
+        self.prev_epoch_locked = self
+            .prev_epoch_locked
+            .checked_sub(amount)
+            .ok_or_else(|| error!(ErrorCode::NegativeBalance))?;
+        Ok(())
+    }
+
     // Updates the aggregate account if it is outdated (current_epoch > last_updated_at) and
     // subtracts amount to delta_locked. This method needs to be called everytime a user requests to
     // create a new position.
@@ -264,6 +288,7 @@ pub mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn check_size() {
         assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<TargetMetadata>()

@@ -1,0 +1,27 @@
+[package]
+name = "integrity-pool"
+version = "1.0.0"
+description = "Created with Anchor"
+edition = "2018"
+
+[features]
+mock-clock = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "integrity_pool"
+
+[dependencies]
+anchor-lang = {workspace = true, features = ["init-if-needed"]}
+anchor-spl = {workspace = true}
+bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
+pyth-staking-program = {path = "../staking", features = ["cpi"]}
+publisher-caps = {path = "../publisher-caps", features = ["no-entrypoint"]}
+
+
+[dev-dependencies]
+litesvm = "0.1.0"
+solana-program = { workspace = true }
+solana-sdk = { workspace = true }
+spl-token = "4.0.1"

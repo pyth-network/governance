@@ -1,0 +1,13 @@
+{
+  "terminal.integrated.env.osx": {
+    "RUST_MIN_STACK": "10485760"
+  },
+  "terminal.integrated.env.linux": {
+    "RUST_MIN_STACK": "10485760"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"]
+}

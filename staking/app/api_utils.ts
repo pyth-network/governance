@@ -208,7 +208,7 @@ export async function getAllLockedCustodyAccounts(
 }
 
 export function getCurrentlyLockedAmount(
-  lock: IdlTypes<Staking>["VestingSchedule"],
+  lock: IdlTypes<Staking>["vestingSchedule"],
   configAccountData: IdlAccounts<Staking>["globalConfig"]
 ): PythBalance {
   const listTime = configAccountData.pythTokenListTime;

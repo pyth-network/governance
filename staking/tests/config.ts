@@ -1,10 +1,6 @@
-import { parseIdlErrors, utils, Wallet } from "@coral-xyz/anchor";
+import { Program, utils, Wallet } from "@coral-xyz/anchor";
 import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
-import {
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  Token,
-} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   startValidator,
   readAnchorConfig,
@@ -13,6 +9,7 @@ import {
   requestPythAirdrop,
   getDummyAgreementHash,
   getDummyAgreementHash2,
+  CustomAbortController,
 } from "./utils/before";
 import { expectFail, createMint, getTargetAccount } from "./utils/utils";
 import BN from "bn.js";
@@ -20,43 +17,33 @@ import assert from "assert";
 import path from "path";
 import * as wasm from "@pythnetwork/staking-wasm";
 import { PYTH_DECIMALS, PythBalance, StakeConnection } from "../app";
+import { Staking } from "../target/types/staking";
+import { abortUnlessDetached } from "./utils/after";
 
-// When DEBUG is turned on, we turn preflight transaction checking off
-// That way failed transactions show up in the explorer, which makes them
-// easier to debug.
-const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("config", async () => {
   const pythMintAccount = new Keypair();
   const pythMintAuthority = new Keypair();
-  const zeroPubkey = new PublicKey(0);
-
+  const pythGovernanceRealm = PublicKey.unique();
   const pdaAuthorityKeypair = new Keypair();
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
+  const poolAuthority = PublicKey.unique();
 
-  let errMap: Map<number, string>;
-
-  let program;
-  let controller;
-
-  let stakeAccountAddress;
-  let votingProductMetadataAccount;
-
+  let program: Program<Staking>;
+  let controller: CustomAbortController;
+  let votingProductMetadataAccount: PublicKey;
   let configAccount: PublicKey;
   let bump: number;
 
-  const votingProduct = { voting: {} };
-
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
 
   before(async () => {
     ({ controller, program } = await startValidator(portNumber, config));
-    errMap = parseIdlErrors(program.idl);
 
     await createMint(
       program.provider,
@@ -67,10 +54,7 @@ describe("config", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("initializes config", async () => {
@@ -81,8 +65,10 @@ describe("config", async () => {
 
     await program.methods
       .initConfig({
-        governanceAuthority: program.provider.wallet.publicKey,
+        bump: 0,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -91,21 +77,14 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
-      })
-      .rpc({
-        skipPreflight: DEBUG,
-      });
-
-    await program.methods
-      .createTarget(votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-        governanceSigner: program.provider.wallet.publicKey,
+        poolAuthority,
       })
       .rpc();
 
+    await program.methods.createTarget().rpc();
+
     await requestPythAirdrop(
-      program.provider.wallet.publicKey,
+      program.provider.publicKey,
       pythMintAccount.publicKey,
       pythMintAuthority,
       PythBalance.fromString("100"),
@@ -120,9 +99,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -131,12 +110,13 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority,
       })
     );
   });
 
   it("advances clock twice", async () => {
-    await program.methods.advanceClock(new BN(5)).rpc({ skipPreflight: DEBUG });
+    await program.methods.advanceClock(new BN(5)).rpc();
 
     let configAccountData = await program.account.globalConfig.fetch(
       configAccount
@@ -146,9 +126,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -157,12 +137,11 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(15),
+        poolAuthority,
       })
     );
 
-    await program.methods
-      .advanceClock(new BN(15))
-      .rpc({ skipPreflight: DEBUG });
+    await program.methods.advanceClock(new BN(15)).rpc();
 
     configAccountData = await program.account.globalConfig.fetch(configAccount);
 
@@ -170,9 +149,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -181,14 +160,13 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
 
   it("updates token list time", async () => {
-    await program.methods
-      .updateTokenListTime(new BN(5))
-      .rpc({ skipPreflight: DEBUG });
+    await program.methods.updateTokenListTime(new BN(5)).rpc();
 
     let configAccountData = await program.account.globalConfig.fetch(
       configAccount
@@ -198,9 +176,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -209,12 +187,11 @@ describe("config", async () => {
         pythTokenListTime: new BN(5),
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
-    await program.methods
-      .updateTokenListTime(null)
-      .rpc({ skipPreflight: DEBUG });
+    await program.methods.updateTokenListTime(null).rpc();
 
     configAccountData = await program.account.globalConfig.fetch(configAccount);
 
@@ -222,9 +199,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -233,6 +210,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -246,9 +224,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -257,10 +235,11 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
-    const owner = program.provider.wallet.publicKey;
+    const owner = program.provider.publicKey;
     const stakeAccountKeypair = new Keypair();
     const instructions: TransactionInstruction[] = [];
 
@@ -276,12 +255,9 @@ describe("config", async () => {
       .preInstructions(instructions)
       .accounts({
         stakeAccountPositions: stakeAccountKeypair.publicKey,
-        mint: pythMintAccount.publicKey,
       })
       .signers([stakeAccountKeypair])
       .rpc();
-
-    stakeAccountAddress = stakeAccountKeypair.publicKey;
   });
 
   it("someone else tries to access admin methods", async () => {
@@ -302,30 +278,31 @@ describe("config", async () => {
 
     await expectFail(
       samConnection.program.methods.updateGovernanceAuthority(new PublicKey(0)),
-      "An address constraint was violated",
-      errMap
+      "A has one constraint was violated"
     );
     await expectFail(
       samConnection.program.methods.updateTokenListTime(new BN(7)),
-      "An address constraint was violated",
-      errMap
+      "A has one constraint was violated"
+    );
+
+    await expectFail(
+      samConnection.program.methods.updatePoolAuthority(new PublicKey(0)),
+      "A has one constraint was violated"
     );
 
     await expectFail(
       samConnection.program.methods.updateAgreementHash(
         Array.from(Buffer.alloc(32))
       ),
-      "An address constraint was violated",
-      errMap
+      "A has one constraint was violated"
     );
   });
 
   it("updates pda authority", async () => {
     // governance authority can't update pda authority
     await expectFail(
-      program.methods.updatePdaAuthority(program.provider.wallet.publicKey),
-      "An address constraint was violated",
-      errMap
+      program.methods.updatePdaAuthority(program.provider.publicKey),
+      "A has one constraint was violated"
     );
 
     const pdaConnection = await StakeConnection.createStakeConnection(
@@ -344,7 +321,7 @@ describe("config", async () => {
 
     // pda_authority updates pda_authority to the holder of governance_authority
     await pdaConnection.program.methods
-      .updatePdaAuthority(program.provider.wallet.publicKey)
+      .updatePdaAuthority(program.provider.publicKey)
       .rpc();
 
     let configAccountData = await program.account.globalConfig.fetch(
@@ -355,17 +332,18 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
-        pdaAuthority: program.provider.wallet.publicKey,
+        pdaAuthority: program.provider.publicKey,
         governanceProgram,
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
 
@@ -378,9 +356,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -389,6 +367,58 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(30),
+        poolAuthority,
+      })
+    );
+  });
+
+  it("updates pool authority", async () => {
+    const newPoolAuthority = PublicKey.unique();
+    await program.methods.updatePoolAuthority(newPoolAuthority).rpc();
+
+    let configAccountData = await program.account.globalConfig.fetch(
+      configAccount
+    );
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority: newPoolAuthority,
+      })
+    );
+
+    await program.methods.updatePoolAuthority(poolAuthority).rpc();
+
+    configAccountData = await program.account.globalConfig.fetch(configAccount);
+
+    assert.equal(
+      JSON.stringify(configAccountData),
+      JSON.stringify({
+        bump,
+        governanceAuthority: program.provider.publicKey,
+        pythTokenMint: pythMintAccount.publicKey,
+        pythGovernanceRealm,
+        unlockingDuration: 2,
+        epochDuration: new BN(3600),
+        freeze: false,
+        pdaAuthority,
+        governanceProgram,
+        pythTokenListTime: null,
+        agreementHash: getDummyAgreementHash(),
+        mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });
@@ -408,9 +438,9 @@ describe("config", async () => {
       JSON.stringify(configAccountData),
       JSON.stringify({
         bump,
-        governanceAuthority: program.provider.wallet.publicKey,
+        governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
-        pythGovernanceRealm: zeroPubkey,
+        pythGovernanceRealm,
         unlockingDuration: 2,
         epochDuration: new BN(3600),
         freeze: false,
@@ -419,6 +449,7 @@ describe("config", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash2(),
         mockClockTime: new BN(30),
+        poolAuthority,
       })
     );
   });

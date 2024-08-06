@@ -48,7 +48,6 @@ pub mod tests {
             state::positions::{
                 Position,
                 PositionData,
-                Publisher,
                 TargetWithParameters,
             },
             utils::voter_weight::compute_voter_weight,
@@ -98,9 +97,8 @@ pub mod tests {
             &Position {
                 activation_epoch:       0,
                 amount:                 10,
-                target_with_parameters: TargetWithParameters::Staking {
-                    product:   Pubkey::new_unique(),
-                    publisher: Publisher::DEFAULT,
+                target_with_parameters: TargetWithParameters::IntegrityPool {
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },

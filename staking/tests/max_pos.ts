@@ -1,81 +1,40 @@
 import * as anchor from "@coral-xyz/anchor";
-import { parseIdlErrors, Program } from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
-import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import { expectFail, getTargetAccount } from "./utils/utils";
-import BN from "bn.js";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
 import {
-  readAnchorConfig,
-  ANCHOR_CONFIG_PATH,
   standardSetup,
   getPortNumber,
-  makeDefaultConfig,
   CustomAbortController,
 } from "./utils/before";
 import { Constants } from "@pythnetwork/staking-wasm";
+import { TargetWithParameters } from "../app/StakeConnection";
+import { abortUnlessDetached } from "./utils/after";
 
-// When DEBUG is turned on, we turn preflight transaction checking off
-// That way failed transactions show up in the explorer, which makes them
-// easier to debug.
-const DEBUG = true;
 const portNumber = getPortNumber(path.basename(__filename));
 
 describe("fills a stake account with positions", async () => {
-  const pythMintAccount = new Keypair();
-  const pythMintAuthority = new Keypair();
-
-  let EPOCH_DURATION: BN;
+  const votingProduct: TargetWithParameters = { voting: {} };
 
   let program: Program<Staking>;
-  let errMap: Map<number, string>;
   let provider: anchor.AnchorProvider;
-
   let stakeAccountAddress: PublicKey;
-  let userAta: PublicKey;
-
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-
-  let votingProductMetadataAccount;
-  let votingProduct;
+  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
-    controller.abort();
+    await abortUnlessDetached(portNumber, controller);
   });
   before(async () => {
-    const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
-    ({ controller, stakeConnection } = await standardSetup(
-      portNumber,
-      config,
-      pythMintAccount,
-      pythMintAuthority,
-      makeDefaultConfig(pythMintAccount.publicKey)
-    ));
+    ({ controller, stakeConnection } = await standardSetup(portNumber));
     program = stakeConnection.program;
     provider = stakeConnection.provider;
-    userAta = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      pythMintAccount.publicKey,
-      provider.wallet.publicKey,
-      true
-    );
 
-    errMap = parseIdlErrors(program.idl);
-    EPOCH_DURATION = stakeConnection.config.epochDuration;
-
-    votingProduct = stakeConnection.votingProduct;
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
 
     await stakeConnection.depositTokens(
       undefined,
@@ -120,9 +79,7 @@ describe("fills a stake account with positions", async () => {
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
-        await provider.sendAndConfirm(transaction, [], {
-          skipPreflight: DEBUG,
-        });
+        await provider.sendAndConfirm(transaction, [], {});
         transaction = new Transaction();
         budgetRemaining = 200_000;
       }
@@ -130,9 +87,7 @@ describe("fills a stake account with positions", async () => {
       budgetRemaining -= ixCost;
       ixCost += deltaCost;
     }
-    await provider.sendAndConfirm(transaction, [], {
-      skipPreflight: DEBUG,
-    });
+    await provider.sendAndConfirm(transaction, [], {});
 
     // Now create 101, which is supposed to fail
     await expectFail(
@@ -142,8 +97,7 @@ describe("fills a stake account with positions", async () => {
           targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
-      "Number of position limit reached",
-      errMap
+      "Number of position limit reached"
     );
   });
 });
