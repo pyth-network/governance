@@ -28,7 +28,7 @@ use {
 pub mod utils;
 
 #[test]
-fn test_staking_slash() {
+fn test_create_slash_event() {
     let SetupResult {
         mut svm,
         payer,
