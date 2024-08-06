@@ -209,8 +209,9 @@ pub mod integrity_pool {
         let publisher_caps = &ctx.accounts.publisher_caps.load()?;
         let pool_config = &ctx.accounts.pool_config;
 
-        require!(
-            publisher_caps.is_verified == 1,
+        require_eq!(
+            publisher_caps.is_verified,
+            1,
             IntegrityPoolError::UnverifiedPublisherCaps
         );
 
