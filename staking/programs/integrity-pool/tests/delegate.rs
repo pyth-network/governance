@@ -91,21 +91,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 100,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 100,
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -114,9 +105,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     let pos1 = positions.read_position(1).unwrap();
@@ -193,21 +182,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 50,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 50,
         }
     );
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -216,9 +196,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     advance_n_epochs(&mut svm, &payer, 1);
@@ -258,25 +236,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          50,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
-        }
-    );
-    assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 50,
-            negative_delta_delegation: 0,
+            total_delegation: 50,
+            delta_delegation: 0,
         }
     );
     assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -285,9 +250,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     svm.expire_blockhash();
@@ -338,36 +301,22 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          50,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 30,
-        }
-    );
-    assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 50,
-            negative_delta_delegation: 0,
+            total_delegation: 50,
+            delta_delegation: -30,
         }
     );
     assert_eq!(
         pool_data.self_del_state[publisher_index],
         DelegationState::default()
     );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
-        DelegationState::default()
-    );
+
 
     for i in 0..MAX_PUBLISHERS {
         if i == publisher_index {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     advance_n_epochs(&mut svm, &payer, 2); // two epochs at a time
@@ -379,25 +328,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
-        }
-    );
-    assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 20,
+            delta_delegation: 0,
         }
     );
     assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -406,9 +342,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     advance_delegation_record(
@@ -437,25 +371,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
-        }
-    );
-    assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 20,
+            delta_delegation: 0,
         }
     );
     assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -464,9 +385,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     let positions: staking::state::positions::PositionData =
@@ -496,25 +415,12 @@ fn test_delegate() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 20,
-        }
-    );
-    assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          20,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 20,
+            delta_delegation: -20,
         }
     );
     assert_eq!(
         pool_data.self_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
         DelegationState::default()
     );
 
@@ -523,9 +429,7 @@ fn test_delegate() {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     let positions: staking::state::positions::PositionData =

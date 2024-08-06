@@ -221,36 +221,24 @@ fn test_set_publisher_stake_account() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 100,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 100,
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 90,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 90,
         }
     ); // stake_account_positions_2
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
-        DelegationState::default()
-    );
 
     for i in 0..MAX_PUBLISHERS {
         if i == publisher_index {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     // now the self delegated account undelegates
@@ -279,36 +267,24 @@ fn test_set_publisher_stake_account() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 100,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 100,
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState::default()
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
         DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 89,
-            negative_delta_delegation: 0,
+            total_delegation: 0,
+            delta_delegation: 89,
         }
     ); // stake_account_positions_2
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
-        DelegationState::default()
-    );
 
     for i in 0..MAX_PUBLISHERS {
         if i == publisher_index {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
     // new epoch
@@ -341,44 +317,24 @@ fn test_set_publisher_stake_account() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          100,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 100,
+            delta_delegation: 0,
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 100,
-            negative_delta_delegation: 0,
-        }
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
         DelegationState {
-            total_delegation:          89,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 9,
+            total_delegation: 89,
+            delta_delegation: -9,
         }
     ); // stake_account_positions_2
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          0,
-            positive_delta_delegation: 89,
-            negative_delta_delegation: 0,
-        }
-    );
 
     for i in 0..MAX_PUBLISHERS {
         if i == publisher_index {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 
 
@@ -391,43 +347,23 @@ fn test_set_publisher_stake_account() {
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
-            total_delegation:          100,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 100,
+            delta_delegation: 0,
         }
     ); // stake_account_positions_3
     assert_eq!(
-        pool_data.prev_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          100,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
-        }
-    );
-    assert_eq!(
         pool_data.self_del_state[publisher_index],
         DelegationState {
-            total_delegation:          80,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 0,
+            total_delegation: 80,
+            delta_delegation: 0,
         }
     ); // stake_account_positions_2
-    assert_eq!(
-        pool_data.prev_self_del_state[publisher_index],
-        DelegationState {
-            total_delegation:          89,
-            positive_delta_delegation: 0,
-            negative_delta_delegation: 9,
-        }
-    );
 
     for i in 0..MAX_PUBLISHERS {
         if i == publisher_index {
             continue;
         }
         assert_eq!(pool_data.del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
-        assert_eq!(pool_data.prev_self_del_state[i], DelegationState::default());
     }
 }
