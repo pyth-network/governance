@@ -2699,10 +2699,10 @@ export type Staking = {
                 {
                   "array": [
                     "u8",
-                    200
+                    100
                   ]
                 },
-                20
+                40
               ]
             }
           }
