@@ -164,7 +164,7 @@ pub fn post_publisher_caps(
     );
     let (vaa, merkle_proofs) = deserialize_accumulator_update_data(message).unwrap();
 
-    let encoded_vaa = Keypair::new().pubkey();
+    let encoded_vaa = Pubkey::new_unique();
     svm.set_account(
         encoded_vaa,
         build_encoded_vaa_account_from_vaa(serde_wormhole::from_slice(&vaa).unwrap()),
