@@ -405,6 +405,7 @@ pub struct PoolConfig {
     pub reward_program_authority: Pubkey,
     pub pyth_token_mint:          Pubkey,
     pub y:                        frac64,
+    pub num_slash_events:         u64,
 }
 
 impl PoolConfig {
