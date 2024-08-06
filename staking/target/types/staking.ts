@@ -427,7 +427,34 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -557,7 +584,34 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "optional": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "poolAuthority",
@@ -787,23 +841,40 @@ export type Staking = {
         },
         {
           "name": "targetAccount",
-          "writable": true
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "systemProgram",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": [
-        {
-          "name": "target",
-          "type": {
-            "defined": {
-              "name": "target"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "createVoterRecord",
@@ -1349,6 +1420,183 @@ export type Staking = {
       ]
     },
     {
+      "name": "slashAccount",
+      "discriminator": [
+        185,
+        97,
+        8,
+        208,
+        118,
+        205,
+        166,
+        2
+      ],
+      "accounts": [
+        {
+          "name": "poolAuthority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "publisher",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's checked against target"
+          ]
+        },
+        {
+          "name": "stakeAccountPositions",
+          "writable": true
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakeAccountCustody",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "governanceTargetAccount",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  97,
+                  114,
+                  103,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  111,
+                  116,
+                  105,
+                  110,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "custodyAuthority",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's a checked PDA"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "tokenProgram",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "slashRatio",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "updateAgreementHash",
       "discriminator": [
         86,
@@ -1555,6 +1803,53 @@ export type Staking = {
       "args": [
         {
           "name": "newAuthority",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "updatePoolAuthority",
+      "discriminator": [
+        160,
+        162,
+        113,
+        9,
+        99,
+        187,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "governanceAuthority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "poolAuthority",
           "type": "pubkey"
         }
       ]
@@ -2194,6 +2489,16 @@ export type Staking = {
     },
     {
       "code": 6037,
+      "name": "missingTargetAccount",
+      "msg": "The target account is missing"
+    },
+    {
+      "code": 6038,
+      "name": "invalidSlashRatio",
+      "msg": "The slash ratio should be between 0 and 1"
+    },
+    {
+      "code": 6039,
       "name": "other",
       "msg": "other"
     }
@@ -2263,6 +2568,10 @@ export type Staking = {
           {
             "name": "mockClockTime",
             "type": "i64"
+          },
+          {
+            "name": "poolAuthority",
+            "type": "pubkey"
           }
         ]
       }
@@ -2479,26 +2788,6 @@ export type Staking = {
       }
     },
     {
-      "name": "target",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "voting"
-          },
-          {
-            "name": "integrityPool",
-            "fields": [
-              {
-                "name": "poolAuthority",
-                "type": "pubkey"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "name": "targetMetadata",
       "docs": [
         "This represents a target that users can stake to",
@@ -2542,10 +2831,6 @@ export type Staking = {
           {
             "name": "integrityPool",
             "fields": [
-              {
-                "name": "poolAuthority",
-                "type": "pubkey"
-              },
               {
                 "name": "publisher",
                 "type": "pubkey"

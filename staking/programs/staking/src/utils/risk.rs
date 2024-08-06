@@ -3,6 +3,7 @@ use {
         state::positions::{
             PositionData,
             Target,
+            TargetWithParameters,
             MAX_POSITIONS,
         },
         ErrorCode::{
@@ -15,6 +16,23 @@ use {
     anchor_lang::prelude::*,
     std::cmp,
 };
+
+pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
+    let mut governance_exposure: u64 = 0;
+    for i in 0..MAX_POSITIONS {
+        if let Some(position) = positions.read_position(i)? {
+            if matches!(
+                position.target_with_parameters,
+                TargetWithParameters::Voting
+            ) {
+                governance_exposure = governance_exposure
+                    .checked_add(position.amount)
+                    .ok_or_else(|| error!(GenericOverflow))?;
+            }
+        }
+    }
+    Ok(governance_exposure)
+}
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -105,8 +123,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 7,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        Some(50),
             },
@@ -118,8 +135,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        Some(50),
             },
@@ -168,8 +184,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },
@@ -185,7 +200,6 @@ pub mod tests {
     #[test]
     fn test_double_integrity_pool() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         // We need at least 10 vested to support these
         pd.write_position(
             0,
@@ -193,7 +207,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 7,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -206,7 +219,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 3,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -229,8 +241,7 @@ pub mod tests {
                     activation_epoch:       1,
                     amount:                 10,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority: Pubkey::new_unique(),
-                        publisher:      Pubkey::new_unique(),
+                        publisher: Pubkey::new_unique(),
                     },
                     unlocking_start:        None,
                 },
@@ -245,8 +256,7 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 10,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority: Pubkey::new_unique(),
-                    publisher:      Pubkey::new_unique(),
+                    publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
             },
@@ -300,7 +310,6 @@ pub mod tests {
     #[test]
     fn test_overflow_aggregation() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -308,7 +317,6 @@ pub mod tests {
                     activation_epoch:       1,
                     amount:                 u64::MAX / 3,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority,
                         publisher: Pubkey::new_unique(),
                     },
                     unlocking_start:        None,
@@ -323,7 +331,6 @@ pub mod tests {
     #[test]
     fn test_multiple_voting_and_integrity_pool() {
         let mut pd = PositionData::default();
-        let pool_authority = Pubkey::new_unique();
         // We need at least 4 vested, 10 total
         pd.write_position(
             0,
@@ -331,7 +338,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 2,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,
@@ -344,7 +350,6 @@ pub mod tests {
                 activation_epoch:       1,
                 amount:                 2,
                 target_with_parameters: TargetWithParameters::IntegrityPool {
-                    pool_authority,
                     publisher: Pubkey::new_unique(),
                 },
                 unlocking_start:        None,

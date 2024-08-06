@@ -1,15 +1,18 @@
 use {
     crate::{
+        error::IntegrityPoolError,
         state::{
             delegation_record::DelegationRecord,
             pool::{
                 PoolConfig,
                 PoolData,
             },
+            slash::SlashEvent,
         },
         utils::constants::{
             DELEGATION_RECORD,
             POOL_CONFIG,
+            SLASH_EVENT,
         },
     },
     anchor_lang::prelude::*,
@@ -79,10 +82,6 @@ pub struct Delegate<'info> {
     )]
     pub stake_account_custody: AccountInfo<'info>,
 
-    /// CHECK : This AccountInfo is safe because it will checked in staking program
-    #[account(mut)]
-    pub target_account: AccountInfo<'info>,
-
     pub staking_program: Program<'info, Staking>,
 }
 
@@ -137,10 +136,6 @@ pub struct Undelegate<'info> {
         seeds::program = staking_program.key(),
     )]
     pub stake_account_custody: AccountInfo<'info>,
-
-    /// CHECK : This AccountInfo is safe because it will checked in staking program
-    #[account(mut)]
-    pub target_account: AccountInfo<'info>,
 
     pub staking_program: Program<'info, Staking>,
 }
@@ -222,5 +217,38 @@ pub struct AdvanceDelegationRecord<'info> {
     pub delegation_record: Account<'info, DelegationRecord>,
 
     pub token_program:  Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(index: u64, slash_ratio: u64, publisher: Pubkey)]
+pub struct CreateSlashEvent<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub reward_program_authority: Signer<'info>,
+
+    #[account(
+        token::mint = pool_config.pyth_token_mint,
+    )]
+    pub slash_custody: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [POOL_CONFIG.as_bytes()],
+        bump,
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority
+    )]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    #[account(
+        init,
+        payer = payer,
+        space = SlashEvent::LEN,
+        seeds = [SLASH_EVENT.as_bytes(), &index.to_be_bytes()],
+        bump,
+    )]
+    pub slash_event: Account<'info, SlashEvent>,
+
     pub system_program: Program<'info, System>,
 }

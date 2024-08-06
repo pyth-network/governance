@@ -78,6 +78,10 @@ pub enum ErrorCode {
     RecoverWithStake,
     #[msg("The pool authority hasn't been passed or doesn't match the target")] // 6036
     InvalidPoolAuthority,
-    #[msg("Other")] //6037
+    #[msg("The target account is missing")] // 6037
+    MissingTargetAccount,
+    #[msg("The slash ratio should be between 0 and 1")] // 6038
+    InvalidSlashRatio,
+    #[msg("Other")] //6039
     Other,
 }

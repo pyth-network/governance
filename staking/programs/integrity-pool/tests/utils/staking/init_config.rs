@@ -1,4 +1,5 @@
 use {
+    crate::utils::integrity_pool::pool_data::get_pool_config_address,
     anchor_lang::{
         system_program,
         InstructionData,
@@ -23,6 +24,7 @@ pub fn get_config_address() -> (Pubkey, u8) {
 }
 
 pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
+    let (pool_config, _) = get_pool_config_address();
     let (config_account, config_bump) = get_config_address();
 
     let init_config_data = staking::instruction::InitConfig {
@@ -39,6 +41,7 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             pyth_token_list_time: None,
             agreement_hash: [0; 32],
             mock_clock_time: 30,
+            pool_authority: pool_config,
         },
     };
     let init_config_accs = staking::accounts::InitConfig {
@@ -60,4 +63,28 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
     );
 
     svm.send_transaction(init_config_tx).unwrap();
+}
+
+
+pub fn update_pool_authority(svm: &mut litesvm::LiteSVM, payer: &Keypair, pool_authority: Pubkey) {
+    let (config_account, _) = get_config_address();
+
+    let update_pool_authority_data = staking::instruction::UpdatePoolAuthority { pool_authority };
+    let update_pool_authority_accs = staking::accounts::UpdatePoolAuthority {
+        config:               config_account,
+        governance_authority: payer.pubkey(),
+    };
+    let update_pool_authority_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &update_pool_authority_data.data(),
+        update_pool_authority_accs.to_account_metas(None),
+    );
+    let update_pool_authority_tx = Transaction::new_signed_with_payer(
+        &[update_pool_authority_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(update_pool_authority_tx).unwrap();
 }

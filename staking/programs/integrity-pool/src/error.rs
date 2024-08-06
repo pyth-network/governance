@@ -19,4 +19,7 @@ pub enum IntegrityPoolError {
     #[msg("Start epoch of the reward program is before the current epoch")]
     InvalidStartEpoch,
     UnverifiedPublisherCaps,
+    #[msg("Slash event indexes must be sequential and start at 0")]
+    InvalidSlashEventIndex,
+    InvalidRewardProgramAuthority,
 }

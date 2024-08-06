@@ -279,7 +279,6 @@ reexport_seed_const!(VOTER_RECORD_SEED);
 reexport_seed_const!(TARGET_SEED);
 reexport_seed_const!(MAX_VOTER_RECORD_SEED);
 reexport_seed_const!(VOTING_TARGET_SEED);
-reexport_seed_const!(INTEGRITY_POOL_TARGET_SEED);
 reexport_seed_const!(SPLIT_REQUEST);
 
 #[wasm_bindgen]

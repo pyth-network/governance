@@ -36,6 +36,7 @@ pub mod integrity_pool {
         pool_config.reward_program_authority = reward_program_authority;
         pool_config.pyth_token_mint = pyth_token_mint;
         pool_config.y = y;
+        pool_config.num_slash_events = 0;
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
         pool_data.last_updated_epoch = get_current_epoch()?;
@@ -54,12 +55,10 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
-                pool_authority: pool_config.key(),
-                publisher:      publisher.key(),
+                publisher: publisher.key(),
             };
 
         let cpi_accounts = staking::cpi::accounts::CreatePosition {
@@ -68,7 +67,7 @@ pub mod integrity_pool {
             stake_account_metadata,
             stake_account_custody,
             owner: payer.to_account_info(),
-            target_account,
+            target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
         };
 
@@ -99,7 +98,6 @@ pub mod integrity_pool {
         let staking_program = &ctx.accounts.staking_program;
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let target_account = ctx.accounts.target_account.clone();
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
 
         // assert delegator record is up to date
@@ -124,8 +122,7 @@ pub mod integrity_pool {
         //cpi
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
-                pool_authority: pool_config.key(),
-                publisher:      publisher.key(),
+                publisher: publisher.key(),
             };
 
         let cpi_accounts = staking::cpi::accounts::ClosePosition {
@@ -134,7 +131,7 @@ pub mod integrity_pool {
             stake_account_positions: ctx.accounts.stake_account_positions.to_account_info(),
             stake_account_metadata:  stake_account_metadata.clone(),
             stake_account_custody:   stake_account_custody.clone(),
-            target_account:          target_account.clone(),
+            target_account:          None,
             pool_authority:          Some(pool_config.to_account_info()),
         };
 
@@ -154,8 +151,7 @@ pub mod integrity_pool {
         let new_stake_account = &ctx.accounts.new_stake_account_positions.load()?;
 
         let publisher_target = TargetWithParameters::IntegrityPool {
-            pool_authority: ctx.accounts.pool_config.key(),
-            publisher:      publisher.key(),
+            publisher: publisher.key(),
         };
 
         let publisher_index = pool_data.get_publisher_index(publisher.key)?;
@@ -231,7 +227,6 @@ pub mod integrity_pool {
             &stake_account_positions.key(),
             positions,
             &publisher.key(),
-            &pool_config.key(),
             get_current_epoch()?,
         )?;
 
@@ -254,6 +249,32 @@ pub mod integrity_pool {
         anchor_spl::token::transfer(ctx, reward_amount)?;
 
         delegation_record.advance(get_current_epoch()?)?;
+        Ok(())
+    }
+
+    pub fn create_slash_event(
+        ctx: Context<CreateSlashEvent>,
+        index: u64,
+        slash_ratio: frac64,
+        publisher: Pubkey,
+    ) -> Result<()> {
+        let pool_config = &mut ctx.accounts.pool_config;
+        let slash_event = &mut ctx.accounts.slash_event;
+        let slash_custody = &ctx.accounts.slash_custody;
+
+        require_eq!(
+            pool_config.num_slash_events,
+            index,
+            IntegrityPoolError::InvalidSlashEventIndex,
+        );
+
+        pool_config.num_slash_events += 1;
+
+        slash_event.epoch = get_current_epoch()?;
+        slash_event.slash_ratio = slash_ratio;
+        slash_event.slash_custody = slash_custody.key();
+        slash_event.publisher = publisher;
+
         Ok(())
     }
 }

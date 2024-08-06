@@ -63,10 +63,7 @@ describe("recover account", async () => {
       TOKEN_PROGRAM_ID
     );
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
 
     await program.methods
       .initConfig({
@@ -82,15 +79,11 @@ describe("recover account", async () => {
         pythTokenListTime: null,
         agreementHash: getDummyAgreementHash(),
         mockClockTime: new BN(10),
+        poolAuthority: PublicKey.unique(),
       })
       .rpc();
 
-    await program.methods
-      .createTarget(votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-      })
-      .rpc();
+    await program.methods.createTarget().rpc();
 
     await requestPythAirdrop(
       provider.wallet.publicKey,

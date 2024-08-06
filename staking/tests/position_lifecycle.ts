@@ -53,10 +53,7 @@ describe("position_lifecycle", async () => {
 
     epochDuration = stakeConnection.config.epochDuration;
 
-    votingProductMetadataAccount = await getTargetAccount(
-      votingProduct,
-      program.programId
-    );
+    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("deposits tokens and locks", async () => {

@@ -10,7 +10,6 @@ use {
         TokenAccount,
         Transfer,
     },
-    std::iter::Iterator,
 };
 
 pub const AUTHORITY_SEED: &str = "authority";
@@ -21,24 +20,7 @@ pub const VOTER_RECORD_SEED: &str = "voter_weight";
 pub const TARGET_SEED: &str = "target";
 pub const MAX_VOTER_RECORD_SEED: &str = "max_voter";
 pub const VOTING_TARGET_SEED: &str = "voting";
-pub const INTEGRITY_POOL_TARGET_SEED: &str = "integrity";
 pub const SPLIT_REQUEST: &str = "split_request";
-
-impl positions::Target {
-    pub fn get_seed(&self) -> Vec<u8> {
-        match *self {
-            positions::Target::Voting => VOTING_TARGET_SEED.as_bytes().to_vec(),
-            positions::Target::IntegrityPool { ref pool_authority } => {
-                return INTEGRITY_POOL_TARGET_SEED
-                    .as_bytes()
-                    .iter()
-                    .chain(pool_authority.as_ref()[..16].iter())
-                    .cloned()
-                    .collect()
-            }
-        }
-    }
-}
 
 #[derive(Accounts)]
 pub struct InitConfig<'info> {
@@ -60,7 +42,7 @@ pub struct InitConfig<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(new_authority : Pubkey)]
+#[instruction(new_authority: Pubkey)]
 pub struct UpdateGovernanceAuthority<'info> {
     pub governance_authority: Signer<'info>,
     #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
@@ -68,7 +50,7 @@ pub struct UpdateGovernanceAuthority<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(new_authority : Pubkey)]
+#[instruction(new_authority: Pubkey)]
 pub struct UpdatePdaAuthority<'info> {
     pub pda_authority: Signer<'info>,
     #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = pda_authority)]
@@ -76,7 +58,7 @@ pub struct UpdatePdaAuthority<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(token_list_time : Option<i64>)]
+#[instruction(token_list_time: Option<i64>)]
 pub struct UpdateTokenListTime<'info> {
     pub governance_authority: Signer<'info>,
     #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
@@ -84,8 +66,16 @@ pub struct UpdateTokenListTime<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(agreement_hash : [u8; 32])]
+#[instruction(agreement_hash: [u8; 32])]
 pub struct UpdateAgreementHash<'info> {
+    pub governance_authority: Signer<'info>,
+    #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config:               Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(pool_authority: Pubkey)]
+pub struct UpdatePoolAuthority<'info> {
     pub governance_authority: Signer<'info>,
     #[account(mut, seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config:               Account<'info, global_config::GlobalConfig>,
@@ -206,9 +196,9 @@ pub struct CreatePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(),&target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
 }
 
@@ -233,9 +223,9 @@ pub struct ClosePosition<'info> {
     // Target account :
     #[account(
         mut,
-        seeds = [TARGET_SEED.as_bytes(), &target_with_parameters.get_target().get_seed()[..]],
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
-    pub target_account:          Account<'info, target::TargetMetadata>,
+    pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
 }
 
@@ -281,7 +271,6 @@ pub struct UpdateMaxVoterWeight<'info> {
 
 
 #[derive(Accounts)]
-#[instruction(_target : positions::Target)]
 pub struct CreateTarget<'info> {
     #[account(mut)]
     pub payer:                Signer<'info>,
@@ -291,7 +280,7 @@ pub struct CreateTarget<'info> {
     #[account(
         init,
         payer = payer,
-        seeds =  [TARGET_SEED.as_bytes(), &_target.get_seed()[..]],
+        seeds =  [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         space = target::TargetMetadata::LEN,
         bump)]
     pub target_account:       Account<'info, target::TargetMetadata>,
@@ -435,4 +424,65 @@ pub struct RecoverAccount<'info> {
 
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+#[instruction(slash_ratio: u64)]
+pub struct SlashAccount<'info> {
+    pool_authority: Signer<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's checked against target
+    pub publisher: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.metadata_bump,
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+        mut,
+        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.custody_bump,
+    )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one=pool_authority)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+
+    #[account(
+        mut,
+        seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
+        bump = governance_target_account.bump
+    )]
+    pub governance_target_account: Account<'info, target::TargetMetadata>,
+
+    // transfer the slashed amount to this account
+    #[account(mut)]
+    pub destination: Account<'info, TokenAccount>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(seeds = [AUTHORITY_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.authority_bump)]
+    pub custody_authority: AccountInfo<'info>,
+
+    // Primitive accounts :
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'a, 'b, 'c, 'info> From<&SlashAccount<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, Transfer<'info>>
+{
+    fn from(accounts: &SlashAccount<'info>) -> CpiContext<'a, 'b, 'c, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from:      accounts.stake_account_custody.to_account_info(),
+            to:        accounts.destination.to_account_info(),
+            authority: accounts.custody_authority.to_account_info(),
+        };
+        let cpi_program = accounts.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }

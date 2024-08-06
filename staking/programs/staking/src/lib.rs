@@ -22,20 +22,22 @@ use {
             Position,
             PositionData,
             PositionState,
-            Target,
             TargetWithParameters,
         },
         vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
     },
+    std::convert::TryInto,
     utils::{
         clock::{
             get_current_epoch,
             time_to_epoch,
         },
+        risk::calculate_governance_exposure,
         voter_weight::compute_voter_weight,
     },
 };
+
 
 pub mod context;
 pub mod error;
@@ -64,6 +66,7 @@ pub mod staking {
         config_account.governance_program = global_config.governance_program;
         config_account.pyth_token_list_time = None;
         config_account.agreement_hash = global_config.agreement_hash;
+        config_account.pool_authority = global_config.pool_authority;
 
         #[cfg(feature = "mock-clock")]
         {
@@ -109,6 +112,15 @@ pub mod staking {
     ) -> Result<()> {
         let config = &mut ctx.accounts.config;
         config.agreement_hash = agreement_hash;
+        Ok(())
+    }
+
+    pub fn update_pool_authority(
+        ctx: Context<UpdatePoolAuthority>,
+        pool_authority: Pubkey,
+    ) -> Result<()> {
+        let config = &mut ctx.accounts.config;
+        config.pool_authority = pool_authority;
         Ok(())
     }
 
@@ -165,14 +177,21 @@ pub mod staking {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
-        let target_account = &mut ctx.accounts.target_account;
+        let maybe_target_account = &mut ctx.accounts.target_account;
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }
@@ -209,7 +228,9 @@ pub mod staking {
             unvested_balance,
         )?;
 
-        target_account.add_locking(amount, current_epoch)?;
+        if let Some(target_account) = maybe_target_account {
+            target_account.add_locking(amount, current_epoch)?;
+        }
 
         Ok(())
     }
@@ -224,18 +245,26 @@ pub mod staking {
             return Err(error!(ErrorCode::ClosePositionWithZero));
         }
 
+
         let i: usize = index.into();
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
+        let maybe_target_account = &mut ctx.accounts.target_account;
 
-        if let TargetWithParameters::IntegrityPool { pool_authority, .. } = target_with_parameters {
+        if target_with_parameters == TargetWithParameters::Voting {
+            require!(
+                maybe_target_account.is_some(),
+                ErrorCode::MissingTargetAccount,
+            )
+        }
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()
-                    .map_or(false, |x| x.key() == pool_authority),
+                    .map_or(false, |x| x.key() == config.pool_authority),
                 ErrorCode::InvalidPoolAuthority
             )
         }
@@ -306,7 +335,9 @@ pub mod staking {
                     );
                 }
 
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
 
             // For this case, we don't need to create new positions because the "closed"
@@ -328,7 +359,9 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
                 }
-                target_account.add_unlocking(amount, current_epoch)?;
+                if let Some(target_account) = maybe_target_account {
+                    target_account.add_unlocking(amount, current_epoch)?;
+                }
             }
             PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
@@ -520,7 +553,7 @@ pub mod staking {
         Ok(())
     }
 
-    pub fn create_target(ctx: Context<CreateTarget>, _target: Target) -> Result<()> {
+    pub fn create_target(ctx: Context<CreateTarget>) -> Result<()> {
         let target_account = &mut ctx.accounts.target_account;
         let config = &ctx.accounts.config;
 
@@ -719,6 +752,156 @@ pub mod staking {
         ctx.accounts.voter_record.governing_token_owner = new_owner;
 
         Ok(())
+    }
+
+    pub fn slash_account(
+        ctx: Context<SlashAccount>,
+        // a number between 0 and 1 with 6 decimals of precision
+        // TODO: use fract64 instead of u64
+        slash_ratio: u64,
+    ) -> Result<(u64, u64, u64)> {
+        require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
+
+        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let governance_target_account = &mut ctx.accounts.governance_target_account;
+        let publisher = &ctx.accounts.publisher;
+
+        let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
+
+        let current_epoch = get_current_epoch(&ctx.accounts.config)?;
+        let unlocking_duration = ctx.accounts.config.unlocking_duration;
+
+        let mut locked_slashed = 0;
+        let mut unlocking_slashed = 0;
+        let mut preunlocking_slashed = 0;
+
+        let mut i: usize = 0;
+        while i < usize::from(*next_index) {
+            let position = stake_account_positions.read_position(i)?;
+
+            if let Some(position_data) = position {
+                let prev_state =
+                    position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
+                let current_state =
+                    position_data.get_current_position(current_epoch, unlocking_duration)?;
+                if matches!(
+                    position_data.target_with_parameters,
+                    TargetWithParameters::IntegrityPool { publisher: publisher_pubkey } if publisher_pubkey == *publisher.key,
+                ) && (prev_state == PositionState::LOCKED
+                    || prev_state == PositionState::PREUNLOCKING)
+                {
+                    // TODO: use constants
+                    let to_slash: u64 =
+                        ((u128::from(position_data.amount) * u128::from(slash_ratio)) / 1_000_000)
+                            .try_into()?;
+
+                    match current_state {
+                        PositionState::LOCKED => {
+                            locked_slashed += to_slash;
+                        }
+                        PositionState::UNLOCKING => {
+                            unlocking_slashed += to_slash;
+                        }
+                        PositionState::PREUNLOCKING => {
+                            preunlocking_slashed += to_slash;
+                        }
+                        _ => {
+                            return Err(error!(ErrorCode::InvalidPosition));
+                        }
+                    }
+
+                    // position_data.amount >= to_slash since slash_ratio is between 0 and 1
+                    if position_data.amount - to_slash == 0 {
+                        stake_account_positions.make_none(i, next_index)?;
+                        continue;
+                    } else {
+                        stake_account_positions.write_position(
+                            i,
+                            &Position {
+                                amount:                 position_data.amount - to_slash,
+                                target_with_parameters: position_data.target_with_parameters,
+                                activation_epoch:       position_data.activation_epoch,
+                                unlocking_start:        position_data.unlocking_start,
+                            },
+                        )?;
+                    }
+                }
+            }
+            i += 1;
+        }
+
+        let total_amount = ctx.accounts.stake_account_custody.amount;
+        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
+
+        let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
+        if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
+        {
+            let mut i = 0;
+            while i < usize::from(*next_index) && remaining > 0 {
+                if let Some(position) = stake_account_positions.read_position(i)? {
+                    let prev_state =
+                        position.get_current_position(current_epoch - 1, unlocking_duration)?;
+                    let current_state =
+                        position.get_current_position(current_epoch, unlocking_duration)?;
+
+                    if position.target_with_parameters == TargetWithParameters::Voting {
+                        let to_slash = remaining.min(position.amount);
+                        remaining -= to_slash;
+
+                        match prev_state {
+                            PositionState::LOCKED | PositionState::PREUNLOCKING => {
+                                governance_target_account
+                                    .sub_prev_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::LOCKING
+                            | PositionState::UNLOCKING
+                            | PositionState::UNLOCKED => {}
+                        }
+
+                        match current_state {
+                            PositionState::LOCKING => {
+                                governance_target_account.add_unlocking(to_slash, current_epoch)?;
+                            }
+                            PositionState::LOCKED => {
+                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                            }
+                            PositionState::PREUNLOCKING => {
+                                governance_target_account.sub_locked(to_slash, current_epoch)?;
+                                governance_target_account.add_locking(to_slash, current_epoch)?;
+                            }
+                            PositionState::UNLOCKING | PositionState::UNLOCKED => {}
+                        }
+
+                        if to_slash == position.amount {
+                            stake_account_positions.make_none(i, next_index)?;
+                            continue;
+                        } else {
+                            stake_account_positions.write_position(
+                                i,
+                                &Position {
+                                    amount:                 position.amount - to_slash,
+                                    target_with_parameters: position.target_with_parameters,
+                                    activation_epoch:       position.activation_epoch,
+                                    unlocking_start:        position.unlocking_start,
+                                },
+                            )?;
+                        }
+                    }
+                }
+                i += 1;
+            }
+        }
+
+        transfer(
+            CpiContext::from(&*ctx.accounts).with_signer(&[&[
+                AUTHORITY_SEED.as_bytes(),
+                ctx.accounts.stake_account_positions.key().as_ref(),
+                &[ctx.accounts.stake_account_metadata.authority_bump],
+            ]]),
+            total_slashed,
+        )?;
+
+        Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
     }
 
     // Hack to allow exporting the Position type in the IDL

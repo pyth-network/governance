@@ -117,7 +117,6 @@ impl PoolData {
         stake_account_positions_key: &Pubkey,
         positions: Ref<staking::state::positions::PositionData>,
         publisher: &Pubkey,
-        pool_authority: &Pubkey,
         current_epoch: u64,
     ) -> Result<frac64> {
         self.assert_up_to_date(current_epoch)?;
@@ -151,10 +150,9 @@ impl PoolData {
                     if matches!(
                         position.target_with_parameters,
                         TargetWithParameters::IntegrityPool {
-                            pool_authority: ref position_pool_authority,
                             publisher: ref position_publisher
-                        } if position_publisher == publisher && position_pool_authority == pool_authority
-                    ) && matches!(position_state, PositionState::LOCKED)
+                        } if position_publisher == publisher
+                    ) && position_state == PositionState::LOCKED
                     {
                         amount += position.amount;
                     }
@@ -413,6 +411,7 @@ pub struct PoolConfig {
     pub reward_program_authority: Pubkey,
     pub pyth_token_mint:          Pubkey,
     pub y:                        frac64,
+    pub num_slash_events:         u64,
 }
 
 impl PoolConfig {
@@ -528,7 +527,6 @@ mod tests {
             num_events:               0,
         };
 
-        let pool_authority = Pubkey::new_unique();
         let publisher_key = Pubkey::new_unique();
         let publisher_index = 123;
         pool_data.publisher_stake_accounts[publisher_index] = publisher_key;
@@ -572,23 +570,7 @@ mod tests {
                     activation_epoch:       1,
                     amount:                 23 * FRAC_64_MULTIPLIER,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority,
                         publisher: Pubkey::new_unique(),
-                    },
-                    unlocking_start:        None,
-                },
-            )
-            .unwrap();
-        // this position should be ignored (wrong pool_authority)
-        positions
-            .write_position(
-                2,
-                &staking::state::positions::Position {
-                    activation_epoch:       1,
-                    amount:                 34 * FRAC_64_MULTIPLIER,
-                    target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority: Pubkey::new_unique(),
-                        publisher:      publisher_key,
                     },
                     unlocking_start:        None,
                 },
@@ -602,7 +584,6 @@ mod tests {
                     activation_epoch:       1,
                     amount:                 40 * FRAC_64_MULTIPLIER,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority,
                         publisher: publisher_key,
                     },
                     unlocking_start:        None,
@@ -617,7 +598,6 @@ mod tests {
                     activation_epoch:       2,
                     amount:                 60 * FRAC_64_MULTIPLIER,
                     target_with_parameters: TargetWithParameters::IntegrityPool {
-                        pool_authority,
                         publisher: publisher_key,
                     },
                     unlocking_start:        None,
@@ -633,7 +613,6 @@ mod tests {
                 &publisher_key,
                 RefCell::new(positions).borrow(),
                 &publisher_key,
-                &pool_authority,
                 2,
             )
             .unwrap();
@@ -649,7 +628,6 @@ mod tests {
                 &publisher_key,
                 RefCell::new(positions).borrow(),
                 &publisher_key,
-                &pool_authority,
                 3,
             )
             .unwrap();
@@ -665,7 +643,6 @@ mod tests {
                 &publisher_key,
                 RefCell::new(positions).borrow(),
                 &publisher_key,
-                &pool_authority,
                 11,
             )
             .unwrap();
@@ -689,7 +666,6 @@ mod tests {
                 &publisher_key,
                 RefCell::new(positions).borrow(),
                 &publisher_key,
-                &pool_authority,
                 101,
             )
             .unwrap();
