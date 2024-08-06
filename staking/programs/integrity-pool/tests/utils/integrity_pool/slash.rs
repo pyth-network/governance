@@ -19,15 +19,18 @@ use {
     },
 };
 
-pub fn get_slash_event_address(index: u8) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[SLASH_EVENT.as_bytes(), &[index]], &integrity_pool::ID)
+pub fn get_slash_event_address(index: u64) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[SLASH_EVENT.as_bytes(), &index.to_be_bytes()],
+        &integrity_pool::ID,
+    )
 }
 
 pub fn create_slash_event(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     reward_program_authority: &Keypair,
-    index: u8,
+    index: u64,
     slash_ratio: frac64,
     slash_custody: Pubkey,
     publisher: Pubkey,
