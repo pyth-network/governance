@@ -37,7 +37,6 @@ pub fn create_slash_event(
 ) -> TransactionResult {
     let create_slash_event_data = integrity_pool::instruction::CreateSlashEvent {
         index,
-        slash_custody,
         slash_ratio,
         publisher,
     };
@@ -48,6 +47,7 @@ pub fn create_slash_event(
 
     let create_slash_event_accs = integrity_pool::accounts::CreateSlashEvent {
         payer: payer.pubkey(),
+        slash_custody,
         reward_program_authority: reward_program_authority.pubkey(),
         pool_config,
         slash_event,
