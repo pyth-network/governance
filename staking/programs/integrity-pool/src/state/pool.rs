@@ -178,6 +178,12 @@ impl PoolData {
     ) -> Result<()> {
         let mut existing_publishers = BoolArray::new(MAX_CAPS);
 
+        require_eq!(
+            publisher_caps.is_verified,
+            1,
+            IntegrityPoolError::UnverifiedPublisherCaps
+        );
+
         require_gt!(
             current_epoch,
             self.last_updated_epoch,
@@ -185,7 +191,7 @@ impl PoolData {
         );
         require_eq!(
             current_epoch,
-            time_to_epoch(publisher_caps.timestamp)?,
+            time_to_epoch(publisher_caps.publish_time())?,
             IntegrityPoolError::OutdatedPublisherCaps
         );
 
@@ -205,7 +211,7 @@ impl PoolData {
             let publisher_cap = match cap_index {
                 Ok(cap_index) => {
                     existing_publishers.set(cap_index);
-                    publisher_caps.caps[cap_index].cap
+                    publisher_caps.get_cap(cap_index).cap
                 }
                 Err(_) => 0,
             };
@@ -261,10 +267,10 @@ impl PoolData {
             i += 1;
         }
 
-        for j in 0..(publisher_caps.num_publishers as usize) {
+        for j in 0..(publisher_caps.num_publishers() as usize) {
             // Silently ignore if there are more publishers than MAX_PUBLISHERS
             if !existing_publishers.get(j) && i < MAX_PUBLISHERS {
-                self.publishers[i] = publisher_caps.caps[j].pubkey;
+                self.publishers[i] = publisher_caps.get_cap(j).pubkey;
                 i += 1;
             }
         }
@@ -283,7 +289,7 @@ impl PoolData {
             return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
         }
         publisher_caps
-            .caps
+            .caps()
             .binary_search_by_key(&publisher, |cap| &cap.pubkey)
             .map_err(|_| IntegrityPoolError::PublisherNotFound.into())
     }

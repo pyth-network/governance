@@ -12,7 +12,6 @@ use {
             MAX_PUBLISHERS,
         },
     },
-    publisher_caps::get_dummy_publisher,
     solana_sdk::{
         pubkey::Pubkey,
         signer::Signer,
@@ -28,7 +27,10 @@ use {
             advance::advance,
             delegate::delegate,
         },
-        publisher_caps::post_publisher_caps::post_publisher_caps,
+        publisher_caps::post_publisher_caps::{
+            get_dummy_publisher,
+            post_publisher_caps,
+        },
         setup::{
             setup,
             SetupProps,

@@ -25,3 +25,8 @@ litesvm = "0.1.0"
 solana-program = { workspace = true }
 solana-sdk = { workspace = true }
 spl-token = "4.0.1"
+wormhole-vaas-serde =  "0.1.0"
+wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}
+serde_wormhole = "0.1.0"
+pythnet-sdk = {version = "2.3.0", features = ["test-utils"]}
+byteorder = "1.4.3"
