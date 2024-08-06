@@ -18,4 +18,7 @@ pub enum IntegrityPoolError {
     InsufficientRewards,
     #[msg("Start epoch of the reward program is before the current epoch")]
     InvalidStartEpoch,
+    #[msg("Slash event indexes must be sequential and start at 0")]
+    InvalidSlashEventIndex,
+    InvalidRewardProgramAuthority,
 }

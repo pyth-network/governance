@@ -36,6 +36,7 @@ pub mod integrity_pool {
         pool_config.reward_program_authority = reward_program_authority;
         pool_config.pyth_token_mint = pyth_token_mint;
         pool_config.y = y;
+        pool_config.num_slash_events = 0;
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
         pool_data.last_updated_epoch = get_current_epoch()?;
@@ -256,33 +257,23 @@ pub mod integrity_pool {
         _index: u8,
         slash_ratio: frac64,
         slash_custody: Pubkey,
+        publisher: Pubkey,
     ) -> Result<()> {
+        let pool_config = &mut ctx.accounts.pool_config;
         let slash_event = &mut ctx.accounts.slash_event;
+
+        require_eq!(
+            pool_config.num_slash_events,
+            _index,
+            IntegrityPoolError::InvalidSlashEventIndex,
+        );
+
+        pool_config.num_slash_events += 1;
+
         slash_event.epoch = get_current_epoch()?;
         slash_event.slash_ratio = slash_ratio;
         slash_event.slash_custody = slash_custody;
-
-        Ok(())
-    }
-
-    pub fn slash(ctx: Context<Slash>, _index: u8) -> Result<()> {
-        let slash_event = &ctx.accounts.slash_event;
-        let publisher = &ctx.accounts.publisher;
-        let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
-
-        let current_epoch = get_current_epoch()?;
-
-        let (locked_slashed, preunlocking_slashed, unlocking_slashed) =
-            staking::cpi::slash_account(CpiContext::from(&*ctx.accounts), slash_event.slash_ratio)?
-                .get();
-
-        pool_data.apply_slash(
-            &publisher.key(),
-            locked_slashed,
-            preunlocking_slashed,
-            unlocking_slashed,
-            current_epoch,
-        )?;
+        slash_event.publisher = publisher;
 
         Ok(())
     }

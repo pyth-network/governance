@@ -10,6 +10,7 @@ pub struct SlashEvent {
     pub epoch:         u64,
     pub slash_ratio:   frac64,
     pub slash_custody: Pubkey,
+    pub publisher:     Pubkey,
 }
 
 impl SlashEvent {
