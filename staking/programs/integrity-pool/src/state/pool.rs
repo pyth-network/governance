@@ -71,6 +71,7 @@ pub struct PoolData {
     pub publisher_stake_accounts: [Pubkey; MAX_PUBLISHERS],
     pub events:                   [Event; MAX_EVENTS],
     pub num_events:               u64,
+    pub num_slash_events:         [u64; MAX_PUBLISHERS],
 }
 
 impl PoolData {
@@ -391,7 +392,6 @@ pub struct PoolConfig {
     pub reward_program_authority: Pubkey,
     pub pyth_token_mint:          Pubkey,
     pub y:                        frac64,
-    pub num_slash_events:         u64,
 }
 
 impl PoolConfig {
@@ -433,6 +433,7 @@ mod tests {
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
+            num_slash_events:         [0; MAX_PUBLISHERS],
         };
 
         pool_data.get_event_mut(1).epoch = 123;
@@ -451,6 +452,7 @@ mod tests {
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
+            num_slash_events:         [0; MAX_PUBLISHERS],
         };
 
         let event = Event {
@@ -499,6 +501,7 @@ mod tests {
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
+            num_slash_events:         [0; MAX_PUBLISHERS],
         };
 
         let publisher_key = Pubkey::new_unique();
@@ -661,6 +664,7 @@ mod tests {
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
+            num_slash_events:         [0; MAX_PUBLISHERS],
         };
 
         let mut caps = [PublisherCap {
@@ -702,6 +706,7 @@ mod tests {
             publisher_stake_accounts: [Pubkey::default(); MAX_PUBLISHERS],
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
+            num_slash_events:         [0; MAX_PUBLISHERS],
         };
 
         let mut caps = [PublisherCap {

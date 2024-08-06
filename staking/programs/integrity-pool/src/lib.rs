@@ -36,7 +36,6 @@ pub mod integrity_pool {
         pool_config.reward_program_authority = reward_program_authority;
         pool_config.pyth_token_mint = pyth_token_mint;
         pool_config.y = y;
-        pool_config.num_slash_events = 0;
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
         pool_data.last_updated_epoch = get_current_epoch()?;
@@ -258,17 +257,19 @@ pub mod integrity_pool {
         slash_ratio: frac64,
         publisher: Pubkey,
     ) -> Result<()> {
-        let pool_config = &mut ctx.accounts.pool_config;
+        let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let slash_event = &mut ctx.accounts.slash_event;
         let slash_custody = &ctx.accounts.slash_custody;
 
+        let publisher_index = pool_data.get_publisher_index(&publisher)?;
+
         require_eq!(
-            pool_config.num_slash_events,
+            pool_data.num_slash_events[publisher_index],
             index,
             IntegrityPoolError::InvalidSlashEventIndex,
         );
 
-        pool_config.num_slash_events += 1;
+        pool_data.num_slash_events[publisher_index] += 1;
 
         slash_event.epoch = get_current_epoch()?;
         slash_event.slash_ratio = slash_ratio;
