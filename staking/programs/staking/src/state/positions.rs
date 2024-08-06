@@ -13,9 +13,9 @@ use {
     },
 };
 
-pub const MAX_POSITIONS: usize = 20;
+pub const MAX_POSITIONS: usize = 40;
 // Intentionally make the buffer for positions bigger than it needs for migrations
-pub const POSITION_BUFFER_SIZE: usize = 200;
+pub const POSITION_BUFFER_SIZE: usize = 100;
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
@@ -42,6 +42,18 @@ impl Default for PositionData {
         }
     }
 }
+
+/// Initially we had a `[200; 20]` array, but we changed it to a `[100; 40]` array to fit more
+/// positions. Because some accounts already exist with the old layout,
+/// we need to maintain the invariant that the first 20 positions start at the offsets multiples of
+/// 200.
+pub fn convert_index(i: usize) -> Result<usize> {
+    if i > MAX_POSITIONS {
+        return Err(error!(ErrorCode::PositionOutOfBounds));
+    }
+    Ok(2 * (i % 20) + (i / 20))
+}
+
 impl PositionData {
     pub fn initialize(&mut self, owner: &Pubkey) {
         self.owner = *owner;
@@ -64,18 +76,19 @@ impl PositionData {
             return Err(error!(ErrorCode::PositionOutOfBounds));
         }
         *next_index -= 1;
-        self.positions[i] = self.positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
+        self.positions[convert_index(i)?] = self.positions[convert_index(*next_index as usize)?];
+        None::<Option<Position>>
+            .try_write(&mut self.positions[convert_index(*next_index as usize)?])
     }
 
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
-        Some(position).try_write(&mut self.positions[i])
+        Some(position).try_write(&mut self.positions[convert_index(i)?])
     }
 
     pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
         Option::<Position>::try_read(
             self.positions
-                .get(i)
+                .get(convert_index(i)?)
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
     }
@@ -317,7 +330,8 @@ pub mod tests {
         );
         // Checks that the position struct fits in the individual position buffer
         assert!(
-            anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
+            anchor_lang::solana_program::borsh::get_packed_len::<Option<Position>>()
+                < POSITION_BUFFER_SIZE
         );
     }
 
