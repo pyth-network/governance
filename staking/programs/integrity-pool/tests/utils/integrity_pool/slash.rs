@@ -3,6 +3,7 @@ use {
     anchor_lang::{
         system_program,
         InstructionData,
+        Key,
         ToAccountMetas,
     },
     integrity_pool::utils::{
@@ -19,9 +20,13 @@ use {
     },
 };
 
-pub fn get_slash_event_address(index: u64) -> (Pubkey, u8) {
+pub fn get_slash_event_address(index: u64, publisher: Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(
-        &[SLASH_EVENT.as_bytes(), &index.to_be_bytes()],
+        &[
+            SLASH_EVENT.as_bytes(),
+            publisher.key().as_ref(),
+            &index.to_be_bytes(),
+        ],
         &integrity_pool::ID,
     )
 }
@@ -34,6 +39,7 @@ pub fn create_slash_event(
     slash_ratio: frac64,
     slash_custody: Pubkey,
     publisher: Pubkey,
+    pool_data: Pubkey,
 ) -> TransactionResult {
     let create_slash_event_data = integrity_pool::instruction::CreateSlashEvent {
         index,
@@ -42,11 +48,11 @@ pub fn create_slash_event(
     };
 
     let (pool_config, _) = get_pool_config_address();
-
-    let (slash_event, _) = get_slash_event_address(index);
+    let (slash_event, _) = get_slash_event_address(index, publisher);
 
     let create_slash_event_accs = integrity_pool::accounts::CreateSlashEvent {
         payer: payer.pubkey(),
+        pool_data,
         slash_custody,
         reward_program_authority: reward_program_authority.pubkey(),
         pool_config,

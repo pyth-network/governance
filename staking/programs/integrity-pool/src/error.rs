@@ -22,4 +22,5 @@ pub enum IntegrityPoolError {
     #[msg("Slash event indexes must be sequential and start at 0")]
     InvalidSlashEventIndex,
     InvalidRewardProgramAuthority,
+    InvalidPoolDataAccount,
 }

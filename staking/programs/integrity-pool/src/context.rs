@@ -233,11 +233,15 @@ pub struct CreateSlashEvent<'info> {
     )]
     pub slash_custody: Account<'info, TokenAccount>,
 
+    #[account(mut)]
+    pub pool_data: AccountLoader<'info, PoolData>,
+
     #[account(
         mut,
         seeds = [POOL_CONFIG.as_bytes()],
         bump,
-        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
+        has_one = pool_data @ IntegrityPoolError::InvalidPoolDataAccount,
     )]
     pub pool_config: Account<'info, PoolConfig>,
 
@@ -245,7 +249,7 @@ pub struct CreateSlashEvent<'info> {
         init,
         payer = payer,
         space = SlashEvent::LEN,
-        seeds = [SLASH_EVENT.as_bytes(), &index.to_be_bytes()],
+        seeds = [SLASH_EVENT.as_bytes(), publisher.key().as_ref(), &index.to_be_bytes()],
         bump,
     )]
     pub slash_event: Account<'info, SlashEvent>,
