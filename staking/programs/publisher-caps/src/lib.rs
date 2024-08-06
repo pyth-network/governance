@@ -29,6 +29,7 @@ pub const WORMHOLE_RECEIVER: Pubkey = pubkey!("HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUY
 pub const PRICE_FEEDS_EMITTER_ADDRESS: Pubkey =
     pubkey!("G9LV2mp9ua1znRAfYwZz5cPiJMAbo1T6mbjdQsDZuMJg");
 pub const PRICE_FEEDS_EMITTER_CHAIN: u16 = 26; //pythnet
+pub const PUBLISHER_STAKE_CAPS_MESSAGE_DISCRIMINATOR: u8 = 2;
 pub const MAX_CAPS: usize = 1024;
 
 #[program]
@@ -97,7 +98,7 @@ pub mod publisher_caps {
 
         require_eq!(
             publisher_caps.discriminator(),
-            2,
+            PUBLISHER_STAKE_CAPS_MESSAGE_DISCRIMINATOR,
             PublisherCapsError::WrongDiscriminator // This is not a PublisherStakeCaps message
         );
 
