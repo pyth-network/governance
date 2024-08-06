@@ -173,8 +173,9 @@ impl PublisherCaps {
         u16::from_be_bytes(*array_ref!(self.publisher_caps_message_buffer, 9, 2))
     }
 
-    pub fn caps(&self) -> &[PublisherCap; MAX_CAPS] {
-        bytemuck::from_bytes(&self.publisher_caps_message_buffer[11..])
+    pub fn caps(&self) -> &[PublisherCap] {
+        &bytemuck::from_bytes::<[PublisherCap; MAX_CAPS]>(&self.publisher_caps_message_buffer[11..])
+            [..self.num_publishers() as usize]
     }
 
     pub fn get_cap(&self, i: usize) -> PublisherCap {
