@@ -221,12 +221,17 @@ pub struct AdvanceDelegationRecord<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(index: u64, slash_ratio: u64, slash_custody: Pubkey, publisher: Pubkey)]
+#[instruction(index: u64, slash_ratio: u64, publisher: Pubkey)]
 pub struct CreateSlashEvent<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
     pub reward_program_authority: Signer<'info>,
+
+    #[account(
+        token::mint = pool_config.pyth_token_mint,
+    )]
+    pub slash_custody: Account<'info, TokenAccount>,
 
     #[account(
         mut,

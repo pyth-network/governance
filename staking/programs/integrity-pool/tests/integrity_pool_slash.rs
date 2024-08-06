@@ -8,6 +8,7 @@ use {
         program_error::ProgramError,
         pubkey::Pubkey,
         signature::Keypair,
+        signer::Signer,
     },
     utils::{
         account::fetch_account_data,
@@ -22,6 +23,7 @@ use {
             SetupProps,
             SetupResult,
         },
+        staking::create_token_account::create_token_account,
     },
 };
 
@@ -32,7 +34,7 @@ fn test_create_slash_event() {
     let SetupResult {
         mut svm,
         payer,
-        pyth_token_mint: _,
+        pyth_token_mint,
         publisher_keypair: _,
         pool_data_pubkey: _,
         reward_program_authority,
@@ -45,7 +47,7 @@ fn test_create_slash_event() {
         init_publishers: true,
     });
 
-    let slash_custody = Pubkey::new_unique();
+    let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
     let slash_publisher = Pubkey::new_unique();
 
     assert_anchor_program_error(
