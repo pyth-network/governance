@@ -14,7 +14,7 @@ pub struct SlashEvent {
 }
 
 impl SlashEvent {
-    pub const LEN: usize = 1024;
+    pub const LEN: usize = 8 + 8 + 8 + 32 + 32;
 }
 
 #[cfg(test)]
@@ -30,7 +30,7 @@ mod tests {
         assert!(
             solana_sdk::borsh0_10::get_packed_len::<SlashEvent>()
                 + SlashEvent::discriminator().len()
-                <= SlashEvent::LEN
+                == SlashEvent::LEN
         );
     }
 }

@@ -254,7 +254,7 @@ pub mod integrity_pool {
 
     pub fn create_slash_event(
         ctx: Context<CreateSlashEvent>,
-        index: u8,
+        index: u64,
         slash_ratio: frac64,
         slash_custody: Pubkey,
         publisher: Pubkey,
