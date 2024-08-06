@@ -53,7 +53,7 @@ fn test_create_slash_event() {
     });
 
     let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
-    let slash_publisher = publisher_keypair.pubkey();
+    let slashed_publisher = publisher_keypair.pubkey();
 
     assert_anchor_program_error(
         create_slash_event(
@@ -63,7 +63,7 @@ fn test_create_slash_event() {
             1,
             FRAC_64_MULTIPLIER / 2,
             slash_custody,
-            slash_publisher,
+            slashed_publisher,
             pool_data_pubkey,
         ),
         IntegrityPoolError::InvalidSlashEventIndex.into(),
@@ -77,7 +77,7 @@ fn test_create_slash_event() {
         0,
         FRAC_64_MULTIPLIER / 2,
         slash_custody,
-        slash_publisher,
+        slashed_publisher,
         pool_data_pubkey,
     )
     .unwrap();
@@ -92,7 +92,7 @@ fn test_create_slash_event() {
         1,
         FRAC_64_MULTIPLIER / 10,
         slash_custody,
-        slash_publisher,
+        slashed_publisher,
         pool_data_pubkey,
     )
     .unwrap();
@@ -109,7 +109,7 @@ fn test_create_slash_event() {
         2,
         FRAC_64_MULTIPLIER / 10,
         slash_custody,
-        slash_publisher,
+        slashed_publisher,
         pool_data_pubkey,
     )
     .unwrap();
@@ -126,7 +126,7 @@ fn test_create_slash_event() {
             4,
             FRAC_64_MULTIPLIER / 2,
             slash_custody,
-            slash_publisher,
+            slashed_publisher,
             pool_data_pubkey,
         ),
         IntegrityPoolError::InvalidSlashEventIndex.into(),
@@ -140,7 +140,7 @@ fn test_create_slash_event() {
             2,
             FRAC_64_MULTIPLIER / 2,
             slash_custody,
-            slash_publisher,
+            slashed_publisher,
             pool_data_pubkey,
         ),
         ProgramError::Custom(0).into(),
@@ -156,7 +156,7 @@ fn test_create_slash_event() {
             3,
             FRAC_64_MULTIPLIER / 2,
             slash_custody,
-            slash_publisher,
+            slashed_publisher,
             pool_data_pubkey,
         ),
         IntegrityPoolError::InvalidRewardProgramAuthority.into(),
@@ -165,26 +165,26 @@ fn test_create_slash_event() {
 
     const STARTING_EPOCH: u64 = 2;
     let slash_account_0: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(0, slash_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(0, slashed_publisher).0);
 
     assert_eq!(slash_account_0.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_0.slash_ratio, FRAC_64_MULTIPLIER / 2);
     assert_eq!(slash_account_0.slash_custody, slash_custody);
-    assert_eq!(slash_account_0.publisher, slash_publisher);
+    assert_eq!(slash_account_0.publisher, slashed_publisher);
 
     let slash_account_1: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(1, slash_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(1, slashed_publisher).0);
 
     assert_eq!(slash_account_1.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_1.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_1.slash_custody, slash_custody);
-    assert_eq!(slash_account_1.publisher, slash_publisher);
+    assert_eq!(slash_account_1.publisher, slashed_publisher);
 
     let slash_account_2: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(2, slash_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(2, slashed_publisher).0);
 
     assert_eq!(slash_account_2.epoch, STARTING_EPOCH + 10);
     assert_eq!(slash_account_2.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_2.slash_custody, slash_custody);
-    assert_eq!(slash_account_2.publisher, slash_publisher);
+    assert_eq!(slash_account_2.publisher, slashed_publisher);
 }
