@@ -1,4 +1,6 @@
 use {
+    anchor_lang::AccountDeserialize,
+    anchor_spl::token::TokenAccount,
     integrity_pool::{
         error::IntegrityPoolError,
         state::{
@@ -19,16 +21,28 @@ use {
         },
         clock::advance_n_epochs,
         error::assert_anchor_program_error,
-        integrity_pool::slash::{
-            create_slash_event,
-            get_slash_event_address,
+        integrity_pool::{
+            advance::advance,
+            delegate::{
+                advance_delegation_record,
+                delegate,
+            },
+            slash::{
+                create_slash_event,
+                get_slash_event_address,
+                slash,
+            },
         },
+        publisher_caps::post_publisher_caps::post_publisher_caps,
         setup::{
             setup,
             SetupProps,
             SetupResult,
         },
-        staking::create_token_account::create_token_account,
+        staking::{
+            create_stake_account::create_stake_account,
+            create_token_account::create_token_account,
+        },
     },
 };
 
@@ -187,4 +201,116 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_2.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_2.slash_custody, slash_custody);
     assert_eq!(slash_account_2.publisher, slashed_publisher);
+}
+
+#[test]
+fn test_slash() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        publisher_keypair,
+        pool_data_pubkey,
+        reward_program_authority,
+        publisher_index,
+    } = setup(SetupProps {
+        init_config:     true,
+        init_target:     true,
+        init_mint:       true,
+        init_pool_data:  true,
+        init_publishers: true,
+    });
+
+    let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
+
+    let stake_account_positions =
+        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        10 * FRAC_64_MULTIPLIER,
+    );
+
+    advance_n_epochs(&mut svm, &payer, 2);
+
+    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        20 * FRAC_64_MULTIPLIER,
+    );
+
+    create_slash_event(
+        &mut svm,
+        &payer,
+        &reward_program_authority,
+        0,
+        FRAC_64_MULTIPLIER / 20,
+        slash_custody,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    create_slash_event(
+        &mut svm,
+        &payer,
+        &reward_program_authority,
+        1,
+        FRAC_64_MULTIPLIER / 2,
+        slash_custody,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    assert_anchor_program_error(
+        slash(
+            &mut svm,
+            &payer,
+            stake_account_positions,
+            1,
+            slash_custody,
+            publisher_keypair.pubkey(),
+            pool_data_pubkey,
+        ),
+        IntegrityPoolError::WrongSlashEventOrder.into(),
+        0,
+    );
+
+    slash(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        0,
+        slash_custody,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    let slash_account_data = svm.get_account(&slash_custody).unwrap();
+    let slash_account =
+        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+
+    assert_eq!(slash_account.amount, 10 * FRAC_64_MULTIPLIER / 20);
 }
