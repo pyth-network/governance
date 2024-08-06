@@ -33,7 +33,7 @@ pub fn create_slash_event(
     publisher: Pubkey,
 ) -> TransactionResult {
     let create_slash_event_data = integrity_pool::instruction::CreateSlashEvent {
-        _index: index,
+        index,
         slash_custody,
         slash_ratio,
         publisher,
