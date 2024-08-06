@@ -254,7 +254,7 @@ pub mod integrity_pool {
 
     pub fn create_slash_event(
         ctx: Context<CreateSlashEvent>,
-        _index: u8,
+        index: u8,
         slash_ratio: frac64,
         slash_custody: Pubkey,
         publisher: Pubkey,
@@ -264,7 +264,7 @@ pub mod integrity_pool {
 
         require_eq!(
             pool_config.num_slash_events,
-            _index,
+            index,
             IntegrityPoolError::InvalidSlashEventIndex,
         );
 
