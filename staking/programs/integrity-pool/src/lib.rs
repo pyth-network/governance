@@ -284,6 +284,7 @@ pub mod integrity_pool {
         let slash_event = &ctx.accounts.slash_event;
         let publisher = &ctx.accounts.publisher;
         let delegation_record = &mut ctx.accounts.delegation_record;
+        let stake_account_positions = &ctx.accounts.stake_account_positions.key();
 
         let current_epoch = get_current_epoch()?;
 
@@ -315,6 +316,7 @@ pub mod integrity_pool {
 
         pool_data.apply_slash(
             &publisher.key(),
+            stake_account_positions,
             locked_slashed,
             preunlocking_slashed,
             current_epoch,

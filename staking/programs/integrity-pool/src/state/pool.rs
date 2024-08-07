@@ -378,6 +378,7 @@ impl PoolData {
     pub fn apply_slash(
         &mut self,
         publisher: &Pubkey,
+        stake_account_positions_key: &Pubkey,
         locked_slash: u64,
         preunlocking_slash: u64,
         current_epoch: u64,
@@ -387,13 +388,13 @@ impl PoolData {
         let publisher_index = self.get_publisher_index(publisher)?;
 
         let del_state = match publisher {
-            _ if self.publisher_stake_accounts[publisher_index] == *publisher => {
+            _ if self.publisher_stake_accounts[publisher_index] == *stake_account_positions_key => {
                 &mut self.self_del_state[publisher_index]
             }
             _ => &mut self.del_state[publisher_index],
         };
 
-        del_state.total_delegation -= locked_slash;
+        del_state.total_delegation -= locked_slash + preunlocking_slash;
         del_state.delta_delegation += TryInto::<i64>::try_into(preunlocking_slash)?;
 
         Ok(())
