@@ -113,7 +113,7 @@ impl PoolData {
         &self,
         from_epoch: u64,
         stake_account_positions_key: &Pubkey,
-        positions: Ref<staking::state::positions::PositionData>,
+        positions: Ref<staking::state::positions::PositionDataV2>,
         publisher: &Pubkey,
         current_epoch: u64,
     ) -> Result<frac64> {
@@ -526,7 +526,7 @@ mod tests {
             pool_data.events[i].epoch = (i + 1) as u64;
         }
 
-        let mut positions = staking::state::positions::PositionData::default();
+        let mut positions = staking::state::positions::PositionDataV2::default();
         // this position should be ignored (wrong target)
         positions
             .write_position(

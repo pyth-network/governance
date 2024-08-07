@@ -1185,6 +1185,30 @@ export type Staking = {
       ]
     },
     {
+      "name": "migratePositionsAccount",
+      "discriminator": [
+        22,
+        61,
+        163,
+        179,
+        22,
+        63,
+        131,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "positions",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "recoverAccount",
       "docs": [
         "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
@@ -2249,6 +2273,19 @@ export type Staking = {
       ]
     },
     {
+      "name": "positionDataV2",
+      "discriminator": [
+        153,
+        190,
+        157,
+        149,
+        201,
+        221,
+        111,
+        94
+      ]
+    },
+    {
       "name": "splitRequest",
       "discriminator": [
         80,
@@ -2703,6 +2740,36 @@ export type Staking = {
                   ]
                 },
                 20
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "positionDataV2",
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "positions",
+            "type": {
+              "array": [
+                {
+                  "array": [
+                    "u8",
+                    59
+                  ]
+                },
+                67
               ]
             }
           }

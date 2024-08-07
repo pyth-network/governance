@@ -2,7 +2,7 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
-            PositionData,
+            PositionDataV2,
             PositionState,
             MAX_POSITIONS,
         },
@@ -12,7 +12,7 @@ use {
 };
 
 pub fn compute_voter_weight(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &PositionDataV2,
     current_epoch: u64,
     unlocking_duration: u8,
     current_locked: u64,
@@ -47,7 +47,7 @@ pub mod tests {
         crate::{
             state::positions::{
                 Position,
-                PositionData,
+                PositionDataV2,
                 TargetWithParameters,
             },
             utils::voter_weight::compute_voter_weight,
@@ -58,7 +58,7 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
 
         pd.write_position(
             0,
@@ -123,7 +123,7 @@ pub mod tests {
 
     #[test]
     fn test_overflow() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
 
         pd.write_position(
             0,
@@ -142,7 +142,7 @@ pub mod tests {
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
 
         pd.write_position(
             0,

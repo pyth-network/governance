@@ -77,7 +77,7 @@ fn test_delegate() {
         100,
     );
 
-    let positions: staking::state::positions::PositionData =
+    let positions: staking::state::positions::PositionDataV2 =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
@@ -166,7 +166,7 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
+    let positions: staking::state::positions::PositionDataV2 =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
@@ -281,7 +281,7 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
+    let positions: staking::state::positions::PositionDataV2 =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
@@ -388,7 +388,7 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
+    let positions: staking::state::positions::PositionDataV2 =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
@@ -432,7 +432,7 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
+    let positions: staking::state::positions::PositionDataV2 =
         fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
     let pos0 = positions.read_position(0).unwrap().unwrap();
 

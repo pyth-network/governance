@@ -5,7 +5,7 @@ use {
         state::{
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
-                PositionData,
+                PositionDataV2,
                 PositionState,
                 MAX_POSITIONS,
             },
@@ -23,12 +23,13 @@ use {
         AccountDeserialize,
         AnchorDeserialize,
     },
+    std::mem::size_of,
     wasm_bindgen::prelude::*,
 };
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
-    wrapped: PositionData,
+    wrapped: PositionDataV2,
 }
 
 #[wasm_bindgen]
@@ -44,12 +45,12 @@ impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
         convert_error(WasmPositionData::from_buffer_impl(
-            &buffer[..PositionData::LEN],
+            &buffer[..8 + size_of::<PositionDataV2>()],
         ))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
         let mut ptr = buffer;
-        let position_data = PositionData::try_deserialize(&mut ptr)?;
+        let position_data = PositionDataV2::try_deserialize(&mut ptr)?;
         Ok(WasmPositionData {
             wrapped: position_data,
         })
@@ -289,7 +290,7 @@ impl Constants {
     }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
-        PositionData::LEN
+        PositionDataV2::LEN
     }
     #[wasm_bindgen]
     pub fn MAX_VOTER_WEIGHT() -> u64 {

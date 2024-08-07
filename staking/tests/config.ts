@@ -244,7 +244,7 @@ describe("config", async () => {
     const instructions: TransactionInstruction[] = [];
 
     instructions.push(
-      await program.account.positionData.createInstruction(
+      await program.account.positionDataV2.createInstruction(
         stakeAccountKeypair,
         wasm.Constants.POSITIONS_ACCOUNT_SIZE()
       )

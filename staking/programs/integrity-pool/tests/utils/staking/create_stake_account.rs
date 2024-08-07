@@ -65,7 +65,7 @@ pub fn create_stake_account(
     let stake_account_positions = create_account(
         svm,
         payer,
-        staking::state::positions::PositionData::LEN,
+        staking::state::positions::PositionDataV2::LEN,
         staking::ID,
     );
 

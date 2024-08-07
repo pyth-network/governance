@@ -65,7 +65,7 @@ interface ClosingItem {
 }
 
 export type GlobalConfig = IdlAccounts<Staking>["globalConfig"];
-export type PositionData = IdlAccounts<Staking>["positionData"];
+export type PositionData = IdlAccounts<Staking>["positionDataV2"];
 export type StakeAccountMetadata =
   IdlAccounts<Staking>["stakeAccountMetadataV2"];
 export type VestingSchedule = IdlTypes<Staking>["vestingSchedule"];
@@ -215,7 +215,7 @@ export class StakeConnection {
       {
         encoding: "base64",
         filters: [
-          { memcmp: this.program.coder.accounts.memcmp("positionData") },
+          { memcmp: this.program.coder.accounts.memcmp("positionDataV2") },
         ],
       }
     );
@@ -230,7 +230,7 @@ export class StakeConnection {
         encoding: "base64",
         filters: [
           {
-            memcmp: this.program.coder.accounts.memcmp("positionData"),
+            memcmp: this.program.coder.accounts.memcmp("positionDataV2"),
           },
           {
             memcmp: {
