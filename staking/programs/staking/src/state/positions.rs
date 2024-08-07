@@ -35,7 +35,7 @@ pub const POSITION_BUFFER_SIZE: usize = 59;
 #[derive(Debug)]
 pub struct PositionData {
     pub owner: Pubkey,
-    positions: [[u8; 200]; 20],
+    positions: [[u8; OLD_POSITION_BUFFER_SIZE]; OLD_MAX_NUMBER_POSITIONS],
 }
 
 
@@ -44,7 +44,7 @@ impl Default for PositionData {
     fn default() -> Self {
         PositionData {
             owner:     Pubkey::default(),
-            positions: [[0u8; 200]; 20],
+            positions: [[0u8; OLD_POSITION_BUFFER_SIZE]; OLD_MAX_NUMBER_POSITIONS],
         }
     }
 }
@@ -82,6 +82,16 @@ impl PositionData {
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
     }
+
+    pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
+        let res: usize = *next_index as usize;
+        *next_index += 1;
+        if res < OLD_MAX_NUMBER_POSITIONS {
+            Ok(res)
+        } else {
+            Err(error!(ErrorCode::TooManyPositions))
+        }
+    }
 }
 
 impl PositionDataV2 {
@@ -91,7 +101,7 @@ impl PositionDataV2 {
 
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
-        let res = *next_index as usize;
+        let res: usize = *next_index as usize;
         *next_index += 1;
         if res < MAX_POSITIONS {
             Ok(res)
@@ -549,25 +559,28 @@ pub mod tests {
     impl Arbitrary for PositionDataFixture {
         fn arbitrary(g: &mut Gen) -> Self {
             let num_positions = u8::arbitrary(g) % 20;
-
+            let mut next_index: u8 = 0;
             let mut owner = [0u8; 32];
             for i in 0..32 {
                 owner[i] = u8::arbitrary(g);
             }
 
-            let mut positions = [[0u8; 200]; 20];
+            let positions = [[0u8; 200]; 20];
+            let mut position_data = PositionData {
+                owner: Pubkey::from(owner),
+                positions,
+            };
+
             for i in 0..num_positions {
-                let position = Position::arbitrary(g);
-                Some(position)
-                    .try_write(&mut positions[i as usize])
-                    .unwrap();
+                let position: Position = Position::arbitrary(g);
+
+                let index =
+                    PositionData::reserve_new_index(&mut position_data, &mut next_index).unwrap();
+                position_data.write_position(index, &position).unwrap();
             }
             PositionDataFixture {
-                next_index:    num_positions,
-                position_data: PositionData {
-                    owner: Pubkey::from(owner),
-                    positions,
-                },
+                next_index,
+                position_data,
             }
         }
     }
