@@ -89,7 +89,7 @@ pub struct CreateStakeAccount<'info> {
     pub payer:                   Signer<'info>,
     // Stake program accounts:
     #[account(zero)]
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(init, payer = payer, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump)]
     pub stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
@@ -120,7 +120,7 @@ pub struct CreateVoterRecord<'info> {
     #[account(mut)]
     pub payer:                   Signer<'info>,
     // Stake program accounts:
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
@@ -144,7 +144,7 @@ pub struct WithdrawStake<'info> {
     #[account(mut)]
     pub destination:             Account<'info, TokenAccount>,
     // Stake program accounts:
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
@@ -183,7 +183,7 @@ pub struct CreatePosition<'info> {
     pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
@@ -210,7 +210,7 @@ pub struct ClosePosition<'info> {
     pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
@@ -235,7 +235,7 @@ pub struct UpdateVoterWeight<'info> {
     // Native payer:
     pub owner:                   Signer<'info>,
     // Stake program accounts:
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(
@@ -294,7 +294,7 @@ pub struct RequestSplit<'info> {
     #[account(mut)]
     pub owner:                       Signer<'info>,
     // Stake program accounts:
-    pub stake_account_positions:     AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions:     AccountLoader<'info, positions::PositionDataV2>,
     #[account(seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:      Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(init_if_needed, payer = owner, space=split_request::SplitRequest::LEN ,  seeds = [SPLIT_REQUEST.as_bytes(), stake_account_positions.key().as_ref()], bump)]
@@ -313,7 +313,7 @@ pub struct AcceptSplit<'info> {
     pub pda_authority:                      Signer<'info>,
     // Current stake accounts:
     #[account(mut)]
-    pub source_stake_account_positions:     AccountLoader<'info, positions::PositionData>,
+    pub source_stake_account_positions:     AccountLoader<'info, positions::PositionDataV2>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), source_stake_account_positions.key().as_ref()], bump = source_stake_account_metadata.metadata_bump)]
     pub source_stake_account_metadata: Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(mut, seeds = [SPLIT_REQUEST.as_bytes(), source_stake_account_positions.key().as_ref()], bump)]
@@ -330,7 +330,7 @@ pub struct AcceptSplit<'info> {
 
     // New stake accounts :
     #[account(zero)]
-    pub new_stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub new_stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(init, payer = pda_authority, space = stake_account::StakeAccountMetadataV2::LEN, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), new_stake_account_positions.key().as_ref()], bump)]
     pub new_stake_account_metadata:  Box<Account<'info, stake_account::StakeAccountMetadataV2>>,
     #[account(
@@ -376,7 +376,7 @@ pub struct JoinDaoLlc<'info> {
     // Native payer:
     pub owner:                   Signer<'info>,
     // Stake program accounts:
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, constraint = config.agreement_hash == agreement_hash @ ErrorCode::InvalidLlcAgreement)]
@@ -402,7 +402,7 @@ pub struct RecoverAccount<'info> {
 
     // Stake program accounts:
     #[account(mut)]
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
 
     #[account(
         mut,
@@ -427,6 +427,14 @@ pub struct RecoverAccount<'info> {
 }
 
 #[derive(Accounts)]
+pub struct MigratePositionsAccount<'info> {
+    pub signer:    Signer<'info>,
+    /// CHECK : We will be fixing this
+    #[account(mut)]
+    pub positions: AccountLoader<'info, positions::PositionDataV2>,
+}
+
+#[derive(Accounts)]
 #[instruction(slash_ratio: u64)]
 pub struct SlashAccount<'info> {
     pool_authority: Signer<'info>,
@@ -435,7 +443,7 @@ pub struct SlashAccount<'info> {
     pub publisher: AccountInfo<'info>,
 
     #[account(mut)]
-    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, positions::PositionDataV2>,
 
     #[account(
         mut,

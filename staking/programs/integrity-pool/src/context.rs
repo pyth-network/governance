@@ -118,7 +118,7 @@ pub struct Undelegate<'info> {
     pub config_account:    AccountInfo<'info>,
 
     #[account(mut)]
-    pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionDataV2>,
 
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(
@@ -149,9 +149,10 @@ pub struct SetPublisherStakeAccount<'info> {
     pub pool_data:                              AccountLoader<'info, PoolData>,
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
     pub pool_config:                            Account<'info, PoolConfig>,
-    pub new_stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+    pub new_stake_account_positions:
+        AccountLoader<'info, staking::state::positions::PositionDataV2>,
     pub current_stake_account_positions_option:
-        Option<AccountLoader<'info, staking::state::positions::PositionData>>,
+        Option<AccountLoader<'info, staking::state::positions::PositionDataV2>>,
 }
 
 #[derive(Accounts)]
@@ -178,7 +179,7 @@ pub struct AdvanceDelegationRecord<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+    pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionDataV2>,
 
     pub pool_data: AccountLoader<'info, PoolData>,
 

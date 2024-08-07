@@ -6,6 +6,11 @@ use {
             *,
         },
         solana_program::wasm_bindgen,
+        Discriminator,
+    },
+    solana_program::program_memory::{
+        sol_memcpy,
+        sol_memset,
     },
     std::fmt::{
         self,
@@ -13,9 +18,12 @@ use {
     },
 };
 
-pub const MAX_POSITIONS: usize = 20;
+pub const OLD_POSITION_BUFFER_SIZE: usize = 200;
+pub const OLD_MAX_NUMBER_POSITIONS: usize = 20;
+
+pub const MAX_POSITIONS: usize = 67;
 // Intentionally make the buffer for positions bigger than it needs for migrations
-pub const POSITION_BUFFER_SIZE: usize = 200;
+pub const POSITION_BUFFER_SIZE: usize = 59;
 
 /// An array that contains all of a user's positions i.e. where are the staking and who are they
 /// staking to.
@@ -24,25 +32,59 @@ pub const POSITION_BUFFER_SIZE: usize = 200;
 
 #[account(zero_copy)]
 #[repr(C)]
+#[derive(Debug)]
 pub struct PositionData {
     pub owner: Pubkey,
-    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+    positions: [[u8; 200]; 20],
 }
 
-impl PositionData {
-    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
-}
 
 impl Default for PositionData {
     // Only used for testing, so unwrap is acceptable
     fn default() -> Self {
         PositionData {
             owner:     Pubkey::default(),
+            positions: [[0u8; 200]; 20],
+        }
+    }
+}
+
+#[account(zero_copy)]
+#[repr(C)]
+pub struct PositionDataV2 {
+    pub owner: Pubkey,
+    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+}
+
+impl PositionDataV2 {
+    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
+}
+
+impl Default for PositionDataV2 {
+    // Only used for testing, so unwrap is acceptable
+    fn default() -> Self {
+        PositionDataV2 {
+            owner:     Pubkey::default(),
             positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
         }
     }
 }
+
 impl PositionData {
+    pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
+        Some(position).try_write(&mut self.positions[i])
+    }
+
+    pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
+        Option::<Position>::try_read(
+            self.positions
+                .get(i)
+                .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
+        )
+    }
+}
+
+impl PositionDataV2 {
     pub fn initialize(&mut self, owner: &Pubkey) {
         self.owner = *owner;
     }
@@ -205,6 +247,23 @@ impl Position {
     }
 }
 
+pub fn _migrate_positions_account(position_data_buffer: &mut [u8]) {
+    let size = position_data_buffer.len();
+    sol_memcpy(position_data_buffer, &PositionDataV2::discriminator(), 8); // update discriminator
+    for i in 0..OLD_MAX_NUMBER_POSITIONS {
+        position_data_buffer.copy_within(
+            32 + i * OLD_POSITION_BUFFER_SIZE
+                ..32 + i * OLD_POSITION_BUFFER_SIZE + POSITION_BUFFER_SIZE,
+            32 + i * POSITION_BUFFER_SIZE,
+        )
+    }
+    sol_memset(
+        &mut position_data_buffer[32 + OLD_MAX_NUMBER_POSITIONS * POSITION_BUFFER_SIZE..],
+        0,
+        size - 32 - OLD_MAX_NUMBER_POSITIONS * POSITION_BUFFER_SIZE,
+    );
+}
+
 /// The core states that a position can be in
 #[repr(u8)]
 #[wasm_bindgen]
@@ -226,16 +285,20 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use {
+        super::PositionData,
         crate::state::positions::{
             Position,
-            PositionData,
+            PositionDataV2,
             PositionState,
             TargetWithParameters,
             TryBorsh,
+            _migrate_positions_account,
             MAX_POSITIONS,
+            OLD_MAX_NUMBER_POSITIONS,
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::prelude::*,
+        bytemuck::from_bytes,
         quickcheck::{
             Arbitrary,
             Gen,
@@ -308,16 +371,14 @@ pub mod tests {
     #[allow(deprecated)]
     fn test_serialized_size() {
         assert_eq!(
-            std::mem::size_of::<PositionData>(),
+            std::mem::size_of::<PositionDataV2>(),
             32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
         );
-        assert_eq!(
-            PositionData::LEN,
-            8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
-        );
+        assert!(PositionDataV2::LEN >= 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE);
         // Checks that the position struct fits in the individual position buffer
         assert!(
-            anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
+            anchor_lang::solana_program::borsh::get_packed_len::<Option<Position>>()
+                <= POSITION_BUFFER_SIZE
         );
     }
 
@@ -330,7 +391,7 @@ pub mod tests {
 
     #[test]
     fn test_has_target_with_parameters_exposure() {
-        let mut position_data = PositionData::default();
+        let mut position_data = PositionDataV2::default();
         let position = Position {
             activation_epoch:       8,
             unlocking_start:        Some(12),
@@ -375,7 +436,7 @@ pub mod tests {
             Position {
                 activation_epoch:       u64::arbitrary(g),
                 unlocking_start:        Option::<u64>::arbitrary(g),
-                target_with_parameters: TargetWithParameters::Voting,
+                target_with_parameters: TargetWithParameters::arbitrary(g),
                 amount:                 u64::arbitrary(g),
             }
         }
@@ -403,7 +464,8 @@ pub mod tests {
         }
     }
 
-    impl PositionData {
+
+    impl PositionDataV2 {
         fn to_set(self, next_index: u8) -> HashSet<Position> {
             let mut res: HashSet<Position> = HashSet::new();
             for i in 0..next_index {
@@ -430,7 +492,7 @@ pub mod tests {
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
-        let mut position_data = PositionData::default();
+        let mut position_data = PositionDataV2::default();
         let mut next_index: u8 = 0;
         let mut set: HashSet<Position> = HashSet::new();
         let mut rng = rand::thread_rng();
@@ -475,5 +537,81 @@ pub mod tests {
             };
         }
         set == position_data.to_set(next_index)
+    }
+
+
+    #[derive(Clone, Debug)]
+    pub struct PositionDataFixture {
+        pub next_index:    u8,
+        pub position_data: PositionData,
+    }
+
+    impl Arbitrary for PositionDataFixture {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let num_positions = u8::arbitrary(g) % 20;
+
+            let mut owner = [0u8; 32];
+            for i in 0..32 {
+                owner[i] = u8::arbitrary(g);
+            }
+
+            let mut positions = [[0u8; 200]; 20];
+            for i in 0..num_positions {
+                let position = Position::arbitrary(g);
+                Some(position)
+                    .try_write(&mut positions[i as usize])
+                    .unwrap();
+            }
+            PositionDataFixture {
+                next_index:    num_positions,
+                position_data: PositionData {
+                    owner: Pubkey::from(owner),
+                    positions,
+                },
+            }
+        }
+    }
+
+
+    #[quickcheck]
+    fn migrate(input: PositionDataFixture) {
+        let mut position_data_fixture = input.clone();
+        let bytes = bytemuck::bytes_of_mut(&mut position_data_fixture.position_data);
+        _migrate_positions_account(bytes);
+
+        let position_data_v2: &PositionDataV2 =
+            from_bytes(&bytes[..std::mem::size_of::<PositionDataV2>()]);
+
+        for i in 0..input.next_index {
+            let position = input
+                .position_data
+                .read_position(i as usize)
+                .unwrap()
+                .unwrap();
+            let position_2 = position_data_v2.read_position(i as usize).unwrap().unwrap();
+            assert_eq!(position, position_2);
+        }
+
+        for i in input.next_index..OLD_MAX_NUMBER_POSITIONS as u8 {
+            assert_eq!(
+                Option::<Position>::None,
+                input.position_data.read_position(i as usize).unwrap()
+            );
+            assert_eq!(
+                Option::<Position>::None,
+                position_data_v2.read_position(i as usize).unwrap()
+            );
+        }
+
+        for i in OLD_MAX_NUMBER_POSITIONS as u8..MAX_POSITIONS as u8 {
+            assert_eq!(
+                Option::<Position>::None,
+                position_data_v2.read_position(i as usize).unwrap()
+            );
+        }
+
+        for byte in &bytes[std::mem::size_of::<PositionDataV2>()..] {
+            assert_eq!(0, *byte);
+        }
     }
 }

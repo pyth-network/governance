@@ -1,7 +1,7 @@
 use {
     crate::{
         state::positions::{
-            PositionData,
+            PositionDataV2,
             Target,
             TargetWithParameters,
             MAX_POSITIONS,
@@ -17,7 +17,7 @@ use {
     std::cmp,
 };
 
-pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
+pub fn calculate_governance_exposure(positions: &PositionDataV2) -> Result<u64> {
     let mut governance_exposure: u64 = 0;
     for i in 0..MAX_POSITIONS {
         if let Some(position) = positions.read_position(i)? {
@@ -40,7 +40,7 @@ pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
 /// that can be withdrawn without violating risk constraints.
 /// It's guaranteed that the returned value is between 0 and vested_balance (both inclusive)
 pub fn validate(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &PositionDataV2,
     total_balance: u64,
     unvested_balance: u64,
 ) -> Result<u64> {
@@ -103,7 +103,7 @@ pub mod tests {
         crate::{
             state::positions::{
                 Position,
-                PositionData,
+                PositionDataV2,
                 PositionState,
                 TargetWithParameters,
             },
@@ -115,7 +115,7 @@ pub mod tests {
 
     #[test]
     fn test_disjoint() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         // We need at least 10 vested tokens to support these positions
         pd.write_position(
             0,
@@ -166,7 +166,7 @@ pub mod tests {
 
     #[test]
     fn test_voting() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         // We need at least 3 vested, 7 total
         pd.write_position(
             0,
@@ -199,7 +199,7 @@ pub mod tests {
     }
     #[test]
     fn test_double_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         // We need at least 10 vested to support these
         pd.write_position(
             0,
@@ -233,7 +233,7 @@ pub mod tests {
     }
     #[test]
     fn test_multiple_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -269,7 +269,7 @@ pub mod tests {
     }
     #[test]
     fn test_multiple_voting() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -290,7 +290,7 @@ pub mod tests {
 
     #[test]
     fn test_overflow_total() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -309,7 +309,7 @@ pub mod tests {
 
     #[test]
     fn test_overflow_aggregation() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -330,7 +330,7 @@ pub mod tests {
 
     #[test]
     fn test_multiple_voting_and_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut pd = PositionDataV2::default();
         // We need at least 4 vested, 10 total
         pd.write_position(
             0,

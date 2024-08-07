@@ -1185,6 +1185,33 @@ export type Staking = {
       ]
     },
     {
+      "name": "migratePositionsAccount",
+      "discriminator": [
+        22,
+        61,
+        163,
+        179,
+        22,
+        63,
+        131,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "signer": true
+        },
+        {
+          "name": "positions",
+          "docs": [
+            "CHECK : We will be fixing this"
+          ],
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "recoverAccount",
       "docs": [
         "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
@@ -2236,16 +2263,16 @@ export type Staking = {
       ]
     },
     {
-      "name": "positionData",
+      "name": "positionDataV2",
       "discriminator": [
-        85,
-        195,
-        241,
-        79,
-        124,
-        192,
-        79,
-        11
+        153,
+        190,
+        157,
+        149,
+        201,
+        221,
+        111,
+        94
       ]
     },
     {
@@ -2674,13 +2701,7 @@ export type Staking = {
       }
     },
     {
-      "name": "positionData",
-      "docs": [
-        "An array that contains all of a user's positions i.e. where are the staking and who are they",
-        "staking to.",
-        "The invariant we preserve is : For i < next_index, positions[i] == Some",
-        "For i >= next_index, positions[i] == None"
-      ],
+      "name": "positionDataV2",
       "serialization": "bytemuck",
       "repr": {
         "kind": "c"
@@ -2699,10 +2720,10 @@ export type Staking = {
                 {
                   "array": [
                     "u8",
-                    200
+                    59
                   ]
                 },
-                20
+                67
               ]
             }
           }

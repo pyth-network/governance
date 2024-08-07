@@ -20,7 +20,7 @@ use {
         max_voter_weight_record::MAX_VOTER_WEIGHT,
         positions::{
             Position,
-            PositionData,
+            PositionDataV2,
             PositionState,
             TargetWithParameters,
         },
@@ -52,6 +52,19 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use {
+        anchor_lang::Discriminator,
+        solana_program::program_memory::{
+            sol_memcpy,
+            sol_memset,
+        },
+        state::positions::{
+            _migrate_positions_account,
+            OLD_MAX_NUMBER_POSITIONS,
+            OLD_POSITION_BUFFER_SIZE,
+            POSITION_BUFFER_SIZE,
+        },
+    };
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -207,7 +220,7 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        let i = PositionData::reserve_new_index(
+        let i = PositionDataV2::reserve_new_index(
             stake_account_positions,
             &mut ctx.accounts.stake_account_metadata.next_index,
         )?;
@@ -304,7 +317,7 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
 
-                    let j = PositionData::reserve_new_index(
+                    let j = PositionDataV2::reserve_new_index(
                         stake_account_positions,
                         &mut ctx.accounts.stake_account_metadata.next_index,
                     )?;
@@ -902,6 +915,14 @@ pub mod staking {
         )?;
 
         Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
+    }
+
+
+    pub fn migrate_positions_account(ctx: Context<MigratePositionsAccount>) -> Result<()> {
+        let positions = &mut ctx.accounts.positions.to_account_info();
+        let data = &mut positions.try_borrow_mut_data()?;
+        _migrate_positions_account(&mut data[8..]);
+        Ok(())
     }
 
     // Hack to allow exporting the Position type in the IDL

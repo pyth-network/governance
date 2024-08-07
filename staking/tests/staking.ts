@@ -96,7 +96,7 @@ describe("staking", async () => {
     const tx = await program.methods
       .createStakeAccount(owner, { fullyVested: {} })
       .preInstructions([
-        await program.account.positionData.createInstruction(
+        await program.account.positionDataV2.createInstruction(
           stakeAccountPositionsSecret,
           wasm.Constants.POSITIONS_ACCOUNT_SIZE()
         ),
