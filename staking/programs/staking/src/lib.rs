@@ -53,6 +53,10 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use {
+        anchor_lang::Discriminator,
+        solana_program::program_memory::sol_memcpy,
+    };
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -909,6 +913,7 @@ pub mod staking {
     pub fn migrate_positions_account(ctx: Context<MigratePositionsAccount>) -> Result<()> {
         let positions = &mut ctx.accounts.positions.to_account_info();
         let data = &mut positions.try_borrow_mut_data()?;
+        sol_memcpy(data, &PositionDataV2::discriminator(), 8);
         _migrate_positions_account(&mut data[8..]);
         Ok(())
     }
