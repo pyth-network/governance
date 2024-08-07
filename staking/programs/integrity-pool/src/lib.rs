@@ -294,6 +294,12 @@ pub mod integrity_pool {
             IntegrityPoolError::ThisCodeShouldBeUnreachable,
         );
 
+        require_gte!(
+            index,
+            delegation_record.next_slash_event_index,
+            IntegrityPoolError::WrongSlashEventOrder
+        );
+
         if current_epoch > slash_event.epoch {
             // the slash window has passed, no need to slash
             delegation_record.next_slash_event_index = index + 1;
