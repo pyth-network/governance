@@ -1203,9 +1203,6 @@ export type Staking = {
         },
         {
           "name": "positions",
-          "docs": [
-            "CHECK : We will be fixing this"
-          ],
           "writable": true
         }
       ],
@@ -2263,6 +2260,19 @@ export type Staking = {
       ]
     },
     {
+      "name": "positionData",
+      "discriminator": [
+        85,
+        195,
+        241,
+        79,
+        124,
+        192,
+        79,
+        11
+      ]
+    },
+    {
       "name": "positionDataV2",
       "discriminator": [
         153,
@@ -2695,6 +2705,42 @@ export type Staking = {
               "defined": {
                 "name": "targetWithParameters"
               }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "positionData",
+      "docs": [
+        "An array that contains all of a user's positions i.e. where are the staking and who are they",
+        "staking to.",
+        "The invariant we preserve is : For i < next_index, positions[i] == Some",
+        "For i >= next_index, positions[i] == None"
+      ],
+      "serialization": "bytemuck",
+      "repr": {
+        "kind": "c"
+      },
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "positions",
+            "type": {
+              "array": [
+                {
+                  "array": [
+                    "u8",
+                    200
+                  ]
+                },
+                20
+              ]
             }
           }
         ]

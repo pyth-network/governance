@@ -429,9 +429,8 @@ pub struct RecoverAccount<'info> {
 #[derive(Accounts)]
 pub struct MigratePositionsAccount<'info> {
     pub signer:    Signer<'info>,
-    /// CHECK : We will be fixing this
     #[account(mut)]
-    pub positions: AccountLoader<'info, positions::PositionDataV2>,
+    pub positions: AccountLoader<'info, positions::PositionData>,
 }
 
 #[derive(Accounts)]

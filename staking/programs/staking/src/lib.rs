@@ -23,6 +23,7 @@ use {
             PositionDataV2,
             PositionState,
             TargetWithParameters,
+            _migrate_positions_account,
         },
         vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
@@ -52,19 +53,6 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use {
-        anchor_lang::Discriminator,
-        solana_program::program_memory::{
-            sol_memcpy,
-            sol_memset,
-        },
-        state::positions::{
-            _migrate_positions_account,
-            OLD_MAX_NUMBER_POSITIONS,
-            OLD_POSITION_BUFFER_SIZE,
-            POSITION_BUFFER_SIZE,
-        },
-    };
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
