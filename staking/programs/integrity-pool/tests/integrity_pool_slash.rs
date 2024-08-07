@@ -4,7 +4,11 @@ use {
     integrity_pool::{
         error::IntegrityPoolError,
         state::{
-            pool::PoolData,
+            delegation_record::DelegationRecord,
+            pool::{
+                DelegationState,
+                PoolData,
+            },
             slash::SlashEvent,
         },
         utils::types::FRAC_64_MULTIPLIER,
@@ -26,6 +30,8 @@ use {
             delegate::{
                 advance_delegation_record,
                 delegate,
+                get_delegation_record_address,
+                undelegate,
             },
             slash::{
                 create_slash_event,
@@ -226,6 +232,7 @@ fn test_slash() {
     let stake_account_positions =
         create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
+    // delegate 10 PYTH at epoch N
     delegate(
         &mut svm,
         &payer,
@@ -235,20 +242,72 @@ fn test_slash() {
         10 * FRAC_64_MULTIPLIER,
     );
 
-    advance_n_epochs(&mut svm, &payer, 2);
+    advance_n_epochs(&mut svm, &payer, 1);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
-    delegate(
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    // undelegate 5 PYTH at epoch N + 1
+    undelegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
         pool_data_pubkey,
         stake_account_positions,
-        20 * FRAC_64_MULTIPLIER,
+        0,
+        5 * FRAC_64_MULTIPLIER,
+    )
+    .unwrap();
+
+    advance_n_epochs(&mut svm, &payer, 1);
+
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    // at epoch N + 1 before slashing -> total = 10 pyth, delta = -5 pyth
+    assert_eq!(
+        pool_data.del_state[publisher_index],
+        DelegationState {
+            total_delegation: 10 * FRAC_64_MULTIPLIER,
+            delta_delegation: -5 * FRAC_64_MULTIPLIER as i64,
+        }
     );
 
+    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    // undelegate 5 PYTH at epoch N + 2
+    undelegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        0,
+        5 * FRAC_64_MULTIPLIER,
+    )
+    .unwrap();
+
+    // create a slash event at epoch N + 2 for epoch N + 1 with 5% slash ratio
     create_slash_event(
         &mut svm,
         &payer,
@@ -261,6 +320,7 @@ fn test_slash() {
     )
     .unwrap();
 
+    // create another slash event at epoch N + 2 for epoch N + 1 with 50% slash ratio
     create_slash_event(
         &mut svm,
         &payer,
@@ -273,15 +333,16 @@ fn test_slash() {
     )
     .unwrap();
 
-    advance_delegation_record(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        stake_account_positions,
-        pyth_token_mint.pubkey(),
-        pool_data_pubkey,
-    )
-    .unwrap();
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    // at epoch N+2 before slashing -> total = 5 pyth, delta = -5 pyth
+    assert_eq!(
+        pool_data.del_state[publisher_index],
+        DelegationState {
+            total_delegation: 5 * FRAC_64_MULTIPLIER,
+            delta_delegation: -5 * FRAC_64_MULTIPLIER as i64,
+        }
+    );
 
     assert_anchor_program_error(
         slash(
@@ -312,5 +373,59 @@ fn test_slash() {
     let slash_account =
         TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
 
+    // Slashed for epoch N + 1 -> 10 pyth * 5% = 0.5 pyth
     assert_eq!(slash_account.amount, 10 * FRAC_64_MULTIPLIER / 20);
+
+    let delegation_record: DelegationRecord = fetch_account_data(
+        &mut svm,
+        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
+    );
+
+    assert_eq!(delegation_record.next_slash_event_index, 1);
+
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    // at epoch N+2 after slashing -> total = 5 pyth - 5% = 4.75 pyth, delta = -5 pyth + 5% = -4.75
+    assert_eq!(
+        pool_data.del_state[publisher_index],
+        DelegationState {
+            total_delegation: 475 * FRAC_64_MULTIPLIER / 100,
+            delta_delegation: -475 * FRAC_64_MULTIPLIER as i64 / 100,
+        }
+    );
+
+    svm.expire_blockhash();
+    // slash again for epoch N + 1 with 50% slash ratio
+    slash(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        1,
+        slash_custody,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+    )
+    .unwrap();
+
+    let slash_account_data = svm.get_account(&slash_custody).unwrap();
+    let slash_account =
+        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+
+    // slashed for epoch N + 1 -> 9.5 pyth * 50% = 4.75 pyth
+    assert_eq!(
+        slash_account.amount,
+        10 * FRAC_64_MULTIPLIER / 20 + 475 * FRAC_64_MULTIPLIER / 100
+    );
+
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    // at epoch N+2 after 2nd slash -> total = 5 pyth - 5% - 50% = 2.375 pyth, delta = -5 pyth + 5%
+    // + 50% = -2.375
+    assert_eq!(
+        pool_data.del_state[publisher_index],
+        DelegationState {
+            total_delegation: 2375 * FRAC_64_MULTIPLIER / 1000,
+            delta_delegation: -2375 * FRAC_64_MULTIPLIER as i64 / 1000,
+        }
+    );
 }
