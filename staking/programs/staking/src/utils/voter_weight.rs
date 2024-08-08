@@ -2,6 +2,7 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
+            PositionBuffer,
             PositionData,
             PositionState,
             MAX_POSITIONS,
@@ -12,7 +13,7 @@ use {
 };
 
 pub fn compute_voter_weight(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &PositionBuffer,
     current_epoch: u64,
     unlocking_duration: u8,
     current_locked: u64,

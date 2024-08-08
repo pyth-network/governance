@@ -52,6 +52,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use state::positions::PositionBuffer;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -142,7 +143,8 @@ pub mod staking {
         );
         stake_account_metadata.set_lock(lock);
 
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
+        let mut stake_account_positions =
+            PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         stake_account_positions.initialize(&owner);
 
         Ok(())
@@ -173,7 +175,8 @@ pub mod staking {
 
         // TODO: Should we check that target is legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake target
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_positions =
+            &mut PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
@@ -207,7 +210,7 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        let i = PositionData::reserve_new_index(
+        let i = PositionBuffer::reserve_new_index(
             stake_account_positions,
             &mut ctx.accounts.stake_account_metadata.next_index,
         )?;
@@ -247,7 +250,8 @@ pub mod staking {
 
 
         let i: usize = index.into();
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let mut stake_account_positions =
+            PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
         let maybe_target_account = &mut ctx.accounts.target_account;
@@ -304,8 +308,8 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
 
-                    let j = PositionData::reserve_new_index(
-                        stake_account_positions,
+                    let j = PositionBuffer::reserve_new_index(
+                        &mut stake_account_positions,
                         &mut ctx.accounts.stake_account_metadata.next_index,
                     )?;
                     stake_account_positions.write_position(
@@ -372,7 +376,8 @@ pub mod staking {
     }
 
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
-        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let stake_account_positions =
+            PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
 
@@ -400,8 +405,12 @@ pub mod staking {
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
-        if utils::risk::validate(stake_account_positions, remaining_balance, unvested_balance)
-            .is_err()
+        if utils::risk::validate(
+            &stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+        )
+        .is_err()
         {
             return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
@@ -418,7 +427,7 @@ pub mod staking {
         ctx.accounts.stake_account_custody.reload()?;
 
         if utils::risk::validate(
-            stake_account_positions,
+            &stake_account_positions,
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
         )
@@ -434,7 +443,8 @@ pub mod staking {
         ctx: Context<UpdateVoterWeight>,
         action: VoterWeightAction,
     ) -> Result<()> {
-        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let stake_account_positions =
+            PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
@@ -458,7 +468,7 @@ pub mod staking {
             .unwrap();
 
         utils::risk::validate(
-            stake_account_positions,
+            &stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
         )?;
@@ -531,7 +541,7 @@ pub mod staking {
         }
 
         voter_record.voter_weight = compute_voter_weight(
-            stake_account_positions,
+            &stake_account_positions,
             epoch_of_snapshot,
             config.unlocking_duration,
             governance_target.get_current_amount_locked(epoch_of_snapshot)?,
@@ -625,18 +635,22 @@ pub mod staking {
             &split_request.recipient,
         );
 
-        let new_stake_account_positions =
-            &mut ctx.accounts.new_stake_account_positions.load_init()?;
+
+        let mut new_stake_account_positions =
+            PositionBuffer::new(ctx.accounts.new_stake_account_positions.to_account_info());
         new_stake_account_positions.initialize(&split_request.recipient);
 
         // Pre-check invariants
         // Note that the accept operation requires the positions account to be empty, which should
         // trivially pass this invariant check. However, we explicitly check invariants
         // everywhere else, so may as well check in this operation also.
-        let source_stake_account_positions =
-            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
+        let source_stake_account_positions = PositionBuffer::new(
+            ctx.accounts
+                .source_stake_account_positions
+                .to_account_info(),
+        );
         utils::risk::validate(
-            source_stake_account_positions,
+            &source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
             ctx.accounts
                 .source_stake_account_metadata
@@ -689,7 +703,7 @@ pub mod staking {
 
         // Post-check
         utils::risk::validate(
-            source_stake_account_positions,
+            &source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
             ctx.accounts
                 .source_stake_account_metadata
@@ -701,7 +715,7 @@ pub mod staking {
         )?;
 
         utils::risk::validate(
-            new_stake_account_positions,
+            &new_stake_account_positions,
             ctx.accounts.new_stake_account_custody.amount,
             ctx.accounts
                 .new_stake_account_metadata
@@ -762,7 +776,8 @@ pub mod staking {
     ) -> Result<(u64, u64)> {
         require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
 
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let mut stake_account_positions =
+            PositionBuffer::new(ctx.accounts.stake_account_positions.to_account_info());
         let governance_target_account = &mut ctx.accounts.governance_target_account;
         let publisher = &ctx.accounts.publisher;
 
@@ -831,7 +846,7 @@ pub mod staking {
         }
 
         let total_amount = ctx.accounts.stake_account_custody.amount;
-        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
+        let governance_exposure = calculate_governance_exposure(&stake_account_positions)?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
