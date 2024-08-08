@@ -379,8 +379,8 @@ impl PoolData {
         &mut self,
         publisher: &Pubkey,
         stake_account_positions_key: &Pubkey,
-        locked_slash: u64,
-        preunlocking_slash: u64,
+        locked_slashed: u64,
+        preunlocking_slashed: u64,
         current_epoch: u64,
     ) -> Result<()> {
         self.assert_up_to_date(current_epoch)?;
@@ -394,8 +394,8 @@ impl PoolData {
             _ => &mut self.del_state[publisher_index],
         };
 
-        del_state.total_delegation -= locked_slash + preunlocking_slash;
-        del_state.delta_delegation += TryInto::<i64>::try_into(preunlocking_slash)?;
+        del_state.total_delegation -= locked_slashed + preunlocking_slashed;
+        del_state.delta_delegation += TryInto::<i64>::try_into(preunlocking_slashed)?;
 
         Ok(())
     }

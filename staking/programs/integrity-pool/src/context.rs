@@ -260,7 +260,6 @@ pub struct CreateSlashEvent<'info> {
 #[derive(Accounts)]
 #[instruction(index: u64)]
 pub struct Slash<'info> {
-    #[account(mut)]
     pub signer: Signer<'info>,
 
     #[account(mut)]

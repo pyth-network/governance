@@ -295,7 +295,7 @@ fn test_slash() {
     )
     .unwrap();
 
-    // undelegate 5 PYTH at epoch N + 2
+    // undelegate 2 PYTH at epoch N + 2
     undelegate(
         &mut svm,
         &payer,
@@ -303,7 +303,7 @@ fn test_slash() {
         pool_data_pubkey,
         stake_account_positions,
         0,
-        5 * FRAC_64_MULTIPLIER,
+        2 * FRAC_64_MULTIPLIER,
     )
     .unwrap();
 
@@ -340,7 +340,7 @@ fn test_slash() {
         pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation: 5 * FRAC_64_MULTIPLIER,
-            delta_delegation: -5 * FRAC_64_MULTIPLIER as i64,
+            delta_delegation: -2 * FRAC_64_MULTIPLIER as i64,
         }
     );
 
@@ -369,12 +369,12 @@ fn test_slash() {
     )
     .unwrap();
 
-    let slash_account_data = svm.get_account(&slash_custody).unwrap();
-    let slash_account =
-        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+    let slash_custody_data = svm.get_account(&slash_custody).unwrap();
+    let slash_custody_account =
+        TokenAccount::try_deserialize(&mut slash_custody_data.data.as_slice()).unwrap();
 
     // Slashed for epoch N + 1 -> 10 pyth * 5% = 0.5 pyth
-    assert_eq!(slash_account.amount, 10 * FRAC_64_MULTIPLIER / 20);
+    assert_eq!(slash_custody_account.amount, 10 * FRAC_64_MULTIPLIER / 20);
 
     let delegation_record: DelegationRecord = fetch_account_data(
         &mut svm,
@@ -385,12 +385,12 @@ fn test_slash() {
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
 
-    // at epoch N+2 after slashing -> total = 5 pyth - 5% = 4.75 pyth, delta = -5 pyth + 5% = -4.75
+    // at epoch N+2 after slashing -> total = 5 pyth - 5% = 4.75 pyth, delta = -2 pyth + 5% = -1.9
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation: 475 * FRAC_64_MULTIPLIER / 100,
-            delta_delegation: -475 * FRAC_64_MULTIPLIER as i64 / 100,
+            delta_delegation: -19 * FRAC_64_MULTIPLIER as i64 / 10,
         }
     );
 
@@ -407,25 +407,25 @@ fn test_slash() {
     )
     .unwrap();
 
-    let slash_account_data = svm.get_account(&slash_custody).unwrap();
-    let slash_account =
-        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+    let slash_custody_data = svm.get_account(&slash_custody).unwrap();
+    let slash_custody_account =
+        TokenAccount::try_deserialize(&mut slash_custody_data.data.as_slice()).unwrap();
 
     // slashed for epoch N + 1 -> 9.5 pyth * 50% = 4.75 pyth
     assert_eq!(
-        slash_account.amount,
+        slash_custody_account.amount,
         10 * FRAC_64_MULTIPLIER / 20 + 475 * FRAC_64_MULTIPLIER / 100
     );
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
 
     // at epoch N+2 after 2nd slash -> total = 5 pyth - 5% - 50% = 2.375 pyth, delta = -5 pyth + 5%
-    // + 50% = -2.375
+    // + 50% = -0.95
     assert_eq!(
         pool_data.del_state[publisher_index],
         DelegationState {
             total_delegation: 2375 * FRAC_64_MULTIPLIER / 1000,
-            delta_delegation: -2375 * FRAC_64_MULTIPLIER as i64 / 1000,
+            delta_delegation: -95 * FRAC_64_MULTIPLIER as i64 / 100,
         }
     );
 }

@@ -12,7 +12,7 @@ pub struct DelegationRecord {
 }
 
 impl DelegationRecord {
-    pub const LEN: usize = 1024;
+    pub const LEN: usize = 128;
 }
 
 impl DelegationRecord {
