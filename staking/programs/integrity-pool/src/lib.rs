@@ -278,4 +278,56 @@ pub mod integrity_pool {
 
         Ok(())
     }
+
+    pub fn slash(ctx: Context<Slash>, index: u64) -> Result<()> {
+        let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
+        let slash_event = &ctx.accounts.slash_event;
+        let publisher = &ctx.accounts.publisher;
+        let delegation_record = &mut ctx.accounts.delegation_record;
+        let stake_account_positions = &ctx.accounts.stake_account_positions.key();
+
+        let current_epoch = get_current_epoch()?;
+
+        require_gte!(
+            current_epoch,
+            slash_event.epoch,
+            IntegrityPoolError::ThisCodeShouldBeUnreachable,
+        );
+
+        require_gte!(
+            index,
+            delegation_record.next_slash_event_index,
+            IntegrityPoolError::WrongSlashEventOrder
+        );
+
+        if current_epoch > slash_event.epoch {
+            // the slash window has passed, no need to slash
+            delegation_record.next_slash_event_index = index + 1;
+            return Ok(());
+        }
+
+        require_eq!(
+            delegation_record.next_slash_event_index,
+            index,
+            IntegrityPoolError::WrongSlashEventOrder,
+        );
+        delegation_record.next_slash_event_index += 1;
+
+        let (locked_slashed, preunlocking_slashed) = staking::cpi::slash_account(
+            CpiContext::from(&*ctx.accounts)
+                .with_signer(&[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]]),
+            slash_event.slash_ratio,
+        )?
+        .get();
+
+        pool_data.apply_slash(
+            &publisher.key(),
+            stake_account_positions,
+            locked_slashed,
+            preunlocking_slashed,
+            current_epoch,
+        )?;
+
+        Ok(())
+    }
 }

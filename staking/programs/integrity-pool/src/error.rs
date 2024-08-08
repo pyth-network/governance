@@ -23,4 +23,6 @@ pub enum IntegrityPoolError {
     InvalidSlashEventIndex,
     InvalidRewardProgramAuthority,
     InvalidPoolDataAccount,
+    #[msg("Slashes must be executed in order of slash event index")]
+    WrongSlashEventOrder,
 }

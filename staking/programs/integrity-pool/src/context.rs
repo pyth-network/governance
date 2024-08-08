@@ -256,3 +256,119 @@ pub struct CreateSlashEvent<'info> {
 
     pub system_program: Program<'info, System>,
 }
+
+#[derive(Accounts)]
+#[instruction(index: u64)]
+pub struct Slash<'info> {
+    pub signer: Signer<'info>,
+
+    #[account(mut)]
+    pub pool_data: AccountLoader<'info, PoolData>,
+
+    #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    #[account(
+        seeds = [SLASH_EVENT.as_bytes(), publisher.key().as_ref(), &index.to_be_bytes()],
+        bump,
+        has_one = slash_custody,
+    )]
+    pub slash_event: Account<'info, SlashEvent>,
+
+    #[account(
+        mut,
+        seeds = [
+            DELEGATION_RECORD.as_bytes(),
+            publisher.key().as_ref(),
+            stake_account_positions.key().as_ref()
+        ],
+        bump,
+    )]
+    pub delegation_record: Account<'info, DelegationRecord>,
+
+    // accounts for the staking program CPI
+    /// CHECK : The publisher will be checked in the staking program
+    pub publisher: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        mut,
+        seeds = [staking::context::STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump,
+        seeds::program = staking::ID,
+    )]
+    pub stake_account_metadata: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        seeds = [staking::context::CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump,
+        seeds::program = staking::ID,
+    )]
+    pub stake_account_custody: Account<'info, TokenAccount>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        seeds = [staking::context::CONFIG_SEED.as_bytes()],
+        bump,
+        seeds::program = staking::id(),
+    )]
+    pub config_account: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        seeds = [
+            staking::context::TARGET_SEED.as_bytes(),
+            staking::context::VOTING_TARGET_SEED.as_bytes()
+        ],
+        seeds::program = staking::id(),
+        bump,
+    )]
+    pub governance_target_account: Account<'info, staking::state::target::TargetMetadata>,
+
+    #[account(
+        mut,
+        token::mint = pool_config.pyth_token_mint,
+    )]
+    pub slash_custody: Account<'info, TokenAccount>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        seeds = [
+            staking::context::AUTHORITY_SEED.as_bytes(),
+            stake_account_positions.key().as_ref()
+        ],
+        seeds::program = staking::id(),
+        bump
+    )]
+    pub custody_authority: AccountInfo<'info>,
+
+    pub staking_program: Program<'info, Staking>,
+    pub token_program:   Program<'info, Token>,
+}
+
+impl<'a, 'b, 'c, 'info> From<&Slash<'info>>
+    for CpiContext<'a, 'b, 'c, 'info, staking::cpi::accounts::SlashAccount<'info>>
+{
+    fn from(
+        accounts: &Slash<'info>,
+    ) -> CpiContext<'a, 'b, 'c, 'info, staking::cpi::accounts::SlashAccount<'info>> {
+        let cpi_accounts = staking::cpi::accounts::SlashAccount {
+            stake_account_positions:   accounts.stake_account_positions.to_account_info(),
+            stake_account_metadata:    accounts.stake_account_metadata.to_account_info(),
+            stake_account_custody:     accounts.stake_account_custody.to_account_info(),
+            config:                    accounts.config_account.to_account_info(),
+            governance_target_account: accounts.governance_target_account.to_account_info(),
+            destination:               accounts.slash_custody.to_account_info(),
+            custody_authority:         accounts.custody_authority.to_account_info(),
+            pool_authority:            accounts.pool_config.to_account_info(),
+            publisher:                 accounts.publisher.to_account_info(),
+            token_program:             accounts.token_program.to_account_info(),
+        };
+        let cpi_program = accounts.staking_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}

@@ -759,7 +759,7 @@ pub mod staking {
         // a number between 0 and 1 with 6 decimals of precision
         // TODO: use fract64 instead of u64
         slash_ratio: u64,
-    ) -> Result<(u64, u64, u64)> {
+    ) -> Result<(u64, u64)> {
         require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
 
         let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
@@ -901,7 +901,7 @@ pub mod staking {
             total_slashed,
         )?;
 
-        Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
+        Ok((locked_slashed, preunlocking_slashed))
     }
 
     // Hack to allow exporting the Position type in the IDL

@@ -375,6 +375,31 @@ impl PoolData {
         Ok(())
     }
 
+    pub fn apply_slash(
+        &mut self,
+        publisher: &Pubkey,
+        stake_account_positions_key: &Pubkey,
+        locked_slashed: u64,
+        preunlocking_slashed: u64,
+        current_epoch: u64,
+    ) -> Result<()> {
+        self.assert_up_to_date(current_epoch)?;
+
+        let publisher_index = self.get_publisher_index(publisher)?;
+
+        let del_state = match publisher {
+            _ if self.publisher_stake_accounts[publisher_index] == *stake_account_positions_key => {
+                &mut self.self_del_state[publisher_index]
+            }
+            _ => &mut self.del_state[publisher_index],
+        };
+
+        del_state.total_delegation -= locked_slashed + preunlocking_slashed;
+        del_state.delta_delegation += TryInto::<i64>::try_into(preunlocking_slashed)?;
+
+        Ok(())
+    }
+
     pub fn assert_up_to_date(&self, current_epoch: u64) -> Result<()> {
         require_eq!(
             self.last_updated_epoch,
