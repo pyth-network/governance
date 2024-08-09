@@ -9,13 +9,9 @@ use {
         Discriminator,
     },
     arrayref::array_ref,
-    std::{
-        fmt::{
-            self,
-            Debug,
-        },
-        mem::size_of,
-        sync::PoisonError,
+    std::fmt::{
+        self,
+        Debug,
     },
 };
 
@@ -31,21 +27,10 @@ pub const POSITION_BUFFER_SIZE: usize = 200;
 #[repr(C)]
 pub struct PositionData {
     pub owner: Pubkey,
-    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
 impl PositionData {
-    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
-}
-
-impl Default for PositionData {
-    // Only used for testing, so unwrap is acceptable
-    fn default() -> Self {
-        PositionData {
-            owner:     Pubkey::default(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        }
-    }
+    pub const LEN: usize = 8 + 32;
 }
 
 pub struct DynamicPositionArrayFixture {
@@ -58,7 +43,7 @@ impl Default for DynamicPositionArrayFixture {
     fn default() -> Self {
         let key = Pubkey::new_unique();
         let lamports = 0;
-        let data = vec![0; PositionData::LEN];
+        let data = vec![0; 10000];
         Self {
             key,
             lamports,
@@ -74,7 +59,7 @@ impl DynamicPositionArrayFixture {
             false,
             false,
             &mut self.lamports,
-            &mut self.data,
+            &mut self.data[..PositionData::LEN],
             &self.key,
             false,
             0,
@@ -95,7 +80,7 @@ impl<'a> DynamicPositionArray<'a> {
 
     pub const HEADER_LEN: usize = 8 + 32;
 
-    fn get_position_capacity(&self) -> usize {
+    pub fn get_position_capacity(&self) -> usize {
         self.account_info
             .data_len()
             .saturating_sub(Self::HEADER_LEN)
@@ -136,13 +121,17 @@ impl<'a> DynamicPositionArray<'a> {
 
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
+        let position_capacity: usize = self.get_position_capacity();
         let res = *next_index as usize;
         *next_index += 1;
-        if res < MAX_POSITIONS {
-            Ok(res)
-        } else {
-            Err(error!(ErrorCode::TooManyPositions))
+
+        if res == position_capacity {
+            self.account_info.realloc(
+                Self::HEADER_LEN + *next_index as usize * POSITION_BUFFER_SIZE,
+                false,
+            )?;
         }
+        Ok(res)
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant

@@ -139,7 +139,7 @@ impl PoolData {
             }
 
             let mut amount = 0_u64;
-            for i in 0..MAX_POSITIONS {
+            for i in 0..positions.get_position_capacity() {
                 let position = positions.read_position(i)?;
                 if let Some(position) = position {
                     let position_state =
@@ -556,6 +556,8 @@ mod tests {
 
         let mut fixture = DynamicPositionArrayFixture::default();
         let mut positions = fixture.to_dynamic_position_array(); // this position should be ignored (wrong target)
+        let mut next_index = 0;
+        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
                 0,
@@ -568,6 +570,7 @@ mod tests {
             )
             .unwrap();
         // this position should be ignored (wrong publisher)
+        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
                 1,
@@ -582,9 +585,10 @@ mod tests {
             )
             .unwrap();
         // this position should be included from epoch 1
+        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
-                3,
+                2,
                 &staking::state::positions::Position {
                     activation_epoch:       1,
                     amount:                 40 * FRAC_64_MULTIPLIER,
@@ -596,9 +600,10 @@ mod tests {
             )
             .unwrap();
         // this position should be included from epoch 2
+        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
-                4,
+                3,
                 &staking::state::positions::Position {
                     activation_epoch:       2,
                     amount:                 60 * FRAC_64_MULTIPLIER,

@@ -2691,20 +2691,6 @@ export type Staking = {
           {
             "name": "owner",
             "type": "pubkey"
-          },
-          {
-            "name": "positions",
-            "type": {
-              "array": [
-                {
-                  "array": [
-                    "u8",
-                    200
-                  ]
-                },
-                20
-              ]
-            }
           }
         ]
       }
