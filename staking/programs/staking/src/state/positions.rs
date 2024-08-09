@@ -6,10 +6,15 @@ use {
             *,
         },
         solana_program::wasm_bindgen,
+        Discriminator,
     },
-    std::fmt::{
-        self,
-        Debug,
+    std::{
+        fmt::{
+            self,
+            Debug,
+        },
+        mem::size_of,
+        sync::PoisonError,
     },
 };
 
@@ -21,7 +26,6 @@ pub const POSITION_BUFFER_SIZE: usize = 200;
 /// staking to.
 /// The invariant we preserve is : For i < next_index, positions[i] == Some
 /// For i >= next_index, positions[i] == None
-
 #[account(zero_copy)]
 #[repr(C)]
 pub struct PositionData {
@@ -42,9 +46,57 @@ impl Default for PositionData {
         }
     }
 }
-impl PositionData {
-    pub fn initialize(&mut self, owner: &Pubkey) {
-        self.owner = *owner;
+
+// pub struct DynamicPositionArrayFixture {
+//     pub key : Pubkey,
+//     pub lamports : u64,
+//     pub data : Vec<u8>
+// }
+
+// impl DynamicPositionArrayFixture {
+//     pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray{
+//         let account_info = AccountInfo::new(&self, false, false, self.lamports, &self.data,
+// &self.key, false, 0);         DynamicPositionArray::new(AccountLoader::new(account_info))
+//     }
+// }
+
+pub struct DynamicPositionArray<'a> {
+    account_info: AccountInfo<'a>, // We store account info to get access to the data and resize
+}
+
+impl<'a> DynamicPositionArray<'a> {
+    pub fn new(stake_account_positions: AccountLoader<'a, PositionData>) -> Self {
+        Self {
+            account_info: stake_account_positions.to_account_info(),
+        }
+    }
+
+    pub const HEADER_LEN: usize = 8 + 32;
+
+    fn get_position_capacity(&self) -> usize {
+        self.account_info
+            .data_len()
+            .saturating_sub(Self::HEADER_LEN)
+            / PositionData::LEN
+    }
+
+    fn get_positions_slice(&self) -> Result<&mut [[u8; POSITION_BUFFER_SIZE]]> {
+        let position_capacity = self.get_position_capacity();
+        unsafe {
+            Ok(std::slice::from_raw_parts_mut(
+                self.account_info.try_borrow_mut_data()?[Self::HEADER_LEN..].as_mut_ptr()
+                    as *mut [u8; POSITION_BUFFER_SIZE],
+                position_capacity,
+            ))
+        }
+    }
+
+    pub fn initialize(&mut self, owner: &Pubkey) -> Result<()> {
+        Ok(
+            self.account_info.try_borrow_mut_data()?[PositionData::discriminator().len()
+                ..PositionData::discriminator().len() + std::mem::size_of::<Pubkey>()]
+                .copy_from_slice(&owner.to_bytes()),
+        )
     }
 
     /// Finds first index available for a new position, increments the internal counter
@@ -64,17 +116,20 @@ impl PositionData {
             return Err(error!(ErrorCode::PositionOutOfBounds));
         }
         *next_index -= 1;
-        self.positions[i] = self.positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
+        let positions = self.get_positions_slice()?;
+        positions[i] = positions[*next_index as usize];
+        None::<Option<Position>>.try_write(&mut positions[*next_index as usize])
     }
 
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
-        Some(position).try_write(&mut self.positions[i])
+        let positions = self.get_positions_slice()?;
+        Some(position).try_write(&mut positions[i])
     }
 
     pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
+        let positions = self.get_positions_slice()?;
         Option::<Position>::try_read(
-            self.positions
+            positions
                 .get(i)
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
@@ -84,7 +139,8 @@ impl PositionData {
         &self,
         target_with_parameters: TargetWithParameters,
     ) -> Result<bool> {
-        for i in 0..MAX_POSITIONS {
+        let positions = self.get_positions_slice()?;
+        for i in 0..positions.len() {
             if let Some(position) = self.read_position(i)? {
                 if position.target_with_parameters == target_with_parameters {
                     return Ok(true);
