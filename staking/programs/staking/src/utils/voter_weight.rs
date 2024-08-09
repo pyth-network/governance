@@ -2,6 +2,7 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
+            self,
             DynamicPositionArray,
             PositionData,
             PositionState,
@@ -20,7 +21,7 @@ pub fn compute_voter_weight(
     total_supply: u64,
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
-    for i in 0..MAX_POSITIONS {
+    for i in 0..stake_account_positions.get_position_capacity() {
         if let Some(position) = stake_account_positions.read_position(i)? {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {

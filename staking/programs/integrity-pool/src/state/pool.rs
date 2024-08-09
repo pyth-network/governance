@@ -32,7 +32,6 @@ use {
     staking::state::positions::{
         PositionState,
         TargetWithParameters,
-        MAX_POSITIONS,
     },
     std::{
         cmp::min,

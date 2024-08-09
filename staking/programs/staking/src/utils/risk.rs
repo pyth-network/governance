@@ -1,6 +1,7 @@
 use {
     crate::{
         state::positions::{
+            self,
             DynamicPositionArray,
             PositionData,
             Target,
@@ -20,7 +21,7 @@ use {
 
 pub fn calculate_governance_exposure(positions: &DynamicPositionArray) -> Result<u64> {
     let mut governance_exposure: u64 = 0;
-    for i in 0..MAX_POSITIONS {
+    for i in 0..positions.get_position_capacity() {
         if let Some(position) = positions.read_position(i)? {
             if matches!(
                 position.target_with_parameters,
@@ -48,7 +49,7 @@ pub fn validate(
     let mut governance_exposure: u64 = 0;
     let mut integrity_pool_exposure: u64 = 0;
 
-    for i in 0..MAX_POSITIONS {
+    for i in 0..stake_account_positions.get_position_capacity() {
         if let Some(position) = stake_account_positions.read_position(i)? {
             match position.target_with_parameters.get_target() {
                 Target::Voting => {
