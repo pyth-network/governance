@@ -19,6 +19,7 @@ use {
         account::{
             fetch_account_data,
             fetch_account_data_bytemuck,
+            fetch_positions_account,
         },
         clock::advance_n_epochs,
         error::assert_anchor_program_error,
@@ -77,8 +78,8 @@ fn test_delegate() {
         100,
     );
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 100);
@@ -166,8 +167,8 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 50);
@@ -281,9 +282,8 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
-    let pos0 = positions.read_position(0).unwrap().unwrap();
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
 
     assert_eq!(pos0.amount, 20);
     assert_eq!(pos0.target_with_parameters, target_with_parameters);
@@ -388,9 +388,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
-    let pos0 = positions.read_position(0).unwrap().unwrap();
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
 
     assert_eq!(pos0.amount, 20);
     assert_eq!(pos0.target_with_parameters, target_with_parameters);
@@ -432,8 +431,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 20);

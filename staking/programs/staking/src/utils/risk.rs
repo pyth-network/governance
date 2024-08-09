@@ -103,6 +103,7 @@ pub mod tests {
     use {
         crate::{
             state::positions::{
+                DynamicPositionArrayFixture,
                 Position,
                 PositionData,
                 PositionState,
@@ -116,7 +117,8 @@ pub mod tests {
 
     #[test]
     fn test_disjoint() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         // We need at least 10 vested tokens to support these positions
         pd.write_position(
             0,
@@ -167,7 +169,8 @@ pub mod tests {
 
     #[test]
     fn test_voting() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         // We need at least 3 vested, 7 total
         pd.write_position(
             0,
@@ -200,7 +203,8 @@ pub mod tests {
     }
     #[test]
     fn test_double_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         // We need at least 10 vested to support these
         pd.write_position(
             0,
@@ -234,7 +238,8 @@ pub mod tests {
     }
     #[test]
     fn test_multiple_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -270,7 +275,8 @@ pub mod tests {
     }
     #[test]
     fn test_multiple_voting() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -291,7 +297,8 @@ pub mod tests {
 
     #[test]
     fn test_overflow_total() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -310,7 +317,8 @@ pub mod tests {
 
     #[test]
     fn test_overflow_aggregation() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         for i in 0..5 {
             pd.write_position(
                 i,
@@ -331,7 +339,8 @@ pub mod tests {
 
     #[test]
     fn test_multiple_voting_and_integrity_pool() {
-        let mut pd = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         // We need at least 4 vested, 10 total
         pd.write_position(
             0,

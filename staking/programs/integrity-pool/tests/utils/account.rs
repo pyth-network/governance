@@ -1,5 +1,6 @@
 use {
     anchor_lang::{
+        accounts::account,
         AccountDeserialize,
         AnchorDeserialize,
     },
@@ -15,6 +16,7 @@ use {
         system_instruction,
         transaction::Transaction,
     },
+    staking::state::positions::DynamicPositionArrayFixture,
 };
 
 
@@ -57,4 +59,16 @@ pub fn fetch_account_data_bytemuck<T: Pod + Zeroable + AccountDeserialize>(
 ) -> T {
     let size = std::mem::size_of::<T>();
     T::try_deserialize(&mut &svm.get_account(account).unwrap().data.as_slice()[..size + 8]).unwrap()
+}
+
+pub fn fetch_positions_account(
+    svm: &mut litesvm::LiteSVM,
+    address: &Pubkey,
+) -> DynamicPositionArrayFixture {
+    let account = &svm.get_account(address).unwrap();
+    DynamicPositionArrayFixture {
+        key:      *address,
+        lamports: account.lamports,
+        data:     account.data.clone(),
+    }
 }

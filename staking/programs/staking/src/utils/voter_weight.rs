@@ -47,6 +47,7 @@ pub mod tests {
     use {
         crate::{
             state::positions::{
+                DynamicPositionArrayFixture,
                 Position,
                 PositionData,
                 TargetWithParameters,
@@ -59,8 +60,8 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -124,8 +125,8 @@ pub mod tests {
 
     #[test]
     fn test_overflow() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -143,8 +144,8 @@ pub mod tests {
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {

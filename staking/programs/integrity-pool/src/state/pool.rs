@@ -432,6 +432,10 @@ mod tests {
             PublisherCap,
             MAX_CAPS,
         },
+        staking::state::positions::{
+            self,
+            DynamicPositionArrayFixture,
+        },
         std::cell::RefCell,
     };
 
@@ -550,8 +554,8 @@ mod tests {
             pool_data.events[i].epoch = (i + 1) as u64;
         }
 
-        let mut positions = staking::state::positions::PositionData::default();
-        // this position should be ignored (wrong target)
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut positions = fixture.to_dynamic_position_array(); // this position should be ignored (wrong target)
         positions
             .write_position(
                 0,
@@ -609,13 +613,7 @@ mod tests {
         pool_data.last_updated_epoch = 2;
         pool_data.num_events = 1;
         let publisher_reward = pool_data
-            .calculate_reward(
-                1,
-                &publisher_key,
-                RefCell::new(positions).borrow(),
-                &publisher_key,
-                2,
-            )
+            .calculate_reward(1, &publisher_key, &positions, &publisher_key, 2)
             .unwrap();
 
         // 40 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 4 PYTH
@@ -624,13 +622,7 @@ mod tests {
         pool_data.num_events = 2;
         pool_data.last_updated_epoch = 3;
         let publisher_reward = pool_data
-            .calculate_reward(
-                2,
-                &publisher_key,
-                RefCell::new(positions).borrow(),
-                &publisher_key,
-                3,
-            )
+            .calculate_reward(2, &publisher_key, &positions, &publisher_key, 3)
             .unwrap();
 
         // 40 + 60 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 10 PYTH
@@ -639,13 +631,7 @@ mod tests {
         pool_data.num_events = 10;
         pool_data.last_updated_epoch = 11;
         let publisher_reward = pool_data
-            .calculate_reward(
-                1,
-                &publisher_key,
-                RefCell::new(positions).borrow(),
-                &publisher_key,
-                11,
-            )
+            .calculate_reward(1, &publisher_key, &positions, &publisher_key, 11)
             .unwrap();
 
         assert_eq!(publisher_reward, 94 * FRAC_64_MULTIPLIER);
@@ -662,13 +648,7 @@ mod tests {
         }
 
         let publisher_reward = pool_data
-            .calculate_reward(
-                1,
-                &publisher_key,
-                RefCell::new(positions).borrow(),
-                &publisher_key,
-                101,
-            )
+            .calculate_reward(1, &publisher_key, &positions, &publisher_key, 101)
             .unwrap();
 
         assert_eq!(

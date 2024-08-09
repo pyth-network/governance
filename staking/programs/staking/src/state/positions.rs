@@ -58,7 +58,7 @@ impl Default for DynamicPositionArrayFixture {
     fn default() -> Self {
         let key = Pubkey::new_unique();
         let lamports = 0;
-        let data = vec![0; 40];
+        let data = vec![0; PositionData::LEN];
         Self {
             key,
             lamports,
@@ -317,7 +317,9 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use {
+        super::DynamicPositionArray,
         crate::state::positions::{
+            DynamicPositionArrayFixture,
             Position,
             PositionData,
             PositionState,
@@ -421,7 +423,8 @@ pub mod tests {
 
     #[test]
     fn test_has_target_with_parameters_exposure() {
-        let mut position_data = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut position_data = fixture.to_dynamic_position_array();
         let position = Position {
             activation_epoch:       8,
             unlocking_start:        Some(12),
@@ -494,8 +497,8 @@ pub mod tests {
         }
     }
 
-    impl PositionData {
-        fn to_set(self, next_index: u8) -> HashSet<Position> {
+    impl<'a> DynamicPositionArray<'a> {
+        fn to_set(&self, next_index: u8) -> HashSet<Position> {
             let mut res: HashSet<Position> = HashSet::new();
             for i in 0..next_index {
                 if let Some(position) = self.read_position(i as usize).unwrap() {
@@ -521,7 +524,8 @@ pub mod tests {
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
-        let mut position_data = PositionData::default();
+        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut position_data = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
         let mut set: HashSet<Position> = HashSet::new();
         let mut rng = rand::thread_rng();

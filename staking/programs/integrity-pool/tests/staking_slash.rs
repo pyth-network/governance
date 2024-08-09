@@ -16,7 +16,10 @@ use {
         },
     },
     utils::{
-        account::fetch_account_data,
+        account::{
+            fetch_account_data,
+            fetch_positions_account,
+        },
         clock::advance_n_epochs,
         error::assert_anchor_program_error,
         setup::{
@@ -127,8 +130,8 @@ fn test_staking_slash() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = fixture.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 25 * FRAC_64_MULTIPLIER);
