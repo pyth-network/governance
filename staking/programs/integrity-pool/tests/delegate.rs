@@ -285,6 +285,8 @@ fn test_delegate() {
     let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = fixture.to_dynamic_position_array();
 
+    let pos0 = positions.read_position(0).unwrap().unwrap();
+
     assert_eq!(pos0.amount, 20);
     assert_eq!(pos0.target_with_parameters, target_with_parameters);
     assert_eq!(pos0.activation_epoch, 3);
