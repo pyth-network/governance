@@ -99,7 +99,7 @@ impl<'a> DynamicPositionArray<'a> {
         self.account_info
             .data_len()
             .saturating_sub(Self::HEADER_LEN)
-            / PositionData::LEN
+            / POSITION_BUFFER_SIZE
     }
 
     fn get_positions_slice(&self) -> Result<&mut [[u8; POSITION_BUFFER_SIZE]]> {
