@@ -29,55 +29,75 @@ pub struct PositionData {
     positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
-impl PositionData {
-    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
+pub struct PositionBuffer<'a> {
+    account_info: AccountInfo<'a>,
 }
 
-impl Default for PositionData {
-    // Only used for testing, so unwrap is acceptable
-    fn default() -> Self {
-        PositionData {
-            owner:     Pubkey::default(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
-        }
-    }
-}
-impl PositionData {
-    pub fn initialize(&mut self, owner: &Pubkey) {
-        self.owner = *owner;
+impl<'a> PositionBuffer<'a> {
+    pub fn new(account_info: AccountInfo<'a>) -> Self {
+        Self { account_info }
     }
 
-    /// Finds first index available for a new position, increments the internal counter
+    pub fn get_position_capacity(&self) -> usize {
+        (self.account_info.data_len() - 40) / POSITION_BUFFER_SIZE
+    }
+
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
         let res = *next_index as usize;
         *next_index += 1;
-        if res < MAX_POSITIONS {
-            Ok(res)
-        } else {
-            Err(error!(ErrorCode::TooManyPositions))
+        let size = self.account_info.data_len();
+
+        if res == self.get_position_capacity() {
+            self.account_info
+                .realloc(size + POSITION_BUFFER_SIZE, true)?
         }
+        Ok(res)
     }
 
-    // Makes position at index i none, and swaps positions to preserve the invariant
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
         if (*next_index as usize) <= i {
             return Err(error!(ErrorCode::PositionOutOfBounds));
         }
-        *next_index -= 1;
-        self.positions[i] = self.positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
+
+        unsafe {
+            let position_capacity = self.get_position_capacity();
+            let positions: &mut [[u8; POSITION_BUFFER_SIZE]] = std::slice::from_raw_parts_mut(
+                self.account_info.try_borrow_mut_data()?[40..].as_mut_ptr()
+                    as *mut [u8; POSITION_BUFFER_SIZE],
+                position_capacity,
+            );
+            *next_index -= 1;
+            positions[i] = positions[*next_index as usize];
+            None::<Option<Position>>.try_write(&mut positions[*next_index as usize])
+        }
     }
 
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
-        Some(position).try_write(&mut self.positions[i])
+        unsafe {
+            let position_capacity = self.get_position_capacity();
+            let positions: &mut [[u8; POSITION_BUFFER_SIZE]] = std::slice::from_raw_parts_mut(
+                self.account_info.try_borrow_mut_data()?[40..].as_mut_ptr()
+                    as *mut [u8; POSITION_BUFFER_SIZE],
+                position_capacity,
+            );
+            Some(position).try_write(&mut positions[i])
+        }
     }
 
     pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
-        Option::<Position>::try_read(
-            self.positions
-                .get(i)
-                .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
-        )
+        unsafe {
+            let position_capacity = self.get_position_capacity();
+            let positions: &[[u8; POSITION_BUFFER_SIZE]] = std::slice::from_raw_parts(
+                self.account_info.try_borrow_data()?[40..].as_ptr()
+                    as *const [u8; POSITION_BUFFER_SIZE],
+                position_capacity,
+            );
+            Option::<Position>::try_read(
+                positions
+                    .get(i)
+                    .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
+            )
+        }
     }
 
     pub fn has_target_with_parameters_exposure(
@@ -92,6 +112,24 @@ impl PositionData {
             }
         }
         Ok(false)
+    }
+
+    pub fn initialize(&mut self, owner: &Pubkey) {
+        self.account_info.try_borrow_mut_data().unwrap()[8..40].copy_from_slice(&owner.to_bytes());
+    }
+}
+
+impl PositionData {
+    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
+}
+
+impl Default for PositionData {
+    // Only used for testing, so unwrap is acceptable
+    fn default() -> Self {
+        PositionData {
+            owner:     Pubkey::default(),
+            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+        }
     }
 }
 
