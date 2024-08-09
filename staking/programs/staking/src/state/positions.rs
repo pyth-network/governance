@@ -8,6 +8,7 @@ use {
         solana_program::wasm_bindgen,
         Discriminator,
     },
+    arrayref::array_ref,
     std::{
         fmt::{
             self,
@@ -47,28 +48,49 @@ impl Default for PositionData {
     }
 }
 
-// pub struct DynamicPositionArrayFixture {
-//     pub key : Pubkey,
-//     pub lamports : u64,
-//     pub data : Vec<u8>
-// }
+pub struct DynamicPositionArrayFixture {
+    pub key:      Pubkey,
+    pub lamports: u64,
+    pub data:     Vec<u8>,
+}
 
-// impl DynamicPositionArrayFixture {
-//     pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray{
-//         let account_info = AccountInfo::new(&self, false, false, self.lamports, &self.data,
-// &self.key, false, 0);         DynamicPositionArray::new(AccountLoader::new(account_info))
-//     }
-// }
+impl Default for DynamicPositionArrayFixture {
+    fn default() -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        let data = vec![0; 40];
+        Self {
+            key,
+            lamports,
+            data,
+        }
+    }
+}
+
+impl DynamicPositionArrayFixture {
+    pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
+        let account_info = AccountInfo::new(
+            &self.key,
+            false,
+            false,
+            &mut self.lamports,
+            &mut self.data,
+            &self.key,
+            false,
+            0,
+        );
+        DynamicPositionArray { account_info }
+    }
+}
 
 pub struct DynamicPositionArray<'a> {
-    account_info: AccountInfo<'a>, // We store account info to get access to the data and resize
+    pub account_info: AccountInfo<'a>, /* We store account info to get access to the data and
+                                        * resize */
 }
 
 impl<'a> DynamicPositionArray<'a> {
-    pub fn new(stake_account_positions: AccountLoader<'a, PositionData>) -> Self {
-        Self {
-            account_info: stake_account_positions.to_account_info(),
-        }
+    pub fn new(account_info: AccountInfo<'a>) -> Self {
+        Self { account_info }
     }
 
     pub const HEADER_LEN: usize = 8 + 32;
@@ -91,12 +113,25 @@ impl<'a> DynamicPositionArray<'a> {
         }
     }
 
+    pub fn owner(&self) -> Pubkey {
+        let data = self.account_info.try_borrow_data().unwrap();
+        Pubkey::from(*array_ref![data, 8, 32])
+    }
+
     pub fn initialize(&mut self, owner: &Pubkey) -> Result<()> {
-        Ok(
-            self.account_info.try_borrow_mut_data()?[PositionData::discriminator().len()
-                ..PositionData::discriminator().len() + std::mem::size_of::<Pubkey>()]
-                .copy_from_slice(&owner.to_bytes()),
-        )
+        let mut data = self.account_info.try_borrow_mut_data()?;
+        let mut disc_bytes = [0u8; 8];
+        disc_bytes.copy_from_slice(&data[..8]);
+        let discriminator = u64::from_le_bytes(disc_bytes);
+        if discriminator != 0 {
+            return Err(anchor_lang::prelude::ErrorCode::AccountDiscriminatorAlreadySet.into());
+        }
+
+        data[PositionData::discriminator().len()
+            ..PositionData::discriminator().len() + std::mem::size_of::<Pubkey>()]
+            .copy_from_slice(&owner.to_bytes());
+
+        Ok(())
     }
 
     /// Finds first index available for a new position, increments the internal counter

@@ -35,7 +35,6 @@ use {
         MAX_POSITIONS,
     },
     std::{
-        cell::Ref,
         cmp::min,
         convert::TryInto,
     },
@@ -113,7 +112,7 @@ impl PoolData {
         &self,
         from_epoch: u64,
         stake_account_positions_key: &Pubkey,
-        positions: Ref<staking::state::positions::PositionData>,
+        positions: &staking::state::positions::DynamicPositionArray,
         publisher: &Pubkey,
         current_epoch: u64,
     ) -> Result<frac64> {

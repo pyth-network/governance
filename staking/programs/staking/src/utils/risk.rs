@@ -1,6 +1,7 @@
 use {
     crate::{
         state::positions::{
+            DynamicPositionArray,
             PositionData,
             Target,
             TargetWithParameters,
@@ -17,7 +18,7 @@ use {
     std::cmp,
 };
 
-pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
+pub fn calculate_governance_exposure(positions: &DynamicPositionArray) -> Result<u64> {
     let mut governance_exposure: u64 = 0;
     for i in 0..MAX_POSITIONS {
         if let Some(position) = positions.read_position(i)? {
@@ -40,7 +41,7 @@ pub fn calculate_governance_exposure(positions: &PositionData) -> Result<u64> {
 /// that can be withdrawn without violating risk constraints.
 /// It's guaranteed that the returned value is between 0 and vested_balance (both inclusive)
 pub fn validate(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &DynamicPositionArray,
     total_balance: u64,
     unvested_balance: u64,
 ) -> Result<u64> {
