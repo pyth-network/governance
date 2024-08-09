@@ -5,6 +5,8 @@ use {
         state::{
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
+                Position,
+                PositionBuffer,
                 PositionData,
                 PositionState,
                 MAX_POSITIONS,
@@ -17,18 +19,71 @@ use {
     anchor_lang::{
         prelude::{
             error,
+            AccountInfo,
             Clock,
             Error,
+            Pubkey,
         },
         AccountDeserialize,
         AnchorDeserialize,
     },
+    solana_program::lamports,
     wasm_bindgen::prelude::*,
 };
 
 #[wasm_bindgen]
 pub struct WasmPositionData {
-    wrapped: PositionData,
+    wrapped: Vec<u8>,
+}
+
+// pub struct PositionBufferWrapper<'a>{
+//     key : Pubkey,
+//     owner: Pubkey,
+//     lamports : u64,
+//     data: Vec<u8>,
+//     position_buffer : PositionBuffer<'a>
+// }
+
+// pub struct AccountInfo2<'a> {
+//     pub owner: &'a Pubkey,
+// }
+
+// pub struct AccountInfoWrapper<'a> {
+//     pub pubkey: Pubkey,
+//     pub account_info: AccountInfo2<'a>,
+// }
+
+// impl<'a> AccountInfoWrapper<'a> {
+//     pub fn new(pubkey: Pubkey) -> AccountInfoWrapper<'a> {
+//         AccountInfoWrapper {
+//             account_info: AccountInfo2 { owner: &pubkey },
+//             pubkey,
+//         }
+//     }
+// }
+
+// impl<'a> PositionBufferWrapper<'a> {
+//     pub fn new(key : Pubkey, owner : Pubkey, lamports: u64, data : Vec<u8>) ->
+// PositionBufferWrapper<'a>{         return PositionBufferWrapper{
+//             position_buffer: PositionBuffer::new(AccountInfo::new(&key, false, false, &mut
+// lamports, &mut data, &owner, false, 0)),             key,
+//             owner,
+//             lamports,
+//             data,
+//         }
+//     }
+// }
+
+impl<'a> PositionBuffer<'a> {
+    pub fn new_from_data(
+        data: &'a mut [u8],
+        owner: &'a Pubkey,
+        key: &'a Pubkey,
+        lamports: &'a mut u64,
+    ) -> Self {
+        let account_info = AccountInfo::new(key, false, false, lamports, data, owner, false, 0);
+        PositionBuffer::new(account_info)
+    }
 }
 
 #[wasm_bindgen]
@@ -48,10 +103,8 @@ impl WasmPositionData {
         ))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
-        let mut ptr = buffer;
-        let position_data = PositionData::try_deserialize(&mut ptr)?;
         Ok(WasmPositionData {
-            wrapped: position_data,
+            wrapped: buffer.to_vec(),
         })
     }
 
@@ -70,7 +123,20 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        self.wrapped
+        let owner = Pubkey::default();
+        let mut lamports = 0;
+        let mut data = self.wrapped.clone();
+        let position_buffer = PositionBuffer::new(AccountInfo::new(
+            &owner,
+            false,
+            false,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        ));
+        position_buffer
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
             .get_current_position(current_epoch, unlocking_duration)
@@ -80,8 +146,20 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        Ok(self
-            .wrapped
+        let owner = Pubkey::default();
+        let mut lamports = 0;
+        let mut data = self.wrapped.clone();
+        let position_buffer = PositionBuffer::new(AccountInfo::new(
+            &owner,
+            false,
+            false,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        ));
+        Ok(position_buffer
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
             .is_voting())
@@ -108,8 +186,22 @@ impl WasmPositionData {
         let mut unlocking: u64 = 0;
         let mut preunlocking: u64 = 0;
 
+        let owner = Pubkey::default();
+        let mut lamports = 0;
+        let mut data = self.wrapped.clone();
+        let position_buffer = PositionBuffer::new(AccountInfo::new(
+            &owner,
+            false,
+            false,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        ));
+
         for i in 0..MAX_POSITIONS {
-            if let Some(position) = self.wrapped.read_position(i)? {
+            if let Some(position) = position_buffer.read_position(i)? {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
                         locking = locking
@@ -150,8 +242,21 @@ impl WasmPositionData {
         unlocking_duration: u8,
         current_locked: u64,
     ) -> Result<u64, JsValue> {
+        let owner = Pubkey::default();
+        let mut lamports = 0;
+        let mut data = self.wrapped.clone();
+        let position_buffer = PositionBuffer::new(AccountInfo::new(
+            &owner,
+            false,
+            false,
+            &mut lamports,
+            &mut data,
+            &owner,
+            false,
+            0,
+        ));
         convert_error(crate::utils::voter_weight::compute_voter_weight(
-            &self.wrapped,
+            &position_buffer,
             current_epoch,
             unlocking_duration,
             current_locked,
