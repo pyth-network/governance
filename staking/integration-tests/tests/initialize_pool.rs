@@ -9,10 +9,8 @@ use {
             SetupProps,
             SetupResult,
         },
-        utils::{
-            account::fetch_account_data,
-            error::assert_anchor_program_error,
-        },
+        solana::utils::fetch_account_data,
+        utils::error::assert_anchor_program_error,
     },
     integrity_pool::state::pool::PoolConfig,
     solana_sdk::{

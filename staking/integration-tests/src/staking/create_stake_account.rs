@@ -5,13 +5,15 @@ use {
         get_stake_account_custory_authority_address,
         get_stake_account_metadata_address,
     },
-    crate::utils::{
-        account::{
-            create_account,
-            fetch_account_data,
+    crate::{
+        solana::{
+            instructions::{
+                airdrop_spl,
+                create_account,
+            },
+            utils::fetch_account_data,
         },
-        constants::STAKED_TOKENS,
-        mint::airdrop_spl,
+        utils::constants::STAKED_TOKENS,
     },
     anchor_lang::{
         solana_program,

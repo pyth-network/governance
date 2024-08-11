@@ -24,14 +24,16 @@ use {
             SetupProps,
             SetupResult,
         },
-        staking::create_stake_account::create_stake_account,
-        utils::{
-            account::{
+        solana::{
+            instructions::create_token_account,
+            utils::{
                 fetch_account_data,
                 fetch_account_data_bytemuck,
             },
+        },
+        staking::create_stake_account::create_stake_account,
+        utils::{
             clock::advance_n_epochs,
-            create_token_account::create_token_account,
             error::assert_anchor_program_error,
         },
     },

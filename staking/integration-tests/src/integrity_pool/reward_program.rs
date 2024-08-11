@@ -3,7 +3,7 @@ use {
         get_pool_config_address,
         get_pool_reward_custody_address,
     },
-    crate::utils::mint::airdrop_spl,
+    crate::solana::instructions::airdrop_spl,
     anchor_lang::solana_program::pubkey::Pubkey,
     anchor_spl::{
         associated_token::spl_associated_token_account,
