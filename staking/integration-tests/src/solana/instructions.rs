@@ -1,5 +1,9 @@
 use {
-    anchor_spl::token::spl_token,
+    anchor_spl::{
+        associated_token::spl_associated_token_account,
+        token::spl_token,
+    },
+    litesvm::types::TransactionResult,
     solana_sdk::{
         program_pack::Pack,
         pubkey::Pubkey,
@@ -128,4 +132,27 @@ pub fn airdrop_spl(
         svm.latest_blockhash(),
     );
     svm.send_transaction(mint_to_tx).unwrap();
+}
+
+pub fn initialize_ata(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    mint: Pubkey,
+    authority: Pubkey,
+) -> TransactionResult {
+    let create_ata_ix = spl_associated_token_account::instruction::create_associated_token_account(
+        &payer.pubkey(),
+        &authority,
+        &mint,
+        &spl_token::ID,
+    );
+
+    let create_ata_tx = Transaction::new_signed_with_payer(
+        &[create_ata_ix],
+        Some(&payer.pubkey()),
+        &[payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(create_ata_tx)
 }
