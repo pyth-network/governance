@@ -1,7 +1,7 @@
 use {
-    crate::utils::types::frac64,
     anchor_lang::prelude::*,
     borsh::BorshSchema,
+    common_utils::frac64::frac64,
 };
 
 #[account]

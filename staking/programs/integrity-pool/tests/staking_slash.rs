@@ -2,7 +2,7 @@ use {
     crate::utils::account::fetch_account_data_bytemuck,
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
-    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
+    common_utils::frac64::FRAC_64_MULTIPLIER,
     solana_sdk::{
         signature::Keypair,
         signer::Signer,

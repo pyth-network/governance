@@ -2,7 +2,7 @@
 
 use {
     anchor_lang::AccountDeserialize,
-    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
+    common_utils::frac64::FRAC_64_MULTIPLIER,
     solana_sdk::{
         signature::Keypair,
         signer::Signer,

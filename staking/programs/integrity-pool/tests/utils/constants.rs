@@ -1,4 +1,4 @@
-use integrity_pool::utils::types::{
+use common_utils::frac64::{
     frac64,
     FRAC_64_MULTIPLIER,
 };

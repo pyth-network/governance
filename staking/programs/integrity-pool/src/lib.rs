@@ -1,5 +1,6 @@
 use {
     anchor_lang::prelude::*,
+    common_utils::frac64::frac64,
     context::*,
     error::IntegrityPoolError,
     staking::state::positions::TargetWithParameters,
@@ -9,7 +10,6 @@ use {
             UNLOCKING_DURATION,
         },
         constants::POOL_CONFIG,
-        types::frac64,
     },
 };
 

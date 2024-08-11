@@ -1,13 +1,11 @@
 use {
-    crate::utils::{
-        constants::MAX_PUBLISHERS,
-        types::frac64,
-    },
+    crate::utils::constants::MAX_PUBLISHERS,
     anchor_lang::prelude::*,
     bytemuck::{
         Pod,
         Zeroable,
     },
+    common_utils::frac64::frac64,
     std::fmt::Debug,
 };
 

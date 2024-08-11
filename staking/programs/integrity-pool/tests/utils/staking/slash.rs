@@ -12,7 +12,7 @@ use {
         InstructionData,
         ToAccountMetas,
     },
-    integrity_pool::utils::types::frac64,
+    common_utils::frac64::frac64,
     litesvm::types::TransactionResult,
     solana_sdk::{
         compute_budget::ComputeBudgetInstruction,

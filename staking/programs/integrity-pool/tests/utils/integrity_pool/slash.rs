@@ -18,10 +18,8 @@ use {
         Key,
         ToAccountMetas,
     },
-    integrity_pool::utils::{
-        constants::SLASH_EVENT,
-        types::frac64,
-    },
+    common_utils::frac64::frac64,
+    integrity_pool::utils::constants::SLASH_EVENT,
     litesvm::types::TransactionResult,
     solana_sdk::{
         instruction::Instruction,
