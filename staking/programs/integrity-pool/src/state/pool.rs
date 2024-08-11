@@ -12,11 +12,6 @@ use {
                 MAX_EVENTS,
                 MAX_PUBLISHERS,
             },
-            types::{
-                frac64,
-                BoolArray,
-                FRAC_64_MULTIPLIER_U128,
-            },
         },
     },
     anchor_lang::prelude::*,
@@ -24,6 +19,13 @@ use {
     bytemuck::{
         Pod,
         Zeroable,
+    },
+    common_utils::{
+        bool_array::BoolArray,
+        frac64::{
+            frac64,
+            FRAC_64_MULTIPLIER_U128,
+        },
     },
     publisher_caps::{
         PublisherCaps,
@@ -427,8 +429,8 @@ impl PoolConfig {
 mod tests {
     use {
         super::*,
-        crate::utils::types::FRAC_64_MULTIPLIER,
         anchor_lang::Discriminator,
+        common_utils::frac64::FRAC_64_MULTIPLIER,
         publisher_caps::{
             PublisherCap,
             MAX_CAPS,

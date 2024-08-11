@@ -5,7 +5,7 @@ use {
         get_associated_token_address,
         spl_associated_token_account,
     },
-    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
+    common_utils::frac64::FRAC_64_MULTIPLIER,
     litesvm::types::TransactionResult,
     solana_program::pubkey::Pubkey,
     solana_sdk::{

@@ -1,6 +1,7 @@
 use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
+    common_utils::frac64::FRAC_64_MULTIPLIER,
     integrity_pool::{
         error::IntegrityPoolError,
         state::{
@@ -11,7 +12,6 @@ use {
             },
             slash::SlashEvent,
         },
-        utils::types::FRAC_64_MULTIPLIER,
     },
     solana_sdk::{
         program_error::ProgramError,

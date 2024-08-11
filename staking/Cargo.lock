@@ -854,6 +854,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "common-utils"
+version = "0.1.0"
+
+[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1574,6 +1578,7 @@ dependencies = [
  "anchor-spl",
  "bytemuck",
  "byteorder",
+ "common-utils",
  "litesvm",
  "publisher-caps",
  "pyth-staking-program",

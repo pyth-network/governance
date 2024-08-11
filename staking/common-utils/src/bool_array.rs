@@ -1,12 +1,3 @@
-#[allow(non_camel_case_types)]
-// It is used to store fractional numbers with 6 decimal places
-// The number 6 is coming from the decimal places of the PYTH token
-pub type frac64 = u64;
-
-pub const FRAC_64_MULTIPLIER: u64 = 1_000_000;
-pub const FRAC_64_MULTIPLIER_U128: u128 = FRAC_64_MULTIPLIER as u128;
-
-
 pub struct BoolArray {
     pub data: Vec<u8>,
 }
@@ -33,10 +24,7 @@ impl BoolArray {
 
 #[cfg(test)]
 mod tests {
-    use {
-        super::*,
-        publisher_caps::MAX_CAPS,
-    };
+    use super::*;
 
     #[test]
     fn test_bool_array() {
@@ -47,8 +35,8 @@ mod tests {
             assert!(arr.get(i));
         }
 
-        let mut arr = BoolArray::new(MAX_CAPS);
-        for i in 0..MAX_CAPS {
+        let mut arr = BoolArray::new(1024);
+        for i in 0..1024 {
             assert!(!arr.get(i));
             arr.set(i);
             assert!(arr.get(i));

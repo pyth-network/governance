@@ -11,7 +11,7 @@ use {
         InstructionData,
         ToAccountMetas,
     },
-    integrity_pool::utils::types::frac64,
+    common_utils::frac64::frac64,
     solana_sdk::{
         instruction::Instruction,
         pubkey::Pubkey,
