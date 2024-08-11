@@ -29,7 +29,7 @@ use {
                 fetch_account_data_bytemuck,
             },
         },
-        staking::create_stake_account::create_stake_account,
+        staking::helper_functions::initialize_new_stake_account,
         utils::{
             clock::advance_n_epochs,
             error::assert_anchor_program_error,
@@ -231,7 +231,7 @@ fn test_slash() {
     let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     // delegate 10 PYTH at epoch N
     delegate(

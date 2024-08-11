@@ -15,7 +15,7 @@ use {
             SetupResult,
         },
         solana::utils::fetch_account_data_bytemuck,
-        staking::create_stake_account::create_stake_account,
+        staking::helper_functions::initialize_new_stake_account,
         utils::{
             clock::{
                 advance_n_epochs,
@@ -115,7 +115,7 @@ fn test_advance_reward_events() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     delegate(
         &mut svm,

@@ -15,14 +15,16 @@ use {
             },
         },
         staking::{
-            create_position::create_position,
-            create_stake_account::create_stake_account,
-            instructions::update_pool_authority,
+            helper_functions::initialize_new_stake_account,
+            instructions::{
+                create_position,
+                slash_staking,
+                update_pool_authority,
+            },
             pda::{
                 get_stake_account_metadata_address,
                 get_target_address,
             },
-            slash::slash_staking,
         },
         utils::{
             clock::advance_n_epochs,
@@ -64,7 +66,7 @@ fn test_staking_slash() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     let pool_authority = Keypair::new();
 

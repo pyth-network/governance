@@ -15,7 +15,7 @@ use {
             SetupResult,
         },
         staking::{
-            create_stake_account::create_stake_account,
+            helper_functions::initialize_new_stake_account,
             pda::get_stake_account_custody_address,
         },
         utils::{
@@ -52,7 +52,7 @@ fn test_claim() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate 1 token at epoch x
@@ -194,7 +194,7 @@ fn test_lost_reward() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
@@ -266,7 +266,7 @@ fn test_correct_position_states() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
@@ -353,7 +353,7 @@ fn test_advance_delegation_record_permissionlessness() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
