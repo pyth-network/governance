@@ -85,7 +85,7 @@ fn test_claim() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -230,7 +230,7 @@ fn test_lost_reward() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -318,7 +318,7 @@ fn test_correct_position_states() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -389,7 +389,7 @@ fn test_advance_delegation_record_permissionlessness() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm

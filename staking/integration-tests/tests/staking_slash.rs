@@ -156,14 +156,14 @@ fn test_staking_slash() {
 
     assert_eq!(slash_account.amount, 25 * FRAC_64_MULTIPLIER);
 
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let meta_data_account: StakeAccountMetadataV2 =
         fetch_account_data(&mut svm, &stake_account_metadata);
 
     assert_eq!(meta_data_account.next_index, 2);
     assert!(positions.read_position(2).unwrap().is_none());
 
-    let target_account: TargetMetadata = fetch_account_data(&mut svm, &get_target_address().0);
+    let target_account: TargetMetadata = fetch_account_data(&mut svm, &get_target_address());
     assert_eq!(target_account.locked, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(target_account.prev_epoch_locked, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(target_account.delta_locked, 0);
