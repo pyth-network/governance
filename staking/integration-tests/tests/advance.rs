@@ -1,9 +1,9 @@
 use {
     anchor_lang::prelude::Error,
     integration_tests::{
-        integrity_pool::{
-            delegate::delegate,
-            instructions::advance,
+        integrity_pool::instructions::{
+            advance,
+            delegate,
         },
         publisher_caps::instructions::{
             get_dummy_publisher,

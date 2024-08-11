@@ -1,12 +1,12 @@
 use {
     integration_tests::{
         integrity_pool::{
-            delegate::{
+            instructions::{
+                advance,
                 advance_delegation_record,
                 delegate,
                 undelegate,
             },
-            instructions::advance,
             pda::get_delegation_record_address,
         },
         publisher_caps::instructions::post_publisher_caps,

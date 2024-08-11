@@ -1,11 +1,11 @@
 use {
     crate::{
         integrity_pool::{
+            helper_functions::initialize_pool_reward_custody,
             instructions::{
                 advance,
                 create_pool_data_account,
             },
-            reward_program::initialize_pool_reward_custody,
         },
         publisher_caps::instructions::post_publisher_caps,
         solana::{
