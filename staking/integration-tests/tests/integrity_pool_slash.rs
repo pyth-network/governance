@@ -21,6 +21,7 @@ use {
             setup,
             SetupProps,
             SetupResult,
+            STARTING_EPOCH,
         },
         solana::{
             instructions::create_token_account,
@@ -184,7 +185,6 @@ fn test_create_slash_event() {
         0,
     );
 
-    const STARTING_EPOCH: u64 = 2;
     let slash_account_0: SlashEvent =
         fetch_account_data(&mut svm, &get_slash_event_address(0, slashed_publisher));
 

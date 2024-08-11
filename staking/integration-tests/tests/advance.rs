@@ -13,6 +13,7 @@ use {
             setup,
             SetupProps,
             SetupResult,
+            STARTING_EPOCH,
         },
         solana::utils::fetch_account_data_bytemuck,
         staking::helper_functions::initialize_new_stake_account,
@@ -127,7 +128,7 @@ fn test_advance_reward_events() {
     );
 
     advance_n_epochs(&mut svm, &payer, 1);
-    assert_eq!(get_current_epoch(&mut svm), 3);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
@@ -142,13 +143,13 @@ fn test_advance_reward_events() {
     );
 
     advance_n_epochs(&mut svm, &payer, 8);
-    assert_eq!(get_current_epoch(&mut svm), 11);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
-    assert_eq!(get_current_epoch(&mut svm), 12);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
@@ -182,7 +183,7 @@ fn test_advance_reward_events() {
             pool_data.events[i].event_data[publisher_index].self_reward_ratio,
             0
         );
-        assert_eq!(pool_data.events[i].epoch, 1 + i as u64);
+        assert_eq!(pool_data.events[i].epoch, STARTING_EPOCH + i as u64 - 1);
         assert_eq!(pool_data.events[i].y, YIELD);
     }
     for i in 11..MAX_EVENTS {

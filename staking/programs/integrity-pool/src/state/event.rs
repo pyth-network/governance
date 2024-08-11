@@ -1,14 +1,20 @@
 use {
     crate::utils::{
         constants::MAX_PUBLISHERS,
-        types::frac64,
+        types::{
+            frac64,
+            FRAC_64_MULTIPLIER_U128,
+        },
     },
     anchor_lang::prelude::*,
     bytemuck::{
         Pod,
         Zeroable,
     },
-    std::fmt::Debug,
+    std::{
+        convert::TryInto,
+        fmt::Debug,
+    },
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Zeroable, Pod, PartialEq, Eq)]
@@ -30,6 +36,33 @@ impl Default for Event {
     }
 }
 
+impl Event {
+    // calculate the reward in pyth with decimals
+    pub fn calculate_reward_for_delegator(
+        &self,
+        amount: frac64, // in pyth with decimals
+        publisher_index: usize,
+    ) -> Result<frac64> {
+        let reward_ratio = self.event_data[publisher_index].other_reward_ratio;
+        let reward_rate = u128::from(self.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
+        let reward_amount: frac64 =
+            (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
+        Ok(reward_amount)
+    }
+
+    pub fn calculate_reward_for_publisher(
+        &self,
+        amount: frac64, // in pyth with decimals
+        publisher_index: usize,
+    ) -> Result<frac64> {
+        let reward_ratio = self.event_data[publisher_index].self_reward_ratio;
+        let reward_rate = u128::from(self.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
+        let reward_amount: frac64 =
+            (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
+        Ok(reward_amount)
+    }
+}
+
 #[derive(
     AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Zeroable, Pod, Default, PartialEq, Eq,
 )]
@@ -41,4 +74,90 @@ pub struct PublisherEventData {
     // be less than 1 such that the total reward they get is equal to y * cap
     pub self_reward_ratio:  frac64,
     pub other_reward_ratio: frac64,
+}
+
+#[cfg(test)]
+mod tests {
+    use {
+        super::*,
+        crate::utils::types::FRAC_64_MULTIPLIER,
+    };
+
+    #[test]
+    fn test_calculate_reward_for_delegator() {
+        let mut event = Event {
+            // 10%
+            y: FRAC_64_MULTIPLIER / 10,
+            ..Default::default()
+        };
+
+        event.event_data[0] = PublisherEventData {
+            self_reward_ratio:  0,
+            // ratio = 100%
+            other_reward_ratio: FRAC_64_MULTIPLIER,
+        };
+        event.event_data[1] = PublisherEventData {
+            self_reward_ratio:  0,
+            // ratio = 50%
+            other_reward_ratio: FRAC_64_MULTIPLIER / 2,
+        };
+
+        let reward = event
+            .calculate_reward_for_delegator(100 * FRAC_64_MULTIPLIER, 0)
+            .unwrap();
+        assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
+
+        let reward = event
+            .calculate_reward_for_delegator(100 * FRAC_64_MULTIPLIER, 1)
+            .unwrap();
+        assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
+    }
+
+    #[test]
+    fn test_calculate_reward_for_publisher() {
+        let mut event = Event {
+            // 10%
+            y: FRAC_64_MULTIPLIER / 10,
+            ..Default::default()
+        };
+
+        event.event_data[0] = PublisherEventData {
+            // ratio = 100%
+            self_reward_ratio:  FRAC_64_MULTIPLIER,
+            other_reward_ratio: 0,
+        };
+        event.event_data[1] = PublisherEventData {
+            // ratio = 50%
+            self_reward_ratio:  FRAC_64_MULTIPLIER / 2,
+            other_reward_ratio: 0,
+        };
+
+        let reward = event
+            .calculate_reward_for_publisher(100 * FRAC_64_MULTIPLIER, 0)
+            .unwrap();
+        assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
+
+        let reward = event
+            .calculate_reward_for_publisher(100 * FRAC_64_MULTIPLIER, 1)
+            .unwrap();
+        assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
+    }
+
+    #[test]
+    fn test_overflow() {
+        let mut event = Event {
+            // 100%
+            y: FRAC_64_MULTIPLIER,
+            ..Default::default()
+        };
+
+        event.event_data[0] = PublisherEventData {
+            // ratio = 100%
+            self_reward_ratio:  FRAC_64_MULTIPLIER,
+            other_reward_ratio: 0,
+        };
+
+        let reward = event.calculate_reward_for_publisher(u64::MAX, 0).unwrap();
+        assert_eq!(reward, u64::MAX);
+    }
 }
