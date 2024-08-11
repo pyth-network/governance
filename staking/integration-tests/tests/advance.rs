@@ -5,9 +5,9 @@ use {
             advance,
             delegate,
         },
-        publisher_caps::instructions::{
-            get_dummy_publisher,
-            post_publisher_caps,
+        publisher_caps::{
+            helper_functions::post_publisher_caps,
+            utils::get_dummy_publisher,
         },
         setup::{
             setup,

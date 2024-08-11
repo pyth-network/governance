@@ -8,7 +8,7 @@ use {
             advance_delegation_record,
             delegate,
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         setup::{
             setup,
             SetupProps,

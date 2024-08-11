@@ -16,7 +16,7 @@ use {
                 get_slash_event_address,
             },
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         setup::{
             setup,
             SetupProps,

@@ -1,178 +1,29 @@
 use {
-    crate::solana::instructions::create_account,
     anchor_lang::{
-        prelude::{
-            borsh::{
-                BorshDeserialize,
-                BorshSerialize,
-            },
-            *,
-        },
         InstructionData,
         ToAccountMetas,
     },
-    byteorder::BigEndian,
-    litesvm::LiteSVM,
-    publisher_caps::{
-        PublisherCaps,
-        MAX_CAPS,
-        PRICE_FEEDS_EMITTER_ADDRESS,
-        WORMHOLE_RECEIVER,
+    litesvm::{
+        types::TransactionResult,
+        LiteSVM,
     },
-    pythnet_sdk::{
-        messages::{
-            Message,
-            PublisherStakeCap,
-            PublisherStakeCapsMessage,
-        },
-        test_utils::{
-            create_accumulator_message,
-            create_dummy_price_feed_message,
-            DataSource,
-        },
-        wire::v1::{
-            AccumulatorUpdateData,
-            MerklePriceUpdate,
-            Proof,
-        },
-    },
-    serde_wormhole::RawMessage,
+    pythnet_sdk::wire::v1::MerklePriceUpdate,
     solana_sdk::{
-        account::Account,
         compute_budget::ComputeBudgetInstruction,
         instruction::Instruction,
         pubkey::Pubkey,
-        rent::Rent,
         signature::Keypair,
         signer::Signer,
         transaction::Transaction,
     },
-    std::{
-        cmp::min,
-        convert::TryInto,
-    },
-    wormhole_sdk::Vaa,
-    wormhole_solana_vaas::zero_copy::EncodedVaa,
+    std::convert::TryInto,
 };
 
-#[derive(BorshDeserialize, BorshSerialize)]
-pub enum ProcessingStatus {
-    Unset,
-    Writing,
-    Verified,
-}
-
-#[derive(BorshDeserialize, BorshSerialize)]
-pub struct EncodedVaaHeader {
-    pub status:          ProcessingStatus,
-    pub write_authority: Pubkey,
-    pub version:         u8,
-}
-
-pub fn get_dummy_publisher(i: usize) -> Pubkey {
-    let mut bytes = [0u8; 32];
-    bytes[0] = (i % 256) as u8;
-    bytes[1] = (i / 256) as u8;
-    Pubkey::from(bytes)
-}
-
-
-pub fn build_encoded_vaa_account_from_vaa(vaa: Vaa<&RawMessage>) -> Account {
-    let encoded_vaa_data = (
-        EncodedVaa::DISCRIMINATOR,
-        EncodedVaaHeader {
-            status: ProcessingStatus::Writing,
-
-            write_authority: Pubkey::new_unique(),
-            version:         1,
-        },
-        serde_wormhole::to_vec(&vaa).unwrap(),
-    )
-        .try_to_vec()
-        .unwrap();
-
-    Account {
-        lamports:   Rent::default().minimum_balance(encoded_vaa_data.len()),
-        data:       encoded_vaa_data,
-        owner:      WORMHOLE_RECEIVER,
-        executable: false,
-        rent_epoch: 0,
-    }
-}
-
-pub fn deserialize_accumulator_update_data(
-    accumulator_message: Vec<u8>,
-) -> Result<(Vec<u8>, Vec<MerklePriceUpdate>)> {
-    let accumulator_update_data =
-        AccumulatorUpdateData::try_from_slice(accumulator_message.as_slice()).unwrap();
-
-    match accumulator_update_data.proof {
-        Proof::WormholeMerkle { vaa, updates } => return Ok((vaa.as_ref().to_vec(), updates)),
-    }
-}
-
-
-pub fn create_dummy_publisher_caps_message(
-    svm: &mut LiteSVM,
-    first_publisher: Pubkey,
-    first_publisher_cap: u64,
-) -> Message {
-    let timestamp = svm.get_sysvar::<Clock>().unix_timestamp;
-    let mut caps: Vec<PublisherStakeCap> = vec![];
-
-    caps.push(PublisherStakeCap {
-        publisher: first_publisher.to_bytes(),
-        cap:       first_publisher_cap,
-    });
-
-
-    for i in 1..MAX_CAPS {
-        caps.push(PublisherStakeCap {
-            publisher: get_dummy_publisher(i).to_bytes(),
-            cap:       i as u64,
-        });
-    }
-
-    // publisher caps should always be sorted
-    caps.sort_by_key(|cap| cap.publisher);
-
-    Message::PublisherStakeCapsMessage(PublisherStakeCapsMessage {
-        publish_time: timestamp,
-        caps:         caps.into(),
-    })
-}
-
-
-pub fn post_publisher_caps(
+pub fn init_publisher_caps(
     svm: &mut LiteSVM,
     payer: &Keypair,
-    first_publisher: Pubkey,
-    first_publisher_cap: u64,
-) -> Pubkey {
-    let publisher_caps_message =
-        create_dummy_publisher_caps_message(svm, first_publisher, first_publisher_cap);
-    let feed_1 = create_dummy_price_feed_message(100);
-    let message = create_accumulator_message(
-        &[&feed_1, &publisher_caps_message],
-        &[&publisher_caps_message],
-        false,
-        false,
-        Some(DataSource {
-            address: wormhole_sdk::Address(PRICE_FEEDS_EMITTER_ADDRESS.to_bytes()),
-            chain:   wormhole_sdk::Chain::Pythnet,
-        }),
-    );
-    let (vaa, merkle_proofs) = deserialize_accumulator_update_data(message).unwrap();
-
-    let encoded_vaa = Pubkey::new_unique();
-    svm.set_account(
-        encoded_vaa,
-        build_encoded_vaa_account_from_vaa(serde_wormhole::from_slice(&vaa).unwrap()),
-    )
-    .unwrap();
-
-    let publisher_caps = create_account(svm, payer, PublisherCaps::LEN, publisher_caps::ID);
-
+    publisher_caps: Pubkey,
+) -> TransactionResult {
     let accounts = publisher_caps::accounts::InitPublisherCaps {
         signer: payer.pubkey(),
         publisher_caps,
@@ -195,40 +46,50 @@ pub fn post_publisher_caps(
         &[payer],
         svm.latest_blockhash(),
     );
-    svm.send_transaction(transaction).unwrap();
 
+    svm.send_transaction(transaction)
+}
 
-    let publisher_caps_message_bytes =
-        pythnet_sdk::wire::to_vec::<_, BigEndian>(&publisher_caps_message).unwrap();
+pub fn write_publisher_caps(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    publisher_caps: Pubkey,
+    index: usize,
+    chunk: &[u8],
+) -> TransactionResult {
+    let accounts = publisher_caps::accounts::WritePublisherCaps {
+        write_authority: payer.pubkey(),
+        publisher_caps,
+    };
 
-    for i in (0..publisher_caps_message_bytes.len()).step_by(1000) {
-        let chunk =
-            &publisher_caps_message_bytes[i..min(i + 1000, publisher_caps_message_bytes.len())];
-        let accounts = publisher_caps::accounts::WritePublisherCaps {
-            write_authority: payer.pubkey(),
-            publisher_caps,
-        };
+    let instruction_data = publisher_caps::instruction::WritePublisherCaps {
+        index: index.try_into().unwrap(),
+        data:  chunk.to_vec(),
+    };
 
-        let instruction_data = publisher_caps::instruction::WritePublisherCaps {
-            index: i.try_into().unwrap(),
-            data:  chunk.to_vec(),
-        };
+    let instruction = Instruction {
+        program_id: publisher_caps::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
 
-        let instruction = Instruction {
-            program_id: publisher_caps::ID,
-            accounts:   accounts.to_account_metas(None),
-            data:       instruction_data.data(),
-        };
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&payer.pubkey()),
+        &[payer],
+        svm.latest_blockhash(),
+    );
 
-        let transaction = Transaction::new_signed_with_payer(
-            &[instruction],
-            Some(&payer.pubkey()),
-            &[payer],
-            svm.latest_blockhash(),
-        );
-        svm.send_transaction(transaction).unwrap();
-    }
+    svm.send_transaction(transaction)
+}
 
+pub fn verify_publisher_caps(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    publisher_caps: Pubkey,
+    encoded_vaa: Pubkey,
+    merkle_proofs: Vec<MerklePriceUpdate>,
+) -> TransactionResult {
     let accounts = publisher_caps::accounts::VerifyPublisherCaps {
         signer: payer.pubkey(),
         publisher_caps,
@@ -254,7 +115,5 @@ pub fn post_publisher_caps(
         &[payer],
         svm.latest_blockhash(),
     );
-    svm.send_transaction(transaction).unwrap();
-
-    publisher_caps
+    svm.send_transaction(transaction)
 }
