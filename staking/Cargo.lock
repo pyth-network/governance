@@ -1567,23 +1567,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "integration-tests"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "bytemuck",
+ "byteorder",
+ "integrity-pool",
+ "litesvm",
+ "publisher-caps",
+ "pyth-staking-program",
+ "pythnet-sdk",
+ "serde_wormhole",
+ "solana-sdk",
+ "wormhole-solana-vaas",
+ "wormhole-vaas-serde",
+]
+
+[[package]]
 name = "integrity-pool"
 version = "1.0.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "byteorder",
- "litesvm",
  "publisher-caps",
  "pyth-staking-program",
- "pythnet-sdk",
- "serde_wormhole",
- "solana-program",
  "solana-sdk",
- "spl-token",
- "wormhole-solana-vaas",
- "wormhole-vaas-serde",
 ]
 
 [[package]]
