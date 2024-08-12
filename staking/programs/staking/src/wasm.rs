@@ -5,6 +5,7 @@ use {
         state::{
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
+                DynamicPositionArrayFixture,
                 PositionData,
                 PositionState,
                 MAX_POSITIONS,
@@ -26,9 +27,10 @@ use {
     wasm_bindgen::prelude::*,
 };
 
+
 #[wasm_bindgen]
 pub struct WasmPositionData {
-    wrapped: PositionData,
+    wrapped: Vec<u8>,
 }
 
 #[wasm_bindgen]
@@ -39,19 +41,16 @@ pub struct LockedBalanceSummary {
     pub preunlocking: u64,
 }
 
+
 #[wasm_bindgen]
 impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
-        convert_error(WasmPositionData::from_buffer_impl(
-            &buffer[..PositionData::LEN],
-        ))
+        convert_error(WasmPositionData::from_buffer_impl(&buffer))
     }
     fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
-        let mut ptr = buffer;
-        let position_data = PositionData::try_deserialize(&mut ptr)?;
         Ok(WasmPositionData {
-            wrapped: position_data,
+            wrapped: buffer.to_vec(),
         })
     }
 
@@ -70,7 +69,9 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        self.wrapped
+        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        fixture
+            .to_dynamic_position_array()
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
             .get_current_position(current_epoch, unlocking_duration)
@@ -80,8 +81,10 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        Ok(self
-            .wrapped
+        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+
+        Ok(fixture
+            .to_dynamic_position_array()
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
             .is_voting())
@@ -103,13 +106,16 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<LockedBalanceSummary> {
+        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        let positions = fixture.to_dynamic_position_array();
+
         let mut locking: u64 = 0;
         let mut locked: u64 = 0;
         let mut unlocking: u64 = 0;
         let mut preunlocking: u64 = 0;
 
-        for i in 0..MAX_POSITIONS {
-            if let Some(position) = self.wrapped.read_position(i)? {
+        for i in 0..positions.get_position_capacity() {
+            if let Some(position) = positions.read_position(i)? {
                 match position.get_current_position(current_epoch, unlocking_duration)? {
                     PositionState::LOCKING => {
                         locking = locking
@@ -150,8 +156,9 @@ impl WasmPositionData {
         unlocking_duration: u8,
         current_locked: u64,
     ) -> Result<u64, JsValue> {
+        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
         convert_error(crate::utils::voter_weight::compute_voter_weight(
-            &self.wrapped,
+            &fixture.to_dynamic_position_array(),
             current_epoch,
             unlocking_duration,
             current_locked,

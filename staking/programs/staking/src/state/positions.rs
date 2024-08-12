@@ -54,13 +54,23 @@ impl Default for DynamicPositionArrayFixture {
 }
 
 impl DynamicPositionArrayFixture {
+    pub fn default_with_data(data: Vec<u8>) -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        Self {
+            key,
+            lamports,
+            data,
+        }
+    }
+
     pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
         let account_info = AccountInfo::new(
             &self.key,
             false,
             false,
             &mut self.lamports,
-            &mut self.data[..PositionData::LEN],
+            &mut self.data,
             &self.key,
             false,
             0,

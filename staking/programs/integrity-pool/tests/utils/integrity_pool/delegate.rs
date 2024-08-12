@@ -109,6 +109,7 @@ pub fn delegate(
         stake_account_metadata,
         stake_account_custody,
         staking_program: staking::ID,
+        system_program: system_program::ID,
     };
 
     let delegate_ix = Instruction::new_with_bytes(
