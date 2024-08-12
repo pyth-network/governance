@@ -18,7 +18,3 @@ anchor-spl = {workspace = true}
 bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
 pyth-staking-program = {path = "../staking", features = ["cpi"]}
 publisher-caps = {path = "../publisher-caps", features = ["no-entrypoint"]}
-
-
-[dev-dependencies]
-solana-sdk = { workspace = true }

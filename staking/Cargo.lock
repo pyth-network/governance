@@ -1594,7 +1594,6 @@ dependencies = [
  "bytemuck",
  "publisher-caps",
  "pyth-staking-program",
- "solana-sdk",
 ]
 
 [[package]]
