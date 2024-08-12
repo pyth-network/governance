@@ -42,7 +42,7 @@ mod tests {
     #[allow(deprecated)]
     fn test_delegation_record_len() {
         assert!(
-            solana_sdk::borsh0_10::get_packed_len::<DelegationRecord>()
+            anchor_lang::solana_program::borsh0_10::get_packed_len::<DelegationRecord>()
                 + DelegationRecord::discriminator().len()
                 <= DelegationRecord::LEN
         );

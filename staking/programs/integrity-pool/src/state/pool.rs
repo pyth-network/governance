@@ -441,7 +441,7 @@ mod tests {
     fn test_size() {
         assert!(std::mem::size_of::<PoolData>() + 8 <= PoolData::LEN);
         assert!(
-            solana_sdk::borsh0_10::get_packed_len::<PoolConfig>()
+            anchor_lang::solana_program::borsh0_10::get_packed_len::<PoolConfig>()
                 + PoolConfig::discriminator().len()
                 <= PoolConfig::LEN
         );
