@@ -48,6 +48,19 @@ pub mod integrity_pool {
         Ok(())
     }
 
+    pub fn update_delegation_fee(
+        ctx: Context<UpdateDelegationFee>,
+        delegation_fee: frac64,
+    ) -> Result<()> {
+        let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
+
+        for publisher_index in 0..pool_data.delegation_fees.len() {
+            pool_data.delegation_fees[publisher_index] = delegation_fee;
+        }
+
+        Ok(())
+    }
+
     pub fn delegate(ctx: Context<Delegate>, amount: u64) -> Result<()> {
         let payer = ctx.accounts.payer.clone();
         let pool_config = &ctx.accounts.pool_config;

@@ -57,6 +57,28 @@ pub struct UpdateY<'info> {
 }
 
 #[derive(Accounts)]
+pub struct UpdateDelegationFee<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    pub reward_program_authority: Signer<'info>,
+
+    #[account(mut)]
+    pub pool_data: AccountLoader<'info, PoolData>,
+
+    #[account(
+        mut,
+        seeds = [POOL_CONFIG.as_bytes()],
+        bump,
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
+        has_one = pool_data @ IntegrityPoolError::InvalidPoolDataAccount,
+    )]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 #[instruction(amount: u64)]
 pub struct Delegate<'info> {
     pub payer: Signer<'info>,
