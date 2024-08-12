@@ -255,6 +255,7 @@ fn test_slash() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -293,6 +294,7 @@ fn test_slash() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 

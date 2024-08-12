@@ -224,9 +224,13 @@ pub mod integrity_pool {
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let token_program = &ctx.accounts.token_program;
         let publisher = &ctx.accounts.publisher;
+        let publisher_stake_account_positions = &ctx.accounts.publisher_stake_account_positions;
+        let publisher_stake_account_custody = &ctx.accounts.publisher_stake_account_custody;
+
+        let publisher_index = pool_data.get_publisher_index(&publisher.key())?;
 
         // reward amount in PYTH with decimals
-        let reward_amount: frac64 = pool_data.calculate_reward(
+        let (delegator_reward, publisher_reward) = pool_data.calculate_reward(
             delegation_record.last_epoch,
             &stake_account_positions.key(),
             positions,
@@ -234,13 +238,7 @@ pub mod integrity_pool {
             get_current_epoch()?,
         )?;
 
-        // reward is less than a unit, no need to transfer
-        if reward_amount == 0 {
-            delegation_record.advance(get_current_epoch()?)?;
-            return Ok(());
-        }
-
-        // transfer reward from pool_reward_custody to stake_account_custody
+        // transfer delegator reward from pool_reward_custody to stake_account_custody
         let cpi_accounts = anchor_spl::token::Transfer {
             from:      pool_reward_custody.to_account_info(),
             to:        stake_account_custody.to_account_info(),
@@ -248,9 +246,44 @@ pub mod integrity_pool {
         };
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
 
-        let ctx = CpiContext::new(token_program.to_account_info(), cpi_accounts)
+        let transfer_ctx = CpiContext::new(token_program.to_account_info(), cpi_accounts)
             .with_signer(signer_seeds);
-        anchor_spl::token::transfer(ctx, reward_amount)?;
+        anchor_spl::token::transfer(transfer_ctx, delegator_reward)?;
+
+        match publisher_stake_account_positions {
+            Some(publisher_stake_account_positions) => {
+                require_eq!(
+                    pool_data.publisher_stake_accounts[publisher_index],
+                    publisher_stake_account_positions.key(),
+                    IntegrityPoolError::PublisherStakeAccountMismatch
+                );
+
+                let destination = publisher_stake_account_custody
+                    .as_ref()
+                    .ok_or(IntegrityPoolError::PublisherCustodyAccountRequired)?;
+
+                // transfer publisher reward from pool_reward_custody to
+                // publisher_stake_account_custody
+                let cpi_accounts = anchor_spl::token::Transfer {
+                    from:      pool_reward_custody.to_account_info(),
+                    to:        destination.to_account_info(),
+                    authority: pool_config.to_account_info(),
+                };
+                let signer_seeds: &[&[&[u8]]] =
+                    &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
+
+                let transfer_ctx = CpiContext::new(token_program.to_account_info(), cpi_accounts)
+                    .with_signer(signer_seeds);
+                anchor_spl::token::transfer(transfer_ctx, publisher_reward)?;
+            }
+            None => {
+                require_eq!(
+                    pool_data.publisher_stake_accounts[publisher_index],
+                    Pubkey::default(),
+                    IntegrityPoolError::PublisherStakeAccountMismatch
+                );
+            }
+        }
 
         delegation_record.advance(get_current_epoch()?)?;
         Ok(())

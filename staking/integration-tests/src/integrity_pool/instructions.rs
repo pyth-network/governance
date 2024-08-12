@@ -175,11 +175,15 @@ pub fn advance_delegation_record(
     stake_account_positions: Pubkey,
     pyth_token_mint: Pubkey,
     pool_data: Pubkey,
+    publisher_stake_account_positions: Option<Pubkey>,
 ) -> TransactionResult {
     let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
     let custody_addess = get_pool_reward_custody_address(pyth_token_mint);
     let pool_config_pubkey = get_pool_config_address();
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+
+    let publisher_stake_account_custody =
+        publisher_stake_account_positions.map(get_stake_account_custody_address);
 
     let data = integrity_pool::instruction::AdvanceDelegationRecord {};
 
@@ -192,6 +196,8 @@ pub fn advance_delegation_record(
         publisher,
         delegation_record,
         stake_account_positions,
+        publisher_stake_account_custody,
+        publisher_stake_account_positions,
         token_program: spl_token::ID,
         system_program: system_program::ID,
     };

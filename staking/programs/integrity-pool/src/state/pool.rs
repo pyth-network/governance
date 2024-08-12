@@ -74,6 +74,7 @@ pub struct PoolData {
     pub events:                   [Event; MAX_EVENTS],
     pub num_events:               u64,
     pub num_slash_events:         [u64; MAX_PUBLISHERS],
+    pub delegation_fees:          [frac64; MAX_PUBLISHERS],
 }
 
 impl PoolData {
@@ -91,6 +92,7 @@ impl PoolData {
     }
 
     // calculate the reward in pyth with decimals
+    // returns (delegator_reward, publisher_reward)
     pub fn calculate_reward(
         &self,
         from_epoch: u64,
@@ -98,12 +100,13 @@ impl PoolData {
         positions: Ref<staking::state::positions::PositionData>,
         publisher: &Pubkey,
         current_epoch: u64,
-    ) -> Result<frac64> {
+    ) -> Result<(frac64, frac64)> {
         self.assert_up_to_date(current_epoch)?;
 
         let publisher_index = self.get_publisher_index(publisher)?;
         let mut last_event_index: usize = self.num_events as usize;
-        let mut reward: frac64 = 0;
+        let mut delegator_reward: frac64 = 0;
+        let mut publisher_reward: frac64 = 0;
         loop {
             // prevent infinite loop and double counting events
             // by breaking the loop when visiting all events
@@ -140,12 +143,16 @@ impl PoolData {
             }
 
             if &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key {
-                reward += event.calculate_reward_for_publisher(amount, publisher_index)?;
+                delegator_reward +=
+                    event.calculate_reward_for_publisher(amount, publisher_index)?;
             } else {
-                reward += event.calculate_reward_for_delegator(amount, publisher_index)?;
+                let (delegator_reward_for_event, publisher_reward_for_event) =
+                    event.calculate_reward_for_delegator(amount, publisher_index)?;
+                delegator_reward += delegator_reward_for_event;
+                publisher_reward += publisher_reward_for_event;
             }
         }
-        Ok(reward)
+        Ok((delegator_reward, publisher_reward))
     }
 
 
@@ -289,6 +296,7 @@ impl PoolData {
                 .event_data[publisher_index] = PublisherEventData {
                 self_reward_ratio,
                 other_reward_ratio,
+                delegation_fee: self.delegation_fees[publisher_index],
             };
         }
         Ok(())
@@ -443,6 +451,7 @@ mod tests {
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
             num_slash_events:         [0; MAX_PUBLISHERS],
+            delegation_fees:          [0; MAX_PUBLISHERS],
         };
 
         pool_data.get_event_mut(1).epoch = 123;
@@ -462,6 +471,7 @@ mod tests {
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
             num_slash_events:         [0; MAX_PUBLISHERS],
+            delegation_fees:          [0; MAX_PUBLISHERS],
         };
 
         let publisher_key = Pubkey::new_unique();
@@ -479,6 +489,7 @@ mod tests {
         event.event_data[publisher_index] = PublisherEventData {
             self_reward_ratio:  FRAC_64_MULTIPLIER,     // 1
             other_reward_ratio: FRAC_64_MULTIPLIER / 2, // 1/2
+            delegation_fee:     0,
         };
 
         for i in 0..10 {
@@ -544,7 +555,7 @@ mod tests {
 
         pool_data.last_updated_epoch = 2;
         pool_data.num_events = 1;
-        let publisher_reward = pool_data
+        let (delegator_reward, _) = pool_data
             .calculate_reward(
                 1,
                 &publisher_key,
@@ -555,11 +566,11 @@ mod tests {
             .unwrap();
 
         // 40 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 4 PYTH
-        assert_eq!(publisher_reward, 4 * FRAC_64_MULTIPLIER);
+        assert_eq!(delegator_reward, 4 * FRAC_64_MULTIPLIER);
 
         pool_data.num_events = 2;
         pool_data.last_updated_epoch = 3;
-        let publisher_reward = pool_data
+        let (delegator_reward, _) = pool_data
             .calculate_reward(
                 2,
                 &publisher_key,
@@ -570,11 +581,11 @@ mod tests {
             .unwrap();
 
         // 40 + 60 PYTH (amount) * 1 (self_reward_ratio) * 10% (y) = 10 PYTH
-        assert_eq!(publisher_reward, 10 * FRAC_64_MULTIPLIER);
+        assert_eq!(delegator_reward, 10 * FRAC_64_MULTIPLIER);
 
         pool_data.num_events = 10;
         pool_data.last_updated_epoch = 11;
-        let publisher_reward = pool_data
+        let (delegator_reward, _) = pool_data
             .calculate_reward(
                 1,
                 &publisher_key,
@@ -584,7 +595,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(publisher_reward, 94 * FRAC_64_MULTIPLIER);
+        assert_eq!(delegator_reward, 94 * FRAC_64_MULTIPLIER);
 
 
         // test many events
@@ -597,7 +608,7 @@ mod tests {
             pool_data.get_event_mut(i).epoch = (i + 1) as u64;
         }
 
-        let publisher_reward = pool_data
+        let (delegator_reward, _) = pool_data
             .calculate_reward(
                 1,
                 &publisher_key,
@@ -608,7 +619,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            publisher_reward,
+            delegator_reward,
             (MAX_EVENTS as u64) * 10 * FRAC_64_MULTIPLIER
         );
     }
@@ -625,6 +636,7 @@ mod tests {
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
             num_slash_events:         [0; MAX_PUBLISHERS],
+            delegation_fees:          [0; MAX_PUBLISHERS],
         };
 
         let mut caps = [PublisherCap {
@@ -667,6 +679,7 @@ mod tests {
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
             num_slash_events:         [0; MAX_PUBLISHERS],
+            delegation_fees:          [0; MAX_PUBLISHERS],
         };
 
         let mut caps = [PublisherCap {
@@ -709,6 +722,7 @@ mod tests {
             events:                   [Event::default(); MAX_EVENTS],
             num_events:               0,
             num_slash_events:         [0; MAX_PUBLISHERS],
+            delegation_fees:          [0; MAX_PUBLISHERS],
         };
 
         pool_data.publishers[0] = publisher_1;

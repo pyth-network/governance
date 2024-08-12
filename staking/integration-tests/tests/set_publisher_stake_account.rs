@@ -250,6 +250,7 @@ fn test_set_publisher_stake_account() {
         stake_account_positions_2,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        Some(stake_account_positions_2),
     )
     .unwrap();
 
@@ -300,6 +301,7 @@ fn test_set_publisher_stake_account() {
         stake_account_positions_2,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        Some(stake_account_positions_2),
     )
     .unwrap();
 
