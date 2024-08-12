@@ -135,6 +135,39 @@ pub fn create_pool_data_account(
     svm.send_transaction(initialize_pool_tx.clone())
 }
 
+pub fn update_y(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    reward_program_authority: &Keypair,
+    y: frac64,
+) -> TransactionResult {
+    let pool_config_pubkey = get_pool_config_address();
+
+    let update_y_data = integrity_pool::instruction::UpdateY { y };
+
+    let update_y_accs = integrity_pool::accounts::UpdateY {
+        payer:                    payer.pubkey(),
+        pool_config:              pool_config_pubkey,
+        reward_program_authority: reward_program_authority.pubkey(),
+        system_program:           system_program::ID,
+    };
+
+    let update_y_ix = Instruction::new_with_bytes(
+        integrity_pool::ID,
+        &update_y_data.data(),
+        update_y_accs.to_account_metas(None),
+    );
+
+    let initialize_pool_tx = Transaction::new_signed_with_payer(
+        &[update_y_ix],
+        Some(&payer.pubkey()),
+        &[payer, reward_program_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(initialize_pool_tx.clone())
+}
+
 pub fn advance_delegation_record(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
