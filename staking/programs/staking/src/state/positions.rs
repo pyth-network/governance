@@ -9,6 +9,7 @@ use {
         Discriminator,
     },
     arrayref::array_ref,
+    solana_program::system_instruction,
     std::fmt::{
         self,
         Debug,
@@ -97,6 +98,27 @@ impl<'a> DynamicPositionArray<'a> {
             ))
         }
     }
+
+    fn data_len(&self) -> usize {
+        self.account_info.data_len()
+    }
+
+    pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
+        let rent = Rent::get()?;
+
+        let amount_to_transfer = rent
+            .minimum_balance(self.data_len())
+            .saturating_sub(self.account_info.lamports());
+        let transfer_instruction =
+            system_instruction::transfer(payer.key, self.account_info.key, amount_to_transfer);
+        anchor_lang::solana_program::program::invoke(
+            &transfer_instruction,
+            &[payer.to_account_info(), self.account_info.clone()],
+        )?;
+
+        Ok(())
+    }
+
 
     pub fn owner(&self) -> Pubkey {
         let data = self.account_info.try_borrow_data().unwrap();

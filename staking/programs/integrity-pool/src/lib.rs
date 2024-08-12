@@ -57,6 +57,7 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
+        let system_program = ctx.accounts.system_program.clone();
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
@@ -71,6 +72,7 @@ pub mod integrity_pool {
             owner: payer.to_account_info(),
             target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
+            system_program: system_program.to_account_info(),
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];

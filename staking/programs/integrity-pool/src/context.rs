@@ -83,6 +83,8 @@ pub struct Delegate<'info> {
     pub stake_account_custody: AccountInfo<'info>,
 
     pub staking_program: Program<'info, Staking>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

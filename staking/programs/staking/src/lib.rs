@@ -235,6 +235,8 @@ pub mod staking {
             target_account.add_locking(amount, current_epoch)?;
         }
 
+        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+
         Ok(())
     }
 
