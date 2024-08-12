@@ -109,8 +109,7 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert!(positions.read_position(1).is_err());
 
     advance_delegation_record(
         &mut svm,
@@ -176,8 +175,7 @@ fn test_delegate() {
     assert_eq!(pos0.activation_epoch, 3);
     assert_eq!(pos0.unlocking_start, None);
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert!(positions.read_position(1).is_err());
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(

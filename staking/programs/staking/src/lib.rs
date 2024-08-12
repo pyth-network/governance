@@ -374,6 +374,8 @@ pub mod staking {
             }
         }
 
+        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+
         Ok(())
     }
 

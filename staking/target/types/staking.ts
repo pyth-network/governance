@@ -344,6 +344,7 @@ export type Staking = {
       "accounts": [
         {
           "name": "owner",
+          "writable": true,
           "signer": true,
           "relations": [
             "stakeAccountMetadata"
@@ -460,6 +461,10 @@ export type Staking = {
           "name": "poolAuthority",
           "signer": true,
           "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [

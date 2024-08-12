@@ -104,6 +104,7 @@ pub mod integrity_pool {
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
         let stake_account_positions =
             &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+        let system_program = ctx.accounts.system_program.clone();
 
         // assert delegator record is up to date
         delegation_record.assert_up_to_date(get_current_epoch()?)?;
@@ -137,6 +138,7 @@ pub mod integrity_pool {
             stake_account_custody:   stake_account_custody.clone(),
             target_account:          None,
             pool_authority:          Some(pool_config.to_account_info()),
+            system_program:          system_program.to_account_info(),
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];

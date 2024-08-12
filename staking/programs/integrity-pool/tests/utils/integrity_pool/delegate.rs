@@ -158,6 +158,7 @@ pub fn undelegate(
         stake_account_metadata,
         stake_account_custody,
         staking_program: staking::ID,
+        system_program: system_program::ID,
     };
     let undelegate_ix = Instruction::new_with_bytes(
         integrity_pool::ID,

@@ -209,6 +209,7 @@ pub struct CreatePosition<'info> {
                                                                                                   // checks
 pub struct ClosePosition<'info> {
     // Native payer:
+    #[account(mut)]
     pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
@@ -229,6 +230,7 @@ pub struct ClosePosition<'info> {
         bump = target_account.bump)]
     pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
+    pub system_program:          Program<'info, System>,
 }
 
 #[derive(Accounts)]
