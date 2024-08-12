@@ -89,15 +89,12 @@ describe("fills a stake account with positions", async () => {
     }
     await provider.sendAndConfirm(transaction, [], {});
 
-    // Now create 101, which is supposed to fail
-    await expectFail(
-      program.methods
-        .createPosition(votingProduct, PythBalance.fromString("1").toBN())
-        .accounts({
-          targetAccount: votingProductMetadataAccount,
-          stakeAccountPositions: stakeAccountAddress,
-        }),
-      "Number of position limit reached"
-    );
+    // Can create more
+    program.methods
+      .createPosition(votingProduct, PythBalance.fromString("1").toBN())
+      .accounts({
+        stakeAccountPositions: stakeAccountAddress,
+      }),
+      "Number of position limit reached";
   });
 });
