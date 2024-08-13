@@ -134,7 +134,9 @@ impl<'a> DynamicPositionArray<'a> {
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
         let position_capacity: usize = self.get_position_capacity();
         let res = usize::from(*next_index);
-        *next_index += 1;
+        *next_index = next_index
+            .checked_add(1)
+            .ok_or_else(|| error!(ErrorCode::TooManyPositions))?;
 
         if res == position_capacity {
             self.acc_info.realloc(
