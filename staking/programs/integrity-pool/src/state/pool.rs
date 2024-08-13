@@ -431,11 +431,7 @@ mod tests {
             PublisherCap,
             MAX_CAPS,
         },
-        staking::state::positions::{
-            self,
-            DynamicPositionArrayAccount,
-        },
-        std::cell::RefCell,
+        staking::state::positions::DynamicPositionArrayAccount,
     };
 
     #[test]

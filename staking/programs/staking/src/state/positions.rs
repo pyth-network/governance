@@ -11,12 +11,9 @@ use {
     },
     arrayref::array_ref,
     solana_program::system_instruction,
-    std::{
-        cell::RefMut,
-        fmt::{
-            self,
-            Debug,
-        },
+    std::fmt::{
+        self,
+        Debug,
     },
 };
 

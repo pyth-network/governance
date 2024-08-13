@@ -2,9 +2,7 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
-            self,
             DynamicPositionArray,
-            PositionData,
             PositionState,
         },
     },
@@ -49,7 +47,6 @@ pub mod tests {
             state::positions::{
                 DynamicPositionArrayAccount,
                 Position,
-                PositionData,
                 TargetWithParameters,
             },
             utils::voter_weight::compute_voter_weight,

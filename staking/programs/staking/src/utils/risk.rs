@@ -1,9 +1,7 @@
 use {
     crate::{
         state::positions::{
-            self,
             DynamicPositionArray,
-            PositionData,
             Target,
             TargetWithParameters,
         },
@@ -105,7 +103,6 @@ pub mod tests {
             state::positions::{
                 DynamicPositionArrayAccount,
                 Position,
-                PositionData,
                 PositionState,
                 TargetWithParameters,
             },

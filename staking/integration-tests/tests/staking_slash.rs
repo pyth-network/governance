@@ -20,7 +20,6 @@ use {
         utils::{
             account::{
                 fetch_account_data,
-                fetch_account_data_bytemuck,
                 fetch_positions_account,
             },
             clock::advance_n_epochs,

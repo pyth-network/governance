@@ -249,7 +249,7 @@ pub mod staking {
 
 
         let i: usize = index.into();
-        let mut stake_account_positions =
+        let stake_account_positions =
             &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;

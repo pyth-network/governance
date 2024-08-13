@@ -1,6 +1,5 @@
 use {
     anchor_lang::{
-        accounts::account,
         AccountDeserialize,
         AnchorDeserialize,
     },
