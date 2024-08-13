@@ -38,7 +38,7 @@ describe("fills a stake account with positions", async () => {
 
     await stakeConnection.depositTokens(
       undefined,
-      PythBalance.fromString("102")
+      PythBalance.fromString("400")
     );
     stakeAccountAddress = (
       await stakeConnection.getMainAccount(provider.wallet.publicKey)
@@ -69,7 +69,7 @@ describe("fills a stake account with positions", async () => {
     let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
 
     let transaction = new Transaction();
-    for (let numPositions = 0; numPositions < 20; numPositions++) {
+    for (let numPositions = 0; numPositions < 256; numPositions++) {
       if (
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
@@ -91,7 +91,7 @@ describe("fills a stake account with positions", async () => {
     await assertPositionsAccountLength(
       provider.connection,
       stakeAccountAddress,
-      20
+      256
     );
 
     // Can create more
