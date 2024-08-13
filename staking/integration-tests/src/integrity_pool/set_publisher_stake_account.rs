@@ -1,6 +1,6 @@
 use {
     super::pda::get_pool_config_address,
-    crate::utils::account::fetch_account_data,
+    crate::solana::utils::fetch_account_data,
     anchor_lang::{
         InstructionData,
         ToAccountMetas,

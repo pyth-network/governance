@@ -3,9 +3,9 @@ use {
         get_pool_config_address,
         get_pool_reward_custody_address,
     },
-    crate::utils::{
-        account::fetch_account_data,
-        constants::YIELD,
+    crate::{
+        solana::utils::fetch_account_data,
+        utils::constants::YIELD,
     },
     anchor_lang::{
         solana_program::system_instruction::create_account,
