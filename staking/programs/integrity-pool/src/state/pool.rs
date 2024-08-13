@@ -139,11 +139,11 @@ impl PoolData {
                 }
             }
 
-            if &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key {
-                reward += event.calculate_reward_for_publisher(amount, publisher_index)?;
-            } else {
-                reward += event.calculate_reward_for_delegator(amount, publisher_index)?;
-            }
+            reward += event.calculate_reward(
+                amount,
+                publisher_index,
+                &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key,
+            )?;
         }
         Ok(reward)
     }

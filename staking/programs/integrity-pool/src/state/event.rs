@@ -38,24 +38,18 @@ impl Default for Event {
 
 impl Event {
     // calculate the reward in pyth with decimals
-    pub fn calculate_reward_for_delegator(
+    pub fn calculate_reward(
         &self,
         amount: frac64, // in pyth with decimals
         publisher_index: usize,
+        is_publisher: bool,
     ) -> Result<frac64> {
-        let reward_ratio = self.event_data[publisher_index].other_reward_ratio;
-        let reward_rate = u128::from(self.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
-        let reward_amount: frac64 =
-            (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
-        Ok(reward_amount)
-    }
+        let reward_ratio = if is_publisher {
+            self.event_data[publisher_index].self_reward_ratio
+        } else {
+            self.event_data[publisher_index].other_reward_ratio
+        };
 
-    pub fn calculate_reward_for_publisher(
-        &self,
-        amount: frac64, // in pyth with decimals
-        publisher_index: usize,
-    ) -> Result<frac64> {
-        let reward_ratio = self.event_data[publisher_index].self_reward_ratio;
         let reward_rate = u128::from(self.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
         let reward_amount: frac64 =
             (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
@@ -103,12 +97,12 @@ mod tests {
         };
 
         let reward = event
-            .calculate_reward_for_delegator(100 * FRAC_64_MULTIPLIER, 0)
+            .calculate_reward(100 * FRAC_64_MULTIPLIER, 0, false)
             .unwrap();
         assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
 
         let reward = event
-            .calculate_reward_for_delegator(100 * FRAC_64_MULTIPLIER, 1)
+            .calculate_reward(100 * FRAC_64_MULTIPLIER, 1, false)
             .unwrap();
         assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
     }
@@ -133,12 +127,12 @@ mod tests {
         };
 
         let reward = event
-            .calculate_reward_for_publisher(100 * FRAC_64_MULTIPLIER, 0)
+            .calculate_reward(100 * FRAC_64_MULTIPLIER, 0, true)
             .unwrap();
         assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
 
         let reward = event
-            .calculate_reward_for_publisher(100 * FRAC_64_MULTIPLIER, 1)
+            .calculate_reward(100 * FRAC_64_MULTIPLIER, 1, true)
             .unwrap();
         assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
     }
@@ -157,7 +151,7 @@ mod tests {
             other_reward_ratio: 0,
         };
 
-        let reward = event.calculate_reward_for_publisher(u64::MAX, 0).unwrap();
+        let reward = event.calculate_reward(u64::MAX, 0, true).unwrap();
         assert_eq!(reward, u64::MAX);
     }
 }
