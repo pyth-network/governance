@@ -240,6 +240,7 @@ pub struct AdvanceDelegationRecord<'info> {
     pub publisher_stake_account_positions: Option<AccountInfo<'info>>,
 
     #[account(
+        mut,
         seeds = [
             staking::context::CUSTODY_SEED.as_bytes(),
             publisher_stake_account_positions.as_ref().unwrap().key().as_ref()
