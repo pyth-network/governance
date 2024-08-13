@@ -142,11 +142,14 @@ impl PoolData {
                 }
             }
 
-            reward += event.calculate_reward(
+            let (delegator_reward_for_event, publisher_reward_for_event) = event.calculate_reward(
                 amount,
                 publisher_index,
                 &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key,
             )?;
+
+            delegator_reward += delegator_reward_for_event;
+            publisher_reward += publisher_reward_for_event;
         }
         Ok((delegator_reward, publisher_reward))
     }
