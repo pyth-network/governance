@@ -27,4 +27,6 @@ pub enum IntegrityPoolError {
     WrongSlashEventOrder,
     #[msg("Publisher custody account required")]
     PublisherCustodyAccountRequired,
+    #[msg("Delegation fee must not be greater than 100%")]
+    InvalidDelegationFee,
 }

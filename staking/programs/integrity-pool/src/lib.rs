@@ -8,7 +8,10 @@ use {
             get_current_epoch,
             UNLOCKING_DURATION,
         },
-        constants::POOL_CONFIG,
+        constants::{
+            MAX_PUBLISHERS,
+            POOL_CONFIG,
+        },
         types::frac64,
     },
 };
@@ -23,7 +26,10 @@ declare_id!("BiJszJY5BfRKkvt818SAbY9z9cJLp2jYDPgG2BzsufiE");
 #[program]
 pub mod integrity_pool {
 
-    use super::*;
+    use {
+        super::*,
+        utils::types::FRAC_64_MULTIPLIER,
+    };
 
     pub fn initialize_pool(
         ctx: Context<InitializePool>,
@@ -54,7 +60,13 @@ pub mod integrity_pool {
     ) -> Result<()> {
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
 
-        for publisher_index in 0..pool_data.delegation_fees.len() {
+        require_gte!(
+            FRAC_64_MULTIPLIER,
+            delegation_fee,
+            IntegrityPoolError::InvalidDelegationFee
+        );
+
+        for publisher_index in 0..MAX_PUBLISHERS {
             pool_data.delegation_fees[publisher_index] = delegation_fee;
         }
 
