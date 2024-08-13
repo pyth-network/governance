@@ -31,7 +31,7 @@ pub mod integrity_pool {
         ctx: Context<InitializePool>,
         reward_program_authority: Pubkey,
         pyth_token_mint: Pubkey,
-        y: u64,
+        y: frac64,
     ) -> Result<()> {
         let pool_config = &mut ctx.accounts.pool_config;
         pool_config.pool_data = ctx.accounts.pool_data.key();
@@ -42,6 +42,11 @@ pub mod integrity_pool {
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
         pool_data.last_updated_epoch = get_current_epoch()?;
 
+        Ok(())
+    }
+
+    pub fn update_y(ctx: Context<UpdateY>, y: frac64) -> Result<()> {
+        ctx.accounts.pool_config.y = y;
         Ok(())
     }
 

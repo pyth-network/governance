@@ -15,14 +15,16 @@ use {
             },
         },
         staking::{
-            create_position::create_position,
-            create_stake_account::create_stake_account,
-            instructions::update_pool_authority,
+            helper_functions::initialize_new_stake_account,
+            instructions::{
+                create_position,
+                slash_staking,
+                update_pool_authority,
+            },
             pda::{
                 get_stake_account_metadata_address,
                 get_target_address,
             },
-            slash::slash_staking,
         },
         utils::{
             clock::advance_n_epochs,
@@ -64,7 +66,7 @@ fn test_staking_slash() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     let pool_authority = Keypair::new();
 
@@ -154,14 +156,14 @@ fn test_staking_slash() {
 
     assert_eq!(slash_account.amount, 25 * FRAC_64_MULTIPLIER);
 
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let meta_data_account: StakeAccountMetadataV2 =
         fetch_account_data(&mut svm, &stake_account_metadata);
 
     assert_eq!(meta_data_account.next_index, 2);
     assert!(positions.read_position(2).unwrap().is_none());
 
-    let target_account: TargetMetadata = fetch_account_data(&mut svm, &get_target_address().0);
+    let target_account: TargetMetadata = fetch_account_data(&mut svm, &get_target_address());
     assert_eq!(target_account.locked, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(target_account.prev_epoch_locked, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(target_account.delta_locked, 0);

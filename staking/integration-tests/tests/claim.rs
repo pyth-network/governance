@@ -8,14 +8,14 @@ use {
             advance_delegation_record,
             delegate,
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         setup::{
             setup,
             SetupProps,
             SetupResult,
         },
         staking::{
-            create_stake_account::create_stake_account,
+            helper_functions::initialize_new_stake_account,
             pda::get_stake_account_custody_address,
         },
         utils::{
@@ -52,7 +52,7 @@ fn test_claim() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate 1 token at epoch x
@@ -85,7 +85,7 @@ fn test_claim() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -194,7 +194,7 @@ fn test_lost_reward() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
@@ -230,7 +230,7 @@ fn test_lost_reward() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -266,7 +266,7 @@ fn test_correct_position_states() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
@@ -318,7 +318,7 @@ fn test_correct_position_states() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -353,7 +353,7 @@ fn test_advance_delegation_record_permissionlessness() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
 
     // delegate at epoch x
@@ -389,7 +389,7 @@ fn test_advance_delegation_record_permissionlessness() {
     )
     .unwrap();
 
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
