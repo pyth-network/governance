@@ -18,7 +18,7 @@ pub fn initialize_pool_reward_custody(
     payer: &Keypair,
     pyth_token_mint: Pubkey,
 ) {
-    let (pool_config_pubkey, _) = get_pool_config_address();
+    let pool_config_pubkey = get_pool_config_address();
 
     // Create the ATA for the pool_config_pubkey if it doesn't exist
     initialize_ata(svm, payer, pyth_token_mint, pool_config_pubkey).unwrap();

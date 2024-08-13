@@ -11,7 +11,7 @@ use {
             set_publisher_stake_account,
             undelegate,
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         setup::{
             setup,
             SetupProps,

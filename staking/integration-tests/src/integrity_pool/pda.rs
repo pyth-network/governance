@@ -9,10 +9,7 @@ use {
     solana_sdk::pubkey::Pubkey,
 };
 
-pub fn get_delegation_record_address(
-    publisher: Pubkey,
-    stake_account_positions: Pubkey,
-) -> (Pubkey, u8) {
+pub fn get_delegation_record_address(publisher: Pubkey, stake_account_positions: Pubkey) -> Pubkey {
     Pubkey::find_program_address(
         &[
             DELEGATION_RECORD.as_bytes(),
@@ -21,19 +18,20 @@ pub fn get_delegation_record_address(
         ],
         &integrity_pool::ID,
     )
+    .0
 }
 
-pub fn get_pool_config_address() -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[POOL_CONFIG.as_bytes()], &integrity_pool::ID)
+pub fn get_pool_config_address() -> Pubkey {
+    Pubkey::find_program_address(&[POOL_CONFIG.as_bytes()], &integrity_pool::ID).0
 }
 
 pub fn get_pool_reward_custody_address(pyth_token_mint: Pubkey) -> Pubkey {
-    let (pool_config_pubkey, _) = get_pool_config_address();
+    let pool_config_pubkey = get_pool_config_address();
 
     get_associated_token_address(&pool_config_pubkey, &pyth_token_mint)
 }
 
-pub fn get_slash_event_address(index: u64, publisher: Pubkey) -> (Pubkey, u8) {
+pub fn get_slash_event_address(index: u64, publisher: Pubkey) -> Pubkey {
     Pubkey::find_program_address(
         &[
             SLASH_EVENT.as_bytes(),
@@ -42,4 +40,5 @@ pub fn get_slash_event_address(index: u64, publisher: Pubkey) -> (Pubkey, u8) {
         ],
         &integrity_pool::ID,
     )
+    .0
 }

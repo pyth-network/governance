@@ -41,7 +41,7 @@ fn initialize_pool() {
     });
 
     // Pool data should be setup correctly
-    let (pool_config_pubkey, _) = get_pool_config_address();
+    let pool_config_pubkey = get_pool_config_address();
     let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
 
     assert!(pool_config.pool_data == pool_data_pubkey);
