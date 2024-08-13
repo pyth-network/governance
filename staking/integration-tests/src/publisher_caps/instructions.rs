@@ -1,5 +1,5 @@
 use {
-    crate::utils::account::create_account,
+    crate::solana::instructions::create_account,
     anchor_lang::{
         prelude::{
             borsh::{

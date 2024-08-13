@@ -7,6 +7,13 @@ use {
             SetupProps,
             SetupResult,
         },
+        solana::{
+            instructions::create_token_account,
+            utils::{
+                fetch_account_data,
+                fetch_positions_account,
+            },
+        },
         staking::{
             create_position::create_position,
             create_stake_account::create_stake_account,
@@ -18,12 +25,7 @@ use {
             slash::slash_staking,
         },
         utils::{
-            account::{
-                fetch_account_data,
-                fetch_positions_account,
-            },
             clock::advance_n_epochs,
-            create_token_account::create_token_account,
             error::assert_anchor_program_error,
         },
     },

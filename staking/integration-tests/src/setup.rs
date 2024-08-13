@@ -1,22 +1,22 @@
 use {
     crate::{
         integrity_pool::{
+            helper_functions::initialize_pool_reward_custody,
             instructions::{
                 advance,
                 create_pool_data_account,
             },
-            reward_program::initialize_pool_reward_custody,
         },
         publisher_caps::instructions::post_publisher_caps,
+        solana::{
+            instructions::init_mint_account,
+            utils::fetch_account_data_bytemuck,
+        },
         staking::instructions::{
             create_target_account,
             init_config_account,
         },
-        utils::{
-            account::fetch_account_data_bytemuck,
-            clock::advance_n_epochs,
-            mint::init_mint_account,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::state::pool::PoolData,
     solana_sdk::{

@@ -1,12 +1,12 @@
 use {
     integration_tests::{
         integrity_pool::{
-            delegate::{
+            instructions::{
+                advance,
                 advance_delegation_record,
                 delegate,
                 undelegate,
             },
-            instructions::advance,
             pda::get_delegation_record_address,
         },
         publisher_caps::instructions::post_publisher_caps,
@@ -15,13 +15,13 @@ use {
             SetupProps,
             SetupResult,
         },
+        solana::utils::{
+            fetch_account_data,
+            fetch_account_data_bytemuck,
+            fetch_positions_account,
+        },
         staking::create_stake_account::create_stake_account,
         utils::{
-            account::{
-                fetch_account_data,
-                fetch_account_data_bytemuck,
-                fetch_positions_account,
-            },
             clock::advance_n_epochs,
             error::assert_anchor_program_error,
         },

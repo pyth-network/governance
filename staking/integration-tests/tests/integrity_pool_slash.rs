@@ -3,19 +3,17 @@ use {
     anchor_spl::token::TokenAccount,
     integration_tests::{
         integrity_pool::{
-            delegate::{
+            instructions::{
+                advance,
                 advance_delegation_record,
+                create_slash_event,
                 delegate,
+                slash,
                 undelegate,
             },
-            instructions::advance,
             pda::{
                 get_delegation_record_address,
                 get_slash_event_address,
-            },
-            slash::{
-                create_slash_event,
-                slash,
             },
         },
         publisher_caps::instructions::post_publisher_caps,
@@ -24,14 +22,16 @@ use {
             SetupProps,
             SetupResult,
         },
-        staking::create_stake_account::create_stake_account,
-        utils::{
-            account::{
+        solana::{
+            instructions::create_token_account,
+            utils::{
                 fetch_account_data,
                 fetch_account_data_bytemuck,
             },
+        },
+        staking::create_stake_account::create_stake_account,
+        utils::{
             clock::advance_n_epochs,
-            create_token_account::create_token_account,
             error::assert_anchor_program_error,
         },
     },

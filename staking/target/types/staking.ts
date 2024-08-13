@@ -2686,10 +2686,7 @@ export type Staking = {
     {
       "name": "positionData",
       "docs": [
-        "An array that contains all of a user's positions i.e. where are the staking and who are they",
-        "staking to.",
-        "The invariant we preserve is : For i < next_index, positions[i] == Some",
-        "For i >= next_index, positions[i] == None"
+        "The header of DynamicPositionArray"
       ],
       "serialization": "bytemuck",
       "repr": {
