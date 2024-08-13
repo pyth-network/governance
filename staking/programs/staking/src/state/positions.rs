@@ -20,10 +20,7 @@ use {
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
-/// An array that contains all of a user's positions i.e. where are the staking and who are they
-/// staking to.
-/// The invariant we preserve is : For i < next_index, positions[i] == Some
-/// For i >= next_index, positions[i] == None
+/// The header of DynamicPositionArray
 #[account(zero_copy)]
 #[repr(C)]
 pub struct PositionData {
@@ -34,6 +31,13 @@ impl PositionData {
     pub const LEN: usize = 8 + 32;
 }
 
+/// This account stores a user's positions in a dynamic sized array.
+/// Its first 40 bytes are `PositionData` (including discriminator) and the rest is a
+/// variable-length slice of `[u8; POSITION_BUFFER_SIZE]`. Each element of the array can be
+/// deserialized into an `Option<Position>`. The old invariant is maintained: For `i < next_index`,
+/// `positions[i] == Some` For `i >= next_index`, `positions[i] == None`
+/// Other invariants are that `data_len() == 40 + n * POSITION_BUFFER_SIZE` where n is an integer
+/// and that `data_len() >= 40 + next_index * POSITION_BUFFER_SIZE`
 pub struct DynamicPositionArray<'a> {
     pub acc_info: AccountInfo<'a>, /* We store account info to get access to the data and
                                     * resize */
