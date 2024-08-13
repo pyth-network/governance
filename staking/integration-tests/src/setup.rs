@@ -26,7 +26,6 @@ use {
     },
 };
 
-
 pub struct SetupResult {
     pub svm:                      litesvm::LiteSVM,
     pub payer:                    Keypair,
