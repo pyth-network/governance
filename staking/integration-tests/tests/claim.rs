@@ -82,6 +82,7 @@ fn test_claim() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -117,6 +118,7 @@ fn test_claim() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -154,6 +156,7 @@ fn test_claim() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -227,6 +230,7 @@ fn test_lost_reward() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -315,6 +319,7 @@ fn test_correct_position_states() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -386,6 +391,7 @@ fn test_advance_delegation_record_permissionlessness() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 

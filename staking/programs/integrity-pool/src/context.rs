@@ -54,6 +54,25 @@ pub struct UpdateY<'info> {
 }
 
 #[derive(Accounts)]
+pub struct UpdateDelegationFee<'info> {
+    pub reward_program_authority: Signer<'info>,
+
+    #[account(mut)]
+    pub pool_data: AccountLoader<'info, PoolData>,
+
+    #[account(
+        mut,
+        seeds = [POOL_CONFIG.as_bytes()],
+        bump,
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
+        has_one = pool_data @ IntegrityPoolError::InvalidPoolDataAccount,
+    )]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 #[instruction(amount: u64)]
 pub struct Delegate<'info> {
     #[account(mut)]
@@ -223,6 +242,19 @@ pub struct AdvanceDelegationRecord<'info> {
 
     /// CHECK : The publisher will be checked against data in the pool_data
     pub publisher: AccountInfo<'info>,
+
+    pub publisher_stake_account_positions: Option<AccountInfo<'info>>,
+
+    #[account(
+        mut,
+        seeds = [
+            staking::context::CUSTODY_SEED.as_bytes(),
+            publisher_stake_account_positions.as_ref().unwrap().key().as_ref()
+        ],
+        seeds::program = staking::id(),
+        bump,
+    )]
+    pub publisher_stake_account_custody: Option<Account<'info, TokenAccount>>,
 
     #[account(
         init_if_needed,

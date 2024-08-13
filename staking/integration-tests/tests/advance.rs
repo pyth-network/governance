@@ -1,9 +1,15 @@
 use {
-    anchor_lang::prelude::Error,
+    anchor_lang::{
+        prelude::Error,
+        AccountDeserialize,
+    },
     integration_tests::{
         integrity_pool::instructions::{
             advance,
+            advance_delegation_record,
             delegate,
+            set_publisher_stake_account,
+            update_delegation_fee,
         },
         publisher_caps::{
             helper_functions::post_publisher_caps,
@@ -16,13 +22,19 @@ use {
             STARTING_EPOCH,
         },
         solana::utils::fetch_account_data_bytemuck,
-        staking::helper_functions::initialize_new_stake_account,
+        staking::{
+            helper_functions::initialize_new_stake_account,
+            pda::get_stake_account_custody_address,
+        },
         utils::{
             clock::{
                 advance_n_epochs,
                 get_current_epoch,
             },
-            constants::YIELD,
+            constants::{
+                STAKED_TOKENS,
+                YIELD,
+            },
             error::assert_anchor_program_error,
         },
     },
@@ -32,9 +44,12 @@ use {
             event::Event,
             pool::PoolData,
         },
-        utils::constants::{
-            MAX_EVENTS,
-            MAX_PUBLISHERS,
+        utils::{
+            constants::{
+                MAX_EVENTS,
+                MAX_PUBLISHERS,
+            },
+            types::FRAC_64_MULTIPLIER,
         },
     },
     solana_sdk::{
@@ -189,4 +204,164 @@ fn test_advance_reward_events() {
     for i in 11..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())
     }
+}
+
+
+#[test]
+fn test_reward_events_with_delegation_fee() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        publisher_keypair,
+        pool_data_pubkey,
+        reward_program_authority,
+        publisher_index,
+    } = setup(SetupProps {
+        init_config:     true,
+        init_target:     true,
+        init_mint:       true,
+        init_pool_data:  true,
+        init_publishers: true,
+    });
+
+    let stake_account_positions =
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+    let publisher_stake_account_positions =
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+
+    update_delegation_fee(
+        &mut svm,
+        &payer,
+        pool_data_pubkey,
+        &reward_program_authority,
+        FRAC_64_MULTIPLIER / 20,
+    )
+    .unwrap();
+
+    set_publisher_stake_account(
+        &mut svm,
+        &payer,
+        &publisher_keypair,
+        publisher_keypair.pubkey(),
+        None,
+        publisher_stake_account_positions,
+    )
+    .unwrap();
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        50 * FRAC_64_MULTIPLIER,
+    );
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        publisher_stake_account_positions,
+        100 * FRAC_64_MULTIPLIER,
+    );
+
+    advance_n_epochs(&mut svm, &payer, 2);
+
+    let publisher_caps = post_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        200 * FRAC_64_MULTIPLIER,
+    );
+    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+
+    assert_eq!(pool_data.events[2].epoch, 3);
+    assert_eq!(pool_data.events[2].y, YIELD);
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
+        FRAC_64_MULTIPLIER,
+    );
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
+        FRAC_64_MULTIPLIER,
+    );
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].delegation_fee,
+        FRAC_64_MULTIPLIER / 20,
+    );
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        Some(publisher_stake_account_positions),
+    )
+    .unwrap();
+
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
+        &mut svm
+            .get_account(&stake_account_custody)
+            .unwrap()
+            .data
+            .as_slice(),
+    )
+    .unwrap();
+
+    // reward = 1 epoch * 50 PYTH * YIELD - 5% delegation fee
+    assert_eq!(
+        custody_data.amount,
+        STAKED_TOKENS + 50 * YIELD - 50 * YIELD / 20
+    );
+
+    let publisher_stake_account_custody =
+        get_stake_account_custody_address(publisher_stake_account_positions);
+    let publisher_custody_data = anchor_spl::token::TokenAccount::try_deserialize(
+        &mut svm
+            .get_account(&publisher_stake_account_custody)
+            .unwrap()
+            .data
+            .as_slice(),
+    )
+    .unwrap();
+
+    // publisher reward = 50 PYTH * YIELD * 5%
+    assert_eq!(
+        publisher_custody_data.amount,
+        STAKED_TOKENS + 50 * YIELD / 20
+    );
+
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        publisher_stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        Some(publisher_stake_account_positions),
+    )
+    .unwrap();
+
+    let publisher_custody_data = anchor_spl::token::TokenAccount::try_deserialize(
+        &mut svm
+            .get_account(&publisher_stake_account_custody)
+            .unwrap()
+            .data
+            .as_slice(),
+    )
+    .unwrap();
+
+    // reward = 1 epoch * 100 PYTH * YIELD (no delegation fee)
+    assert_eq!(
+        publisher_custody_data.amount,
+        STAKED_TOKENS + 50 * YIELD / 20 + 100 * YIELD
+    );
 }

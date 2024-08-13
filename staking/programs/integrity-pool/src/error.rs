@@ -25,4 +25,8 @@ pub enum IntegrityPoolError {
     InvalidPoolDataAccount,
     #[msg("Slashes must be executed in order of slash event index")]
     WrongSlashEventOrder,
+    #[msg("Publisher custody account required")]
+    PublisherCustodyAccountRequired,
+    #[msg("Delegation fee must not be greater than 100%")]
+    InvalidDelegationFee,
 }

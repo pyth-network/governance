@@ -43,7 +43,7 @@ impl Event {
         amount: frac64, // in pyth with decimals
         publisher_index: usize,
         is_publisher: bool,
-    ) -> Result<frac64> {
+    ) -> Result<(frac64, frac64)> {
         let reward_ratio = if is_publisher {
             self.event_data[publisher_index].self_reward_ratio
         } else {
@@ -51,9 +51,17 @@ impl Event {
         };
 
         let reward_rate = u128::from(self.y) * u128::from(reward_ratio) / FRAC_64_MULTIPLIER_U128;
-        let reward_amount: frac64 =
-            (u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128).try_into()?;
-        Ok(reward_amount)
+        let total_reward = u128::from(amount) * reward_rate / FRAC_64_MULTIPLIER_U128;
+
+        if is_publisher {
+            return Ok((total_reward.try_into()?, 0));
+        }
+
+        let delegation_fee = u128::from(self.event_data[publisher_index].delegation_fee);
+        let publisher_reward = total_reward * delegation_fee / FRAC_64_MULTIPLIER_U128;
+        let delegator_reward = total_reward - publisher_reward;
+
+        Ok((delegator_reward.try_into()?, publisher_reward.try_into()?))
     }
 }
 
@@ -68,6 +76,10 @@ pub struct PublisherEventData {
     // be less than 1 such that the total reward they get is equal to y * cap
     pub self_reward_ratio:  frac64,
     pub other_reward_ratio: frac64,
+
+    // This is a number between 0 and 1 that shows the delegation fee rate for the publisher at the
+    // time of the event
+    pub delegation_fee: frac64,
 }
 
 #[cfg(test)]
@@ -89,22 +101,26 @@ mod tests {
             self_reward_ratio:  0,
             // ratio = 100%
             other_reward_ratio: FRAC_64_MULTIPLIER,
+            delegation_fee:     FRAC_64_MULTIPLIER / 10,
         };
         event.event_data[1] = PublisherEventData {
             self_reward_ratio:  0,
             // ratio = 50%
             other_reward_ratio: FRAC_64_MULTIPLIER / 2,
+            delegation_fee:     0,
         };
 
-        let reward = event
+        let (delegator_reward, publisher_reward) = event
             .calculate_reward(100 * FRAC_64_MULTIPLIER, 0, false)
             .unwrap();
-        assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
+        assert_eq!(delegator_reward, 9 * FRAC_64_MULTIPLIER);
+        assert_eq!(publisher_reward, FRAC_64_MULTIPLIER);
 
-        let reward = event
+        let (delegator_reward, publisher_reward) = event
             .calculate_reward(100 * FRAC_64_MULTIPLIER, 1, false)
             .unwrap();
-        assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
+        assert_eq!(delegator_reward, 5 * FRAC_64_MULTIPLIER);
+        assert_eq!(publisher_reward, 0);
     }
 
     #[test]
@@ -119,22 +135,24 @@ mod tests {
             // ratio = 100%
             self_reward_ratio:  FRAC_64_MULTIPLIER,
             other_reward_ratio: 0,
+            delegation_fee:     0,
         };
         event.event_data[1] = PublisherEventData {
             // ratio = 50%
             self_reward_ratio:  FRAC_64_MULTIPLIER / 2,
             other_reward_ratio: 0,
+            delegation_fee:     0,
         };
 
         let reward = event
             .calculate_reward(100 * FRAC_64_MULTIPLIER, 0, true)
             .unwrap();
-        assert_eq!(reward, 10 * FRAC_64_MULTIPLIER);
+        assert_eq!(reward, (10 * FRAC_64_MULTIPLIER, 0));
 
         let reward = event
             .calculate_reward(100 * FRAC_64_MULTIPLIER, 1, true)
             .unwrap();
-        assert_eq!(reward, 5 * FRAC_64_MULTIPLIER);
+        assert_eq!(reward, (5 * FRAC_64_MULTIPLIER, 0));
     }
 
     #[test]
@@ -149,9 +167,10 @@ mod tests {
             // ratio = 100%
             self_reward_ratio:  FRAC_64_MULTIPLIER,
             other_reward_ratio: 0,
+            delegation_fee:     0,
         };
 
         let reward = event.calculate_reward(u64::MAX, 0, true).unwrap();
-        assert_eq!(reward, u64::MAX);
+        assert_eq!(reward, (u64::MAX, 0));
     }
 }

@@ -122,6 +122,7 @@ fn test_delegate() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -140,6 +141,7 @@ fn test_delegate() {
             stake_account_positions,
             pyth_token_mint.pubkey(),
             pool_data_pubkey,
+            None,
         ),
         anchor_lang::error::Error::from(IntegrityPoolError::PublisherNotFound),
         0,
@@ -230,6 +232,7 @@ fn test_delegate() {
             stake_account_positions,
             pyth_token_mint.pubkey(),
             pool_data_pubkey,
+            None,
         ),
         anchor_lang::error::Error::from(IntegrityPoolError::OutdatedPublisherAccounting),
         0,
@@ -267,6 +270,7 @@ fn test_delegate() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
@@ -359,6 +363,7 @@ fn test_delegate() {
         stake_account_positions,
         pyth_token_mint.pubkey(),
         pool_data_pubkey,
+        None,
     )
     .unwrap();
 
