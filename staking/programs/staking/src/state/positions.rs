@@ -3,6 +3,7 @@ use {
     anchor_lang::{
         prelude::{
             borsh::BorshSchema,
+            ErrorCode as AnchorErrorCode,
             *,
         },
         solana_program::wasm_bindgen,
@@ -10,9 +11,12 @@ use {
     },
     arrayref::array_ref,
     solana_program::system_instruction,
-    std::fmt::{
-        self,
-        Debug,
+    std::{
+        cell::RefMut,
+        fmt::{
+            self,
+            Debug,
+        },
     },
 };
 
@@ -75,34 +79,33 @@ impl DynamicPositionArrayFixture {
             false,
             0,
         );
-        DynamicPositionArray { account_info }
+        DynamicPositionArray {
+            acc_info: account_info,
+        }
     }
 }
 
 pub struct DynamicPositionArray<'a> {
-    pub account_info: AccountInfo<'a>, /* We store account info to get access to the data and
-                                        * resize */
+    pub acc_info: AccountInfo<'a>, /* We store account info to get access to the data and
+                                    * resize */
 }
 
 impl<'a> DynamicPositionArray<'a> {
     pub fn new(account_info: AccountInfo<'a>) -> Self {
-        Self { account_info }
+        Self {
+            acc_info: account_info,
+        }
     }
 
-    pub const HEADER_LEN: usize = 8 + 32;
-
     pub fn get_position_capacity(&self) -> usize {
-        self.account_info
-            .data_len()
-            .saturating_sub(Self::HEADER_LEN)
-            / POSITION_BUFFER_SIZE
+        self.acc_info.data_len().saturating_sub(PositionData::LEN) / POSITION_BUFFER_SIZE
     }
 
     fn get_positions_slice(&self) -> Result<&mut [[u8; POSITION_BUFFER_SIZE]]> {
         let position_capacity = self.get_position_capacity();
         unsafe {
             Ok(std::slice::from_raw_parts_mut(
-                self.account_info.try_borrow_mut_data()?[Self::HEADER_LEN..].as_mut_ptr()
+                self.acc_info.try_borrow_mut_data()?[PositionData::LEN..].as_mut_ptr()
                     as *mut [u8; POSITION_BUFFER_SIZE],
                 position_capacity,
             ))
@@ -110,33 +113,84 @@ impl<'a> DynamicPositionArray<'a> {
     }
 
     fn data_len(&self) -> usize {
-        self.account_info.data_len()
+        self.acc_info.data_len()
     }
 
     pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
         let rent = Rent::get()?;
-
         let amount_to_transfer = rent
             .minimum_balance(self.data_len())
-            .saturating_sub(self.account_info.lamports());
+            .saturating_sub(self.acc_info.lamports());
         let transfer_instruction =
-            system_instruction::transfer(payer.key, self.account_info.key, amount_to_transfer);
+            system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
         anchor_lang::solana_program::program::invoke(
             &transfer_instruction,
-            &[payer.to_account_info(), self.account_info.clone()],
+            &[payer.to_account_info(), self.acc_info.clone()],
         )?;
-
         Ok(())
     }
 
 
-    pub fn owner(&self) -> Pubkey {
-        let data = self.account_info.try_borrow_data().unwrap();
-        Pubkey::from(*array_ref![data, 8, 32])
+    pub fn owner(&self) -> Result<Pubkey> {
+        let data = self.acc_info.try_borrow_data()?;
+        Ok(Pubkey::from(*array_ref![data, 8, 32]))
     }
 
+    pub fn set_owner(&self, owner: &Pubkey) -> Result<()> {
+        let mut data = self.acc_info.try_borrow_mut_data()?;
+        data[8..40].copy_from_slice(&owner.to_bytes());
+        Ok(())
+    }
+
+    pub fn load_init(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let acc_info = account_loader.to_account_info();
+        if !acc_info.is_writable {
+            return Err(AnchorErrorCode::AccountNotMutable.into());
+        }
+
+        {
+            let data = acc_info.try_borrow_mut_data()?;
+
+            // The discriminator should be zero, since we're initializing.
+            let mut disc_bytes = [0u8; 8];
+            disc_bytes.copy_from_slice(&data[..8]);
+            let discriminator = u64::from_le_bytes(disc_bytes);
+            if discriminator != 0 {
+                return Err(AnchorErrorCode::AccountDiscriminatorAlreadySet.into());
+            }
+        }
+
+        Ok(Self { acc_info })
+    }
+
+    pub fn load_mut(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let result = Self::load(account_loader)?;
+        if !result.acc_info.is_writable {
+            return Err(AnchorErrorCode::AccountNotMutable.into());
+        }
+        Ok(result)
+    }
+
+    pub fn load(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let acc_info = account_loader.to_account_info();
+
+        {
+            let data = acc_info.try_borrow_data()?;
+            if data.len() < PositionData::discriminator().len() {
+                return Err(AnchorErrorCode::AccountDiscriminatorNotFound.into());
+            }
+
+            let disc_bytes = array_ref![data, 0, 8];
+            if disc_bytes != &PositionData::discriminator() {
+                return Err(AnchorErrorCode::AccountDiscriminatorMismatch.into());
+            }
+        }
+        Ok(Self { acc_info })
+    }
+
+
     pub fn initialize(&mut self, owner: &Pubkey) -> Result<()> {
-        let mut data = self.account_info.try_borrow_mut_data()?;
+        let mut data = self.acc_info.try_borrow_mut_data()?;
         let mut disc_bytes = [0u8; 8];
         disc_bytes.copy_from_slice(&data[..8]);
         let discriminator = u64::from_le_bytes(disc_bytes);
@@ -158,8 +212,8 @@ impl<'a> DynamicPositionArray<'a> {
         *next_index += 1;
 
         if res == position_capacity {
-            self.account_info.realloc(
-                Self::HEADER_LEN + *next_index as usize * POSITION_BUFFER_SIZE,
+            self.acc_info.realloc(
+                PositionData::LEN + *next_index as usize * POSITION_BUFFER_SIZE,
                 false,
             )?;
         }

@@ -19,6 +19,7 @@ use {
         global_config::GlobalConfig,
         max_voter_weight_record::MAX_VOTER_WEIGHT,
         positions::{
+            DynamicPositionArray,
             Position,
             PositionData,
             PositionState,
@@ -52,7 +53,6 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use state::positions::DynamicPositionArray;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -143,9 +143,9 @@ pub mod staking {
         );
         stake_account_metadata.set_lock(lock);
 
-        let mut stake_account_positions =
-            DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
-        stake_account_positions.initialize(&owner)?;
+        let stake_account_positions =
+            DynamicPositionArray::load_init(&ctx.accounts.stake_account_positions)?;
+        stake_account_positions.set_owner(&owner)?;
 
         Ok(())
     }
@@ -175,8 +175,8 @@ pub mod staking {
 
         // TODO: Should we check that target is legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake target
-        let mut stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
@@ -210,10 +210,8 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        let i = DynamicPositionArray::reserve_new_index(
-            stake_account_positions,
-            &mut ctx.accounts.stake_account_metadata.next_index,
-        )?;
+        let i = stake_account_positions
+            .reserve_new_index(&mut ctx.accounts.stake_account_metadata.next_index)?;
         stake_account_positions.write_position(i, &new_position)?;
 
         let unvested_balance = ctx
@@ -253,7 +251,7 @@ pub mod staking {
 
         let i: usize = index.into();
         let mut stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
         let maybe_target_account = &mut ctx.accounts.target_account;
@@ -310,10 +308,8 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
 
-                    let j = DynamicPositionArray::reserve_new_index(
-                        stake_account_positions,
-                        &mut ctx.accounts.stake_account_metadata.next_index,
-                    )?;
+                    let j = stake_account_positions
+                        .reserve_new_index(&mut ctx.accounts.stake_account_metadata.next_index)?;
                     stake_account_positions.write_position(
                         j,
                         &Position {
@@ -380,8 +376,8 @@ pub mod staking {
     }
 
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
-        let mut stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+        let stake_account_positions =
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
 
@@ -444,7 +440,7 @@ pub mod staking {
         action: VoterWeightAction,
     ) -> Result<()> {
         let stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
@@ -635,20 +631,16 @@ pub mod staking {
             &split_request.recipient,
         );
 
-        let new_stake_account_positions = &mut DynamicPositionArray::new(
-            ctx.accounts.new_stake_account_positions.to_account_info(),
-        );
-        new_stake_account_positions.initialize(&split_request.recipient)?;
+        let new_stake_account_positions =
+            &mut DynamicPositionArray::load_init(&ctx.accounts.new_stake_account_positions)?;
+        new_stake_account_positions.set_owner(&split_request.recipient)?;
 
         // Pre-check invariants
         // Note that the accept operation requires the positions account to be empty, which should
         // trivially pass this invariant check. However, we explicitly check invariants
         // everywhere else, so may as well check in this operation also.
-        let source_stake_account_positions = &mut DynamicPositionArray::new(
-            ctx.accounts
-                .source_stake_account_positions
-                .to_account_info(),
-        );
+        let source_stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.source_stake_account_positions)?;
 
         utils::risk::validate(
             source_stake_account_positions,
@@ -778,7 +770,7 @@ pub mod staking {
         require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
 
         let stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let governance_target_account = &mut ctx.accounts.governance_target_account;
         let publisher = &ctx.accounts.publisher;
 

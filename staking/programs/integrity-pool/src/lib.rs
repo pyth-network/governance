@@ -188,7 +188,7 @@ pub mod integrity_pool {
             );
             require_eq!(
                 signer.key(),
-                current_stake_account.owner(),
+                current_stake_account.owner()?,
                 IntegrityPoolError::StakeAccountOwnerNeedsToSign
             );
         } else {
