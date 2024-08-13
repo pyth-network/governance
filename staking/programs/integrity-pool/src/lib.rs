@@ -15,7 +15,10 @@ use {
             MAX_PUBLISHERS,
             POOL_CONFIG,
         },
-        types::frac64,
+        types::{
+            frac64,
+            FRAC_64_MULTIPLIER,
+        },
     },
 };
 
