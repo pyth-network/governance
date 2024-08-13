@@ -163,6 +163,7 @@ pub fn create_position(
         owner: payer.pubkey(),
         target_account,
         pool_authority: pool_authority.map(|k| k.pubkey()),
+        system_program: system_program::ID,
     };
 
     let create_position_ix = Instruction::new_with_bytes(

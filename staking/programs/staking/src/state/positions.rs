@@ -3,59 +3,156 @@ use {
     anchor_lang::{
         prelude::{
             borsh::BorshSchema,
+            ErrorCode as AnchorErrorCode,
             *,
         },
         solana_program::wasm_bindgen,
+        Discriminator,
     },
+    arrayref::array_ref,
+    solana_program::system_instruction,
     std::fmt::{
         self,
         Debug,
     },
 };
 
-pub const MAX_POSITIONS: usize = 20;
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
-/// An array that contains all of a user's positions i.e. where are the staking and who are they
-/// staking to.
-/// The invariant we preserve is : For i < next_index, positions[i] == Some
-/// For i >= next_index, positions[i] == None
-
+/// The header of DynamicPositionArray
 #[account(zero_copy)]
 #[repr(C)]
 pub struct PositionData {
     pub owner: Pubkey,
-    positions: [[u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
 }
 
 impl PositionData {
-    pub const LEN: usize = 8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE;
+    pub const LEN: usize = 8 + 32;
 }
 
-impl Default for PositionData {
-    // Only used for testing, so unwrap is acceptable
-    fn default() -> Self {
-        PositionData {
-            owner:     Pubkey::default(),
-            positions: [[0u8; POSITION_BUFFER_SIZE]; MAX_POSITIONS],
+/// This account stores a user's positions in a dynamic sized array.
+/// Its first 40 bytes are `PositionData` (including discriminator) and the rest is a
+/// variable-length slice of `[u8; POSITION_BUFFER_SIZE]`. Each element of the array can be
+/// deserialized into an `Option<Position>`. The old invariant is maintained: For `i < next_index`,
+/// `positions[i] == Some` For `i >= next_index`, `positions[i] == None`
+/// Other invariants are that `data_len() == 40 + n * POSITION_BUFFER_SIZE` where n is an integer
+/// and that `data_len() >= 40 + next_index * POSITION_BUFFER_SIZE`.
+/// It stores account info to get access to the data and resize.
+pub struct DynamicPositionArray<'a> {
+    pub acc_info: AccountInfo<'a>,
+}
+
+impl<'a> DynamicPositionArray<'a> {
+    fn get_positions_slice(&self) -> Result<&mut [[u8; POSITION_BUFFER_SIZE]]> {
+        let position_capacity = self.get_position_capacity();
+        unsafe {
+            Ok(std::slice::from_raw_parts_mut(
+                self.acc_info.try_borrow_mut_data()?[PositionData::LEN..].as_mut_ptr()
+                    as *mut [u8; POSITION_BUFFER_SIZE],
+                position_capacity,
+            ))
         }
     }
-}
-impl PositionData {
-    pub fn initialize(&mut self, owner: &Pubkey) {
-        self.owner = *owner;
+
+    fn data_len(&self) -> usize {
+        self.acc_info.data_len()
+    }
+
+    pub fn load_init(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let acc_info = account_loader.to_account_info();
+        if !acc_info.is_writable {
+            return Err(AnchorErrorCode::AccountNotMutable.into());
+        }
+
+        {
+            let data = acc_info.try_borrow_mut_data()?;
+
+            // The discriminator should be zero, since we're initializing.
+            let mut disc_bytes = [0u8; 8];
+            disc_bytes.copy_from_slice(&data[..8]);
+            let discriminator = u64::from_le_bytes(disc_bytes);
+            if discriminator != 0 {
+                return Err(AnchorErrorCode::AccountDiscriminatorAlreadySet.into());
+            }
+        }
+
+        Ok(Self { acc_info })
+    }
+
+    pub fn load_mut(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let result = Self::load(account_loader)?;
+        if !result.acc_info.is_writable {
+            return Err(AnchorErrorCode::AccountNotMutable.into());
+        }
+        Ok(result)
+    }
+
+    pub fn load(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
+        let acc_info = account_loader.to_account_info();
+
+        {
+            let data = acc_info.try_borrow_data()?;
+            if data.len() < PositionData::discriminator().len() {
+                return Err(AnchorErrorCode::AccountDiscriminatorNotFound.into());
+            }
+
+            let disc_bytes = array_ref![data, 0, 8];
+            if disc_bytes != &PositionData::discriminator() {
+                return Err(AnchorErrorCode::AccountDiscriminatorMismatch.into());
+            }
+        }
+        Ok(Self { acc_info })
+    }
+
+    pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
+        let rent = Rent::get()?;
+        let amount_to_transfer = rent
+            .minimum_balance(self.data_len())
+            .saturating_sub(self.acc_info.lamports());
+
+        if amount_to_transfer > 0 {
+            let transfer_instruction =
+                system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
+
+            anchor_lang::solana_program::program::invoke(
+                &transfer_instruction,
+                &[payer.to_account_info(), self.acc_info.clone()],
+            )?;
+        }
+        Ok(())
+    }
+
+    pub fn owner(&self) -> Result<Pubkey> {
+        let data = self.acc_info.try_borrow_data()?;
+        Ok(Pubkey::from(*array_ref![data, 8, 32]))
+    }
+
+    pub fn set_owner(&self, owner: &Pubkey) -> Result<()> {
+        let mut data = self.acc_info.try_borrow_mut_data()?;
+        data[8..40].copy_from_slice(&owner.to_bytes());
+        Ok(())
+    }
+
+    pub fn get_position_capacity(&self) -> usize {
+        self.acc_info.data_len().saturating_sub(PositionData::LEN) / POSITION_BUFFER_SIZE
     }
 
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
-        let res = *next_index as usize;
-        *next_index += 1;
-        if res < MAX_POSITIONS {
-            Ok(res)
-        } else {
-            Err(error!(ErrorCode::TooManyPositions))
+        let position_capacity: usize = self.get_position_capacity();
+        let res = usize::from(*next_index);
+        *next_index = next_index
+            .checked_add(1)
+            .ok_or_else(|| error!(ErrorCode::TooManyPositions))?;
+
+        if res == position_capacity {
+            self.acc_info.realloc(
+                PositionData::LEN + usize::from(*next_index) * POSITION_BUFFER_SIZE,
+                false,
+            )?;
         }
+        Ok(res)
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
@@ -64,17 +161,20 @@ impl PositionData {
             return Err(error!(ErrorCode::PositionOutOfBounds));
         }
         *next_index -= 1;
-        self.positions[i] = self.positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut self.positions[*next_index as usize])
+        let positions = self.get_positions_slice()?;
+        positions[i] = positions[*next_index as usize];
+        None::<Option<Position>>.try_write(&mut positions[*next_index as usize])
     }
 
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
-        Some(position).try_write(&mut self.positions[i])
+        let positions = self.get_positions_slice()?;
+        Some(position).try_write(&mut positions[i])
     }
 
     pub fn read_position(&self, i: usize) -> Result<Option<Position>> {
+        let positions = self.get_positions_slice()?;
         Option::<Position>::try_read(
-            self.positions
+            positions
                 .get(i)
                 .ok_or_else(|| error!(ErrorCode::PositionOutOfBounds))?,
         )
@@ -84,7 +184,7 @@ impl PositionData {
         &self,
         target_with_parameters: TargetWithParameters,
     ) -> Result<bool> {
-        for i in 0..MAX_POSITIONS {
+        for i in 0..self.get_position_capacity() {
             if let Some(position) = self.read_position(i)? {
                 if position.target_with_parameters == target_with_parameters {
                     return Ok(true);
@@ -94,6 +194,52 @@ impl PositionData {
         Ok(false)
     }
 }
+
+pub struct DynamicPositionArrayAccount {
+    pub key:      Pubkey,
+    pub lamports: u64,
+    pub data:     Vec<u8>,
+}
+
+impl Default for DynamicPositionArrayAccount {
+    fn default() -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        let data = vec![0; 20040]; // Leave lots of space to test the realloc
+        Self {
+            key,
+            lamports,
+            data,
+        }
+    }
+}
+
+impl DynamicPositionArrayAccount {
+    pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
+        let acc_info = AccountInfo::new(
+            &self.key,
+            false,
+            false,
+            &mut self.lamports,
+            &mut self.data,
+            &self.key,
+            false,
+            0,
+        );
+        DynamicPositionArray { acc_info }
+    }
+
+    pub fn default_with_data(data: &[u8]) -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        Self {
+            key,
+            lamports,
+            data: data.to_vec(),
+        }
+    }
+}
+
 
 pub trait TryBorsh {
     fn try_read(slice: &[u8]) -> Result<Self>
@@ -226,13 +372,14 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use {
+        super::DynamicPositionArray,
         crate::state::positions::{
+            DynamicPositionArrayAccount,
             Position,
             PositionData,
             PositionState,
             TargetWithParameters,
             TryBorsh,
-            MAX_POSITIONS,
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::prelude::*,
@@ -307,17 +454,12 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_serialized_size() {
-        assert_eq!(
-            std::mem::size_of::<PositionData>(),
-            32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
-        );
-        assert_eq!(
-            PositionData::LEN,
-            8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
-        );
+        assert_eq!(std::mem::size_of::<PositionData>(), 32);
+        assert_eq!(PositionData::LEN, 8 + 32);
         // Checks that the position struct fits in the individual position buffer
         assert!(
-            anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
+            anchor_lang::solana_program::borsh::get_packed_len::<Option<Position>>()
+                < POSITION_BUFFER_SIZE
         );
     }
 
@@ -330,7 +472,8 @@ pub mod tests {
 
     #[test]
     fn test_has_target_with_parameters_exposure() {
-        let mut position_data = PositionData::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut position_data = fixture.to_dynamic_position_array();
         let position = Position {
             activation_epoch:       8,
             unlocking_start:        Some(12),
@@ -403,8 +546,8 @@ pub mod tests {
         }
     }
 
-    impl PositionData {
-        fn to_set(self, next_index: u8) -> HashSet<Position> {
+    impl<'a> DynamicPositionArray<'a> {
+        fn to_set(&self, next_index: u8) -> HashSet<Position> {
             let mut res: HashSet<Position> = HashSet::new();
             for i in 0..next_index {
                 if let Some(position) = self.read_position(i as usize).unwrap() {
@@ -418,7 +561,7 @@ pub mod tests {
                 }
             }
 
-            for i in next_index..(MAX_POSITIONS as u8) {
+            for i in next_index..(self.get_position_capacity() as u8) {
                 assert_eq!(
                     Option::<Position>::None,
                     self.read_position(i as usize).unwrap()
@@ -430,22 +573,17 @@ pub mod tests {
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
-        let mut position_data = PositionData::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut position_data = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
         let mut set: HashSet<Position> = HashSet::new();
         let mut rng = rand::thread_rng();
         for op in input {
             match op {
                 DataOperation::Add(position) => {
-                    if next_index < MAX_POSITIONS as u8 {
-                        set.insert(position);
-                        let i = position_data.reserve_new_index(&mut next_index).unwrap();
-                        position_data.write_position(i, &position).unwrap();
-                    } else {
-                        assert!(set.len() == MAX_POSITIONS);
-                        assert!(position_data.reserve_new_index(&mut next_index).is_err());
-                        next_index -= 1;
-                    }
+                    set.insert(position);
+                    let i = position_data.reserve_new_index(&mut next_index).unwrap();
+                    position_data.write_position(i, &position).unwrap();
                 }
                 DataOperation::Modify(position) => {
                     if next_index != 0 {
