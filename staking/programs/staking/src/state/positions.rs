@@ -198,7 +198,7 @@ impl Default for DynamicPositionArrayAccount {
     fn default() -> Self {
         let key = Pubkey::new_unique();
         let lamports = 0;
-        let data = vec![0; 10000]; // Leave lots of space to test the realloc
+        let data = vec![0; 20040]; // Leave lots of space to test the realloc
         Self {
             key,
             lamports,
@@ -574,15 +574,9 @@ pub mod tests {
         for op in input {
             match op {
                 DataOperation::Add(position) => {
-                    if next_index < position_data.get_position_capacity() as u8 {
-                        set.insert(position);
-                        let i = position_data.reserve_new_index(&mut next_index).unwrap();
-                        position_data.write_position(i, &position).unwrap();
-                    } else {
-                        assert!(set.len() == position_data.get_position_capacity());
-                        assert!(position_data.reserve_new_index(&mut next_index).is_err());
-                        next_index -= 1;
-                    }
+                    set.insert(position);
+                    let i = position_data.reserve_new_index(&mut next_index).unwrap();
+                    position_data.write_position(i, &position).unwrap();
                 }
                 DataOperation::Modify(position) => {
                     if next_index != 0 {
