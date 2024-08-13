@@ -157,15 +157,51 @@ pub fn update_y(
         update_y_accs.to_account_metas(None),
     );
 
-    let initialize_pool_tx = Transaction::new_signed_with_payer(
+    let update_y_tx = Transaction::new_signed_with_payer(
         &[update_y_ix],
         Some(&payer.pubkey()),
         &[payer, reward_program_authority],
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(initialize_pool_tx.clone())
+    svm.send_transaction(update_y_tx.clone())
 }
+
+pub fn update_delegation_fee(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    pool_data: Pubkey,
+    reward_program_authority: &Keypair,
+    delegation_fee: frac64,
+) -> TransactionResult {
+    let pool_config_pubkey = get_pool_config_address();
+
+    let update_delegation_fee_data =
+        integrity_pool::instruction::UpdateDelegationFee { delegation_fee };
+
+    let update_delegation_fee_accs = integrity_pool::accounts::UpdateDelegationFee {
+        pool_data,
+        pool_config: pool_config_pubkey,
+        reward_program_authority: reward_program_authority.pubkey(),
+        system_program: system_program::ID,
+    };
+
+    let update_delegation_fee_ix = Instruction::new_with_bytes(
+        integrity_pool::ID,
+        &update_delegation_fee_data.data(),
+        update_delegation_fee_accs.to_account_metas(None),
+    );
+
+    let update_delegation_fee_tx = Transaction::new_signed_with_payer(
+        &[update_delegation_fee_ix],
+        Some(&payer.pubkey()),
+        &[payer, reward_program_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(update_delegation_fee_tx.clone())
+}
+
 
 pub fn advance_delegation_record(
     svm: &mut litesvm::LiteSVM,
