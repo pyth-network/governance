@@ -9,6 +9,7 @@ use {
         solana_program::wasm_bindgen,
         Discriminator,
     },
+    anchor_spl::token::accessor::amount,
     arrayref::array_ref,
     solana_program::system_instruction,
     std::fmt::{
@@ -106,12 +107,16 @@ impl<'a> DynamicPositionArray<'a> {
         let amount_to_transfer = rent
             .minimum_balance(self.data_len())
             .saturating_sub(self.acc_info.lamports());
-        let transfer_instruction =
-            system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
-        anchor_lang::solana_program::program::invoke(
-            &transfer_instruction,
-            &[payer.to_account_info(), self.acc_info.clone()],
-        )?;
+
+        if amount_to_transfer > 0 {
+            let transfer_instruction =
+                system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
+
+            anchor_lang::solana_program::program::invoke(
+                &transfer_instruction,
+                &[payer.to_account_info(), self.acc_info.clone()],
+            )?;
+        }
         Ok(())
     }
 
