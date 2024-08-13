@@ -65,8 +65,8 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
-        fixture
+        let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
+        account
             .to_dynamic_position_array()
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
@@ -77,9 +77,9 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
+        let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
 
-        Ok(fixture
+        Ok(account
             .to_dynamic_position_array()
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
@@ -102,8 +102,8 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<LockedBalanceSummary> {
-        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
-        let positions = fixture.to_dynamic_position_array();
+        let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
+        let positions = account.to_dynamic_position_array();
 
         let mut locking: u64 = 0;
         let mut locked: u64 = 0;
@@ -152,9 +152,9 @@ impl WasmPositionData {
         unlocking_duration: u8,
         current_locked: u64,
     ) -> Result<u64, JsValue> {
-        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
+        let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         convert_error(crate::utils::voter_weight::compute_voter_weight(
-            &fixture.to_dynamic_position_array(),
+            &account.to_dynamic_position_array(),
             current_epoch,
             unlocking_duration,
             current_locked,
