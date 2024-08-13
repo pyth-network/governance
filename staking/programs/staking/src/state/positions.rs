@@ -9,7 +9,6 @@ use {
         solana_program::wasm_bindgen,
         Discriminator,
     },
-    anchor_spl::token::accessor::amount,
     arrayref::array_ref,
     solana_program::system_instruction,
     std::fmt::{
