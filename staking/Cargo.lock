@@ -2185,6 +2185,7 @@ dependencies = [
  "ahash 0.8.11",
  "anchor-lang",
  "anchor-spl",
+ "arrayref",
  "bincode",
  "bytemuck",
  "js-sys",

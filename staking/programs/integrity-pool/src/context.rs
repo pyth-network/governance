@@ -75,6 +75,7 @@ pub struct UpdateDelegationFee<'info> {
 #[derive(Accounts)]
 #[instruction(amount: u64)]
 pub struct Delegate<'info> {
+    #[account(mut)]
     pub payer: Signer<'info>,
 
     #[account(mut)]
@@ -117,11 +118,14 @@ pub struct Delegate<'info> {
     pub stake_account_custody: AccountInfo<'info>,
 
     pub staking_program: Program<'info, Staking>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 #[instruction(position_index: u8, amount: u64)]
 pub struct Undelegate<'info> {
+    #[account(mut)]
     pub payer: Signer<'info>,
 
     #[account(mut)]
@@ -172,6 +176,8 @@ pub struct Undelegate<'info> {
     pub stake_account_custody: AccountInfo<'info>,
 
     pub staking_program: Program<'info, Staking>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]

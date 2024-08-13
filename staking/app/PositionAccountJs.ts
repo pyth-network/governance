@@ -11,9 +11,13 @@ export class PositionAccountJs {
     const coder = new BorshCoder(idl);
     let i = 8; // Skip discriminator
     this.owner = new PublicKey(buffer.slice(i, i + 32));
+    let numberOfPositions = Math.floor(
+      (buffer.length - wasm.Constants.POSITIONS_ACCOUNT_SIZE()) /
+        wasm.Constants.POSITION_BUFFER_SIZE()
+    );
     i += 32;
     this.positions = [];
-    for (let j = 0; j < wasm.Constants.MAX_POSITIONS(); j++) {
+    for (let j = 0; j < numberOfPositions; j++) {
       if (buffer[i] === 1) {
         this.positions.push(
           coder.types.decode("position", buffer.subarray(i + 1))

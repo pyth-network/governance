@@ -18,6 +18,7 @@ use {
         solana::utils::{
             fetch_account_data,
             fetch_account_data_bytemuck,
+            fetch_positions_account,
         },
         staking::helper_functions::initialize_new_stake_account,
         utils::{
@@ -78,8 +79,8 @@ fn test_delegate() {
         100,
     );
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 100);
@@ -109,8 +110,10 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
 
     advance_delegation_record(
         &mut svm,
@@ -169,8 +172,8 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 50);
@@ -178,8 +181,10 @@ fn test_delegate() {
     assert_eq!(pos0.activation_epoch, 3);
     assert_eq!(pos0.unlocking_start, None);
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -286,8 +291,9 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
+
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 20);
@@ -394,8 +400,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 20);
@@ -438,8 +444,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let positions: staking::state::positions::PositionData =
-        fetch_account_data_bytemuck(&mut svm, &stake_account_positions);
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 20);

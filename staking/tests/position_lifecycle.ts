@@ -104,7 +104,7 @@ describe("position_lifecycle", async () => {
           stakeAccountPositions: stakeAccountAddress,
           targetAccount: votingProductMetadataAccount,
         }),
-      "Position not in use"
+      "Position out of bounds"
     );
   });
 

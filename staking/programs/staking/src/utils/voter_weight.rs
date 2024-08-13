@@ -2,9 +2,8 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
-            PositionData,
+            DynamicPositionArray,
             PositionState,
-            MAX_POSITIONS,
         },
     },
     anchor_lang::prelude::*,
@@ -12,14 +11,14 @@ use {
 };
 
 pub fn compute_voter_weight(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &DynamicPositionArray,
     current_epoch: u64,
     unlocking_duration: u8,
     current_locked: u64,
     total_supply: u64,
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
-    for i in 0..MAX_POSITIONS {
+    for i in 0..stake_account_positions.get_position_capacity() {
         if let Some(position) = stake_account_positions.read_position(i)? {
             match position.get_current_position(current_epoch, unlocking_duration)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
@@ -46,8 +45,8 @@ pub mod tests {
     use {
         crate::{
             state::positions::{
+                DynamicPositionArrayAccount,
                 Position,
-                PositionData,
                 TargetWithParameters,
             },
             utils::voter_weight::compute_voter_weight,
@@ -58,8 +57,8 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -123,8 +122,8 @@ pub mod tests {
 
     #[test]
     fn test_overflow() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -142,8 +141,8 @@ pub mod tests {
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
