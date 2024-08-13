@@ -551,8 +551,6 @@ mod tests {
 
         let mut stake_positions_account = DynamicPositionArrayAccount::default();
         let mut positions = stake_positions_account.to_dynamic_position_array(); // this position should be ignored (wrong target)
-        let mut next_index = 0;
-        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
                 0,
@@ -565,7 +563,6 @@ mod tests {
             )
             .unwrap();
         // this position should be ignored (wrong publisher)
-        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
                 1,
@@ -580,7 +577,6 @@ mod tests {
             )
             .unwrap();
         // this position should be included from epoch 1
-        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
                 2,
@@ -595,10 +591,9 @@ mod tests {
             )
             .unwrap();
         // this position should be included from epoch 2
-        positions.reserve_new_index(&mut next_index).unwrap();
         positions
             .write_position(
-                3,
+                4,
                 &staking::state::positions::Position {
                     activation_epoch:       2,
                     amount:                 60 * FRAC_64_MULTIPLIER,
