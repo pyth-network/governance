@@ -1,8 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { getTargetAccount } from "./utils/utils";
+import {
+  ComputeBudgetInstruction,
+  ComputeBudgetProgram,
+  PublicKey,
+  Transaction,
+} from "@solana/web3.js";
+import { expectFail, getTargetAccount } from "./utils/utils";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
 import {
@@ -10,9 +15,9 @@ import {
   getPortNumber,
   CustomAbortController,
 } from "./utils/before";
+import { Constants } from "@pythnetwork/staking-wasm";
 import { TargetWithParameters } from "../app/StakeConnection";
 import { abortUnlessDetached } from "./utils/after";
-import assert from "assert";
 
 const portNumber = getPortNumber(path.basename(__filename));
 
@@ -38,7 +43,7 @@ describe("fills a stake account with positions", async () => {
 
     await stakeConnection.depositTokens(
       undefined,
-      PythBalance.fromString("400")
+      PythBalance.fromString("257")
     );
     stakeAccountAddress = (
       await stakeConnection.getMainAccount(provider.wallet.publicKey)
@@ -49,6 +54,7 @@ describe("fills a stake account with positions", async () => {
     let createPosIx = await program.methods
       .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
+        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -63,57 +69,39 @@ describe("fills a stake account with positions", async () => {
       if (m != null) costs.push(parseInt(m.groups["consumed"]));
     }
 
-    let budgetRemaining = 200_000;
+    let budgetRemaining = 1_400_000;
     let ixCost = costs[0];
     let maxInstructions = 10; // Based on txn size
     let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
 
     let transaction = new Transaction();
-    for (let numPositions = 0; numPositions < 256; numPositions++) {
+    transaction.instructions.push(
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })
+    );
+    for (let numPositions = 0; numPositions < 255; numPositions++) {
       if (
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
         await provider.sendAndConfirm(transaction, [], {});
-        await assertPositionsAccountLength(
-          provider.connection,
-          stakeAccountAddress,
-          numPositions
-        );
         transaction = new Transaction();
-        budgetRemaining = 200_000;
+        budgetRemaining = 1_400_000;
       }
       transaction.instructions.push(createPosIx);
       budgetRemaining -= ixCost;
       ixCost += deltaCost;
     }
     await provider.sendAndConfirm(transaction, [], {});
-    await assertPositionsAccountLength(
-      provider.connection,
-      stakeAccountAddress,
-      256
+
+    // Now create 101, which is supposed to fail
+    await expectFail(
+      program.methods
+        .createPosition(votingProduct, PythBalance.fromString("1").toBN())
+        .accounts({
+          targetAccount: votingProductMetadataAccount,
+          stakeAccountPositions: stakeAccountAddress,
+        }),
+      "Number of position limit reached"
     );
-
-    // Can create more
-    await program.methods
-      .createPosition(votingProduct, PythBalance.fromString("1").toBN())
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
   });
-  await assertPositionsAccountLength(
-    provider.connection,
-    stakeAccountAddress,
-    21
-  );
 });
-
-async function assertPositionsAccountLength(
-  connection: Connection,
-  stakeAccountAddress: PublicKey,
-  numPositions: number
-) {
-  const stakeAccount = await connection.getAccountInfo(stakeAccountAddress);
-  assert(stakeAccount.data.length == 40 + 200 * numPositions);
-}
