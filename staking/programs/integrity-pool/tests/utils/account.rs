@@ -16,7 +16,7 @@ use {
         system_instruction,
         transaction::Transaction,
     },
-    staking::state::positions::DynamicPositionArrayFixture,
+    staking::state::positions::DynamicPositionArrayAccount,
 };
 
 
@@ -64,11 +64,7 @@ pub fn fetch_account_data_bytemuck<T: Pod + Zeroable + AccountDeserialize>(
 pub fn fetch_positions_account(
     svm: &mut litesvm::LiteSVM,
     address: &Pubkey,
-) -> DynamicPositionArrayFixture {
+) -> DynamicPositionArrayAccount {
     let account = &svm.get_account(address).unwrap();
-    DynamicPositionArrayFixture {
-        key:      *address,
-        lamports: account.lamports,
-        data:     account.data.clone(),
-    }
+    DynamicPositionArrayAccount::default_with_data(&account.data)
 }

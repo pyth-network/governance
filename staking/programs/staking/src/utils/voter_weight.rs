@@ -6,7 +6,6 @@ use {
             DynamicPositionArray,
             PositionData,
             PositionState,
-            MAX_POSITIONS,
         },
     },
     anchor_lang::prelude::*,
@@ -48,7 +47,7 @@ pub mod tests {
     use {
         crate::{
             state::positions::{
-                DynamicPositionArrayFixture,
+                DynamicPositionArrayAccount,
                 Position,
                 PositionData,
                 TargetWithParameters,
@@ -61,7 +60,7 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
         let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
@@ -126,7 +125,7 @@ pub mod tests {
 
     #[test]
     fn test_overflow() {
-        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
         let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
@@ -145,7 +144,7 @@ pub mod tests {
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
         let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,

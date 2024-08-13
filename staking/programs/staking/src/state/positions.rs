@@ -20,7 +20,6 @@ use {
     },
 };
 
-pub const MAX_POSITIONS: usize = 20;
 // Intentionally make the buffer for positions bigger than it needs for migrations
 pub const POSITION_BUFFER_SIZE: usize = 200;
 
@@ -189,17 +188,17 @@ impl<'a> DynamicPositionArray<'a> {
     }
 }
 
-pub struct DynamicPositionArrayFixture {
+pub struct DynamicPositionArrayAccount {
     pub key:      Pubkey,
     pub lamports: u64,
     pub data:     Vec<u8>,
 }
 
-impl Default for DynamicPositionArrayFixture {
+impl Default for DynamicPositionArrayAccount {
     fn default() -> Self {
         let key = Pubkey::new_unique();
         let lamports = 0;
-        let data = vec![0; 10000];
+        let data = vec![0; 10000]; // Leave lots of space to test the realloc
         Self {
             key,
             lamports,
@@ -208,19 +207,9 @@ impl Default for DynamicPositionArrayFixture {
     }
 }
 
-impl DynamicPositionArrayFixture {
-    pub fn default_with_data(data: Vec<u8>) -> Self {
-        let key = Pubkey::new_unique();
-        let lamports = 0;
-        Self {
-            key,
-            lamports,
-            data,
-        }
-    }
-
+impl DynamicPositionArrayAccount {
     pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
-        let account_info = AccountInfo::new(
+        let acc_info = AccountInfo::new(
             &self.key,
             false,
             false,
@@ -230,8 +219,16 @@ impl DynamicPositionArrayFixture {
             false,
             0,
         );
-        DynamicPositionArray {
-            acc_info: account_info,
+        DynamicPositionArray { acc_info }
+    }
+
+    pub fn default_with_data(data: &[u8]) -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        Self {
+            key,
+            lamports,
+            data: data.to_vec(),
         }
     }
 }
@@ -370,13 +367,12 @@ pub mod tests {
     use {
         super::DynamicPositionArray,
         crate::state::positions::{
-            DynamicPositionArrayFixture,
+            DynamicPositionArrayAccount,
             Position,
             PositionData,
             PositionState,
             TargetWithParameters,
             TryBorsh,
-            MAX_POSITIONS,
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::prelude::*,
@@ -451,14 +447,8 @@ pub mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_serialized_size() {
-        assert_eq!(
-            std::mem::size_of::<PositionData>(),
-            32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
-        );
-        assert_eq!(
-            PositionData::LEN,
-            8 + 32 + MAX_POSITIONS * POSITION_BUFFER_SIZE
-        );
+        assert_eq!(std::mem::size_of::<PositionData>(), 32);
+        assert_eq!(PositionData::LEN, 8 + 32);
         // Checks that the position struct fits in the individual position buffer
         assert!(
             anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
@@ -474,7 +464,7 @@ pub mod tests {
 
     #[test]
     fn test_has_target_with_parameters_exposure() {
-        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
         let mut position_data = fixture.to_dynamic_position_array();
         let position = Position {
             activation_epoch:       8,
@@ -563,7 +553,7 @@ pub mod tests {
                 }
             }
 
-            for i in next_index..(MAX_POSITIONS as u8) {
+            for i in next_index..(self.get_position_capacity() as u8) {
                 assert_eq!(
                     Option::<Position>::None,
                     self.read_position(i as usize).unwrap()
@@ -575,7 +565,7 @@ pub mod tests {
 
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
-        let mut fixture = DynamicPositionArrayFixture::default();
+        let mut fixture = DynamicPositionArrayAccount::default();
         let mut position_data = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
         let mut set: HashSet<Position> = HashSet::new();
@@ -583,12 +573,12 @@ pub mod tests {
         for op in input {
             match op {
                 DataOperation::Add(position) => {
-                    if next_index < MAX_POSITIONS as u8 {
+                    if next_index < position_data.get_position_capacity() as u8 {
                         set.insert(position);
                         let i = position_data.reserve_new_index(&mut next_index).unwrap();
                         position_data.write_position(i, &position).unwrap();
                     } else {
-                        assert!(set.len() == MAX_POSITIONS);
+                        assert!(set.len() == position_data.get_position_capacity());
                         assert!(position_data.reserve_new_index(&mut next_index).is_err());
                         next_index -= 1;
                     }
