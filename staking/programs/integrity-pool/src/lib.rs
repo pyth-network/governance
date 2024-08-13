@@ -2,7 +2,10 @@ use {
     anchor_lang::prelude::*,
     context::*,
     error::IntegrityPoolError,
-    staking::state::positions::TargetWithParameters,
+    staking::state::positions::{
+        DynamicPositionArray,
+        TargetWithParameters,
+    },
     utils::{
         clock::{
             get_current_epoch,
@@ -22,11 +25,7 @@ declare_id!("BiJszJY5BfRKkvt818SAbY9z9cJLp2jYDPgG2BzsufiE");
 
 #[program]
 pub mod integrity_pool {
-
-    use {
-        super::*,
-        staking::state::positions::DynamicPositionArray,
-    };
+    use super::*;
 
     pub fn initialize_pool(
         ctx: Context<InitializePool>,
@@ -57,7 +56,6 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
-        let system_program = ctx.accounts.system_program.clone();
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
@@ -72,7 +70,7 @@ pub mod integrity_pool {
             owner: payer.to_account_info(),
             target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
-            system_program: system_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
@@ -103,8 +101,7 @@ pub mod integrity_pool {
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
         let stake_account_positions =
-            &mut DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
-        let system_program = ctx.accounts.system_program.clone();
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
 
         // assert delegator record is up to date
         delegation_record.assert_up_to_date(get_current_epoch()?)?;
@@ -138,7 +135,7 @@ pub mod integrity_pool {
             stake_account_custody:   stake_account_custody.clone(),
             target_account:          None,
             pool_authority:          Some(pool_config.to_account_info()),
-            system_program:          system_program.to_account_info(),
+            system_program:          ctx.accounts.system_program.to_account_info(),
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
@@ -155,7 +152,7 @@ pub mod integrity_pool {
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let new_stake_account =
-            DynamicPositionArray::new(ctx.accounts.new_stake_account_positions.to_account_info());
+            DynamicPositionArray::load(&ctx.accounts.new_stake_account_positions)?;
 
         let publisher_target = TargetWithParameters::IntegrityPool {
             publisher: publisher.key(),
@@ -179,7 +176,7 @@ pub mod integrity_pool {
                 IntegrityPoolError::PublisherStakeAccountMismatch
             );
             let current_stake_account =
-                DynamicPositionArray::new(current_stake_account_positions.to_account_info());
+                DynamicPositionArray::load(current_stake_account_positions)?;
 
             // current stake account should be undelegated
             require!(
@@ -222,8 +219,8 @@ pub mod integrity_pool {
         let delegation_record = &mut ctx.accounts.delegation_record;
         let pool_data = &ctx.accounts.pool_data.load()?;
         let pool_config = &ctx.accounts.pool_config;
-        let mut stake_account_positions =
-            DynamicPositionArray::new(ctx.accounts.stake_account_positions.to_account_info());
+        let stake_account_positions =
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let pool_reward_custody = &ctx.accounts.pool_reward_custody;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let token_program = &ctx.accounts.token_program;
@@ -233,7 +230,7 @@ pub mod integrity_pool {
         let reward_amount: frac64 = pool_data.calculate_reward(
             delegation_record.last_epoch,
             &ctx.accounts.stake_account_positions.key(),
-            &stake_account_positions,
+            stake_account_positions,
             &publisher.key(),
             get_current_epoch()?,
         )?;
