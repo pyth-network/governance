@@ -124,7 +124,7 @@ fn test_delegate() {
 
     let delegation_record: DelegationRecord = fetch_account_data(
         &mut svm,
-        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
+        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions),
     );
     assert_eq!(delegation_record.last_epoch, 2);
 
@@ -267,7 +267,7 @@ fn test_delegate() {
 
     let delegation_record: DelegationRecord = fetch_account_data(
         &mut svm,
-        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
+        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions),
     );
     assert_eq!(delegation_record.last_epoch, 3);
 

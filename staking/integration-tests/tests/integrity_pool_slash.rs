@@ -21,6 +21,7 @@ use {
             setup,
             SetupProps,
             SetupResult,
+            STARTING_EPOCH,
         },
         solana::{
             instructions::create_token_account,
@@ -184,9 +185,8 @@ fn test_create_slash_event() {
         0,
     );
 
-    const STARTING_EPOCH: u64 = 2;
     let slash_account_0: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(0, slashed_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(0, slashed_publisher));
 
     assert_eq!(slash_account_0.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_0.slash_ratio, FRAC_64_MULTIPLIER / 2);
@@ -194,7 +194,7 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_0.publisher, slashed_publisher);
 
     let slash_account_1: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(1, slashed_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(1, slashed_publisher));
 
     assert_eq!(slash_account_1.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_1.slash_ratio, FRAC_64_MULTIPLIER / 10);
@@ -202,7 +202,7 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_1.publisher, slashed_publisher);
 
     let slash_account_2: SlashEvent =
-        fetch_account_data(&mut svm, &get_slash_event_address(2, slashed_publisher).0);
+        fetch_account_data(&mut svm, &get_slash_event_address(2, slashed_publisher));
 
     assert_eq!(slash_account_2.epoch, STARTING_EPOCH + 10);
     assert_eq!(slash_account_2.slash_ratio, FRAC_64_MULTIPLIER / 10);
@@ -379,7 +379,7 @@ fn test_slash() {
 
     let delegation_record: DelegationRecord = fetch_account_data(
         &mut svm,
-        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions).0,
+        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions),
     );
 
     assert_eq!(delegation_record.next_slash_event_index, 1);

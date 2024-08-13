@@ -1,6 +1,7 @@
 use {
     super::pda::{
         get_config_address,
+        get_config_address_bump,
         get_stake_account_custody_address,
         get_stake_account_custory_authority_address,
         get_stake_account_metadata_address,
@@ -40,8 +41,9 @@ use {
 };
 
 pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
-    let (pool_config, _) = get_pool_config_address();
-    let (config_account, config_bump) = get_config_address();
+    let pool_config = get_pool_config_address();
+    let config_account = get_config_address();
+    let config_bump = get_config_address_bump();
 
     let init_config_data = staking::instruction::InitConfig {
         global_config: GlobalConfig {
@@ -83,7 +85,7 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
 
 
 pub fn update_pool_authority(svm: &mut litesvm::LiteSVM, payer: &Keypair, pool_authority: Pubkey) {
-    let (config_account, _) = get_config_address();
+    let config_account = get_config_address();
 
     let update_pool_authority_data = staking::instruction::UpdatePoolAuthority { pool_authority };
     let update_pool_authority_accs = staking::accounts::UpdatePoolAuthority {
@@ -106,8 +108,8 @@ pub fn update_pool_authority(svm: &mut litesvm::LiteSVM, payer: &Keypair, pool_a
 }
 
 pub fn create_target_account(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
-    let (target_account, _) = get_target_address();
-    let (config_account, _) = get_config_address();
+    let target_account = get_target_address();
+    let config_account = get_config_address();
 
     let target_data = staking::instruction::CreateTarget {};
     let target_accs = staking::accounts::CreateTarget {
@@ -139,9 +141,9 @@ pub fn create_position(
     pool_authority: Option<&Keypair>,
     amount: frac64,
 ) {
-    let (config_pubkey, _) = get_config_address();
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let config_pubkey = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let create_position_data = staking::instruction::CreatePosition {
         target_with_parameters,
@@ -149,7 +151,7 @@ pub fn create_position(
     };
 
     let target_account = match target_with_parameters {
-        TargetWithParameters::Voting => Some(get_target_address().0),
+        TargetWithParameters::Voting => Some(get_target_address()),
         TargetWithParameters::IntegrityPool { .. } => None,
     };
 
@@ -192,11 +194,10 @@ pub fn create_stake_account(
     pyth_token_mint: &Keypair,
     stake_account_positions: Pubkey,
 ) -> TransactionResult {
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
-    let (custody_authority, _) =
-        get_stake_account_custory_authority_address(stake_account_positions);
-    let (config_account, _) = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let config_account = get_config_address();
 
     let create_stake_account_data = staking::instruction::CreateStakeAccount {
         owner: payer.pubkey(),
@@ -235,8 +236,8 @@ pub fn join_dao_llc(
     payer: &Keypair,
     stake_account_positions: Pubkey,
 ) -> TransactionResult {
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (config_account, _) = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let config_account = get_config_address();
 
     let config = fetch_account_data::<GlobalConfig>(svm, &config_account);
 
@@ -274,11 +275,11 @@ pub fn slash_staking(
 ) -> TransactionResult {
     let slash_account_data = staking::instruction::SlashAccount { slash_ratio };
 
-    let (target_account, _) = get_target_address();
-    let (config_pubkey, _) = get_config_address();
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
-    let (stake_account_authority, _) =
+    let target_account = get_target_address();
+    let config_pubkey = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let stake_account_authority =
         get_stake_account_custory_authority_address(stake_account_positions);
 
     let slash_account_accs = staking::accounts::SlashAccount {

@@ -26,6 +26,8 @@ use {
     },
 };
 
+pub const STARTING_EPOCH: u64 = 2;
+
 pub struct SetupResult {
     pub svm:                      litesvm::LiteSVM,
     pub payer:                    Keypair,
