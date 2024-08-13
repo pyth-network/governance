@@ -3,12 +3,10 @@
 use {
     anchor_lang::AccountDeserialize,
     integration_tests::{
-        integrity_pool::{
-            delegate::{
-                advance_delegation_record,
-                delegate,
-            },
-            instructions::advance,
+        integrity_pool::instructions::{
+            advance,
+            advance_delegation_record,
+            delegate,
         },
         publisher_caps::instructions::post_publisher_caps,
         setup::{

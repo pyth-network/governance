@@ -3,19 +3,17 @@ use {
     anchor_spl::token::TokenAccount,
     integration_tests::{
         integrity_pool::{
-            delegate::{
+            instructions::{
+                advance,
                 advance_delegation_record,
+                create_slash_event,
                 delegate,
+                slash,
                 undelegate,
             },
-            instructions::advance,
             pda::{
                 get_delegation_record_address,
                 get_slash_event_address,
-            },
-            slash::{
-                create_slash_event,
-                slash,
             },
         },
         publisher_caps::instructions::post_publisher_caps,

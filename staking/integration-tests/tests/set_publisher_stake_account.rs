@@ -4,14 +4,12 @@ use {
         prelude::Error,
     },
     integration_tests::{
-        integrity_pool::{
-            delegate::{
-                advance_delegation_record,
-                delegate,
-                undelegate,
-            },
-            instructions::advance,
-            set_publisher_stake_account::set_publisher_stake_account,
+        integrity_pool::instructions::{
+            advance,
+            advance_delegation_record,
+            delegate,
+            set_publisher_stake_account,
+            undelegate,
         },
         publisher_caps::instructions::post_publisher_caps,
         setup::{
