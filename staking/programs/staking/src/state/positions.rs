@@ -37,22 +37,13 @@ pub struct PositionData {
 impl PositionData {
     pub const LEN: usize = 8 + 32;
 }
+
 pub struct DynamicPositionArray<'a> {
     pub acc_info: AccountInfo<'a>, /* We store account info to get access to the data and
                                     * resize */
 }
 
 impl<'a> DynamicPositionArray<'a> {
-    pub fn new(account_info: AccountInfo<'a>) -> Self {
-        Self {
-            acc_info: account_info,
-        }
-    }
-
-    pub fn get_position_capacity(&self) -> usize {
-        self.acc_info.data_len().saturating_sub(PositionData::LEN) / POSITION_BUFFER_SIZE
-    }
-
     fn get_positions_slice(&self) -> Result<&mut [[u8; POSITION_BUFFER_SIZE]]> {
         let position_capacity = self.get_position_capacity();
         unsafe {
@@ -66,32 +57,6 @@ impl<'a> DynamicPositionArray<'a> {
 
     fn data_len(&self) -> usize {
         self.acc_info.data_len()
-    }
-
-    pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
-        let rent = Rent::get()?;
-        let amount_to_transfer = rent
-            .minimum_balance(self.data_len())
-            .saturating_sub(self.acc_info.lamports());
-        let transfer_instruction =
-            system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
-        anchor_lang::solana_program::program::invoke(
-            &transfer_instruction,
-            &[payer.to_account_info(), self.acc_info.clone()],
-        )?;
-        Ok(())
-    }
-
-
-    pub fn owner(&self) -> Result<Pubkey> {
-        let data = self.acc_info.try_borrow_data()?;
-        Ok(Pubkey::from(*array_ref![data, 8, 32]))
-    }
-
-    pub fn set_owner(&self, owner: &Pubkey) -> Result<()> {
-        let mut data = self.acc_info.try_borrow_mut_data()?;
-        data[8..40].copy_from_slice(&owner.to_bytes());
-        Ok(())
     }
 
     pub fn load_init(account_loader: &AccountLoader<'a, PositionData>) -> Result<Self> {
@@ -140,32 +105,44 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(Self { acc_info })
     }
 
-
-    pub fn initialize(&mut self, owner: &Pubkey) -> Result<()> {
-        let mut data = self.acc_info.try_borrow_mut_data()?;
-        let mut disc_bytes = [0u8; 8];
-        disc_bytes.copy_from_slice(&data[..8]);
-        let discriminator = u64::from_le_bytes(disc_bytes);
-        if discriminator != 0 {
-            return Err(anchor_lang::prelude::ErrorCode::AccountDiscriminatorAlreadySet.into());
-        }
-
-        data[PositionData::discriminator().len()
-            ..PositionData::discriminator().len() + std::mem::size_of::<Pubkey>()]
-            .copy_from_slice(&owner.to_bytes());
-
+    pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
+        let rent = Rent::get()?;
+        let amount_to_transfer = rent
+            .minimum_balance(self.data_len())
+            .saturating_sub(self.acc_info.lamports());
+        let transfer_instruction =
+            system_instruction::transfer(payer.key, self.acc_info.key, amount_to_transfer);
+        anchor_lang::solana_program::program::invoke(
+            &transfer_instruction,
+            &[payer.to_account_info(), self.acc_info.clone()],
+        )?;
         Ok(())
+    }
+
+    pub fn owner(&self) -> Result<Pubkey> {
+        let data = self.acc_info.try_borrow_data()?;
+        Ok(Pubkey::from(*array_ref![data, 8, 32]))
+    }
+
+    pub fn set_owner(&self, owner: &Pubkey) -> Result<()> {
+        let mut data = self.acc_info.try_borrow_mut_data()?;
+        data[8..40].copy_from_slice(&owner.to_bytes());
+        Ok(())
+    }
+
+    pub fn get_position_capacity(&self) -> usize {
+        self.acc_info.data_len().saturating_sub(PositionData::LEN) / POSITION_BUFFER_SIZE
     }
 
     /// Finds first index available for a new position, increments the internal counter
     pub fn reserve_new_index(&mut self, next_index: &mut u8) -> Result<usize> {
         let position_capacity: usize = self.get_position_capacity();
-        let res = *next_index as usize;
+        let res = usize::from(*next_index);
         *next_index += 1;
 
         if res == position_capacity {
             self.acc_info.realloc(
-                PositionData::LEN + *next_index as usize * POSITION_BUFFER_SIZE,
+                PositionData::LEN + usize::from(*next_index) * POSITION_BUFFER_SIZE,
                 false,
             )?;
         }
@@ -201,8 +178,7 @@ impl<'a> DynamicPositionArray<'a> {
         &self,
         target_with_parameters: TargetWithParameters,
     ) -> Result<bool> {
-        let positions = self.get_positions_slice()?;
-        for i in 0..positions.len() {
+        for i in 0..self.get_position_capacity() {
             if let Some(position) = self.read_position(i)? {
                 if position.target_with_parameters == target_with_parameters {
                     return Ok(true);
