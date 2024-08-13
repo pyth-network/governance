@@ -12,7 +12,8 @@ export class PositionAccountJs {
     let i = 8; // Skip discriminator
     this.owner = new PublicKey(buffer.slice(i, i + 32));
     let numberOfPositions = Math.floor(
-      (buffer.length - 40) / wasm.Constants.POSITION_BUFFER_SIZE()
+      (buffer.length - wasm.Constants.POSITIONS_ACCOUNT_SIZE()) /
+        wasm.Constants.POSITION_BUFFER_SIZE()
     );
     i += 32;
     this.positions = [];
