@@ -56,6 +56,8 @@ pub mod integrity_pool {
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
+        let system_program = ctx.accounts.system_program.to_account_info();
+
 
         let target_with_parameters =
             staking::state::positions::TargetWithParameters::IntegrityPool {
@@ -70,7 +72,7 @@ pub mod integrity_pool {
             owner: payer.to_account_info(),
             target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
-            system_program: ctx.accounts.system_program.to_account_info(),
+            system_program,
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
@@ -102,6 +104,7 @@ pub mod integrity_pool {
         let stake_account_custody = ctx.accounts.stake_account_custody.clone();
         let stake_account_positions =
             &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
+        let system_program = ctx.accounts.system_program.to_account_info();
 
         // assert delegator record is up to date
         delegation_record.assert_up_to_date(get_current_epoch()?)?;
@@ -128,14 +131,14 @@ pub mod integrity_pool {
             };
 
         let cpi_accounts = staking::cpi::accounts::ClosePosition {
-            owner:                   payer.to_account_info(),
-            config:                  config_account.clone(),
+            owner: payer.to_account_info(),
+            config: config_account.clone(),
             stake_account_positions: ctx.accounts.stake_account_positions.to_account_info(),
-            stake_account_metadata:  stake_account_metadata.clone(),
-            stake_account_custody:   stake_account_custody.clone(),
-            target_account:          None,
-            pool_authority:          Some(pool_config.to_account_info()),
-            system_program:          ctx.accounts.system_program.to_account_info(),
+            stake_account_metadata: stake_account_metadata.clone(),
+            stake_account_custody: stake_account_custody.clone(),
+            target_account: None,
+            pool_authority: Some(pool_config.to_account_info()),
+            system_program,
         };
 
         let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
