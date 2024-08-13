@@ -7,7 +7,7 @@ use {
                 create_pool_data_account,
             },
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         solana::{
             instructions::init_mint_account,
             utils::fetch_account_data_bytemuck,
@@ -25,6 +25,8 @@ use {
         signer::Signer,
     },
 };
+
+pub const STARTING_EPOCH: u64 = 2;
 
 pub struct SetupResult {
     pub svm:                      litesvm::LiteSVM,

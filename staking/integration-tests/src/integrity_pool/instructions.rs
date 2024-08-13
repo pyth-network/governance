@@ -52,7 +52,7 @@ pub fn advance(
     publisher_caps: Pubkey,
     pyth_token_mint: Pubkey,
 ) -> TransactionResult {
-    let (pool_config, _) = get_pool_config_address();
+    let pool_config = get_pool_config_address();
     let pool_data = fetch_account_data::<PoolConfig>(svm, &pool_config).pool_data;
     let pool_reward_custody = get_pool_reward_custody_address(pyth_token_mint);
 
@@ -104,7 +104,7 @@ pub fn create_pool_data_account(
         &integrity_pool::ID,
     );
 
-    let (pool_config_pubkey, _) = get_pool_config_address();
+    let pool_config_pubkey = get_pool_config_address();
 
     let initialize_pool_data = integrity_pool::instruction::InitializePool {
         pyth_token_mint,
@@ -143,10 +143,10 @@ pub fn advance_delegation_record(
     pyth_token_mint: Pubkey,
     pool_data: Pubkey,
 ) -> TransactionResult {
-    let (delegation_record, _) = get_delegation_record_address(publisher, stake_account_positions);
+    let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
     let custody_addess = get_pool_reward_custody_address(pyth_token_mint);
-    let (pool_config_pubkey, _) = get_pool_config_address();
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let pool_config_pubkey = get_pool_config_address();
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let data = integrity_pool::instruction::AdvanceDelegationRecord {};
 
@@ -187,10 +187,10 @@ pub fn delegate(
     stake_account_positions: Pubkey,
     amount: u64,
 ) {
-    let (pool_config_pubkey, _) = get_pool_config_address();
-    let (config_account, _) = get_config_address();
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let pool_config_pubkey = get_pool_config_address();
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let delegate_data = integrity_pool::instruction::Delegate { amount };
     let delegate_accs = integrity_pool::accounts::Delegate {
@@ -230,11 +230,11 @@ pub fn undelegate(
     position_index: u8,
     amount: u64,
 ) -> TransactionResult {
-    let (delegation_record, _) = get_delegation_record_address(publisher, stake_account_positions);
-    let (pool_config_pubkey, _) = get_pool_config_address();
-    let (config_account, _) = get_config_address();
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+    let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
+    let pool_config_pubkey = get_pool_config_address();
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let undelegate_data = integrity_pool::instruction::Undelegate {
         position_index,
@@ -275,7 +275,7 @@ pub fn set_publisher_stake_account(
     current_stake_account_positions_option: Option<Pubkey>,
     new_stake_account_positions: Pubkey,
 ) -> TransactionResult {
-    let (pool_config, _) = get_pool_config_address();
+    let pool_config = get_pool_config_address();
     let pool_data: Pubkey = fetch_account_data::<PoolConfig>(svm, &pool_config).pool_data;
 
     let data = integrity_pool::instruction::SetPublisherStakeAccount {};
@@ -320,8 +320,8 @@ pub fn create_slash_event(
         publisher,
     };
 
-    let (pool_config, _) = get_pool_config_address();
-    let (slash_event, _) = get_slash_event_address(index, publisher);
+    let pool_config = get_pool_config_address();
+    let slash_event = get_slash_event_address(index, publisher);
 
     let create_slash_event_accs = integrity_pool::accounts::CreateSlashEvent {
         payer: payer.pubkey(),
@@ -360,15 +360,14 @@ pub fn slash(
 ) -> TransactionResult {
     let slash_data = integrity_pool::instruction::Slash { index };
 
-    let (pool_config, _) = get_pool_config_address();
-    let (slash_event, _) = get_slash_event_address(index, publisher);
-    let (delegation_record, _) = get_delegation_record_address(publisher, stake_account_positions);
-    let (stake_account_metadata, _) = get_stake_account_metadata_address(stake_account_positions);
-    let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
-    let (custody_authority, _) =
-        get_stake_account_custory_authority_address(stake_account_positions);
-    let (config, _) = get_config_address();
-    let (target_account, _) = get_target_address();
+    let pool_config = get_pool_config_address();
+    let slash_event = get_slash_event_address(index, publisher);
+    let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let config = get_config_address();
+    let target_account = get_target_address();
 
     let slash_accs = integrity_pool::accounts::Slash {
         delegation_record,

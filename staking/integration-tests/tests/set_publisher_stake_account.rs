@@ -11,14 +11,14 @@ use {
             set_publisher_stake_account,
             undelegate,
         },
-        publisher_caps::instructions::post_publisher_caps,
+        publisher_caps::helper_functions::post_publisher_caps,
         setup::{
             setup,
             SetupProps,
             SetupResult,
         },
         solana::utils::fetch_account_data_bytemuck,
-        staking::create_stake_account::create_stake_account,
+        staking::helper_functions::initialize_new_stake_account,
         utils::{
             clock::advance_n_epochs,
             error::assert_anchor_program_error,
@@ -58,11 +58,11 @@ fn test_set_publisher_stake_account() {
     });
 
     let stake_account_positions =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
     let stake_account_positions_2 =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
     let stake_account_positions_3 =
-        create_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     // payer tries to set publisher stake account
     assert_anchor_program_error(
