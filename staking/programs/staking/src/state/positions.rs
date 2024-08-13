@@ -37,54 +37,6 @@ pub struct PositionData {
 impl PositionData {
     pub const LEN: usize = 8 + 32;
 }
-
-pub struct DynamicPositionArrayFixture {
-    pub key:      Pubkey,
-    pub lamports: u64,
-    pub data:     Vec<u8>,
-}
-
-impl Default for DynamicPositionArrayFixture {
-    fn default() -> Self {
-        let key = Pubkey::new_unique();
-        let lamports = 0;
-        let data = vec![0; 10000];
-        Self {
-            key,
-            lamports,
-            data,
-        }
-    }
-}
-
-impl DynamicPositionArrayFixture {
-    pub fn default_with_data(data: Vec<u8>) -> Self {
-        let key = Pubkey::new_unique();
-        let lamports = 0;
-        Self {
-            key,
-            lamports,
-            data,
-        }
-    }
-
-    pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
-        let account_info = AccountInfo::new(
-            &self.key,
-            false,
-            false,
-            &mut self.lamports,
-            &mut self.data,
-            &self.key,
-            false,
-            0,
-        );
-        DynamicPositionArray {
-            acc_info: account_info,
-        }
-    }
-}
-
 pub struct DynamicPositionArray<'a> {
     pub acc_info: AccountInfo<'a>, /* We store account info to get access to the data and
                                     * resize */
@@ -260,6 +212,54 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(false)
     }
 }
+
+pub struct DynamicPositionArrayFixture {
+    pub key:      Pubkey,
+    pub lamports: u64,
+    pub data:     Vec<u8>,
+}
+
+impl Default for DynamicPositionArrayFixture {
+    fn default() -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        let data = vec![0; 10000];
+        Self {
+            key,
+            lamports,
+            data,
+        }
+    }
+}
+
+impl DynamicPositionArrayFixture {
+    pub fn default_with_data(data: Vec<u8>) -> Self {
+        let key = Pubkey::new_unique();
+        let lamports = 0;
+        Self {
+            key,
+            lamports,
+            data,
+        }
+    }
+
+    pub fn to_dynamic_position_array(&mut self) -> DynamicPositionArray {
+        let account_info = AccountInfo::new(
+            &self.key,
+            false,
+            false,
+            &mut self.lamports,
+            &mut self.data,
+            &self.key,
+            false,
+            0,
+        );
+        DynamicPositionArray {
+            acc_info: account_info,
+        }
+    }
+}
+
 
 pub trait TryBorsh {
     fn try_read(slice: &[u8]) -> Result<Self>
