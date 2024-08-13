@@ -48,7 +48,7 @@ fn test_advance() {
     let SetupResult {
         mut svm,
         payer,
-        pyth_token_mint,
+        pyth_token_mint: _,
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
@@ -82,7 +82,7 @@ fn test_advance() {
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     let publisher_caps_2 = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     assert_anchor_program_error(
-        advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()),
+        advance(&mut svm, &payer, publisher_caps),
         Error::from(IntegrityPoolError::PoolDataAlreadyUpToDate),
         0,
     );
@@ -91,7 +91,7 @@ fn test_advance() {
     advance_n_epochs(&mut svm, &payer, 1);
 
     assert_anchor_program_error(
-        advance(&mut svm, &payer, publisher_caps_2, pyth_token_mint.pubkey()),
+        advance(&mut svm, &payer, publisher_caps_2),
         Error::from(IntegrityPoolError::OutdatedPublisherCaps),
         0,
     );
@@ -131,7 +131,7 @@ fn test_advance_reward_events() {
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     delegate(
         &mut svm,
@@ -146,13 +146,13 @@ fn test_advance_reward_events() {
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 

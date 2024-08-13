@@ -246,7 +246,7 @@ fn test_slash() {
     advance_n_epochs(&mut svm, &payer, 1);
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -284,7 +284,7 @@ fn test_slash() {
     );
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,

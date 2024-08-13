@@ -106,7 +106,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
     if init_publishers {
         initialize_pool_reward_custody(&mut svm, &payer, pyth_token_mint.pubkey());
         let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 100);
-        advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+        advance(&mut svm, &payer, publisher_caps).unwrap();
     }
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_keypair.pubkey());

@@ -73,7 +73,7 @@ fn test_claim() {
         publisher_keypair.pubkey(),
         1 * FRAC_64_MULTIPLIER / 2,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -108,7 +108,7 @@ fn test_claim() {
         publisher_keypair.pubkey(),
         1 * FRAC_64_MULTIPLIER / 2,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -145,7 +145,7 @@ fn test_claim() {
         publisher_keypair.pubkey(),
         3 * FRAC_64_MULTIPLIER / 2,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -217,7 +217,7 @@ fn test_lost_reward() {
             publisher_keypair.pubkey(),
             1 * FRAC_64_MULTIPLIER,
         );
-        advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+        advance(&mut svm, &payer, publisher_caps).unwrap();
     }
 
     advance_delegation_record(
@@ -287,7 +287,7 @@ fn test_correct_position_states() {
         publisher_keypair.pubkey(),
         100 * FRAC_64_MULTIPLIER,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     delegate(
         &mut svm,
@@ -306,7 +306,7 @@ fn test_correct_position_states() {
         publisher_keypair.pubkey(),
         100 * FRAC_64_MULTIPLIER,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -374,7 +374,7 @@ fn test_advance_delegation_record_permissionlessness() {
         publisher_keypair.pubkey(),
         1 * FRAC_64_MULTIPLIER,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let new_payer = Keypair::new();
     svm.airdrop(&new_payer.pubkey(), 100_000_000_000).unwrap();
