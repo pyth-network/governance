@@ -37,10 +37,10 @@ impl PositionData {
 /// deserialized into an `Option<Position>`. The old invariant is maintained: For `i < next_index`,
 /// `positions[i] == Some` For `i >= next_index`, `positions[i] == None`
 /// Other invariants are that `data_len() == 40 + n * POSITION_BUFFER_SIZE` where n is an integer
-/// and that `data_len() >= 40 + next_index * POSITION_BUFFER_SIZE`
+/// and that `data_len() >= 40 + next_index * POSITION_BUFFER_SIZE`.
+/// It stores account info to get access to the data and resize.
 pub struct DynamicPositionArray<'a> {
-    pub acc_info: AccountInfo<'a>, /* We store account info to get access to the data and
-                                    * resize */
+    pub acc_info: AccountInfo<'a>,
 }
 
 impl<'a> DynamicPositionArray<'a> {
