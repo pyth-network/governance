@@ -28,7 +28,7 @@ mod tests {
     #[allow(deprecated)]
     fn test_slash_event_len() {
         assert!(
-            solana_sdk::borsh0_10::get_packed_len::<SlashEvent>()
+            anchor_lang::solana_program::borsh0_10::get_packed_len::<SlashEvent>()
                 + SlashEvent::discriminator().len()
                 == SlashEvent::LEN
         );

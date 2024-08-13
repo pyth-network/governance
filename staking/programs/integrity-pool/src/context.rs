@@ -40,9 +40,6 @@ pub struct InitializePool<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateY<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-
     pub reward_program_authority: Signer<'info>,
 
     #[account(
@@ -58,9 +55,6 @@ pub struct UpdateY<'info> {
 
 #[derive(Accounts)]
 pub struct UpdateDelegationFee<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-
     pub reward_program_authority: Signer<'info>,
 
     #[account(mut)]

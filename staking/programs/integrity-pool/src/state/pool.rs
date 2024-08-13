@@ -142,15 +142,11 @@ impl PoolData {
                 }
             }
 
-            if &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key {
-                delegator_reward +=
-                    event.calculate_reward_for_publisher(amount, publisher_index)?;
-            } else {
-                let (delegator_reward_for_event, publisher_reward_for_event) =
-                    event.calculate_reward_for_delegator(amount, publisher_index)?;
-                delegator_reward += delegator_reward_for_event;
-                publisher_reward += publisher_reward_for_event;
-            }
+            reward += event.calculate_reward(
+                amount,
+                publisher_index,
+                &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key,
+            )?;
         }
         Ok((delegator_reward, publisher_reward))
     }
@@ -433,7 +429,7 @@ mod tests {
     fn test_size() {
         assert!(std::mem::size_of::<PoolData>() + 8 <= PoolData::LEN);
         assert!(
-            solana_sdk::borsh0_10::get_packed_len::<PoolConfig>()
+            anchor_lang::solana_program::borsh0_10::get_packed_len::<PoolConfig>()
                 + PoolConfig::discriminator().len()
                 <= PoolConfig::LEN
         );
