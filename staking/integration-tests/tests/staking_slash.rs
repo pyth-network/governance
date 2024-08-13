@@ -130,8 +130,8 @@ fn test_staking_slash() {
     )
     .unwrap();
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 25 * FRAC_64_MULTIPLIER);

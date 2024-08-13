@@ -549,8 +549,8 @@ mod tests {
             pool_data.events[i].epoch = (i + 1) as u64;
         }
 
-        let mut fixture = DynamicPositionArrayAccount::default();
-        let mut positions = fixture.to_dynamic_position_array(); // this position should be ignored (wrong target)
+        let mut stake_positions_account = DynamicPositionArrayAccount::default();
+        let mut positions = stake_positions_account.to_dynamic_position_array(); // this position should be ignored (wrong target)
         let mut next_index = 0;
         positions.reserve_new_index(&mut next_index).unwrap();
         positions

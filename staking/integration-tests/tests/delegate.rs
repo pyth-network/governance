@@ -79,8 +79,8 @@ fn test_delegate() {
         100,
     );
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 100);
@@ -167,8 +167,8 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 50);
@@ -281,8 +281,8 @@ fn test_delegate() {
     )
     .unwrap();
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
 
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
@@ -389,8 +389,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
 
     assert_eq!(pos0.amount, 20);
     assert_eq!(pos0.target_with_parameters, target_with_parameters);
@@ -432,8 +432,8 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    let mut fixture = fetch_positions_account(&mut svm, &stake_account_positions);
-    let positions = fixture.to_dynamic_position_array();
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
     let pos0 = positions.read_position(0).unwrap().unwrap();
 
     assert_eq!(pos0.amount, 20);
