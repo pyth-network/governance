@@ -579,7 +579,7 @@ mod tests {
         // this position should be included from epoch 1
         positions
             .write_position(
-                2,
+                3,
                 &staking::state::positions::Position {
                     activation_epoch:       1,
                     amount:                 40 * FRAC_64_MULTIPLIER,
