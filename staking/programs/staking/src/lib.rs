@@ -21,7 +21,6 @@ use {
         positions::{
             DynamicPositionArray,
             Position,
-            PositionData,
             PositionState,
             TargetWithParameters,
         },

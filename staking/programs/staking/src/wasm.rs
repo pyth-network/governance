@@ -5,10 +5,9 @@ use {
         state::{
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
-                DynamicPositionArrayFixture,
+                DynamicPositionArrayAccount,
                 PositionData,
                 PositionState,
-                MAX_POSITIONS,
             },
             target::TargetMetadata,
             vesting::VestingEvent,
@@ -46,9 +45,6 @@ pub struct LockedBalanceSummary {
 impl WasmPositionData {
     #[wasm_bindgen(constructor)]
     pub fn from_buffer(buffer: &[u8]) -> Result<WasmPositionData, JsValue> {
-        convert_error(WasmPositionData::from_buffer_impl(&buffer))
-    }
-    fn from_buffer_impl(buffer: &[u8]) -> Result<WasmPositionData, Error> {
         Ok(WasmPositionData {
             wrapped: buffer.to_vec(),
         })
@@ -69,7 +65,7 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
-        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         fixture
             .to_dynamic_position_array()
             .read_position(index as usize)?
@@ -81,7 +77,7 @@ impl WasmPositionData {
         convert_error(self.is_position_voting_impl(index))
     }
     fn is_position_voting_impl(&self, index: u16) -> anchor_lang::Result<bool> {
-        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
 
         Ok(fixture
             .to_dynamic_position_array()
@@ -106,7 +102,7 @@ impl WasmPositionData {
         current_epoch: u64,
         unlocking_duration: u8,
     ) -> anchor_lang::Result<LockedBalanceSummary> {
-        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         let positions = fixture.to_dynamic_position_array();
 
         let mut locking: u64 = 0;
@@ -156,7 +152,7 @@ impl WasmPositionData {
         unlocking_duration: u8,
         current_locked: u64,
     ) -> Result<u64, JsValue> {
-        let mut fixture = DynamicPositionArrayFixture::default_with_data(self.wrapped.clone());
+        let mut fixture = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         convert_error(crate::utils::voter_weight::compute_voter_weight(
             &fixture.to_dynamic_position_array(),
             current_epoch,
@@ -290,10 +286,6 @@ reexport_seed_const!(SPLIT_REQUEST);
 
 #[wasm_bindgen]
 impl Constants {
-    #[wasm_bindgen]
-    pub fn MAX_POSITIONS() -> usize {
-        crate::state::positions::MAX_POSITIONS
-    }
     #[wasm_bindgen]
     pub fn POSITIONS_ACCOUNT_SIZE() -> usize {
         PositionData::LEN

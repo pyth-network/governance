@@ -451,7 +451,8 @@ pub mod tests {
         assert_eq!(PositionData::LEN, 8 + 32);
         // Checks that the position struct fits in the individual position buffer
         assert!(
-            anchor_lang::solana_program::borsh::get_packed_len::<Position>() < POSITION_BUFFER_SIZE
+            anchor_lang::solana_program::borsh::get_packed_len::<Option<Position>>()
+                < POSITION_BUFFER_SIZE
         );
     }
 
