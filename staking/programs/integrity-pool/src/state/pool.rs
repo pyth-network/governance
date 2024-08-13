@@ -550,7 +550,8 @@ mod tests {
         }
 
         let mut stake_positions_account = DynamicPositionArrayAccount::default();
-        let mut positions = stake_positions_account.to_dynamic_position_array(); // this position should be ignored (wrong target)
+        let mut positions = stake_positions_account.to_dynamic_position_array();
+        // this position should be ignored (wrong target)
         positions
             .write_position(
                 0,
