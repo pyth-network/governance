@@ -110,7 +110,10 @@ fn test_delegate() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 
-    assert!(positions.read_position(1).is_err());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
 
     advance_delegation_record(
         &mut svm,
@@ -176,7 +179,10 @@ fn test_delegate() {
     assert_eq!(pos0.activation_epoch, 3);
     assert_eq!(pos0.unlocking_start, None);
 
-    assert!(positions.read_position(1).is_err());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
