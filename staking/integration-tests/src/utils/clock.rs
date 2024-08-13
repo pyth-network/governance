@@ -35,7 +35,7 @@ pub fn get_current_epoch(svm: &mut LiteSVM) -> u64 {
 
 pub fn advance_mock_clock(svm: &mut LiteSVM, payer: &Keypair, seconds: i64) {
     let accs = staking::accounts::AdvanceClock {
-        config: get_config_address().0,
+        config: get_config_address(),
     };
 
     let data = staking::instruction::AdvanceClock { seconds };

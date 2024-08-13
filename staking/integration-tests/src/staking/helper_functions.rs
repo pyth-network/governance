@@ -42,7 +42,7 @@ pub fn initialize_new_stake_account(
     }
 
     if airdrop {
-        let (stake_account_custody, _) = get_stake_account_custody_address(stake_account_positions);
+        let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
         airdrop_spl(
             svm,
