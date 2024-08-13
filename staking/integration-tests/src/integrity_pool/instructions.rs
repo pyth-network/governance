@@ -146,7 +146,6 @@ pub fn update_y(
     let update_y_data = integrity_pool::instruction::UpdateY { y };
 
     let update_y_accs = integrity_pool::accounts::UpdateY {
-        payer:                    payer.pubkey(),
         pool_config:              pool_config_pubkey,
         reward_program_authority: reward_program_authority.pubkey(),
         system_program:           system_program::ID,
