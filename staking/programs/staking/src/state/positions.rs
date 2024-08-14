@@ -219,9 +219,7 @@ impl<'a> DynamicPositionArray<'a> {
                                     &other_position,
                                     current_epoch,
                                     unlocking_duration,
-                                ) && position.target_with_parameters
-                                    == other_position.target_with_parameters
-                                {
+                                ) {
                                     self.make_none(i, next_index)?;
                                     other_position.amount += position.amount;
                                     self.write_position(j, &other_position)?;
@@ -398,6 +396,7 @@ impl Position {
             == other.get_current_position(current_epoch, unlocking_duration)
             && self.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
                 == other.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+            && self.target_with_parameters == other.target_with_parameters
     }
 
     pub fn is_voting(&self) -> bool {
@@ -583,7 +582,7 @@ pub mod tests {
                 activation_epoch,
                 unlocking_start: Option::<u64>::arbitrary(g)
                     .map(|x| activation_epoch + 1 + (x % 4)),
-                target_with_parameters: TargetWithParameters::Voting,
+                target_with_parameters: TargetWithParameters::arbitrary(g),
                 amount: u32::arbitrary(g) as u64,
             }
         }
@@ -696,6 +695,7 @@ pub mod tests {
         let mut fixture = DynamicPositionArrayAccount::default();
         let mut dynamic_position_array = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
+
         let mut hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
             HashMap::new();
         for &position in input.0.iter() {
