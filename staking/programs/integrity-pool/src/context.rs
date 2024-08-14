@@ -205,12 +205,6 @@ pub struct Advance<'info> {
 
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
     pub pool_config: Account<'info, PoolConfig>,
-
-    #[account(
-        associated_token::mint = pool_config.pyth_token_mint,
-        associated_token::authority = pool_config.key(),
-    )]
-    pub pool_reward_custody: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]

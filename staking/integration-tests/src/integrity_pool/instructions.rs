@@ -46,20 +46,13 @@ use {
 };
 
 
-pub fn advance(
-    svm: &mut LiteSVM,
-    payer: &Keypair,
-    publisher_caps: Pubkey,
-    pyth_token_mint: Pubkey,
-) -> TransactionResult {
+pub fn advance(svm: &mut LiteSVM, payer: &Keypair, publisher_caps: Pubkey) -> TransactionResult {
     let pool_config = get_pool_config_address();
     let pool_data = fetch_account_data::<PoolConfig>(svm, &pool_config).pool_data;
-    let pool_reward_custody = get_pool_reward_custody_address(pyth_token_mint);
 
     let accounts = integrity_pool::accounts::Advance {
         signer: payer.pubkey(),
         pool_config,
-        pool_reward_custody,
         publisher_caps,
         pool_data,
     };

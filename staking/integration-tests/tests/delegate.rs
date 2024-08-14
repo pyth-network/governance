@@ -239,7 +239,7 @@ fn test_delegate() {
     );
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -332,7 +332,7 @@ fn test_delegate() {
 
     advance_n_epochs(&mut svm, &payer, 2); // two epochs at a time
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
