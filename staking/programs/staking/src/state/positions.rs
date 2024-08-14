@@ -194,9 +194,17 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(false)
     }
 
-    // This function is used to reduce the number of positions by merging positions that have been
-    // active for the current and the previous epoch.
-    pub fn optimize_target(
+    /// This function is used to reduce the number of positions in the array by merging equivalent
+    /// positions. Sometimes some positions have the same `target_with_parameters`,
+    /// `activation_epoch` and `unlocking_start`. These can obviously be merged, but this is not
+    /// enough, for example if a user creates a position every epoch, the number of positions
+    /// will grow linearly. The trick therefore is to merge positions that have an
+    /// `activation_epoch` that's enough in the past that they were both active in the previous
+    /// epoch and in the current epoch. However this trick only works if the user has claimed
+    /// the rewards in integrity pool, otherwise we potentially need to know how far in the past the
+    /// position was created to compute the rewards. Therefore the `pool_authority` should
+    /// ensure rewards have been claimed before allowing merging positions.
+    pub fn merge_target_positions(
         &mut self,
         current_epoch: u64,
         unlocking_duration: u8,
@@ -215,13 +223,18 @@ impl<'a> DynamicPositionArray<'a> {
                     } else {
                         for j in 0..i {
                             if let Some(mut other_position) = self.read_position(j)? {
-                                if position.has_same_state(
+                                if position.is_equivalent(
                                     &other_position,
                                     current_epoch,
                                     unlocking_duration,
                                 ) {
                                     self.make_none(i, next_index)?;
                                     other_position.amount += position.amount;
+                                    other_position.activation_epoch = std::cmp::min(
+                                        other_position.activation_epoch,
+                                        position.activation_epoch,
+                                    ); // We keep the oldest activation epoch to keep information about
+                                       // how long the user has been a staker
                                     self.write_position(j, &other_position)?;
                                     break;
                                 }
@@ -386,7 +399,14 @@ impl Position {
         }
     }
 
-    pub fn has_same_state(
+    /**
+     * Two positions are equivalent if they have the same state for the current and previous
+     * epoch. This is because we never check the state of a position for epochs futher in
+     * the past than 1 epoch. An exception to this rule is claimimng rewards in integrity
+     * pool, therefore `pool_authority` should ensure rewards have been claimed before
+     * allowing merging positions.
+     */
+    pub fn is_equivalent(
         &self,
         other: &Position,
         current_epoch: u64,
@@ -696,8 +716,10 @@ pub mod tests {
         let mut dynamic_position_array = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
 
-        let mut hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
-            HashMap::new();
+        let mut pre_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
         for &position in input.0.iter() {
             let current_state = position.get_current_position(epoch, 1).unwrap();
             let previous_state = position
@@ -705,7 +727,7 @@ pub mod tests {
                 .unwrap();
 
             if (current_state != PositionState::UNLOCKED) {
-                hash_map
+                pre_position_buckets
                     .entry((
                         position.target_with_parameters,
                         previous_state,
@@ -724,7 +746,7 @@ pub mod tests {
         }
 
         dynamic_position_array
-            .optimize_target(
+            .merge_target_positions(
                 epoch,
                 1,
                 &mut next_index,
@@ -734,10 +756,10 @@ pub mod tests {
             )
             .unwrap();
         dynamic_position_array
-            .optimize_target(epoch, 1, &mut next_index, TargetWithParameters::Voting)
+            .merge_target_positions(epoch, 1, &mut next_index, TargetWithParameters::Voting)
             .unwrap();
         dynamic_position_array
-            .optimize_target(
+            .merge_target_positions(
                 epoch,
                 1,
                 &mut next_index,
@@ -749,8 +771,10 @@ pub mod tests {
 
         let mut hash_set: HashSet<(TargetWithParameters, PositionState, PositionState)> =
             HashSet::new();
-        let mut new_hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
-            HashMap::new();
+        let mut post_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
         for i in 0..next_index {
             if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
                 let current_state = position.get_current_position(epoch, 1).unwrap();
@@ -763,7 +787,7 @@ pub mod tests {
                     previous_state,
                     current_state,
                 )) {
-                    return false;
+                    return false; // we should not have two positions that are equivalent
                 }
                 hash_set.insert((
                     position.target_with_parameters,
@@ -771,7 +795,7 @@ pub mod tests {
                     current_state,
                 ));
 
-                new_hash_map
+                post_position_buckets
                     .entry((
                         position.target_with_parameters,
                         previous_state,
@@ -782,7 +806,7 @@ pub mod tests {
             }
         }
 
-        if hash_map != new_hash_map {
+        if pre_position_buckets != post_position_buckets {
             return false;
         }
 
