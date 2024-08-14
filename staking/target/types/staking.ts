@@ -1195,6 +1195,120 @@ export type Staking = {
       ]
     },
     {
+      "name": "mergeTargetPositions",
+      "discriminator": [
+        21,
+        136,
+        57,
+        2,
+        204,
+        219,
+        242,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "stakeAccountMetadata"
+          ]
+        },
+        {
+          "name": "stakeAccountPositions",
+          "writable": true
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "stakeAccountCustody",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  115,
+                  116,
+                  111,
+                  100,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "poolAuthority",
+          "signer": true,
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "targetWithParameters",
+          "type": {
+            "defined": {
+              "name": "targetWithParameters"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "recoverAccount",
       "docs": [
         "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
