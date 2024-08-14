@@ -52,6 +52,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use state::stake_account;
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
@@ -233,6 +234,49 @@ pub mod staking {
         }
 
         stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+
+        Ok(())
+    }
+
+    pub fn merge_target_positions(
+        ctx: Context<MergeTargetPositions>,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<()> {
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+        let stake_account_custody = &ctx.accounts.stake_account_custody;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
+
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
+            require!(
+                ctx.accounts
+                    .pool_authority
+                    .as_ref()
+                    .map_or(false, |x| x.key() == config.pool_authority),
+                ErrorCode::InvalidPoolAuthority
+            )
+        }
+
+        stake_account_positions.merge_target_positions(
+            current_epoch,
+            config.unlocking_duration,
+            &mut stake_account_metadata.next_index,
+            target_with_parameters,
+        )?;
+
+        let unvested_balance = stake_account_metadata.lock.get_unvested_balance(
+            utils::clock::get_current_time(config),
+            config.pyth_token_list_time,
+        )?;
+
+        utils::risk::validate(
+            stake_account_positions,
+            stake_account_custody.amount,
+            unvested_balance,
+        )?;
 
         Ok(())
     }

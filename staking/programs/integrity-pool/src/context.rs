@@ -123,6 +123,62 @@ pub struct Delegate<'info> {
 }
 
 #[derive(Accounts)]
+pub struct MergeDelegationPositions<'info> {
+    pub payer: Signer<'info>,
+
+    pub pool_data: AccountLoader<'info, PoolData>,
+
+    #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    /// CHECK : The publisher will be checked against data in the pool_data
+    #[account()]
+    pub publisher: AccountInfo<'info>,
+
+    #[account(
+        seeds = [
+            DELEGATION_RECORD.as_bytes(),
+            publisher.key().as_ref(),
+            stake_account_positions.key().as_ref()
+        ],
+        bump,
+    )]
+    pub delegation_record: Account<'info, DelegationRecord>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        seeds = [staking::context::CONFIG_SEED.as_bytes()],
+        bump,
+        seeds::program = staking_program.key(),
+    )]
+    pub config_account: AccountInfo<'info>,
+
+    /// CHECK : This AccountInfo is safe because it will checked in staking program
+    #[account(mut)]
+    pub stake_account_positions: AccountInfo<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        mut,
+        seeds = [staking::context::STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump,
+        seeds::program = staking_program.key(),
+    )]
+    pub stake_account_metadata: AccountInfo<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's a checked PDA
+    #[account(
+        seeds = [staking::context::CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump,
+        seeds::program = staking_program.key(),
+    )]
+    pub stake_account_custody: AccountInfo<'info>,
+
+    pub staking_program: Program<'info, Staking>,
+}
+
+
+#[derive(Accounts)]
 #[instruction(position_index: u8, amount: u64)]
 pub struct Undelegate<'info> {
     #[account(mut)]

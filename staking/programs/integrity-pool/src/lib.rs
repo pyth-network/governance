@@ -121,6 +121,45 @@ pub mod integrity_pool {
         Ok(())
     }
 
+    pub fn merge_delegation_positions(ctx: Context<MergeDelegationPositions>) -> Result<()> {
+        let publisher = ctx.accounts.publisher.key();
+        let pool_data = &mut ctx.accounts.pool_data.load()?;
+        let delegation_record = &ctx.accounts.delegation_record;
+
+        let payer = ctx.accounts.payer.to_account_info();
+        let pool_config = ctx.accounts.pool_config.to_account_info();
+        let staking_program = ctx.accounts.staking_program.to_account_info();
+        let config_account = ctx.accounts.config_account.clone();
+        let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
+        let stake_account_custody = ctx.accounts.stake_account_custody.clone();
+        let stake_account_positions = ctx.accounts.stake_account_positions.clone();
+
+        // assert delegator record is up to date
+        delegation_record.assert_up_to_date(get_current_epoch()?)?;
+
+        // check that publisher exists
+        pool_data.get_publisher_index(&publisher)?;
+
+
+        let target_with_parameters =
+            staking::state::positions::TargetWithParameters::IntegrityPool { publisher };
+
+        let cpi_accounts = staking::cpi::accounts::MergeTargetPositions {
+            config: config_account,
+            stake_account_positions,
+            stake_account_metadata,
+            stake_account_custody,
+            owner: payer,
+            pool_authority: Some(pool_config),
+        };
+
+        let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
+        let cpi_ctx = CpiContext::new(staking_program, cpi_accounts).with_signer(signer_seeds);
+        staking::cpi::merge_target_positions(cpi_ctx, target_with_parameters)?;
+
+        Ok(())
+    }
+
     pub fn undelegate(ctx: Context<Undelegate>, position_index: u8, amount: u64) -> Result<()> {
         let payer = ctx.accounts.payer.clone();
         let pool_config = &ctx.accounts.pool_config;
