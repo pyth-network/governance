@@ -133,7 +133,8 @@ impl PoolData {
                         TargetWithParameters::IntegrityPool {
                             publisher: ref position_publisher
                         } if position_publisher == publisher
-                    ) && position_state == PositionState::LOCKED
+                    ) && (position_state == PositionState::LOCKED
+                        || position_state == PositionState::PREUNLOCKING)
                     {
                         amount += position.amount;
                     }
