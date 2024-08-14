@@ -593,7 +593,10 @@ pub mod tests {
     }
 
 
-    // Boiler plate to generate random instances
+    /// Boiler plate to generate random instances
+    /// We use small numbers to increase the chance that current_epoch will be equal to
+    /// activation_epoch or unlocking_start
+
     impl Arbitrary for Position {
         fn arbitrary(g: &mut Gen) -> Self {
             let activation_epoch = u64::arbitrary(g) % 4;
@@ -603,7 +606,7 @@ pub mod tests {
                 unlocking_start: Option::<u64>::arbitrary(g)
                     .map(|x| activation_epoch + 1 + (x % 4)),
                 target_with_parameters: TargetWithParameters::arbitrary(g),
-                amount: u32::arbitrary(g) as u64,
+                amount: u32::arbitrary(g) as u64, // We use u32 to avoid u64 overflow
             }
         }
     }
@@ -787,7 +790,8 @@ pub mod tests {
                     previous_state,
                     current_state,
                 )) {
-                    return false; // we should not have two positions that are equivalent
+                    return false; // we should not have have two positions that are equivalent after
+                                  // merging
                 }
                 hash_set.insert((
                     position.target_with_parameters,
