@@ -1,14 +1,11 @@
 use {
     integration_tests::{
-        integrity_pool::{
-            instructions::{
-                advance,
-                advance_delegation_record,
-                delegate,
-                merge_delegation_positions,
-                undelegate,
-            },
-            pda::get_delegation_record_address,
+        integrity_pool::instructions::{
+            advance,
+            advance_delegation_record,
+            delegate,
+            merge_delegation_positions,
+            undelegate,
         },
         publisher_caps::helper_functions::post_publisher_caps,
         setup::{
@@ -17,11 +14,7 @@ use {
             SetupResult,
             STARTING_EPOCH,
         },
-        solana::utils::{
-            fetch_account_data,
-            fetch_account_data_bytemuck,
-            fetch_positions_account,
-        },
+        solana::utils::fetch_positions_account,
         staking::{
             helper_functions::initialize_new_stake_account,
             instructions::create_position,
@@ -31,29 +24,12 @@ use {
             error::assert_anchor_program_error,
         },
     },
-    integrity_pool::{
-        error::IntegrityPoolError,
-        state::{
-            delegation_record::DelegationRecord,
-            pool::{
-                self,
-                DelegationState,
-                PoolData,
-            },
-        },
-        utils::{
-            clock::EPOCH_DURATION,
-            constants::MAX_PUBLISHERS,
-        },
-    },
+    integrity_pool::error::IntegrityPoolError,
     solana_sdk::{
         pubkey::Pubkey,
         signer::Signer,
     },
-    staking::state::positions::{
-        Target,
-        TargetWithParameters,
-    },
+    staking::state::positions::TargetWithParameters,
 };
 
 

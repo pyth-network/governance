@@ -456,19 +456,15 @@ pub mod tests {
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::prelude::*,
-        core::hash,
         quickcheck::{
             Arbitrary,
             Gen,
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        std::{
-            collections::{
-                HashMap,
-                HashSet,
-            },
-            iter::Cycle,
+        std::collections::{
+            HashMap,
+            HashSet,
         },
     };
     #[test]
@@ -729,7 +725,7 @@ pub mod tests {
                 .get_current_position(epoch.saturating_sub(1), 1)
                 .unwrap();
 
-            if (current_state != PositionState::UNLOCKED) {
+            if current_state != PositionState::UNLOCKED {
                 pre_position_buckets
                     .entry((
                         position.target_with_parameters,

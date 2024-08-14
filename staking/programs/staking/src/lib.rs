@@ -52,7 +52,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use state::stake_account;
+
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;

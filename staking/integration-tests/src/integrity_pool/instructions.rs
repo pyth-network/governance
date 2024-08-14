@@ -25,7 +25,6 @@ use {
     anchor_spl::token::spl_token,
     integrity_pool::{
         state::pool::{
-            self,
             PoolConfig,
             PoolData,
         },
