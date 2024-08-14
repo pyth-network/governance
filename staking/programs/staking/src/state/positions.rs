@@ -193,6 +193,48 @@ impl<'a> DynamicPositionArray<'a> {
         }
         Ok(false)
     }
+
+    // This function is used to reduce the number of positions by merging positions that have been
+    // active for the current and the previous epoch.
+    pub fn optimize_target(
+        &mut self,
+        current_epoch: u64,
+        unlocking_duration: u8,
+        next_index: &mut u8,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<()> {
+        let mut i = *next_index as usize;
+        while i >= 1 {
+            i -= 1;
+            if let Some(position) = self.read_position(i)? {
+                if position.target_with_parameters == target_with_parameters {
+                    if position.get_current_position(current_epoch, unlocking_duration)?
+                        == PositionState::UNLOCKED
+                    {
+                        self.make_none(i, next_index)?;
+                    } else {
+                        for j in 0..i {
+                            if let Some(mut other_position) = self.read_position(j)? {
+                                if position.has_same_state(
+                                    &other_position,
+                                    current_epoch,
+                                    unlocking_duration,
+                                ) && position.target_with_parameters
+                                    == other_position.target_with_parameters
+                                {
+                                    self.make_none(i, next_index)?;
+                                    other_position.amount += position.amount;
+                                    self.write_position(j, &other_position)?;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct DynamicPositionArrayAccount {
@@ -346,6 +388,18 @@ impl Position {
         }
     }
 
+    pub fn has_same_state(
+        &self,
+        other: &Position,
+        current_epoch: u64,
+        unlocking_duration: u8,
+    ) -> bool {
+        self.get_current_position(current_epoch, unlocking_duration)
+            == other.get_current_position(current_epoch, unlocking_duration)
+            && self.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+                == other.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+    }
+
     pub fn is_voting(&self) -> bool {
         matches!(self.target_with_parameters, TargetWithParameters::Voting)
     }
@@ -354,7 +408,7 @@ impl Position {
 /// The core states that a position can be in
 #[repr(u8)]
 #[wasm_bindgen]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PositionState {
     UNLOCKED,
     LOCKING,
@@ -389,7 +443,13 @@ pub mod tests {
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        std::collections::HashSet,
+        std::{
+            collections::{
+                HashMap,
+                HashSet,
+            },
+            iter::Cycle,
+        },
     };
     #[test]
     fn lifecycle_lock_unlock() {
@@ -512,22 +572,34 @@ pub mod tests {
         Delete,
     }
 
+
     // Boiler plate to generate random instances
     impl Arbitrary for Position {
         fn arbitrary(g: &mut Gen) -> Self {
+            let activation_epoch = u64::arbitrary(g) % 4;
+
             Position {
-                activation_epoch:       u64::arbitrary(g),
-                unlocking_start:        Option::<u64>::arbitrary(g),
+                activation_epoch,
+                unlocking_start: Option::<u64>::arbitrary(g).map(|x| activation_epoch + x % 4),
                 target_with_parameters: TargetWithParameters::Voting,
-                amount:                 u64::arbitrary(g),
+                amount: u32::arbitrary(g) as u64,
             }
         }
     }
+
+    const FIRST_PUBLISHER: Pubkey = pubkey!("11111111111111111111111111111111");
+    const SECOND_PUBLISHER: Pubkey = pubkey!("1tJ93RwaVfE1PEMxd5rpZZuPtLCwbEaDCrNBhAy8Cw");
     impl Arbitrary for TargetWithParameters {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
-                TargetWithParameters::IntegrityPool {
-                    publisher: Pubkey::new_unique(),
+                if bool::arbitrary(g) {
+                    TargetWithParameters::IntegrityPool {
+                        publisher: FIRST_PUBLISHER,
+                    }
+                } else {
+                    TargetWithParameters::IntegrityPool {
+                        publisher: SECOND_PUBLISHER,
+                    }
                 }
             } else {
                 TargetWithParameters::Voting
@@ -613,5 +685,92 @@ pub mod tests {
             };
         }
         set == position_data.to_set(next_index)
+    }
+
+
+    #[quickcheck]
+    fn optimize_positions(input: (Vec<Position>, u8)) -> bool {
+        let epoch = (input.1 % 8) as u64;
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut dynamic_position_array = fixture.to_dynamic_position_array();
+        let mut next_index: u8 = 0;
+        let mut hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
+            HashMap::new();
+        for &position in input.0.iter() {
+            let current_state = position.get_current_position(epoch, 1).unwrap();
+            let previous_state = position
+                .get_current_position(epoch.saturating_sub(1), 1)
+                .unwrap();
+
+            println!(
+                "{:?} {:?} {:?} {:?}",
+                epoch, position, previous_state, current_state
+            );
+            if (current_state != PositionState::UNLOCKED
+                || position.target_with_parameters
+                    == TargetWithParameters::IntegrityPool {
+                        publisher: FIRST_PUBLISHER,
+                    })
+            {
+                hash_map
+                    .entry((
+                        position.target_with_parameters,
+                        previous_state,
+                        current_state,
+                    ))
+                    .and_modify(|e| *e += position.amount)
+                    .or_insert(position.amount);
+            }
+
+            let index = dynamic_position_array
+                .reserve_new_index(&mut next_index)
+                .unwrap();
+            dynamic_position_array
+                .write_position(index, &position)
+                .unwrap();
+        }
+
+        // println!("{:?}",hash_map.keys().map(|(_,b,c)| (b,c)));
+
+        dynamic_position_array
+            .optimize_target(epoch, 1, &mut next_index, TargetWithParameters::Voting)
+            .unwrap();
+        dynamic_position_array
+            .optimize_target(
+                epoch,
+                1,
+                &mut next_index,
+                TargetWithParameters::IntegrityPool {
+                    publisher: Pubkey::default(),
+                },
+            )
+            .unwrap();
+
+        let mut new_hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
+            HashMap::new();
+        for i in 0..next_index {
+            if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
+                let current_state = position.get_current_position(epoch, 1).unwrap();
+                let previous_state = position
+                    .get_current_position(epoch.saturating_sub(1), 1)
+                    .unwrap();
+                new_hash_map
+                    .entry((
+                        position.target_with_parameters,
+                        previous_state,
+                        current_state,
+                    ))
+                    .and_modify(|e| *e += position.amount)
+                    .or_insert(position.amount);
+            }
+        }
+
+        if hash_map != new_hash_map {
+            println!("Hash map: {:?}", hash_map);
+            println!("New hash map: {:?}", new_hash_map);
+            return false;
+        }
+
+        true
     }
 }

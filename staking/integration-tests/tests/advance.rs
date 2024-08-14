@@ -275,7 +275,7 @@ fn test_reward_events_with_delegation_fee() {
         publisher_keypair.pubkey(),
         200 * FRAC_64_MULTIPLIER,
     );
-    advance(&mut svm, &payer, publisher_caps, pyth_token_mint.pubkey()).unwrap();
+    advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
