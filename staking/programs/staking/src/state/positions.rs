@@ -437,6 +437,7 @@ pub mod tests {
             POSITION_BUFFER_SIZE,
         },
         anchor_lang::prelude::*,
+        core::hash,
         quickcheck::{
             Arbitrary,
             Gen,
@@ -580,7 +581,8 @@ pub mod tests {
 
             Position {
                 activation_epoch,
-                unlocking_start: Option::<u64>::arbitrary(g).map(|x| activation_epoch + x % 4),
+                unlocking_start: Option::<u64>::arbitrary(g)
+                    .map(|x| activation_epoch + 1 + (x % 4)),
                 target_with_parameters: TargetWithParameters::Voting,
                 amount: u32::arbitrary(g) as u64,
             }
@@ -702,16 +704,7 @@ pub mod tests {
                 .get_current_position(epoch.saturating_sub(1), 1)
                 .unwrap();
 
-            println!(
-                "{:?} {:?} {:?} {:?}",
-                epoch, position, previous_state, current_state
-            );
-            if (current_state != PositionState::UNLOCKED
-                || position.target_with_parameters
-                    == TargetWithParameters::IntegrityPool {
-                        publisher: FIRST_PUBLISHER,
-                    })
-            {
+            if (current_state != PositionState::UNLOCKED) {
                 hash_map
                     .entry((
                         position.target_with_parameters,
@@ -730,8 +723,16 @@ pub mod tests {
                 .unwrap();
         }
 
-        // println!("{:?}",hash_map.keys().map(|(_,b,c)| (b,c)));
-
+        dynamic_position_array
+            .optimize_target(
+                epoch,
+                1,
+                &mut next_index,
+                TargetWithParameters::IntegrityPool {
+                    publisher: FIRST_PUBLISHER,
+                },
+            )
+            .unwrap();
         dynamic_position_array
             .optimize_target(epoch, 1, &mut next_index, TargetWithParameters::Voting)
             .unwrap();
@@ -741,11 +742,13 @@ pub mod tests {
                 1,
                 &mut next_index,
                 TargetWithParameters::IntegrityPool {
-                    publisher: Pubkey::default(),
+                    publisher: SECOND_PUBLISHER,
                 },
             )
             .unwrap();
 
+        let mut hash_set: HashSet<(TargetWithParameters, PositionState, PositionState)> =
+            HashSet::new();
         let mut new_hash_map: HashMap<(TargetWithParameters, PositionState, PositionState), u64> =
             HashMap::new();
         for i in 0..next_index {
@@ -754,6 +757,20 @@ pub mod tests {
                 let previous_state = position
                     .get_current_position(epoch.saturating_sub(1), 1)
                     .unwrap();
+
+                if hash_set.contains(&(
+                    position.target_with_parameters,
+                    previous_state,
+                    current_state,
+                )) {
+                    return false;
+                }
+                hash_set.insert((
+                    position.target_with_parameters,
+                    previous_state,
+                    current_state,
+                ));
+
                 new_hash_map
                     .entry((
                         position.target_with_parameters,
@@ -766,8 +783,6 @@ pub mod tests {
         }
 
         if hash_map != new_hash_map {
-            println!("Hash map: {:?}", hash_map);
-            println!("New hash map: {:?}", new_hash_map);
             return false;
         }
 
