@@ -389,10 +389,7 @@ pub mod tests {
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        std::collections::{
-            HashMap,
-            HashSet,
-        },
+        std::collections::HashMap,
     };
     #[test]
     fn lifecycle_lock_unlock() {
