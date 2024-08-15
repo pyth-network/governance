@@ -105,11 +105,10 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(Self { acc_info })
     }
 
-    pub fn add_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
+    pub fn adjust_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
         let rent = Rent::get()?;
-        let amount_to_transfer = rent
-            .minimum_balance(self.data_len())
-            .saturating_sub(self.acc_info.lamports());
+        let amount_required = rent.minimum_balance(self.data_len());
+        let amount_to_transfer = amount_required.saturating_sub(self.acc_info.lamports());
 
         if amount_to_transfer > 0 {
             let transfer_instruction =
@@ -119,6 +118,13 @@ impl<'a> DynamicPositionArray<'a> {
                 &transfer_instruction,
                 &[payer.to_account_info(), self.acc_info.clone()],
             )?;
+        }
+
+        let amount_to_withdraw = self.acc_info.lamports().saturating_sub(amount_required);
+
+        if amount_to_withdraw > 0 {
+            **payer.try_borrow_mut_lamports()? += amount_to_withdraw;
+            **self.acc_info.try_borrow_mut_lamports()? -= amount_to_withdraw;
         }
         Ok(())
     }
@@ -147,12 +153,17 @@ impl<'a> DynamicPositionArray<'a> {
             .ok_or_else(|| error!(ErrorCode::TooManyPositions))?;
 
         if res == position_capacity {
-            self.acc_info.realloc(
-                PositionData::LEN + usize::from(*next_index) * POSITION_BUFFER_SIZE,
-                false,
-            )?;
+            self.realloc(next_index)?;
         }
         Ok(res)
+    }
+
+    pub fn realloc(&mut self, next_index: &u8) -> Result<()> {
+        self.acc_info.realloc(
+            PositionData::LEN + usize::from(*next_index) * POSITION_BUFFER_SIZE,
+            false,
+        )?;
+        Ok(())
     }
 
     // Makes position at index i none, and swaps positions to preserve the invariant
@@ -244,6 +255,7 @@ impl<'a> DynamicPositionArray<'a> {
                 }
             }
         }
+
         Ok(())
     }
 }

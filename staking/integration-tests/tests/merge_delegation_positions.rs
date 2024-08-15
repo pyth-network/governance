@@ -27,9 +27,13 @@ use {
     integrity_pool::error::IntegrityPoolError,
     solana_sdk::{
         pubkey::Pubkey,
+        rent::Rent,
         signer::Signer,
     },
-    staking::state::positions::TargetWithParameters,
+    staking::state::positions::{
+        TargetWithParameters,
+        POSITION_BUFFER_SIZE,
+    },
 };
 
 
@@ -383,6 +387,8 @@ fn test_merge_delegation_positions() {
     .unwrap();
 
 
+    let payer_balance_before = svm.get_balance(&payer.pubkey()).unwrap();
+
     merge_delegation_positions(
         &mut svm,
         &payer,
@@ -391,6 +397,7 @@ fn test_merge_delegation_positions() {
         stake_account_positions,
     )
     .unwrap();
+
 
     let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();
@@ -432,5 +439,26 @@ fn test_merge_delegation_positions() {
     assert_eq!(pos4.unlocking_start, None);
 
 
-    assert!(positions.read_position(5).unwrap().is_none(),);
+    assert_eq!(
+        positions.read_position(5).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
+
+
+    let payer_balance_after = svm.get_balance(&payer.pubkey()).unwrap();
+    let balance = svm.get_balance(&stake_account_positions).unwrap();
+    let stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+
+    assert_eq!(
+        payer_balance_before + Rent::default().minimum_balance(40 + 9 * POSITION_BUFFER_SIZE),
+        payer_balance_after + Rent::default().minimum_balance(40 + 5 * POSITION_BUFFER_SIZE) + 5000
+    );
+    assert_eq!(
+        balance,
+        Rent::default().minimum_balance(40 + 5 * POSITION_BUFFER_SIZE)
+    );
+    assert_eq!(
+        stake_positions_account.data.len(),
+        40 + 5 * POSITION_BUFFER_SIZE
+    );
 }
