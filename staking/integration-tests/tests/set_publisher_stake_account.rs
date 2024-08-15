@@ -146,7 +146,8 @@ fn test_set_publisher_stake_account() {
         pool_data_pubkey,
         stake_account_positions_3,
         100,
-    );
+    )
+    .unwrap();
 
     assert_anchor_program_error(
         set_publisher_stake_account(
@@ -188,7 +189,8 @@ fn test_set_publisher_stake_account() {
         pool_data_pubkey,
         stake_account_positions_2,
         90,
-    );
+    )
+    .unwrap();
 
     assert_anchor_program_error(
         set_publisher_stake_account(

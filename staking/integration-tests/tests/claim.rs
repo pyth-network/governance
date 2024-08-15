@@ -63,7 +63,8 @@ fn test_claim() {
         pool_data_pubkey,
         stake_account_positions,
         1 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
 
@@ -208,7 +209,8 @@ fn test_lost_reward() {
         pool_data_pubkey,
         stake_account_positions,
         1 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     // advance 200 epochs
     for _ in 0..20 {
@@ -281,7 +283,8 @@ fn test_correct_position_states() {
         pool_data_pubkey,
         stake_account_positions,
         1 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
 
@@ -300,7 +303,8 @@ fn test_correct_position_states() {
         pool_data_pubkey,
         stake_account_positions,
         5 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 2);
 
@@ -369,7 +373,8 @@ fn test_advance_delegation_record_permissionlessness() {
         pool_data_pubkey,
         stake_account_positions,
         1 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 2);
 
