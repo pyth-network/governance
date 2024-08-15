@@ -44,7 +44,7 @@ fn test_max_positions() {
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
-    for _ in 0..20 {
+    for _ in 0..u8::MAX {
         svm.expire_blockhash();
         delegate(
             &mut svm,
@@ -57,19 +57,19 @@ fn test_max_positions() {
         .unwrap();
     }
 
-    // svm.expire_blockhash();
-    // assert_anchor_program_error(
-    //     delegate(
-    //         &mut svm,
-    //         &payer,
-    //         publisher_keypair.pubkey(),
-    //         pool_data_pubkey,
-    //         stake_account_positions,
-    //         100,
-    //     ),
-    //     ErrorCode::TooManyPositions.into(),
-    //     0,
-    // );
+    svm.expire_blockhash();
+    assert_anchor_program_error(
+        delegate(
+            &mut svm,
+            &payer,
+            publisher_keypair.pubkey(),
+            pool_data_pubkey,
+            stake_account_positions,
+            100,
+        ),
+        ErrorCode::TooManyPositions.into(),
+        0,
+    );
 
     for _ in 0..10 {
         advance_n_epochs(&mut svm, &payer, 10);
@@ -95,7 +95,8 @@ fn test_max_positions() {
     )
     .unwrap();
 
-    println!("{:?}", res);
+    // make sure the CU is not too close to the limit
+    assert!(res.compute_units_consumed < 1_350_000);
 
     advance_n_epochs(&mut svm, &payer, 10);
     let publisher_caps = post_publisher_caps(

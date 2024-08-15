@@ -105,7 +105,8 @@ impl PoolData {
 
         let mut delegator_reward: frac64 = 0;
         let mut publisher_reward: frac64 = 0;
-        let mut cnt = 0;
+
+        let mut event_amounts = [0_u64; MAX_EVENTS];
 
         for i in 0..positions.get_position_capacity() {
             let position = match positions.read_position(i)? {
@@ -114,9 +115,7 @@ impl PoolData {
             };
 
             let mut last_event_index: usize = self.num_events as usize;
-            msg!("cnt: {}", cnt);
             loop {
-                cnt += 1;
                 // prevent infinite loop and double counting events
                 // by breaking the loop when visiting all events
                 if self.num_events as usize == last_event_index + MAX_EVENTS {
@@ -149,19 +148,22 @@ impl PoolData {
                         continue;
                     }
                 }
-
-                let (delegator_reward_for_event, publisher_reward_for_event) = event
-                    .calculate_reward(
-                        position.amount,
-                        publisher_index,
-                        &self.publisher_stake_accounts[publisher_index]
-                            == stake_account_positions_key,
-                    )?;
-
-                delegator_reward += delegator_reward_for_event;
-                publisher_reward += publisher_reward_for_event;
+                event_amounts[last_event_index % MAX_EVENTS] += position.amount;
             }
         }
+
+        for (i, amount) in event_amounts.iter().enumerate() {
+            let event = self.get_event(i);
+            let (delegator_reward_for_event, publisher_reward_for_event) = event.calculate_reward(
+                *amount,
+                publisher_index,
+                &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key,
+            )?;
+
+            delegator_reward += delegator_reward_for_event;
+            publisher_reward += publisher_reward_for_event;
+        }
+
         Ok((delegator_reward, publisher_reward))
     }
 
