@@ -29,7 +29,6 @@ describe("fills a stake account with positions", async () => {
   let stakeAccountAddress: PublicKey;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
     await abortUnlessDetached(portNumber, controller);
@@ -38,8 +37,6 @@ describe("fills a stake account with positions", async () => {
     ({ controller, stakeConnection } = await standardSetup(portNumber));
     program = stakeConnection.program;
     provider = stakeConnection.provider;
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
 
     await stakeConnection.depositTokens(
       undefined,
@@ -54,7 +51,6 @@ describe("fills a stake account with positions", async () => {
     let createPosIx = await program.methods
       .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -98,7 +94,6 @@ describe("fills a stake account with positions", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("1").toBN())
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached"

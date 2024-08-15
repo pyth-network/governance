@@ -58,7 +58,7 @@ describe("pool authority", async () => {
           targetWithParameters,
           PythBalance.fromString("100").toBN()
         )
-        .accounts({
+        .accountsPartial({
           stakeAccountPositions: stakeAccount.address,
           poolAuthority: stakeConnection.userPublicKey(),
           targetAccount: null,
@@ -72,7 +72,7 @@ describe("pool authority", async () => {
           targetWithParameters,
           PythBalance.fromString("100").toBN()
         )
-        .accounts({
+        .accountsPartial({
           stakeAccountPositions: stakeAccount.address,
           targetAccount: null,
         }),
@@ -84,7 +84,7 @@ describe("pool authority", async () => {
         targetWithParameters,
         PythBalance.fromString("100").toBN()
       )
-      .accounts({
+      .accountsPartial({
         stakeAccountPositions: stakeAccount.address,
         poolAuthority: authorities.poolAuthority.publicKey,
         targetAccount: null,
@@ -156,7 +156,7 @@ describe("pool authority", async () => {
           PythBalance.fromString("100").toBN(),
           targetWithParameters
         )
-        .accounts({
+        .accountsPartial({
           stakeAccountPositions: stakeAccount.address,
           poolAuthority: stakeConnection.userPublicKey(),
           targetAccount: null,
@@ -171,7 +171,7 @@ describe("pool authority", async () => {
           PythBalance.fromString("100").toBN(),
           targetWithParameters
         )
-        .accounts({
+        .accountsPartial({
           stakeAccountPositions: stakeAccount.address,
           targetAccount: null,
         }),
@@ -183,7 +183,6 @@ describe("pool authority", async () => {
         .closePosition(1, PythBalance.fromString("100").toBN(), votingTarget)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: await getTargetAccount(program.programId),
           poolAuthority: authorities.poolAuthority.publicKey,
         })
         .signers([authorities.poolAuthority]),
@@ -196,7 +195,7 @@ describe("pool authority", async () => {
         PythBalance.fromString("100").toBN(),
         targetWithParameters
       )
-      .accounts({
+      .accountsPartial({
         stakeAccountPositions: stakeAccount.address,
         targetAccount: null,
         poolAuthority: authorities.poolAuthority.publicKey,
