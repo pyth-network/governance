@@ -389,7 +389,10 @@ pub mod tests {
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        std::collections::HashSet,
+        std::collections::{
+            HashMap,
+            HashSet,
+        },
     };
     #[test]
     fn lifecycle_lock_unlock() {
@@ -547,15 +550,11 @@ pub mod tests {
     }
 
     impl<'a> DynamicPositionArray<'a> {
-        fn to_set(&self, next_index: u8) -> HashSet<Position> {
-            let mut res: HashSet<Position> = HashSet::new();
+        fn to_hash_map(&self, next_index: u8) -> HashMap<Position, u64> {
+            let mut res: HashMap<Position, u64> = HashMap::<Position, u64>::new();
             for i in 0..next_index {
                 if let Some(position) = self.read_position(i as usize).unwrap() {
-                    if res.contains(&position) {
-                        panic!()
-                    } else {
-                        res.insert(position);
-                    }
+                    res.entry(position).and_modify(|e| *e += 1).or_insert(1);
                 } else {
                     panic!()
                 }
@@ -571,17 +570,25 @@ pub mod tests {
         }
     }
 
+    fn remove_from_map(map: &mut HashMap<Position, u64>, position: &Position) {
+        let value = map.get_mut(position).unwrap();
+        *value -= 1;
+        if *value == 0 {
+            map.remove(position);
+        }
+    }
+
     #[quickcheck]
     fn prop(input: Vec<DataOperation>) -> bool {
         let mut fixture = DynamicPositionArrayAccount::default();
         let mut position_data = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
-        let mut set: HashSet<Position> = HashSet::new();
+        let mut map: HashMap<Position, u64> = HashMap::<Position, u64>::new();
         let mut rng = rand::thread_rng();
         for op in input {
             match op {
                 DataOperation::Add(position) => {
-                    set.insert(position);
+                    map.entry(position).and_modify(|e| *e += 1).or_insert(1);
                     let i = position_data.reserve_new_index(&mut next_index).unwrap();
                     position_data.write_position(i, &position).unwrap();
                 }
@@ -590,10 +597,10 @@ pub mod tests {
                         let i: usize = rng.gen_range(0..(next_index as usize));
                         let current_position = position_data.read_position(i).unwrap().unwrap();
                         position_data.write_position(i, &position).unwrap();
-                        set.remove(&current_position);
-                        set.insert(position);
+                        map.entry(position).and_modify(|e| *e += 1).or_insert(1);
+                        remove_from_map(&mut map, &current_position)
                     } else {
-                        assert!(set.is_empty());
+                        assert!(map.is_empty());
                     }
                 }
                 DataOperation::Delete => {
@@ -601,17 +608,17 @@ pub mod tests {
                         let i: usize = rng.gen_range(0..(next_index as usize));
                         let current_position = position_data.read_position(i).unwrap().unwrap();
                         position_data.make_none(i, &mut next_index).unwrap();
-                        set.remove(&current_position);
+                        remove_from_map(&mut map, &current_position)
                     } else {
-                        assert!(set.is_empty());
+                        assert!(map.is_empty());
                     }
                 }
             }
 
-            if set != position_data.to_set(next_index) {
+            if map != position_data.to_hash_map(next_index) {
                 return false;
             };
         }
-        set == position_data.to_set(next_index)
+        map == position_data.to_hash_map(next_index)
     }
 }
