@@ -1,4 +1,4 @@
-# Operational PIP 10: Upgrade Entropy contracts on all the testnet chains (Pythian Council)
+# Operational PIP 21: Upgrade Entropy contracts on all the testnet chains (Pythian Council)
 
 ## Abstract
 
