@@ -141,7 +141,8 @@ fn test_advance_reward_events() {
         pool_data_pubkey,
         stake_account_positions,
         50,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
@@ -156,7 +157,8 @@ fn test_advance_reward_events() {
         pool_data_pubkey,
         stake_account_positions,
         50,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 8);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
@@ -257,7 +259,8 @@ fn test_reward_events_with_delegation_fee() {
         pool_data_pubkey,
         stake_account_positions,
         50 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     delegate(
         &mut svm,
@@ -266,7 +269,8 @@ fn test_reward_events_with_delegation_fee() {
         pool_data_pubkey,
         publisher_stake_account_positions,
         100 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 2);
 
@@ -395,7 +399,8 @@ fn test_reward_after_undelegate() {
         pool_data_pubkey,
         stake_account_positions,
         50 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
 

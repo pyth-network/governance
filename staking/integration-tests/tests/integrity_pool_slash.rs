@@ -241,7 +241,8 @@ fn test_slash() {
         pool_data_pubkey,
         stake_account_positions,
         10 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
 
