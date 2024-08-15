@@ -114,6 +114,13 @@ impl PoolData {
                 None => continue,
             };
 
+            match position.target_with_parameters {
+                TargetWithParameters::IntegrityPool {
+                    publisher: ref position_publisher,
+                } if position_publisher == publisher => {}
+                _ => continue,
+            }
+
             let mut last_event_index: usize = self.num_events as usize;
             loop {
                 // prevent infinite loop and double counting events
@@ -134,13 +141,6 @@ impl PoolData {
 
                 let position_state =
                     position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
-
-                match position.target_with_parameters {
-                    TargetWithParameters::IntegrityPool {
-                        publisher: ref position_publisher,
-                    } if position_publisher == publisher => {}
-                    _ => continue,
-                }
 
                 match position_state {
                     PositionState::LOCKED | PositionState::PREUNLOCKING => {}
