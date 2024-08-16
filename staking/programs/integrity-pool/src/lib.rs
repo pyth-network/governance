@@ -126,7 +126,7 @@ pub mod integrity_pool {
         let pool_data = &mut ctx.accounts.pool_data.load()?;
         let delegation_record = &ctx.accounts.delegation_record;
 
-        let payer = ctx.accounts.payer.to_account_info();
+        let owner = ctx.accounts.owner.to_account_info();
         let pool_config = ctx.accounts.pool_config.to_account_info();
         let staking_program = ctx.accounts.staking_program.to_account_info();
         let config_account = ctx.accounts.config_account.clone();
@@ -147,7 +147,7 @@ pub mod integrity_pool {
             config: config_account,
             stake_account_positions,
             stake_account_metadata,
-            owner: payer,
+            owner,
             pool_authority: Some(pool_config),
         };
 

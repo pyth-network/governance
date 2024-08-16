@@ -307,7 +307,7 @@ pub fn merge_delegation_positions(
     let merge_delegation_positions_data = integrity_pool::instruction::MergeDelegationPositions {};
 
     let merge_delegation_positions_accs = integrity_pool::accounts::MergeDelegationPositions {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,

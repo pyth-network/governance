@@ -124,7 +124,7 @@ pub struct Delegate<'info> {
 
 #[derive(Accounts)]
 pub struct MergeDelegationPositions<'info> {
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     pub pool_data: AccountLoader<'info, PoolData>,
 
