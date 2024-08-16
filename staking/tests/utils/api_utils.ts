@@ -289,7 +289,7 @@ class MockProposalCreator {
       GovernanceAccountType.ProposalV2
     );
 
-    const serializedProp = serialize(schema, proposal, GovernanceBinaryWriter);
+    const serializedProp = serialize(schema, proposal);
     const ixData = new BinaryWriter();
     // Add epoch duration to avoid negative seed
     const seed =

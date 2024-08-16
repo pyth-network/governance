@@ -34,7 +34,6 @@ describe("config", async () => {
 
   let program: Program<Staking>;
   let controller: CustomAbortController;
-  let votingProductMetadataAccount: PublicKey;
   let configAccount: PublicKey;
   let bump: number;
 
@@ -53,8 +52,6 @@ describe("config", async () => {
       PYTH_DECIMALS,
       TOKEN_PROGRAM_ID
     );
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("initializes config", async () => {

@@ -53,6 +53,7 @@ pub mod staking {
     /// Creates a global config for the program
     use super::*;
 
+
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = ctx.bumps.config_account;
@@ -232,7 +233,41 @@ pub mod staking {
             target_account.add_locking(amount, current_epoch)?;
         }
 
-        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
+
+        Ok(())
+    }
+
+    pub fn merge_target_positions(
+        ctx: Context<MergeTargetPositions>,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<()> {
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
+
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
+            require!(
+                ctx.accounts
+                    .pool_authority
+                    .as_ref()
+                    .map_or(false, |x| x.key() == config.pool_authority),
+                ErrorCode::InvalidPoolAuthority
+            )
+        }
+
+        stake_account_positions.merge_target_positions(
+            current_epoch,
+            config.unlocking_duration,
+            &mut stake_account_metadata.next_index,
+            target_with_parameters,
+        )?;
+
+        stake_account_positions.realloc(&stake_account_metadata.next_index)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
@@ -369,7 +404,7 @@ pub mod staking {
             }
         }
 
-        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }

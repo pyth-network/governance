@@ -70,7 +70,7 @@ export type StakeAccountMetadata =
   IdlAccounts<Staking>["stakeAccountMetadataV2"];
 export type VestingSchedule = IdlTypes<Staking>["vestingSchedule"];
 export type VoterWeightAction = IdlTypes<Staking>["voterWeightAction"];
-export type Target = IdlTypes<Staking>["target"];
+export type Target = IdlTypes<Staking>["targetWithParameters"];
 export type Position = IdlTypes<Staking>["position"];
 export type TargetWithParameters = IdlTypes<Staking>["targetWithParameters"];
 
@@ -455,7 +455,6 @@ export class StakeConnection {
         this.program.methods
           .closePosition(el.index, el.amount, this.votingProduct)
           .accounts({
-            targetAccount: this.votingProductMetadataAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -572,7 +571,6 @@ export class StakeConnection {
     return await this.program.methods
       .closePosition(index, amount, this.votingProduct)
       .accounts({
-        targetAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .instruction();
@@ -673,7 +671,6 @@ export class StakeConnection {
         .createPosition(this.votingProduct, amountBN)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: this.votingProductMetadataAccount,
         })
         .instruction()
     );
@@ -863,7 +860,6 @@ export class StakeConnection {
         .createPosition(this.votingProduct, amount.toBN())
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          targetAccount: this.votingProductMetadataAccount,
         })
         .instruction()
     );
