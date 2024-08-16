@@ -253,7 +253,7 @@ pub fn delegate(
     pool_data: Pubkey,
     stake_account_positions: Pubkey,
     amount: u64,
-) {
+) -> TransactionResult {
     let pool_config_pubkey = get_pool_config_address();
     let config_account = get_config_address();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
@@ -280,13 +280,16 @@ pub fn delegate(
     );
 
     let delegate_tx = Transaction::new_signed_with_payer(
-        &[delegate_ix],
+        &[
+            delegate_ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[&payer],
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(delegate_tx).unwrap();
+    svm.send_transaction(delegate_tx)
 }
 
 pub fn merge_delegation_positions(

@@ -9,6 +9,7 @@ use {
             advance_delegation_record,
             delegate,
             set_publisher_stake_account,
+            undelegate,
             update_delegation_fee,
         },
         publisher_caps::{
@@ -140,7 +141,8 @@ fn test_advance_reward_events() {
         pool_data_pubkey,
         stake_account_positions,
         50,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
@@ -155,7 +157,8 @@ fn test_advance_reward_events() {
         pool_data_pubkey,
         stake_account_positions,
         50,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 8);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
@@ -256,7 +259,8 @@ fn test_reward_events_with_delegation_fee() {
         pool_data_pubkey,
         stake_account_positions,
         50 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     delegate(
         &mut svm,
@@ -265,7 +269,8 @@ fn test_reward_events_with_delegation_fee() {
         pool_data_pubkey,
         publisher_stake_account_positions,
         100 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 2);
 
@@ -364,4 +369,102 @@ fn test_reward_events_with_delegation_fee() {
         publisher_custody_data.amount,
         STAKED_TOKENS + 50 * YIELD / 20 + 100 * YIELD
     );
+}
+
+#[test]
+fn test_reward_after_undelegate() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        publisher_keypair,
+        pool_data_pubkey,
+        reward_program_authority: _,
+        publisher_index: _,
+    } = setup(SetupProps {
+        init_config:     true,
+        init_target:     true,
+        init_mint:       true,
+        init_pool_data:  true,
+        init_publishers: true,
+    });
+
+    let stake_account_positions =
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        50 * FRAC_64_MULTIPLIER,
+    )
+    .unwrap();
+
+    advance_n_epochs(&mut svm, &payer, 1);
+
+    let publisher_caps = post_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        200 * FRAC_64_MULTIPLIER,
+    );
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+
+    undelegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        0,
+        50 * FRAC_64_MULTIPLIER,
+    )
+    .unwrap();
+
+    advance_n_epochs(&mut svm, &payer, 1);
+
+    let publisher_caps = post_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        200 * FRAC_64_MULTIPLIER,
+    );
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
+        &mut svm
+            .get_account(&stake_account_custody)
+            .unwrap()
+            .data
+            .as_slice(),
+    )
+    .unwrap();
+
+    // reward should be given even when it's undelegating
+    assert_eq!(custody_data.amount, STAKED_TOKENS + 50 * YIELD);
 }

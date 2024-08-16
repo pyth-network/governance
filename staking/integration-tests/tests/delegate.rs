@@ -77,7 +77,8 @@ fn test_delegate() {
         pool_data_pubkey,
         stake_account_positions,
         100,
-    );
+    )
+    .unwrap();
 
     let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();

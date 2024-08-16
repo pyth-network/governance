@@ -102,46 +102,60 @@ impl PoolData {
         self.assert_up_to_date(current_epoch)?;
 
         let publisher_index = self.get_publisher_index(publisher)?;
-        let mut last_event_index: usize = self.num_events as usize;
+
         let mut delegator_reward: frac64 = 0;
         let mut publisher_reward: frac64 = 0;
-        loop {
-            // prevent infinite loop and double counting events
-            // by breaking the loop when visiting all events
-            if self.num_events as usize == last_event_index + MAX_EVENTS {
-                break;
+
+        let mut event_amounts = [0_u64; MAX_EVENTS];
+
+        for i in 0..positions.get_position_capacity() {
+            let position = match positions.read_position(i)? {
+                Some(position) => position,
+                None => continue,
+            };
+
+            match position.target_with_parameters {
+                TargetWithParameters::IntegrityPool {
+                    publisher: ref position_publisher,
+                } if position_publisher == publisher => {}
+                _ => continue,
             }
 
-            match last_event_index {
-                0 => break,
-                _ => last_event_index -= 1,
-            }
+            let mut last_event_index: usize = self.num_events as usize;
+            loop {
+                // prevent infinite loop and double counting events
+                // by breaking the loop when visiting all events
+                if self.num_events as usize == last_event_index + MAX_EVENTS {
+                    break;
+                }
 
-            let event = self.get_event(last_event_index);
-            if event.epoch < from_epoch {
-                break;
-            }
+                match last_event_index {
+                    0 => break,
+                    _ => last_event_index -= 1,
+                }
 
-            let mut amount = 0_u64;
-            for i in 0..positions.get_position_capacity() {
-                let position = positions.read_position(i)?;
-                if let Some(position) = position {
-                    let position_state =
-                        position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
-                    if matches!(
-                        position.target_with_parameters,
-                        TargetWithParameters::IntegrityPool {
-                            publisher: ref position_publisher
-                        } if position_publisher == publisher
-                    ) && position_state == PositionState::LOCKED
-                    {
-                        amount += position.amount;
+                let event = self.get_event(last_event_index);
+                if event.epoch < from_epoch {
+                    break;
+                }
+
+                let position_state =
+                    position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
+
+                match position_state {
+                    PositionState::LOCKED | PositionState::PREUNLOCKING => {}
+                    PositionState::UNLOCKED | PositionState::LOCKING | PositionState::UNLOCKING => {
+                        continue;
                     }
                 }
+                event_amounts[last_event_index % MAX_EVENTS] += position.amount;
             }
+        }
 
+        for (i, amount) in event_amounts.iter().enumerate() {
+            let event = self.get_event(i);
             let (delegator_reward_for_event, publisher_reward_for_event) = event.calculate_reward(
-                amount,
+                *amount,
                 publisher_index,
                 &self.publisher_stake_accounts[publisher_index] == stake_account_positions_key,
             )?;
@@ -149,6 +163,7 @@ impl PoolData {
             delegator_reward += delegator_reward_for_event;
             publisher_reward += publisher_reward_for_event;
         }
+
         Ok((delegator_reward, publisher_reward))
     }
 
@@ -525,7 +540,7 @@ mod tests {
         // this position should be included from epoch 1
         positions
             .write_position(
-                3,
+                2,
                 &staking::state::positions::Position {
                     activation_epoch:       1,
                     amount:                 40 * FRAC_64_MULTIPLIER,
@@ -539,7 +554,7 @@ mod tests {
         // this position should be included from epoch 2
         positions
             .write_position(
-                4,
+                3,
                 &staking::state::positions::Position {
                     activation_epoch:       2,
                     amount:                 60 * FRAC_64_MULTIPLIER,
