@@ -233,7 +233,7 @@ pub mod staking {
             target_account.add_locking(amount, current_epoch)?;
         }
 
-        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
@@ -265,6 +265,9 @@ pub mod staking {
             &mut stake_account_metadata.next_index,
             target_with_parameters,
         )?;
+
+        stake_account_positions.realloc(&stake_account_metadata.next_index)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
@@ -401,7 +404,7 @@ pub mod staking {
             }
         }
 
-        stake_account_positions.add_rent_if_needed(&ctx.accounts.owner)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
