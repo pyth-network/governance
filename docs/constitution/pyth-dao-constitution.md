@@ -11,7 +11,7 @@
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
-- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to liquidations
+- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
 - **DeFi:** decentralized finance applications running on blockchain
@@ -56,6 +56,8 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the setting of the ER fee distribution
         - the upgrade of the Entropy program for each of the blockchains where Entropy is available
         - the setting of Entropy request fees for each of the blockchains where Entropy is available
+        - the setting of pool capacity parameters in OIS
+        - the setting of delegation fee for stake delegators in OIS
         - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://www.notion.so/pyth-network/Rulebook-Pyth-Staking-and-Slashing-for-Data-Integrity-52686ae9ffef4ef999c2febccecc3f5e](TempLink)
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
