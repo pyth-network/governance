@@ -35,7 +35,7 @@ jobs:
       # Anchor test will build the program, so we can run the tests here
       - name: Cargo tests
         working-directory: ./staking
-        run: RUST_MIN_STACK=10485760 cargo test
+        run: RUST_MIN_STACK=33554432 cargo test
       - name: Check commited idl is up to date
         working-directory: ./staking
         run: git diff -G".*" --exit-code target/*
