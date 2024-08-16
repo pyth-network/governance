@@ -55,3 +55,14 @@ pub fn get_stake_account_custory_authority_address(stake_account_positions: Pubk
     )
     .0
 }
+
+pub fn get_voter_record_address(stake_account_positions: Pubkey) -> Pubkey {
+    Pubkey::find_program_address(
+        &[
+            staking::context::VOTER_RECORD_SEED.as_bytes(),
+            stake_account_positions.as_ref(),
+        ],
+        &staking::ID,
+    )
+    .0
+}

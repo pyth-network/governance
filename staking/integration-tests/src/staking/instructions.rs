@@ -6,6 +6,7 @@ use {
         get_stake_account_custory_authority_address,
         get_stake_account_metadata_address,
         get_target_address,
+        get_voter_record_address,
     },
     crate::{
         integrity_pool::pda::get_pool_config_address,
@@ -37,6 +38,7 @@ use {
     staking::state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,
+        voter_weight_record::VoterWeightAction,
     },
 };
 
@@ -313,4 +315,67 @@ pub fn slash_staking(
     );
 
     svm.send_transaction(slash_account_tx)
+}
+
+pub fn update_voter_weight(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let config_account = get_config_address();
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let governance_target = get_target_address();
+    let voter_record = get_voter_record_address(stake_account_positions);
+
+    let update_voter_weight_data: staking::instruction::UpdateVoterWeight =
+        staking::instruction::UpdateVoterWeight {
+            action: VoterWeightAction::CreateGovernance,
+        };
+    let update_voter_weight_accs = staking::accounts::UpdateVoterWeight {
+        stake_account_custody,
+        governance_target,
+        owner: payer.pubkey(),
+        stake_account_positions,
+        stake_account_metadata,
+        config: config_account,
+        voter_record,
+    };
+    let update_voter_weight_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &update_voter_weight_data.data(),
+        update_voter_weight_accs.to_account_metas(None),
+    );
+    let update_voter_weight_tx = Transaction::new_signed_with_payer(
+        &[update_voter_weight_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+    svm.send_transaction(update_voter_weight_tx)
+}
+
+pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token_list_time: i64) {
+    let config_account = get_config_address();
+
+    let update_token_list_time_data = staking::instruction::UpdateTokenListTime {
+        token_list_time: Some(token_list_time),
+    };
+    let update_token_list_time_accs = staking::accounts::UpdateTokenListTime {
+        config:               config_account,
+        governance_authority: payer.pubkey(),
+    };
+    let update_token_list_time_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &update_token_list_time_data.data(),
+        update_token_list_time_accs.to_account_metas(None),
+    );
+    let update_token_list_time_tx = Transaction::new_signed_with_payer(
+        &[update_token_list_time_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(update_token_list_time_tx).unwrap();
 }
