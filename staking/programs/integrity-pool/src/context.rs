@@ -85,7 +85,6 @@ pub struct Delegate<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked against data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     /// CHECK : This AccountInfo is safe because it's a checked PDA
@@ -132,7 +131,6 @@ pub struct MergeDelegationPositions<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked against data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     #[account(
@@ -183,7 +181,6 @@ pub struct Undelegate<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked againts data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     #[account(
