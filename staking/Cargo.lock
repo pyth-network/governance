@@ -1792,6 +1792,7 @@ dependencies = [
  "serde_wormhole",
  "solana-cli-output",
  "solana-sdk",
+ "spl-governance",
  "wormhole-solana-vaas",
  "wormhole-vaas-serde",
 ]
