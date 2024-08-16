@@ -213,11 +213,6 @@ pub struct MergeTargetPositions<'info> {
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
     #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
     pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
-    #[account(
-        seeds = [CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
-        bump = stake_account_metadata.custody_bump,
-    )]
-    pub stake_account_custody:   Account<'info, TokenAccount>,
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
     pub config:                  Account<'info, global_config::GlobalConfig>,
     pub pool_authority:          Option<Signer<'info>>,

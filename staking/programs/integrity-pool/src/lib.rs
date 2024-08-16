@@ -131,7 +131,6 @@ pub mod integrity_pool {
         let staking_program = ctx.accounts.staking_program.to_account_info();
         let config_account = ctx.accounts.config_account.clone();
         let stake_account_metadata = ctx.accounts.stake_account_metadata.clone();
-        let stake_account_custody = ctx.accounts.stake_account_custody.clone();
         let stake_account_positions = ctx.accounts.stake_account_positions.clone();
 
         // assert delegator record is up to date
@@ -148,7 +147,6 @@ pub mod integrity_pool {
             config: config_account,
             stake_account_positions,
             stake_account_metadata,
-            stake_account_custody,
             owner: payer,
             pool_authority: Some(pool_config),
         };

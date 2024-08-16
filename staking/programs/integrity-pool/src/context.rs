@@ -166,14 +166,6 @@ pub struct MergeDelegationPositions<'info> {
     )]
     pub stake_account_metadata: AccountInfo<'info>,
 
-    /// CHECK : This AccountInfo is safe because it's a checked PDA
-    #[account(
-        seeds = [staking::context::CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
-        bump,
-        seeds::program = staking_program.key(),
-    )]
-    pub stake_account_custody: AccountInfo<'info>,
-
     pub staking_program: Program<'info, Staking>,
 }
 
