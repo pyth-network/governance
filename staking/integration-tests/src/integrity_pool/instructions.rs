@@ -292,6 +292,46 @@ pub fn delegate(
     svm.send_transaction(delegate_tx)
 }
 
+pub fn merge_delegation_positions(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    publisher: Pubkey,
+    pool_data: Pubkey,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
+    let pool_config_pubkey = get_pool_config_address();
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+
+    let merge_delegation_positions_data = integrity_pool::instruction::MergeDelegationPositions {};
+
+    let merge_delegation_positions_accs = integrity_pool::accounts::MergeDelegationPositions {
+        owner: payer.pubkey(),
+        pool_data,
+        pool_config: pool_config_pubkey,
+        publisher,
+        delegation_record,
+        config_account,
+        stake_account_positions,
+        stake_account_metadata,
+        staking_program: staking::ID,
+    };
+    let merge_delegation_positions_ix = Instruction::new_with_bytes(
+        integrity_pool::ID,
+        &merge_delegation_positions_data.data(),
+        merge_delegation_positions_accs.to_account_metas(None),
+    );
+    let merge_delegation_positions_ix = Transaction::new_signed_with_payer(
+        &[merge_delegation_positions_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(merge_delegation_positions_ix)
+}
+
 pub fn undelegate(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,

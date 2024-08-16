@@ -193,6 +193,59 @@ impl<'a> DynamicPositionArray<'a> {
         }
         Ok(false)
     }
+
+    /// This function is used to reduce the number of positions in the array by merging equivalent
+    /// positions. Sometimes some positions have the same `target_with_parameters`,
+    /// `activation_epoch` and `unlocking_start`. These can obviously be merged, but this is not
+    /// enough, for example if a user creates a position every epoch, the number of positions
+    /// will grow linearly. The trick therefore is to merge positions that have an
+    /// `activation_epoch` that's enough in the past that they were both active in the previous
+    /// epoch and in the current epoch. However this trick only works if the user has claimed
+    /// the rewards in integrity pool, otherwise we potentially need to know how far in the past the
+    /// position was created to compute the rewards. Therefore the `pool_authority` should
+    /// ensure rewards have been claimed before allowing merging positions.
+    pub fn merge_target_positions(
+        &mut self,
+        current_epoch: u64,
+        unlocking_duration: u8,
+        next_index: &mut u8,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<()> {
+        let mut i = *next_index as usize;
+        while i >= 1 {
+            i -= 1;
+            if let Some(position) = self.read_position(i)? {
+                if position.target_with_parameters == target_with_parameters {
+                    if position.get_current_position(current_epoch, unlocking_duration)?
+                        == PositionState::UNLOCKED
+                    {
+                        self.make_none(i, next_index)?;
+                    } else {
+                        for j in 0..i {
+                            if let Some(mut other_position) = self.read_position(j)? {
+                                if position.is_equivalent(
+                                    &other_position,
+                                    current_epoch,
+                                    unlocking_duration,
+                                ) {
+                                    self.make_none(i, next_index)?;
+                                    other_position.amount += position.amount;
+                                    other_position.activation_epoch = std::cmp::min(
+                                        other_position.activation_epoch,
+                                        position.activation_epoch,
+                                    ); // We keep the oldest activation epoch to keep information about
+                                       // how long the user has been a staker
+                                    self.write_position(j, &other_position)?;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct DynamicPositionArrayAccount {
@@ -346,6 +399,26 @@ impl Position {
         }
     }
 
+    /**
+     * Two positions are equivalent if they have the same state for the current and previous
+     * epoch. This is because we never check the state of a position for epochs futher in
+     * the past than 1 epoch. An exception to this rule is claimimng rewards in integrity
+     * pool, therefore `pool_authority` should ensure rewards have been claimed before
+     * allowing merging positions.
+     */
+    pub fn is_equivalent(
+        &self,
+        other: &Position,
+        current_epoch: u64,
+        unlocking_duration: u8,
+    ) -> bool {
+        self.get_current_position(current_epoch, unlocking_duration)
+            == other.get_current_position(current_epoch, unlocking_duration)
+            && self.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+                == other.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+            && self.target_with_parameters == other.target_with_parameters
+    }
+
     pub fn is_voting(&self) -> bool {
         matches!(self.target_with_parameters, TargetWithParameters::Voting)
     }
@@ -354,7 +427,7 @@ impl Position {
 /// The core states that a position can be in
 #[repr(u8)]
 #[wasm_bindgen]
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PositionState {
     UNLOCKED,
     LOCKING,
@@ -389,7 +462,10 @@ pub mod tests {
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        std::collections::HashMap,
+        std::collections::{
+            HashMap,
+            HashSet,
+        },
     };
     #[test]
     fn lifecycle_lock_unlock() {
@@ -512,22 +588,38 @@ pub mod tests {
         Delete,
     }
 
-    // Boiler plate to generate random instances
+
+    /// Boiler plate to generate random instances
+    /// We use small numbers to increase the chance that current_epoch will be equal to
+    /// activation_epoch or unlocking_start
+
     impl Arbitrary for Position {
         fn arbitrary(g: &mut Gen) -> Self {
+            let activation_epoch = u64::arbitrary(g) % 4;
+
             Position {
-                activation_epoch:       u64::arbitrary(g),
-                unlocking_start:        Option::<u64>::arbitrary(g),
-                target_with_parameters: TargetWithParameters::Voting,
-                amount:                 u64::arbitrary(g),
+                activation_epoch,
+                unlocking_start: Option::<u64>::arbitrary(g)
+                    .map(|x| activation_epoch + 1 + (x % 4)),
+                target_with_parameters: TargetWithParameters::arbitrary(g),
+                amount: u32::arbitrary(g) as u64, // We use u32 to avoid u64 overflow
             }
         }
     }
+
+    const FIRST_PUBLISHER: Pubkey = pubkey!("11111111111111111111111111111111");
+    const SECOND_PUBLISHER: Pubkey = pubkey!("1tJ93RwaVfE1PEMxd5rpZZuPtLCwbEaDCrNBhAy8Cw");
     impl Arbitrary for TargetWithParameters {
         fn arbitrary(g: &mut Gen) -> Self {
             if bool::arbitrary(g) {
-                TargetWithParameters::IntegrityPool {
-                    publisher: Pubkey::new_unique(),
+                if bool::arbitrary(g) {
+                    TargetWithParameters::IntegrityPool {
+                        publisher: FIRST_PUBLISHER,
+                    }
+                } else {
+                    TargetWithParameters::IntegrityPool {
+                        publisher: SECOND_PUBLISHER,
+                    }
                 }
             } else {
                 TargetWithParameters::Voting
@@ -617,5 +709,111 @@ pub mod tests {
             };
         }
         map == position_data.to_hash_map(next_index)
+    }
+
+
+    #[quickcheck]
+    fn optimize_positions(input: (Vec<Position>, u8)) -> bool {
+        let epoch = (input.1 % 8) as u64;
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut dynamic_position_array = fixture.to_dynamic_position_array();
+        let mut next_index: u8 = 0;
+
+        let mut pre_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
+        for &position in input.0.iter() {
+            let current_state = position.get_current_position(epoch, 1).unwrap();
+            let previous_state = position
+                .get_current_position(epoch.saturating_sub(1), 1)
+                .unwrap();
+
+            if current_state != PositionState::UNLOCKED {
+                pre_position_buckets
+                    .entry((
+                        position.target_with_parameters,
+                        previous_state,
+                        current_state,
+                    ))
+                    .and_modify(|e| *e += position.amount)
+                    .or_insert(position.amount);
+            }
+
+            let index = dynamic_position_array
+                .reserve_new_index(&mut next_index)
+                .unwrap();
+            dynamic_position_array
+                .write_position(index, &position)
+                .unwrap();
+        }
+
+        dynamic_position_array
+            .merge_target_positions(
+                epoch,
+                1,
+                &mut next_index,
+                TargetWithParameters::IntegrityPool {
+                    publisher: FIRST_PUBLISHER,
+                },
+            )
+            .unwrap();
+        dynamic_position_array
+            .merge_target_positions(epoch, 1, &mut next_index, TargetWithParameters::Voting)
+            .unwrap();
+        dynamic_position_array
+            .merge_target_positions(
+                epoch,
+                1,
+                &mut next_index,
+                TargetWithParameters::IntegrityPool {
+                    publisher: SECOND_PUBLISHER,
+                },
+            )
+            .unwrap();
+
+        let mut hash_set: HashSet<(TargetWithParameters, PositionState, PositionState)> =
+            HashSet::new();
+        let mut post_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
+        for i in 0..next_index {
+            if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
+                let current_state = position.get_current_position(epoch, 1).unwrap();
+                let previous_state = position
+                    .get_current_position(epoch.saturating_sub(1), 1)
+                    .unwrap();
+
+                if hash_set.contains(&(
+                    position.target_with_parameters,
+                    previous_state,
+                    current_state,
+                )) {
+                    return false; // we should not have have two positions that are equivalent after
+                                  // merging
+                }
+                hash_set.insert((
+                    position.target_with_parameters,
+                    previous_state,
+                    current_state,
+                ));
+
+                post_position_buckets
+                    .entry((
+                        position.target_with_parameters,
+                        previous_state,
+                        current_state,
+                    ))
+                    .and_modify(|e| *e += position.amount)
+                    .or_insert(position.amount);
+            }
+        }
+
+        if pre_position_buckets != post_position_buckets {
+            return false;
+        }
+
+        true
     }
 }

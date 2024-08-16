@@ -1189,6 +1189,97 @@
       ]
     },
     {
+      "name": "merge_target_positions",
+      "discriminator": [
+        21,
+        136,
+        57,
+        2,
+        204,
+        219,
+        242,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "stake_account_metadata"
+          ]
+        },
+        {
+          "name": "stake_account_positions",
+          "writable": true
+        },
+        {
+          "name": "stake_account_metadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pool_authority",
+          "signer": true,
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "target_with_parameters",
+          "type": {
+            "defined": {
+              "name": "TargetWithParameters"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "recover_account",
       "docs": [
         "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
