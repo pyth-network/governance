@@ -379,3 +379,33 @@ pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token
 
     svm.send_transaction(update_token_list_time_tx).unwrap();
 }
+
+pub fn merge_target_positions(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+
+    let data = staking::instruction::MergeTargetPositions {
+        target_with_parameters: TargetWithParameters::Voting,
+    };
+
+    let accs = staking::accounts::MergeTargetPositions {
+        owner: payer.pubkey(),
+        stake_account_positions,
+        stake_account_metadata,
+        pool_authority: None,
+        config: config_account,
+    };
+    let ix = Instruction::new_with_bytes(staking::ID, &data.data(), accs.to_account_metas(None));
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
+}
