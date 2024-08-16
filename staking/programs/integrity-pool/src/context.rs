@@ -85,7 +85,6 @@ pub struct Delegate<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked against data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     /// CHECK : This AccountInfo is safe because it's a checked PDA
@@ -124,7 +123,7 @@ pub struct Delegate<'info> {
 
 #[derive(Accounts)]
 pub struct MergeDelegationPositions<'info> {
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     pub pool_data: AccountLoader<'info, PoolData>,
 
@@ -132,7 +131,6 @@ pub struct MergeDelegationPositions<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked against data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     #[account(
@@ -166,14 +164,6 @@ pub struct MergeDelegationPositions<'info> {
     )]
     pub stake_account_metadata: AccountInfo<'info>,
 
-    /// CHECK : This AccountInfo is safe because it's a checked PDA
-    #[account(
-        seeds = [staking::context::CUSTODY_SEED.as_bytes(), stake_account_positions.key().as_ref()],
-        bump,
-        seeds::program = staking_program.key(),
-    )]
-    pub stake_account_custody: AccountInfo<'info>,
-
     pub staking_program: Program<'info, Staking>,
 }
 
@@ -191,7 +181,6 @@ pub struct Undelegate<'info> {
     pub pool_config: Account<'info, PoolConfig>,
 
     /// CHECK : The publisher will be checked againts data in the pool_data
-    #[account()]
     pub publisher: AccountInfo<'info>,
 
     #[account(

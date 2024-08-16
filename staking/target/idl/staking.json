@@ -1245,29 +1245,6 @@
           }
         },
         {
-          "name": "stake_account_custody",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  117,
-                  115,
-                  116,
-                  111,
-                  100,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "stake_account_positions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "pda": {
             "seeds": [

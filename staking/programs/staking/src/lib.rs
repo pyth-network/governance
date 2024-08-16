@@ -245,7 +245,6 @@ pub mod staking {
         let stake_account_positions =
             &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
-        let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
@@ -265,17 +264,6 @@ pub mod staking {
             config.unlocking_duration,
             &mut stake_account_metadata.next_index,
             target_with_parameters,
-        )?;
-
-        let unvested_balance = stake_account_metadata.lock.get_unvested_balance(
-            utils::clock::get_current_time(config),
-            config.pyth_token_list_time,
-        )?;
-
-        utils::risk::validate(
-            stake_account_positions,
-            stake_account_custody.amount,
-            unvested_balance,
         )?;
 
         stake_account_positions.realloc(&stake_account_metadata.next_index)?;

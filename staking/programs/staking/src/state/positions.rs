@@ -255,7 +255,6 @@ impl<'a> DynamicPositionArray<'a> {
                 }
             }
         }
-
         Ok(())
     }
 }

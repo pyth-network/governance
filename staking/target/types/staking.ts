@@ -1251,29 +1251,6 @@ export type Staking = {
           }
         },
         {
-          "name": "stakeAccountCustody",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  117,
-                  115,
-                  116,
-                  111,
-                  100,
-                  121
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "stakeAccountPositions"
-              }
-            ]
-          }
-        },
-        {
           "name": "config",
           "pda": {
             "seeds": [

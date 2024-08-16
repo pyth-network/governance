@@ -81,7 +81,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         1,
-    );
+    )
+    .unwrap();
 
     delegate(
         &mut svm,
@@ -90,7 +91,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         2,
-    );
+    )
+    .unwrap();
 
     create_position(
         &mut svm,
@@ -168,7 +170,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         4,
-    );
+    )
+    .unwrap();
 
     create_position(
         &mut svm,
@@ -186,7 +189,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         6,
-    );
+    )
+    .unwrap();
 
     let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();
@@ -251,7 +255,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         7,
-    );
+    )
+    .unwrap();
 
     delegate(
         &mut svm,
@@ -260,7 +265,8 @@ fn test_merge_delegation_positions() {
         pool_data_pubkey,
         stake_account_positions,
         8,
-    );
+    )
+    .unwrap();
 
     advance_delegation_record(
         &mut svm,
@@ -397,7 +403,6 @@ fn test_merge_delegation_positions() {
         stake_account_positions,
     )
     .unwrap();
-
 
     let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();

@@ -303,12 +303,11 @@ pub fn merge_delegation_positions(
     let pool_config_pubkey = get_pool_config_address();
     let config_account = get_config_address();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
-    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
 
     let merge_delegation_positions_data = integrity_pool::instruction::MergeDelegationPositions {};
 
     let merge_delegation_positions_accs = integrity_pool::accounts::MergeDelegationPositions {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
@@ -316,7 +315,6 @@ pub fn merge_delegation_positions(
         config_account,
         stake_account_positions,
         stake_account_metadata,
-        stake_account_custody,
         staking_program: staking::ID,
     };
     let merge_delegation_positions_ix = Instruction::new_with_bytes(
