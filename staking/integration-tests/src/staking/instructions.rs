@@ -10,6 +10,10 @@ use {
     },
     crate::{
         integrity_pool::pda::get_pool_config_address,
+        setup::{
+            GOVERNANCE_PROGRAM_ID,
+            REALM_ID,
+        },
         solana::utils::fetch_account_data,
     },
     anchor_lang::{
@@ -35,6 +39,10 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
+    spl_governance::instruction::{
+        cast_vote,
+        create_proposal,
+    },
     staking::state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,
@@ -52,12 +60,12 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             bump: config_bump,
             governance_authority: payer.pubkey(),
             pyth_token_mint,
-            pyth_governance_realm: Pubkey::new_unique(),
+            pyth_governance_realm: REALM_ID,
             unlocking_duration: UNLOCKING_DURATION,
             epoch_duration: EPOCH_DURATION,
             freeze: false,
             pda_authority: payer.pubkey(),
-            governance_program: Pubkey::new_unique(),
+            governance_program: GOVERNANCE_PROGRAM_ID,
             pyth_token_list_time: None,
             agreement_hash: [0; 32],
             mock_clock_time: 30,

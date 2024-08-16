@@ -2,6 +2,7 @@ use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
+        governance::instructions::create_governance_record,
         setup::{
             setup,
             SetupProps,
@@ -50,6 +51,10 @@ use {
         signer::Signer,
         stake,
     },
+    spl_governance::state::{
+        governance,
+        realm,
+    },
     staking::{
         error::ErrorCode,
         state::{
@@ -90,6 +95,7 @@ fn test_old_stake_account() {
 
     let stake_account_positions =
         load_stake_accounts(&mut svm, &payer.pubkey(), &pyth_token_mint.pubkey());
+    load_governance_accounts(&mut svm, &pyth_token_mint.pubkey());
 
     update_token_list_time(&mut svm, &payer, 1684591200);
     advance_n_epochs(&mut svm, &payer, 2850);
@@ -117,6 +123,8 @@ fn test_old_stake_account() {
     for i in 2..positions.get_position_capacity() {
         assert!(positions.read_position(i).unwrap().is_none());
     }
+
+    create_governance_record(&mut svm, &payer).unwrap();
 
     create_position(
         &mut svm,
@@ -198,7 +206,7 @@ fn test_old_stake_account() {
 
 // These accounts were snapshotted on 16th August 2024
 fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubkey) -> Pubkey {
-    let mut stake_account_positions = load_account_file("stake_account_positions.json");
+    let mut stake_account_positions = load_account_file("staking/stake_account_positions.json");
     stake_account_positions.account.data_as_mut_slice()[8..40].copy_from_slice(&payer.to_bytes());
     svm.set_account(
         stake_account_positions.address,
@@ -206,7 +214,7 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
     )
     .unwrap();
 
-    let mut stake_account_metadata = load_account_file("stake_account_metadata.json");
+    let mut stake_account_metadata = load_account_file("staking/stake_account_metadata.json");
     stake_account_metadata.account.data_as_mut_slice()[12..44].copy_from_slice(&payer.to_bytes());
     svm.set_account(
         stake_account_metadata.address,
@@ -215,7 +223,7 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
     .unwrap();
 
 
-    let mut stake_account_custody = load_account_file("stake_account_custody.json");
+    let mut stake_account_custody = load_account_file("staking/stake_account_custody.json");
     stake_account_custody.account.data_as_mut_slice()[..32]
         .copy_from_slice(&pyth_token_mint.to_bytes());
     svm.set_account(
@@ -224,19 +232,44 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
     )
     .unwrap();
 
-    let mut voter_record = load_account_file("voter_record.json");
+    let mut voter_record = load_account_file("staking/voter_record.json");
     voter_record.account.data_as_mut_slice()[32..64].copy_from_slice(&pyth_token_mint.to_bytes());
     voter_record.account.data_as_mut_slice()[64..96].copy_from_slice(&payer.to_bytes());
     svm.set_account(voter_record.address, voter_record.account.into())
         .unwrap();
 
 
-    let target_account = load_account_file("target_account.json");
+    let target_account = load_account_file("staking/target_account.json");
     svm.set_account(target_account.address, target_account.account.into())
         .unwrap();
 
     stake_account_positions.address
 }
+
+fn load_governance_accounts(svm: &mut LiteSVM, pyth_token_mint: &Pubkey) -> Pubkey {
+    // let program = load_account_file("governance/program.json");
+    // svm.set_account(program.address, program.account.into()).unwrap();
+
+
+    // let program_data = load_account_file("governance/program_data.json");
+    // svm.set_account(program_data.address, program_data.account.into()).unwrap();
+
+    let mut realm = load_account_file("governance/realm.json");
+    realm.account.data_as_mut_slice()[1..33].copy_from_slice(&pyth_token_mint.to_bytes());
+    svm.set_account(realm.address, realm.account.into())
+        .unwrap();
+
+    let governance = load_account_file("governance/governance.json");
+    svm.set_account(governance.address, governance.account.into())
+        .unwrap();
+
+    let realm_config = load_account_file("governance/realm_config.json");
+    svm.set_account(realm_config.address, realm_config.account.into())
+        .unwrap();
+
+    return governance.address;
+}
+
 
 pub struct LoadedAccount {
     pub address: Pubkey,
