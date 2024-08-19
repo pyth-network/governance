@@ -12,9 +12,9 @@ use {
                 MAINNET_REALM_ID,
             },
             instructions::{
-                create_governance_proposal,
-                create_governance_record,
-                vote_on_governance_proposal,
+                cast_vote,
+                create_proposal,
+                create_token_owner_record,
             },
         },
         setup::{
@@ -146,7 +146,7 @@ fn test_old_stake_account() {
     assert_eq!(voter_record.voter_weight, expected_voter_weight);
 
     // Try voting against the actual governance program
-    create_governance_record(&mut svm, &payer).unwrap();
+    create_token_owner_record(&mut svm, &payer).unwrap();
     let actual_proposal_data = create_proposal_and_vote(
         &mut svm,
         &payer,
@@ -257,9 +257,8 @@ fn create_proposal_and_vote(
     stake_account_positions: &Pubkey,
     governance_address: &Pubkey,
 ) -> ProposalV2 {
-    let proposal =
-        create_governance_proposal(svm, &payer, *stake_account_positions, &governance_address);
-    vote_on_governance_proposal(
+    let proposal = create_proposal(svm, &payer, *stake_account_positions, &governance_address);
+    cast_vote(
         svm,
         &payer,
         *stake_account_positions,

@@ -17,23 +17,15 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    spl_governance::{
-        instruction::{
-            cast_vote,
-            create_proposal,
-            create_token_owner_record,
-            sign_off_proposal,
+    spl_governance::state::{
+        proposal::{
+            get_proposal_address,
+            VoteType,
         },
-        state::{
-            proposal::{
-                get_proposal_address,
-                VoteType,
-            },
-            token_owner_record::get_token_owner_record_address,
-            vote_record::{
-                Vote,
-                VoteChoice,
-            },
+        token_owner_record::get_token_owner_record_address,
+        vote_record::{
+            Vote,
+            VoteChoice,
         },
     },
     staking::state::{
@@ -42,19 +34,19 @@ use {
     },
 };
 
-pub fn create_governance_record(svm: &mut litesvm::LiteSVM, payer: &Keypair) -> TransactionResult {
+pub fn create_token_owner_record(svm: &mut litesvm::LiteSVM, payer: &Keypair) -> TransactionResult {
     let config = get_config_address();
 
     let config_data: GlobalConfig = fetch_account_data(svm, &config);
-    let realm = &config_data.pyth_governance_realm;
-    let program_id = &config_data.governance_program;
-    let pyth_mint = &config_data.pyth_token_mint;
+    let pyth_governance_realm = &config_data.pyth_governance_realm;
+    let governance_program = &config_data.governance_program;
+    let pyth_token_mint = &config_data.pyth_token_mint;
 
-    let ix = create_token_owner_record(
-        program_id,
-        realm,
+    let ix = spl_governance::instruction::create_token_owner_record(
+        governance_program,
+        pyth_governance_realm,
         &payer.pubkey(),
-        pyth_mint,
+        pyth_token_mint,
         &payer.pubkey(),
     );
 
@@ -68,7 +60,7 @@ pub fn create_governance_record(svm: &mut litesvm::LiteSVM, payer: &Keypair) -> 
     svm.send_transaction(tx)
 }
 
-pub fn create_governance_proposal(
+pub fn create_proposal(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     stake_account_positions: Pubkey,
@@ -77,25 +69,29 @@ pub fn create_governance_proposal(
     let config = get_config_address();
 
     let config_data: GlobalConfig = fetch_account_data(svm, &config);
-    let realm = &config_data.pyth_governance_realm;
+    let pyth_governance_realm = &config_data.pyth_governance_realm;
     let program_id = &config_data.governance_program;
     let pyth_mint = &config_data.pyth_token_mint;
-    let token_owner_record =
-        get_token_owner_record_address(&program_id, &realm, &pyth_mint, &payer.pubkey());
+    let token_owner_record = get_token_owner_record_address(
+        program_id,
+        pyth_governance_realm,
+        pyth_mint,
+        &payer.pubkey(),
+    );
 
     let voter_weight_record = get_voter_record_address(stake_account_positions);
 
     let proposal_seed = Pubkey::new_unique();
     let proposal_address = get_proposal_address(program_id, governance, pyth_mint, &proposal_seed);
 
-    let ix = create_proposal(
+    let ix = spl_governance::instruction::create_proposal(
         program_id,
         governance,
         &token_owner_record,
         &payer.pubkey(),
         &payer.pubkey(),
         Some(voter_weight_record),
-        realm,
+        pyth_governance_realm,
         "name".to_string(),
         "description_link".to_string(),
         pyth_mint,
@@ -105,9 +101,9 @@ pub fn create_governance_proposal(
         &proposal_seed,
     );
 
-    let ix_2 = sign_off_proposal(
+    let ix_2 = spl_governance::instruction::sign_off_proposal(
         program_id,
-        realm,
+        pyth_governance_realm,
         governance,
         &proposal_address,
         &payer.pubkey(),
@@ -135,7 +131,7 @@ pub fn create_governance_proposal(
 }
 
 
-pub fn vote_on_governance_proposal(
+pub fn cast_vote(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     stake_account_positions: Pubkey,
@@ -145,24 +141,28 @@ pub fn vote_on_governance_proposal(
     let config = get_config_address();
 
     let config_data: GlobalConfig = fetch_account_data(svm, &config);
-    let realm = &config_data.pyth_governance_realm;
-    let program_id = &config_data.governance_program;
-    let pyth_mint = &config_data.pyth_token_mint;
-    let token_owner_record =
-        get_token_owner_record_address(&program_id, &realm, &pyth_mint, &payer.pubkey());
+    let governance_realm = &config_data.pyth_governance_realm;
+    let govenance_program = &config_data.governance_program;
+    let pyth_token_mint = &config_data.pyth_token_mint;
+    let token_owner_record = get_token_owner_record_address(
+        govenance_program,
+        governance_realm,
+        pyth_token_mint,
+        &payer.pubkey(),
+    );
 
     let voter_weight_record = get_voter_record_address(stake_account_positions);
     let max_voter_weight_record = get_max_voter_record_address();
 
-    let ix = cast_vote(
-        program_id,
-        realm,
+    let ix = spl_governance::instruction::cast_vote(
+        govenance_program,
+        governance_realm,
         governance,
         proposal,
         &token_owner_record,
         &token_owner_record,
         &payer.pubkey(),
-        pyth_mint,
+        pyth_token_mint,
         &payer.pubkey(),
         Some(voter_weight_record),
         Some(max_voter_weight_record),
