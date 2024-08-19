@@ -77,7 +77,10 @@ use {
     staking::{
         error::ErrorCode,
         state::{
-            positions::TargetWithParameters,
+            positions::{
+                TargetWithParameters,
+                POSITION_BUFFER_SIZE,
+            },
             stake_account::{
                 self,
                 StakeAccountMetadataV2,
@@ -204,6 +207,8 @@ fn test_old_stake_account() {
     let positions = positions_account.to_dynamic_position_array();
 
     assert!(positions.get_position_capacity() == 2);
+    assert_eq!(positions.acc_info.data_len(), 40 + 2 * POSITION_BUFFER_SIZE);
+
 
     let post_merge_pos1 = positions.read_position(0).unwrap().unwrap();
     let post_merge_pos2 = positions.read_position(1).unwrap().unwrap();
