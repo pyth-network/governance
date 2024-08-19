@@ -2,7 +2,7 @@ use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
-        governance::instructions::create_governance_record,
+        governance::instructions::{create_governance_proposal, create_governance_record},
         setup::{
             setup,
             SetupProps,
@@ -95,7 +95,7 @@ fn test_old_stake_account() {
 
     let stake_account_positions =
         load_stake_accounts(&mut svm, &payer.pubkey(), &pyth_token_mint.pubkey());
-    load_governance_accounts(&mut svm, &pyth_token_mint.pubkey());
+    let governance_address = load_governance_accounts(&mut svm, &pyth_token_mint.pubkey());
 
     update_token_list_time(&mut svm, &payer, 1684591200);
     advance_n_epochs(&mut svm, &payer, 2850);
@@ -125,6 +125,7 @@ fn test_old_stake_account() {
     }
 
     create_governance_record(&mut svm, &payer).unwrap();
+    create_governance_proposal(&mut svm, &payer, stake_account_positions,&governance_address).unwrap();
 
     create_position(
         &mut svm,
