@@ -235,6 +235,9 @@ fn create_proposal_and_vote(
 }
 
 // These accounts were snapshotted on 16th August 2024
+/// When loading these stake accounts, we need to replace the mainnet owner of the account by a key
+/// we have access to in the tests. We also need to replace the mainnet pyth mint address by the one
+/// in the tests.
 fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubkey) -> Pubkey {
     let mut stake_account_positions = load_account_file("staking/stake_account_positions.json");
     stake_account_positions.account.data_as_mut_slice()[8..40].copy_from_slice(&payer.to_bytes());
@@ -276,6 +279,7 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
     stake_account_positions.address
 }
 
+// These accounts were snapshotted on 16th August 2024
 fn load_governance_accounts(svm: &mut LiteSVM, pyth_token_mint: &Pubkey) -> Pubkey {
     svm.add_program_from_file(
         MAINNET_GOVERNANCE_PROGRAM_ID,
