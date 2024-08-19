@@ -41,13 +41,6 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    spl_governance::{
-        instruction::{
-            cast_vote,
-            create_proposal,
-        },
-        state::governance,
-    },
     staking::state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,

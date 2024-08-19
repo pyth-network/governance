@@ -1,16 +1,7 @@
 use {
-    anchor_lang::{
-        pubkey,
-        AccountDeserialize,
-        Key,
-    },
-    anchor_spl::token::TokenAccount,
     integration_tests::{
         governance::{
-            addresses::{
-                MAINNET_GOVERNANCE_PROGRAM_ID,
-                MAINNET_REALM_ID,
-            },
+            addresses::MAINNET_GOVERNANCE_PROGRAM_ID,
             instructions::{
                 cast_vote,
                 create_proposal,
@@ -23,40 +14,26 @@ use {
             SetupResult,
             STARTING_EPOCH,
         },
-        solana::{
-            instructions::create_token_account,
-            utils::{
-                fetch_account_data,
-                fetch_governance_account_data,
-                fetch_positions_account,
-            },
+        solana::utils::{
+            fetch_account_data,
+            fetch_governance_account_data,
+            fetch_positions_account,
         },
         staking::{
-            helper_functions::initialize_new_stake_account,
             instructions::{
                 create_position,
-                create_target_account,
-                init_config_account,
                 join_dao_llc,
                 merge_target_positions,
-                slash_staking,
-                update_max_voter_weight_record,
-                update_pool_authority,
                 update_token_list_time,
                 update_voter_weight,
             },
             pda::{
-                get_stake_account_metadata_address,
                 get_target_address,
                 get_voter_record_address,
             },
         },
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
-    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     litesvm::LiteSVM,
     solana_cli_output::CliAccount,
     solana_sdk::{
@@ -67,27 +44,15 @@ use {
         pubkey::Pubkey,
         signature::Keypair,
         signer::Signer,
-        stake,
     },
-    spl_governance::state::{
-        governance,
-        proposal::ProposalV2,
-        realm,
-    },
-    staking::{
-        error::ErrorCode,
-        state::{
-            positions::{
-                TargetWithParameters,
-                POSITION_BUFFER_SIZE,
-            },
-            stake_account::{
-                self,
-                StakeAccountMetadataV2,
-            },
-            target::TargetMetadata,
-            voter_weight_record::VoterWeightRecord,
+    spl_governance::state::proposal::ProposalV2,
+    staking::state::{
+        positions::{
+            TargetWithParameters,
+            POSITION_BUFFER_SIZE,
         },
+        target::TargetMetadata,
+        voter_weight_record::VoterWeightRecord,
     },
     std::{
         fs::File,
@@ -257,12 +222,12 @@ fn create_proposal_and_vote(
     stake_account_positions: &Pubkey,
     governance_address: &Pubkey,
 ) -> ProposalV2 {
-    let proposal = create_proposal(svm, &payer, *stake_account_positions, &governance_address);
+    let proposal = create_proposal(svm, payer, *stake_account_positions, governance_address);
     cast_vote(
         svm,
-        &payer,
+        payer,
         *stake_account_positions,
-        &governance_address,
+        governance_address,
         &proposal,
     )
     .unwrap();

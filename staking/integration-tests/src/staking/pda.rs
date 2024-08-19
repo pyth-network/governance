@@ -2,7 +2,6 @@ use {
     solana_sdk::pubkey::Pubkey,
     staking::context::{
         CONFIG_SEED,
-        MAX_VOTER_RECORD_SEED,
         TARGET_SEED,
         VOTING_TARGET_SEED,
     },

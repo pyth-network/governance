@@ -19,7 +19,6 @@ use {
         },
         utils::clock::advance_n_epochs,
     },
-    anchor_lang::pubkey,
     integrity_pool::state::pool::PoolData,
     solana_sdk::{
         pubkey::Pubkey,
