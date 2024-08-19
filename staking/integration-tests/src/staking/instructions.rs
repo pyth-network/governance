@@ -10,11 +10,11 @@ use {
         get_voter_record_address,
     },
     crate::{
-        integrity_pool::pda::get_pool_config_address,
-        setup::{
-            GOVERNANCE_PROGRAM_ID,
-            REALM_ID,
+        governance::addresses::{
+            MAINNET_GOVERNANCE_PROGRAM_ID,
+            MAINNET_REALM_ID,
         },
+        integrity_pool::pda::get_pool_config_address,
         solana::utils::fetch_account_data,
     },
     anchor_lang::{
@@ -41,9 +41,12 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    spl_governance::instruction::{
-        cast_vote,
-        create_proposal,
+    spl_governance::{
+        instruction::{
+            cast_vote,
+            create_proposal,
+        },
+        state::governance,
     },
     staking::state::{
         global_config::GlobalConfig,
@@ -52,7 +55,13 @@ use {
     },
 };
 
-pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
+pub fn init_config_account(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    pyth_token_mint: Pubkey,
+    pyth_governance_realm: Option<Pubkey>,
+    governance_program: Option<Pubkey>,
+) {
     let pool_config = get_pool_config_address();
     let config_account = get_config_address();
     let config_bump = get_config_address_bump();
@@ -62,12 +71,12 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             bump: config_bump,
             governance_authority: payer.pubkey(),
             pyth_token_mint,
-            pyth_governance_realm: REALM_ID,
+            pyth_governance_realm: MAINNET_REALM_ID,
             unlocking_duration: UNLOCKING_DURATION,
             epoch_duration: EPOCH_DURATION,
             freeze: false,
             pda_authority: payer.pubkey(),
-            governance_program: GOVERNANCE_PROGRAM_ID,
+            governance_program: MAINNET_GOVERNANCE_PROGRAM_ID,
             pyth_token_list_time: None,
             agreement_hash: [0; 32],
             mock_clock_time: 30,

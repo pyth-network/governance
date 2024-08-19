@@ -29,8 +29,6 @@ use {
 };
 
 pub const STARTING_EPOCH: u64 = 2;
-pub const GOVERNANCE_PROGRAM_ID: Pubkey = pubkey!("pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U");
-pub const REALM_ID: Pubkey = pubkey!("4ct8XU5tKbMNRphWy4rePsS9kBqPhDdvZoGpmprPaug4");
 
 pub struct SetupResult {
     pub svm:                      litesvm::LiteSVM,
@@ -78,13 +76,11 @@ pub fn setup(props: SetupProps) -> SetupResult {
         "../../staking/target/deploy/publisher_caps.so",
     )
     .unwrap();
-    svm.add_program_from_file(GOVERNANCE_PROGRAM_ID, "fixtures/governance/governance.so")
-        .unwrap();
 
     svm.airdrop(&payer.pubkey(), 100_000_000_000).unwrap();
 
     if init_config {
-        init_config_account(&mut svm, &payer, pyth_token_mint.pubkey());
+        init_config_account(&mut svm, &payer, pyth_token_mint.pubkey(), None, None);
         update_max_voter_weight_record(&mut svm, &payer);
     }
 

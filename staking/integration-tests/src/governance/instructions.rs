@@ -10,7 +10,6 @@ use {
             },
         },
     },
-    anchor_spl::token,
     litesvm::types::TransactionResult,
     solana_sdk::{
         pubkey::Pubkey,

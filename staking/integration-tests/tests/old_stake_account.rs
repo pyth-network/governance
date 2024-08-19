@@ -1,11 +1,21 @@
 use {
-    anchor_lang::AccountDeserialize,
+    anchor_lang::{
+        pubkey,
+        AccountDeserialize,
+        Key,
+    },
     anchor_spl::token::TokenAccount,
     integration_tests::{
-        governance::instructions::{
-            create_governance_proposal,
-            create_governance_record,
-            vote_on_governance_proposal,
+        governance::{
+            addresses::{
+                MAINNET_GOVERNANCE_PROGRAM_ID,
+                MAINNET_REALM_ID,
+            },
+            instructions::{
+                create_governance_proposal,
+                create_governance_record,
+                vote_on_governance_proposal,
+            },
         },
         setup::{
             setup,
@@ -25,9 +35,12 @@ use {
             helper_functions::initialize_new_stake_account,
             instructions::{
                 create_position,
+                create_target_account,
+                init_config_account,
                 join_dao_llc,
                 merge_target_positions,
                 slash_staking,
+                update_max_voter_weight_record,
                 update_pool_authority,
                 update_token_list_time,
                 update_voter_weight,
@@ -87,7 +100,7 @@ fn test_old_stake_account() {
         mut svm,
         payer,
         pyth_token_mint,
-        publisher_keypair,
+        publisher_keypair: _,
         pool_data_pubkey: _,
         reward_program_authority: _,
         publisher_index: _,
@@ -112,47 +125,39 @@ fn test_old_stake_account() {
     let voter_record: VoterWeightRecord =
         fetch_account_data(&mut svm, &get_voter_record_address(stake_account_positions));
 
+    // Check that the voter weight is calculated correctly
     let mut positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = positions_account.to_dynamic_position_array();
 
     let pos1 = positions.read_position(0).unwrap().unwrap();
     let pos2 = positions.read_position(1).unwrap().unwrap();
-
-    assert_eq!(
-        voter_record.voter_weight,
-        (((pos1.amount + pos2.amount) as u128) * 10_000_000_000_000_000u128
-            / target_account.locked as u128) as u64
-    );
-
     assert!(positions.get_position_capacity() == 20);
 
     for i in 2..positions.get_position_capacity() {
         assert!(positions.read_position(i).unwrap().is_none());
     }
 
+    let expected_voter_weight = (((pos1.amount + pos2.amount) as u128) * 10_000_000_000_000_000u128
+        / target_account.locked as u128) as u64;
+
+    assert_eq!(voter_record.voter_weight, expected_voter_weight);
+
+    // Try voting against the actual governance program
     create_governance_record(&mut svm, &payer).unwrap();
-    let proposal = create_governance_proposal(
+    let actual_proposal_data = create_proposal_and_vote(
         &mut svm,
         &payer,
-        stake_account_positions,
+        &stake_account_positions,
         &governance_address,
     );
-    vote_on_governance_proposal(
-        &mut svm,
-        &payer,
-        stake_account_positions,
-        &governance_address,
-        &proposal,
-    )
-    .unwrap();
-    let proposal_account: ProposalV2 = fetch_governance_account_data(&mut svm, &proposal);
-    assert_eq!(proposal_account.options.len(), 1);
+    assert_eq!(actual_proposal_data.options.len(), 1);
     assert_eq!(
-        proposal_account.options[0].vote_weight,
-        (((pos1.amount + pos2.amount) as u128) * 10_000_000_000_000_000u128
-            / target_account.locked as u128) as u64
+        actual_proposal_data.options[0].vote_weight,
+        expected_voter_weight
     );
 
+    // Test some other actions
+    // create_positions, merge_positions
     create_position(
         &mut svm,
         &payer,
@@ -185,12 +190,13 @@ fn test_old_stake_account() {
 
     let voter_record: VoterWeightRecord =
         fetch_account_data(&mut svm, &get_voter_record_address(stake_account_positions));
-    assert_eq!(
-        voter_record.voter_weight,
-        (((post_pos1.amount + post_pos2.amount + post_pos3.amount) as u128)
-            * 10_000_000_000_000_000u128
-            / (target_account.locked + post_pos3.amount) as u128) as u64
-    );
+
+    let expected_voter_weight = (((post_pos1.amount + post_pos2.amount + post_pos3.amount) as u128)
+        * 10_000_000_000_000_000u128
+        / (target_account.locked + post_pos3.amount) as u128)
+        as u64;
+
+    assert_eq!(voter_record.voter_weight, expected_voter_weight);
 
     merge_target_positions(&mut svm, &payer, stake_account_positions).unwrap();
 
@@ -199,19 +205,19 @@ fn test_old_stake_account() {
 
     assert!(positions.get_position_capacity() == 2);
 
-    let pos1 = positions.read_position(0).unwrap().unwrap();
-    let pos2 = positions.read_position(1).unwrap().unwrap();
+    let post_merge_pos1 = positions.read_position(0).unwrap().unwrap();
+    let post_merge_pos2 = positions.read_position(1).unwrap().unwrap();
 
     assert_eq!(
-        pos1.activation_epoch,
+        post_merge_pos1.activation_epoch,
         std::cmp::min(post_pos1.activation_epoch, post_pos2.activation_epoch)
     );
-    assert_eq!(pos1.amount, post_pos1.amount + post_pos2.amount);
-    assert_eq!(pos1.unlocking_start, None);
+    assert_eq!(post_merge_pos1.amount, post_pos1.amount + post_pos2.amount);
+    assert_eq!(post_merge_pos1.unlocking_start, None);
 
-    assert_eq!(pos2.activation_epoch, post_pos3.activation_epoch);
-    assert_eq!(pos2.amount, post_pos3.amount);
-    assert_eq!(pos2.unlocking_start, None);
+    assert_eq!(post_merge_pos2.activation_epoch, post_pos3.activation_epoch);
+    assert_eq!(post_merge_pos2.amount, post_pos3.amount);
+    assert_eq!(post_merge_pos2.unlocking_start, None);
 
 
     assert_eq!(
@@ -219,39 +225,44 @@ fn test_old_stake_account() {
         staking::error::ErrorCode::PositionOutOfBounds.into()
     );
 
+    // Voter weight should be the same after merging
     svm.expire_blockhash();
     update_voter_weight(&mut svm, &payer, stake_account_positions).unwrap();
     let voter_record: VoterWeightRecord =
         fetch_account_data(&mut svm, &get_voter_record_address(stake_account_positions));
-    assert_eq!(
-        voter_record.voter_weight,
-        (((post_pos1.amount + post_pos2.amount + post_pos3.amount) as u128)
-            * 10_000_000_000_000_000u128
-            / (target_account.locked + post_pos3.amount) as u128) as u64
-    );
+    assert_eq!(voter_record.voter_weight, expected_voter_weight);
 
-    let proposal = create_governance_proposal(
+    // Vote again, after merging
+    let proposal_account = create_proposal_and_vote(
         &mut svm,
         &payer,
-        stake_account_positions,
+        &stake_account_positions,
         &governance_address,
     );
+    assert_eq!(proposal_account.options.len(), 1);
+    assert_eq!(
+        proposal_account.options[0].vote_weight,
+        expected_voter_weight
+    );
+}
+
+fn create_proposal_and_vote(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: &Pubkey,
+    governance_address: &Pubkey,
+) -> ProposalV2 {
+    let proposal =
+        create_governance_proposal(svm, &payer, *stake_account_positions, &governance_address);
     vote_on_governance_proposal(
-        &mut svm,
+        svm,
         &payer,
-        stake_account_positions,
+        *stake_account_positions,
         &governance_address,
         &proposal,
     )
     .unwrap();
-    let proposal_account: ProposalV2 = fetch_governance_account_data(&mut svm, &proposal);
-    assert_eq!(proposal_account.options.len(), 1);
-    assert_eq!(
-        proposal_account.options[0].vote_weight,
-        (((post_pos1.amount + post_pos2.amount + post_pos3.amount) as u128)
-            * 10_000_000_000_000_000u128
-            / (target_account.locked + post_pos3.amount) as u128) as u64
-    );
+    fetch_governance_account_data(svm, &proposal)
 }
 
 // These accounts were snapshotted on 16th August 2024
@@ -297,6 +308,12 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
 }
 
 fn load_governance_accounts(svm: &mut LiteSVM, pyth_token_mint: &Pubkey) -> Pubkey {
+    svm.add_program_from_file(
+        MAINNET_GOVERNANCE_PROGRAM_ID,
+        "fixtures/governance/governance.so",
+    )
+    .unwrap();
+
     let mut realm = load_account_file("governance/realm.json");
     realm.account.data_as_mut_slice()[1..33].copy_from_slice(&pyth_token_mint.to_bytes());
     svm.set_account(realm.address, realm.account.into())
@@ -310,9 +327,8 @@ fn load_governance_accounts(svm: &mut LiteSVM, pyth_token_mint: &Pubkey) -> Pubk
     svm.set_account(realm_config.address, realm_config.account.into())
         .unwrap();
 
-    return governance.address;
+    governance.address
 }
-
 
 pub struct LoadedAccount {
     pub address: Pubkey,
