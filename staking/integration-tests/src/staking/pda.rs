@@ -2,6 +2,7 @@ use {
     solana_sdk::pubkey::Pubkey,
     staking::context::{
         CONFIG_SEED,
+        MAX_VOTER_RECORD_SEED,
         TARGET_SEED,
         VOTING_TARGET_SEED,
     },
@@ -62,6 +63,14 @@ pub fn get_voter_record_address(stake_account_positions: Pubkey) -> Pubkey {
             staking::context::VOTER_RECORD_SEED.as_bytes(),
             stake_account_positions.as_ref(),
         ],
+        &staking::ID,
+    )
+    .0
+}
+
+pub fn get_max_voter_record_address() -> Pubkey {
+    Pubkey::find_program_address(
+        &[staking::context::MAX_VOTER_RECORD_SEED.as_bytes()],
         &staking::ID,
     )
     .0

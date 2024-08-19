@@ -2,6 +2,7 @@ use {
     super::pda::{
         get_config_address,
         get_config_address_bump,
+        get_max_voter_record_address,
         get_stake_account_custody_address,
         get_stake_account_custory_authority_address,
         get_stake_account_metadata_address,
@@ -17,7 +18,11 @@ use {
         solana::utils::fetch_account_data,
     },
     anchor_lang::{
-        prelude::AccountMeta, solana_program, system_program, InstructionData, ToAccountMetas
+        prelude::AccountMeta,
+        solana_program,
+        system_program,
+        InstructionData,
+        ToAccountMetas,
     },
     anchor_spl::token::spl_token,
     integrity_pool::utils::{
@@ -322,8 +327,13 @@ pub fn slash_staking(
     svm.send_transaction(slash_account_tx)
 }
 
-pub fn get_update_voter_weight_instruction(payer: Pubkey, stake_account_positions: Pubkey,voter_weight_action : VoterWeightAction , extra_account : Option<Pubkey>) -> Instruction {
-let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+pub fn get_update_voter_weight_instruction(
+    payer: Pubkey,
+    stake_account_positions: Pubkey,
+    voter_weight_action: VoterWeightAction,
+    extra_account: Option<Pubkey>,
+) -> Instruction {
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let config_account = get_config_address();
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
     let governance_target = get_target_address();
@@ -341,7 +351,8 @@ let stake_account_metadata = get_stake_account_metadata_address(stake_account_po
         stake_account_metadata,
         config: config_account,
         voter_record,
-    }.to_account_metas(None);
+    }
+    .to_account_metas(None);
 
     if let Some(extra_account) = extra_account {
         update_voter_weight_accs.push(AccountMeta::new_readonly(extra_account, false));
@@ -360,7 +371,12 @@ pub fn update_voter_weight(
     stake_account_positions: Pubkey,
 ) -> TransactionResult {
     let update_voter_weight_tx = Transaction::new_signed_with_payer(
-        &[get_update_voter_weight_instruction(payer.pubkey(), stake_account_positions, VoterWeightAction::CreateGovernance, None)],
+        &[get_update_voter_weight_instruction(
+            payer.pubkey(),
+            stake_account_positions,
+            VoterWeightAction::CreateGovernance,
+            None,
+        )],
         Some(&payer.pubkey()),
         &[&payer],
         svm.latest_blockhash(),
@@ -391,6 +407,27 @@ pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token
     );
 
     svm.send_transaction(update_token_list_time_tx).unwrap();
+}
+
+pub fn update_max_voter_weight_record(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
+    let config_account = get_config_address();
+
+    let data = staking::instruction::UpdateMaxVoterWeight {};
+    let accs = staking::accounts::UpdateMaxVoterWeight {
+        config:           config_account,
+        max_voter_record: get_max_voter_record_address(),
+        payer:            payer.pubkey(),
+        system_program:   system_program::ID,
+    };
+    let ix = Instruction::new_with_bytes(staking::ID, &data.data(), accs.to_account_metas(None));
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx).unwrap();
 }
 
 pub fn merge_target_positions(

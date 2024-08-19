@@ -5,6 +5,7 @@ use {
         governance::instructions::{
             create_governance_proposal,
             create_governance_record,
+            vote_on_governance_proposal,
         },
         setup::{
             setup,
@@ -16,6 +17,7 @@ use {
             instructions::create_token_account,
             utils::{
                 fetch_account_data,
+                fetch_governance_account_data,
                 fetch_positions_account,
             },
         },
@@ -56,6 +58,7 @@ use {
     },
     spl_governance::state::{
         governance,
+        proposal::ProposalV2,
         realm,
     },
     staking::{
@@ -128,13 +131,27 @@ fn test_old_stake_account() {
     }
 
     create_governance_record(&mut svm, &payer).unwrap();
-    create_governance_proposal(
+    let proposal = create_governance_proposal(
         &mut svm,
         &payer,
         stake_account_positions,
         &governance_address,
+    );
+    vote_on_governance_proposal(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        &governance_address,
+        &proposal,
     )
     .unwrap();
+    let proposal_account: ProposalV2 = fetch_governance_account_data(&mut svm, &proposal);
+    assert_eq!(proposal_account.options.len(), 1);
+    assert_eq!(
+        proposal_account.options[0].vote_weight,
+        (((pos1.amount + pos2.amount) as u128) * 10_000_000_000_000_000u128
+            / target_account.locked as u128) as u64
+    );
 
     create_position(
         &mut svm,
@@ -212,6 +229,29 @@ fn test_old_stake_account() {
             * 10_000_000_000_000_000u128
             / (target_account.locked + post_pos3.amount) as u128) as u64
     );
+
+    let proposal = create_governance_proposal(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        &governance_address,
+    );
+    vote_on_governance_proposal(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        &governance_address,
+        &proposal,
+    )
+    .unwrap();
+    let proposal_account: ProposalV2 = fetch_governance_account_data(&mut svm, &proposal);
+    assert_eq!(proposal_account.options.len(), 1);
+    assert_eq!(
+        proposal_account.options[0].vote_weight,
+        (((post_pos1.amount + post_pos2.amount + post_pos3.amount) as u128)
+            * 10_000_000_000_000_000u128
+            / (target_account.locked + post_pos3.amount) as u128) as u64
+    );
 }
 
 // These accounts were snapshotted on 16th August 2024
@@ -257,13 +297,6 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
 }
 
 fn load_governance_accounts(svm: &mut LiteSVM, pyth_token_mint: &Pubkey) -> Pubkey {
-    // let program = load_account_file("governance/program.json");
-    // svm.set_account(program.address, program.account.into()).unwrap();
-
-
-    // let program_data = load_account_file("governance/program_data.json");
-    // svm.set_account(program_data.address, program_data.account.into()).unwrap();
-
     let mut realm = load_account_file("governance/realm.json");
     realm.account.data_as_mut_slice()[1..33].copy_from_slice(&pyth_token_mint.to_bytes());
     svm.set_account(realm.address, realm.account.into())
