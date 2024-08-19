@@ -361,25 +361,6 @@ pub fn get_update_voter_weight_instruction(
     )
 }
 
-pub fn update_voter_weight(
-    svm: &mut litesvm::LiteSVM,
-    payer: &Keypair,
-    stake_account_positions: Pubkey,
-) -> TransactionResult {
-    let update_voter_weight_tx = Transaction::new_signed_with_payer(
-        &[get_update_voter_weight_instruction(
-            payer.pubkey(),
-            stake_account_positions,
-            VoterWeightAction::CreateGovernance,
-            None,
-        )],
-        Some(&payer.pubkey()),
-        &[&payer],
-        svm.latest_blockhash(),
-    );
-    svm.send_transaction(update_voter_weight_tx)
-}
-
 pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token_list_time: i64) {
     let config_account = get_config_address();
 
@@ -405,7 +386,26 @@ pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token
     svm.send_transaction(update_token_list_time_tx).unwrap();
 }
 
-pub fn update_max_voter_weight_record(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
+pub fn update_voter_weight(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let update_voter_weight_tx = Transaction::new_signed_with_payer(
+        &[get_update_voter_weight_instruction(
+            payer.pubkey(),
+            stake_account_positions,
+            VoterWeightAction::CreateGovernance,
+            None,
+        )],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+    svm.send_transaction(update_voter_weight_tx)
+}
+
+pub fn update_max_voter_weight(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
     let config_account = get_config_address();
 
     let data = staking::instruction::UpdateMaxVoterWeight {};
