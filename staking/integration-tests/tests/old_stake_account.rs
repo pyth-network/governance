@@ -2,7 +2,10 @@ use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
-        governance::instructions::{create_governance_proposal, create_governance_record},
+        governance::instructions::{
+            create_governance_proposal,
+            create_governance_record,
+        },
         setup::{
             setup,
             SetupProps,
@@ -125,7 +128,13 @@ fn test_old_stake_account() {
     }
 
     create_governance_record(&mut svm, &payer).unwrap();
-    create_governance_proposal(&mut svm, &payer, stake_account_positions,&governance_address).unwrap();
+    create_governance_proposal(
+        &mut svm,
+        &payer,
+        stake_account_positions,
+        &governance_address,
+    )
+    .unwrap();
 
     create_position(
         &mut svm,
@@ -234,8 +243,8 @@ fn load_stake_accounts(svm: &mut LiteSVM, payer: &Pubkey, pyth_token_mint: &Pubk
     .unwrap();
 
     let mut voter_record = load_account_file("staking/voter_record.json");
-    voter_record.account.data_as_mut_slice()[32..64].copy_from_slice(&pyth_token_mint.to_bytes());
-    voter_record.account.data_as_mut_slice()[64..96].copy_from_slice(&payer.to_bytes());
+    voter_record.account.data_as_mut_slice()[40..72].copy_from_slice(&pyth_token_mint.to_bytes());
+    voter_record.account.data_as_mut_slice()[72..104].copy_from_slice(&payer.to_bytes());
     svm.set_account(voter_record.address, voter_record.account.into())
         .unwrap();
 
