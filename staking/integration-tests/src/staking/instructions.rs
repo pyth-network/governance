@@ -48,13 +48,7 @@ use {
     },
 };
 
-pub fn init_config_account(
-    svm: &mut litesvm::LiteSVM,
-    payer: &Keypair,
-    pyth_token_mint: Pubkey,
-    pyth_governance_realm: Option<Pubkey>,
-    governance_program: Option<Pubkey>,
-) {
+pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
     let pool_config = get_pool_config_address();
     let config_account = get_config_address();
     let config_bump = get_config_address_bump();

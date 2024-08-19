@@ -79,7 +79,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
     svm.airdrop(&payer.pubkey(), 100_000_000_000).unwrap();
 
     if init_config {
-        init_config_account(&mut svm, &payer, pyth_token_mint.pubkey(), None, None);
+        init_config_account(&mut svm, &payer, pyth_token_mint.pubkey());
         update_max_voter_weight_record(&mut svm, &payer);
     }
 
