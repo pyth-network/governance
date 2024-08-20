@@ -26,7 +26,7 @@ pub fn fetch_account_data<T: AnchorDeserialize + AccountDeserialize>(
     T::try_deserialize(&mut svm.get_account(account).unwrap().data.as_ref()).unwrap()
 }
 
-pub fn fetch_governance_account_data<T: BorshDeserialize + BorshSerialize>(
+pub fn fetch_governance_account_data<T: BorshDeserialize>(
     svm: &mut litesvm::LiteSVM,
     account: &Pubkey,
 ) -> T {
