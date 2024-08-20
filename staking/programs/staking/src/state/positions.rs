@@ -333,8 +333,8 @@ where
 /// target. This is one of the core pieces of our staking design, and stores all
 /// of the state related to a position The voting position is a position where the
 /// target_with_parameters is VOTING
-#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema)]
-#[cfg_attr(test, derive(Hash, PartialEq, Eq))]
+#[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, BorshSchema, PartialEq, Eq)]
+#[cfg_attr(test, derive(Hash))]
 pub struct Position {
     pub amount:                 u64,
     pub activation_epoch:       u64,

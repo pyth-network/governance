@@ -2,16 +2,23 @@ use {
     super::pda::{
         get_config_address,
         get_config_address_bump,
+        get_max_voter_record_address,
         get_stake_account_custody_address,
         get_stake_account_custory_authority_address,
         get_stake_account_metadata_address,
         get_target_address,
+        get_voter_record_address,
     },
     crate::{
+        governance::addresses::{
+            MAINNET_GOVERNANCE_PROGRAM_ID,
+            MAINNET_REALM_ID,
+        },
         integrity_pool::pda::get_pool_config_address,
         solana::utils::fetch_account_data,
     },
     anchor_lang::{
+        prelude::AccountMeta,
         solana_program,
         system_program,
         InstructionData,
@@ -37,6 +44,7 @@ use {
     staking::state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,
+        voter_weight_record::VoterWeightAction,
     },
 };
 
@@ -50,12 +58,12 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             bump: config_bump,
             governance_authority: payer.pubkey(),
             pyth_token_mint,
-            pyth_governance_realm: Pubkey::new_unique(),
+            pyth_governance_realm: MAINNET_REALM_ID,
             unlocking_duration: UNLOCKING_DURATION,
             epoch_duration: EPOCH_DURATION,
             freeze: false,
             pda_authority: payer.pubkey(),
-            governance_program: Pubkey::new_unique(),
+            governance_program: MAINNET_GOVERNANCE_PROGRAM_ID,
             pyth_token_list_time: None,
             agreement_hash: [0; 32],
             mock_clock_time: 30,
@@ -313,4 +321,137 @@ pub fn slash_staking(
     );
 
     svm.send_transaction(slash_account_tx)
+}
+
+pub fn get_update_voter_weight_instruction(
+    payer: Pubkey,
+    stake_account_positions: Pubkey,
+    voter_weight_action: VoterWeightAction,
+    extra_account: Option<Pubkey>,
+) -> Instruction {
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let config_account = get_config_address();
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+    let governance_target = get_target_address();
+    let voter_record = get_voter_record_address(stake_account_positions);
+
+    let update_voter_weight_data: staking::instruction::UpdateVoterWeight =
+        staking::instruction::UpdateVoterWeight {
+            action: voter_weight_action,
+        };
+    let mut update_voter_weight_accs = staking::accounts::UpdateVoterWeight {
+        stake_account_custody,
+        governance_target,
+        owner: payer,
+        stake_account_positions,
+        stake_account_metadata,
+        config: config_account,
+        voter_record,
+    }
+    .to_account_metas(None);
+
+    if let Some(extra_account) = extra_account {
+        update_voter_weight_accs.push(AccountMeta::new_readonly(extra_account, false));
+    }
+
+    Instruction::new_with_bytes(
+        staking::ID,
+        &update_voter_weight_data.data(),
+        update_voter_weight_accs,
+    )
+}
+
+pub fn update_token_list_time(svm: &mut litesvm::LiteSVM, payer: &Keypair, token_list_time: i64) {
+    let config_account = get_config_address();
+
+    let update_token_list_time_data = staking::instruction::UpdateTokenListTime {
+        token_list_time: Some(token_list_time),
+    };
+    let update_token_list_time_accs = staking::accounts::UpdateTokenListTime {
+        config:               config_account,
+        governance_authority: payer.pubkey(),
+    };
+    let update_token_list_time_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &update_token_list_time_data.data(),
+        update_token_list_time_accs.to_account_metas(None),
+    );
+    let update_token_list_time_tx = Transaction::new_signed_with_payer(
+        &[update_token_list_time_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(update_token_list_time_tx).unwrap();
+}
+
+pub fn update_voter_weight(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let update_voter_weight_tx = Transaction::new_signed_with_payer(
+        &[get_update_voter_weight_instruction(
+            payer.pubkey(),
+            stake_account_positions,
+            VoterWeightAction::CreateGovernance,
+            None,
+        )],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+    svm.send_transaction(update_voter_weight_tx)
+}
+
+pub fn update_max_voter_weight(svm: &mut litesvm::LiteSVM, payer: &Keypair) {
+    let config_account = get_config_address();
+
+    let data = staking::instruction::UpdateMaxVoterWeight {};
+    let accs = staking::accounts::UpdateMaxVoterWeight {
+        config:           config_account,
+        max_voter_record: get_max_voter_record_address(),
+        payer:            payer.pubkey(),
+        system_program:   system_program::ID,
+    };
+    let ix = Instruction::new_with_bytes(staking::ID, &data.data(), accs.to_account_metas(None));
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx).unwrap();
+}
+
+pub fn merge_target_positions(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+
+    let data = staking::instruction::MergeTargetPositions {
+        target_with_parameters: TargetWithParameters::Voting,
+    };
+
+    let accs = staking::accounts::MergeTargetPositions {
+        owner: payer.pubkey(),
+        stake_account_positions,
+        stake_account_metadata,
+        pool_authority: None,
+        config: config_account,
+    };
+    let ix = Instruction::new_with_bytes(staking::ID, &data.data(), accs.to_account_metas(None));
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
 }

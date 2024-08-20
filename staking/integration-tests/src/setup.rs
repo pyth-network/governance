@@ -15,6 +15,7 @@ use {
         staking::instructions::{
             create_target_account,
             init_config_account,
+            update_max_voter_weight,
         },
         utils::clock::advance_n_epochs,
     },
@@ -79,6 +80,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
 
     if init_config {
         init_config_account(&mut svm, &payer, pyth_token_mint.pubkey());
+        update_max_voter_weight(&mut svm, &payer);
     }
 
     advance_n_epochs(&mut svm, &payer, 1);
