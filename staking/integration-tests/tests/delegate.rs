@@ -1,5 +1,6 @@
 use {
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::{
             instructions::{
                 advance,
@@ -21,10 +22,7 @@ use {
             fetch_positions_account,
         },
         staking::helper_functions::initialize_new_stake_account,
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::{
         error::IntegrityPoolError,
@@ -134,7 +132,7 @@ fn test_delegate() {
     assert_eq!(delegation_record.last_epoch, 2);
 
     let fake_publisher = Pubkey::new_unique();
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         advance_delegation_record(
             &mut svm,
             &payer,
@@ -144,11 +142,11 @@ fn test_delegate() {
             pool_data_pubkey,
             None,
         ),
-        anchor_lang::error::Error::from(IntegrityPoolError::PublisherNotFound),
-        0,
+        IntegrityPoolError::PublisherNotFound,
+        0
     );
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         undelegate(
             &mut svm,
             &payer,
@@ -158,8 +156,8 @@ fn test_delegate() {
             0,
             50,
         ),
-        anchor_lang::error::ErrorCode::AccountNotInitialized.into(),
-        0,
+        anchor_lang::error::ErrorCode::AccountNotInitialized,
+        0
     );
 
     undelegate(
@@ -210,7 +208,7 @@ fn test_delegate() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         undelegate(
             &mut svm,
             &payer,
@@ -220,12 +218,12 @@ fn test_delegate() {
             0,
             10,
         ),
-        anchor_lang::error::Error::from(IntegrityPoolError::OutdatedDelegatorAccounting),
-        0,
+        IntegrityPoolError::OutdatedDelegatorAccounting,
+        0
     );
 
     svm.expire_blockhash();
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         advance_delegation_record(
             &mut svm,
             &payer,
@@ -235,8 +233,8 @@ fn test_delegate() {
             pool_data_pubkey,
             None,
         ),
-        anchor_lang::error::Error::from(IntegrityPoolError::OutdatedPublisherAccounting),
-        0,
+        IntegrityPoolError::OutdatedPublisherAccounting,
+        0
     );
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);

@@ -1,5 +1,6 @@
 use {
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::instructions::{
             advance,
             advance_delegation_record,
@@ -19,10 +20,7 @@ use {
             helper_functions::initialize_new_stake_account,
             instructions::create_position,
         },
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::error::IntegrityPoolError,
     solana_sdk::{
@@ -139,7 +137,7 @@ fn test_merge_delegation_positions() {
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         merge_delegation_positions(
             &mut svm,
             &payer,
@@ -147,11 +145,11 @@ fn test_merge_delegation_positions() {
             pool_data_pubkey,
             stake_account_positions,
         ),
-        anchor_lang::error::Error::from(IntegrityPoolError::OutdatedDelegatorAccounting),
-        0,
+        IntegrityPoolError::OutdatedDelegatorAccounting,
+        0
     );
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         merge_delegation_positions(
             &mut svm,
             &payer,
@@ -159,8 +157,8 @@ fn test_merge_delegation_positions() {
             pool_data_pubkey,
             stake_account_positions,
         ),
-        anchor_lang::error::ErrorCode::AccountNotInitialized.into(),
-        0,
+        anchor_lang::error::ErrorCode::AccountNotInitialized,
+        0
     );
 
     delegate(

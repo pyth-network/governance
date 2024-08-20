@@ -2,6 +2,7 @@ use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::{
             instructions::{
                 advance,
@@ -31,10 +32,7 @@ use {
             },
         },
         staking::helper_functions::initialize_new_stake_account,
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::{
         error::IntegrityPoolError,
@@ -77,7 +75,7 @@ fn test_create_slash_event() {
     let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
     let slashed_publisher = publisher_keypair.pubkey();
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         create_slash_event(
             &mut svm,
             &payer,
@@ -88,8 +86,8 @@ fn test_create_slash_event() {
             slashed_publisher,
             pool_data_pubkey,
         ),
-        IntegrityPoolError::InvalidSlashEventIndex.into(),
-        0,
+        IntegrityPoolError::InvalidSlashEventIndex,
+        0
     );
 
     create_slash_event(
@@ -140,7 +138,7 @@ fn test_create_slash_event() {
     assert_eq!(pool_data.num_slash_events[publisher_index], 3);
 
     svm.expire_blockhash();
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         create_slash_event(
             &mut svm,
             &payer,
@@ -151,10 +149,10 @@ fn test_create_slash_event() {
             slashed_publisher,
             pool_data_pubkey,
         ),
-        IntegrityPoolError::InvalidSlashEventIndex.into(),
-        0,
+        IntegrityPoolError::InvalidSlashEventIndex,
+        0
     );
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         create_slash_event(
             &mut svm,
             &payer,
@@ -165,11 +163,11 @@ fn test_create_slash_event() {
             slashed_publisher,
             pool_data_pubkey,
         ),
-        ProgramError::Custom(0).into(),
-        0,
+        ProgramError::Custom(0),
+        0
     );
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         create_slash_event(
             &mut svm,
             &payer,
@@ -181,8 +179,8 @@ fn test_create_slash_event() {
             slashed_publisher,
             pool_data_pubkey,
         ),
-        IntegrityPoolError::InvalidRewardProgramAuthority.into(),
-        0,
+        IntegrityPoolError::InvalidRewardProgramAuthority,
+        0
     );
 
     let slash_account_0: SlashEvent =
@@ -348,7 +346,7 @@ fn test_slash() {
         }
     );
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         slash(
             &mut svm,
             &payer,
@@ -358,8 +356,8 @@ fn test_slash() {
             publisher_keypair.pubkey(),
             pool_data_pubkey,
         ),
-        IntegrityPoolError::WrongSlashEventOrder.into(),
-        0,
+        IntegrityPoolError::WrongSlashEventOrder,
+        0
     );
 
     slash(
