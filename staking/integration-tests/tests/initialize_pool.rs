@@ -1,5 +1,6 @@
 use {
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::{
             instructions::{
                 create_pool_data_account,
@@ -13,10 +14,7 @@ use {
             SetupResult,
         },
         solana::utils::fetch_account_data,
-        utils::{
-            constants::YIELD,
-            error::assert_anchor_program_error,
-        },
+        utils::constants::YIELD,
     },
     integrity_pool::{
         error::IntegrityPoolError,
@@ -64,7 +62,7 @@ fn initialize_pool() {
         Pubkey::new_unique(),
         pyth_token_mint.pubkey(),
     );
-    assert_anchor_program_error(initialize_pool_2_res, ProgramError::Custom(0).into(), 1);
+    assert_anchor_program_error!(initialize_pool_2_res, ProgramError::Custom(0), 1);
 }
 
 #[test]
@@ -98,9 +96,9 @@ fn test_update_y() {
     // Trying to update the yield without the correct authority should fail
     let wrong_authority = Keypair::new();
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         update_y(&mut svm, &payer, &wrong_authority, 456),
-        IntegrityPoolError::InvalidRewardProgramAuthority.into(),
-        0,
+        IntegrityPoolError::InvalidRewardProgramAuthority,
+        0
     );
 }

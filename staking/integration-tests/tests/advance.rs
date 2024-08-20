@@ -1,9 +1,7 @@
 use {
-    anchor_lang::{
-        prelude::Error,
-        AccountDeserialize,
-    },
+    anchor_lang::AccountDeserialize,
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::instructions::{
             advance,
             advance_delegation_record,
@@ -36,7 +34,6 @@ use {
                 STAKED_TOKENS,
                 YIELD,
             },
-            error::assert_anchor_program_error,
         },
     },
     integrity_pool::{
@@ -97,19 +94,19 @@ fn test_advance() {
 
     let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     let publisher_caps_2 = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         advance(&mut svm, &payer, publisher_caps),
-        Error::from(IntegrityPoolError::PoolDataAlreadyUpToDate),
-        0,
+        IntegrityPoolError::PoolDataAlreadyUpToDate,
+        0
     );
 
     // one epoch later, the caps are outdated
     advance_n_epochs(&mut svm, &payer, 1);
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         advance(&mut svm, &payer, publisher_caps_2),
-        Error::from(IntegrityPoolError::OutdatedPublisherCaps),
-        0,
+        IntegrityPoolError::OutdatedPublisherCaps,
+        0
     );
 }
 

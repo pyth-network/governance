@@ -1,9 +1,7 @@
 use {
-    anchor_lang::{
-        error::ErrorCode,
-        prelude::Error,
-    },
+    anchor_lang::error::ErrorCode,
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::instructions::{
             advance,
             advance_delegation_record,
@@ -19,10 +17,7 @@ use {
         },
         solana::utils::fetch_account_data_bytemuck,
         staking::helper_functions::initialize_new_stake_account,
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::{
         error::IntegrityPoolError,
@@ -65,7 +60,7 @@ fn test_set_publisher_stake_account() {
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
     // payer tries to set publisher stake account
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -74,8 +69,8 @@ fn test_set_publisher_stake_account() {
             None,
             stake_account_positions,
         ),
-        Error::from(IntegrityPoolError::PublisherNeedsToSign),
-        0,
+        IntegrityPoolError::PublisherNeedsToSign,
+        0
     );
 
     // now the actual publisher signs
@@ -97,7 +92,7 @@ fn test_set_publisher_stake_account() {
     );
 
     // now only the stake account owner can change this, the publisher fails to change it
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -106,12 +101,12 @@ fn test_set_publisher_stake_account() {
             Some(stake_account_positions),
             stake_account_positions_2,
         ),
-        Error::from(IntegrityPoolError::StakeAccountOwnerNeedsToSign),
-        0,
+        IntegrityPoolError::StakeAccountOwnerNeedsToSign,
+        0
     );
 
     // missing the current stake account, fail
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -120,12 +115,12 @@ fn test_set_publisher_stake_account() {
             None,
             stake_account_positions_2,
         ),
-        Error::from(ErrorCode::AccountNotEnoughKeys),
-        0,
+        ErrorCode::AccountNotEnoughKeys,
+        0
     );
 
     // current stake account is wrong
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -134,8 +129,8 @@ fn test_set_publisher_stake_account() {
             Some(stake_account_positions_2),
             stake_account_positions_2,
         ),
-        Error::from(IntegrityPoolError::PublisherStakeAccountMismatch),
-        0,
+        IntegrityPoolError::PublisherStakeAccountMismatch,
+        0
     );
 
     // new stake account is delegated
@@ -149,7 +144,7 @@ fn test_set_publisher_stake_account() {
     )
     .unwrap();
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -158,8 +153,8 @@ fn test_set_publisher_stake_account() {
             Some(stake_account_positions),
             stake_account_positions_3,
         ),
-        Error::from(IntegrityPoolError::NewStakeAccountShouldBeUndelegated),
-        0,
+        IntegrityPoolError::NewStakeAccountShouldBeUndelegated,
+        0
     );
 
 
@@ -192,7 +187,7 @@ fn test_set_publisher_stake_account() {
     )
     .unwrap();
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -201,12 +196,12 @@ fn test_set_publisher_stake_account() {
             Some(stake_account_positions_2),
             stake_account_positions_3,
         ),
-        Error::from(IntegrityPoolError::CurrentStakeAccountShouldBeUndelegated),
-        0,
+        IntegrityPoolError::CurrentStakeAccountShouldBeUndelegated,
+        0
     );
 
     // lastly, if the publisher doesn't exist, fail
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
@@ -215,8 +210,8 @@ fn test_set_publisher_stake_account() {
             Some(stake_account_positions),
             stake_account_positions_2,
         ),
-        Error::from(IntegrityPoolError::PublisherNotFound),
-        0,
+        IntegrityPoolError::PublisherNotFound,
+        0
     );
 
     // test the interactions between set_publisher_stake_account and delegate/undelegate

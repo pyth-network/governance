@@ -2,6 +2,7 @@ use {
     anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
+        assert_anchor_program_error,
         setup::{
             setup,
             SetupProps,
@@ -26,10 +27,7 @@ use {
                 get_target_address,
             },
         },
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     solana_sdk::{
@@ -109,7 +107,7 @@ fn test_staking_slash() {
     // at epoch N+2, we can slash epoch N+1
     advance_n_epochs(&mut svm, &payer, 2);
 
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         slash_staking(
             &mut svm,
             &payer,
@@ -119,8 +117,8 @@ fn test_staking_slash() {
             publisher_keypair.pubkey(),
             slash_token_account.pubkey(),
         ),
-        ErrorCode::InvalidSlashRatio.into(),
-        0,
+        ErrorCode::InvalidSlashRatio,
+        0
     );
 
     slash_staking(
