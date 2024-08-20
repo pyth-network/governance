@@ -101,15 +101,6 @@ pub fn create_proposal(
         &proposal_seed,
     );
 
-    let ix_2 = spl_governance::instruction::sign_off_proposal(
-        program_id,
-        pyth_governance_realm,
-        governance,
-        &proposal_address,
-        &payer.pubkey(),
-        Some(&token_owner_record),
-    );
-
     let tx = Transaction::new_signed_with_payer(
         &[
             get_update_voter_weight_instruction(
@@ -119,7 +110,6 @@ pub fn create_proposal(
                 Some(*governance),
             ),
             ix,
-            ix_2,
         ],
         Some(&payer.pubkey()),
         &[&payer],
@@ -128,6 +118,44 @@ pub fn create_proposal(
 
     svm.send_transaction(tx).unwrap();
     proposal_address
+}
+
+pub fn sign_off_proposal(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    proposal: &Pubkey,
+    governance: &Pubkey,
+) -> TransactionResult {
+    let config = get_config_address();
+
+    let config_data: GlobalConfig = fetch_account_data(svm, &config);
+    let pyth_governance_realm = &config_data.pyth_governance_realm;
+    let program_id = &config_data.governance_program;
+    let pyth_mint = &config_data.pyth_token_mint;
+    let token_owner_record = get_token_owner_record_address(
+        program_id,
+        pyth_governance_realm,
+        pyth_mint,
+        &payer.pubkey(),
+    );
+
+    let ix = spl_governance::instruction::sign_off_proposal(
+        program_id,
+        pyth_governance_realm,
+        governance,
+        proposal,
+        &payer.pubkey(),
+        Some(&token_owner_record),
+    );
+
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
 }
 
 

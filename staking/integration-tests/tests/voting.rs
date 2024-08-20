@@ -2,6 +2,7 @@ use {
     integration_tests::{
         governance::{
             addresses::MAINNET_GOVERNANCE_PROGRAM_ID,
+            helper_functions::create_proposal_and_vote,
             instructions::{
                 cast_vote,
                 create_proposal,
@@ -62,6 +63,9 @@ use {
     },
 };
 
+const MAINNET_TOKENS_LIST_TIME: i64 = 1684591200;
+const MAINNET_ELAPSED_EPOCHS: u64 = 2850;
+
 #[test]
 /// This test has two purposes:
 /// 1) to test the voting functionality against the deployed governance program and configuration
@@ -89,8 +93,8 @@ fn test_voting() {
         load_stake_accounts(&mut svm, &payer.pubkey(), &pyth_token_mint.pubkey());
     let governance_address = load_governance_accounts(&mut svm, &pyth_token_mint.pubkey());
 
-    update_token_list_time(&mut svm, &payer, 1684591200);
-    advance_n_epochs(&mut svm, &payer, 2850);
+    update_token_list_time(&mut svm, &payer, MAINNET_TOKENS_LIST_TIME);
+    advance_n_epochs(&mut svm, &payer, MAINNET_ELAPSED_EPOCHS);
     join_dao_llc(&mut svm, &payer, stake_account_positions).unwrap();
     update_voter_weight(&mut svm, &payer, stake_account_positions).unwrap();
 
@@ -219,24 +223,6 @@ fn test_voting() {
         proposal_account.options[0].vote_weight,
         expected_voter_weight
     );
-}
-
-fn create_proposal_and_vote(
-    svm: &mut LiteSVM,
-    payer: &Keypair,
-    stake_account_positions: &Pubkey,
-    governance_address: &Pubkey,
-) -> ProposalV2 {
-    let proposal = create_proposal(svm, payer, *stake_account_positions, governance_address);
-    cast_vote(
-        svm,
-        payer,
-        *stake_account_positions,
-        governance_address,
-        &proposal,
-    )
-    .unwrap();
-    fetch_governance_account_data(svm, &proposal)
 }
 
 // These accounts were snapshotted on 16th August 2024

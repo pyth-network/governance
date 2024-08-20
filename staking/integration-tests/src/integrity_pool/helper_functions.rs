@@ -3,13 +3,24 @@ use {
         get_pool_config_address,
         get_pool_reward_custody_address,
     },
-    crate::solana::instructions::{
-        airdrop_spl,
-        initialize_ata,
+    crate::{
+        governance::instructions::{
+            cast_vote,
+            create_proposal,
+        },
+        solana::{
+            instructions::{
+                airdrop_spl,
+                initialize_ata,
+            },
+            utils::fetch_governance_account_data,
+        },
     },
     anchor_lang::solana_program::pubkey::Pubkey,
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
+    litesvm::LiteSVM,
     solana_sdk::signature::Keypair,
+    spl_governance::state::proposal::ProposalV2,
 };
 
 
