@@ -64,9 +64,10 @@ use {
 
 #[test]
 /// This test has two purposes:
-/// 1) to test the voting functionality against the deployed governance program
-/// 2) to test that stake account positions with the old fixed sized position array can be turned
-/// into the new version by calling merge_target_positions and nothing breaks
+/// 1) to test the voting functionality against the deployed governance program and configuration
+/// 2) to test that the new staking account is compatible with stake account positions with the old
+/// fixed sized position array and such accounts can be turned into the new version by calling
+/// merge_target_positions and nothing breaks
 fn test_voting() {
     let SetupResult {
         mut svm,
