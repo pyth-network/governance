@@ -1,9 +1,7 @@
+#![allow(deprecated)]
 use {
     anchor_lang::{
-        prelude::borsh::{
-            BorshDeserialize,
-            BorshSerialize,
-        },
+        prelude::borsh::BorshDeserialize,
         AccountDeserialize,
         AnchorDeserialize,
     },
