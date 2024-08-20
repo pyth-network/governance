@@ -3,11 +3,7 @@ use {
         governance::{
             addresses::MAINNET_GOVERNANCE_PROGRAM_ID,
             helper_functions::create_proposal_and_vote,
-            instructions::{
-                cast_vote,
-                create_proposal,
-                create_token_owner_record,
-            },
+            instructions::create_token_owner_record,
         },
         setup::{
             setup,
@@ -17,7 +13,6 @@ use {
         },
         solana::utils::{
             fetch_account_data,
-            fetch_governance_account_data,
             fetch_positions_account,
         },
         staking::{
@@ -43,10 +38,8 @@ use {
             WritableAccount,
         },
         pubkey::Pubkey,
-        signature::Keypair,
         signer::Signer,
     },
-    spl_governance::state::proposal::ProposalV2,
     staking::state::{
         max_voter_weight_record::MAX_VOTER_WEIGHT,
         positions::{
