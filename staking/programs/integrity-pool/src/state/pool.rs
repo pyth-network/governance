@@ -493,9 +493,10 @@ mod tests {
 
 
         let mut event = Event {
-            epoch:      1,
-            y:          FRAC_64_MULTIPLIER / 10, // 10%
-            event_data: [PublisherEventData::default(); MAX_PUBLISHERS],
+            epoch:       1,
+            y:           FRAC_64_MULTIPLIER / 10, // 10%
+            extra_space: [0; 7],
+            event_data:  [PublisherEventData::default(); MAX_PUBLISHERS],
         };
 
         event.event_data[publisher_index] = PublisherEventData {

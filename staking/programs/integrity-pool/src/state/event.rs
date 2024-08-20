@@ -20,18 +20,20 @@ use {
 #[derive(AnchorSerialize, AnchorDeserialize, Debug, Clone, Copy, Zeroable, Pod, PartialEq, Eq)]
 #[repr(C)]
 pub struct Event {
-    pub epoch:      u64,
+    pub epoch:       u64,
     // storing historical values of y
-    pub y:          frac64,
-    pub event_data: [PublisherEventData; MAX_PUBLISHERS],
+    pub y:           frac64,
+    pub extra_space: [frac64; 7],
+    pub event_data:  [PublisherEventData; MAX_PUBLISHERS],
 }
 
 impl Default for Event {
     fn default() -> Self {
         Self {
-            epoch:      0,
-            y:          0,
-            event_data: [PublisherEventData::default(); MAX_PUBLISHERS],
+            epoch:       0,
+            y:           0,
+            extra_space: [0; 7],
+            event_data:  [PublisherEventData::default(); MAX_PUBLISHERS],
         }
     }
 }
