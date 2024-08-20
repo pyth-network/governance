@@ -357,7 +357,7 @@ pub fn get_update_voter_weight_instruction(
     Instruction::new_with_bytes(
         staking::ID,
         &update_voter_weight_data.data(),
-        update_voter_weight_accs.to_account_metas(None),
+        update_voter_weight_accs,
     )
 }
 
