@@ -1,23 +1,16 @@
-use {
-    litesvm::types::TransactionResult,
-    solana_sdk::{
-        instruction::InstructionError,
-        program_error::ProgramError,
-        transaction::TransactionError,
-    },
-};
-
-
-pub fn assert_anchor_program_error(
-    transaction_result: TransactionResult,
-    expected_error: anchor_lang::prelude::Error,
-    instruction_index: u8,
-) {
-    assert_eq!(
-        transaction_result.unwrap_err().err,
-        TransactionError::InstructionError(
-            instruction_index,
-            InstructionError::from(u64::from(ProgramError::from(expected_error,)))
-        )
-    );
+#[macro_export]
+macro_rules! assert_anchor_program_error {
+    ($transaction_result:expr, $expected_error:expr, $instruction_index:expr) => {
+        assert_eq!(
+            $transaction_result.unwrap_err().err,
+            solana_sdk::transaction::TransactionError::InstructionError(
+                $instruction_index,
+                solana_sdk::instruction::InstructionError::from(u64::from(
+                    solana_sdk::program_error::ProgramError::from(
+                        anchor_lang::prelude::Error::from($expected_error)
+                    )
+                ))
+            )
+        );
+    };
 }

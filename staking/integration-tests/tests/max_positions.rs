@@ -1,5 +1,6 @@
 use {
     integration_tests::{
+        assert_anchor_program_error,
         integrity_pool::instructions::{
             advance,
             advance_delegation_record,
@@ -12,10 +13,7 @@ use {
             SetupResult,
         },
         staking::helper_functions::initialize_new_stake_account,
-        utils::{
-            clock::advance_n_epochs,
-            error::assert_anchor_program_error,
-        },
+        utils::clock::advance_n_epochs,
     },
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     solana_sdk::signer::Signer,
@@ -58,7 +56,7 @@ fn test_max_positions() {
     }
 
     svm.expire_blockhash();
-    assert_anchor_program_error(
+    assert_anchor_program_error!(
         delegate(
             &mut svm,
             &payer,
@@ -67,8 +65,8 @@ fn test_max_positions() {
             stake_account_positions,
             100,
         ),
-        ErrorCode::TooManyPositions.into(),
-        0,
+        ErrorCode::TooManyPositions,
+        0
     );
 
     for _ in 0..10 {
