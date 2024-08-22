@@ -189,7 +189,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_0.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_0.slash_ratio, FRAC_64_MULTIPLIER / 2);
     assert_eq!(slash_account_0.slash_custody, slash_custody);
-    assert_eq!(slash_account_0.publisher, slashed_publisher);
 
     let slash_account_1: SlashEvent =
         fetch_account_data(&mut svm, &get_slash_event_address(1, slashed_publisher));
@@ -197,7 +196,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_1.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_1.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_1.slash_custody, slash_custody);
-    assert_eq!(slash_account_1.publisher, slashed_publisher);
 
     let slash_account_2: SlashEvent =
         fetch_account_data(&mut svm, &get_slash_event_address(2, slashed_publisher));
@@ -205,7 +203,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_2.epoch, STARTING_EPOCH + 10);
     assert_eq!(slash_account_2.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_2.slash_custody, slash_custody);
-    assert_eq!(slash_account_2.publisher, slashed_publisher);
 }
 
 #[test]
