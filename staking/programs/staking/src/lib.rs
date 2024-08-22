@@ -375,18 +375,6 @@ pub mod staking {
                     target_account.add_unlocking(amount, current_epoch)?;
                 }
             }
-
-            // For this case, we don't need to create new positions because the "closed"
-            // tokens become "free"
-            PositionState::UNLOCKED => {
-                if remaining_amount == 0 {
-                    stake_account_positions
-                        .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
-                } else {
-                    current_position.amount = remaining_amount;
-                    stake_account_positions.write_position(i, &current_position)?;
-                }
-            }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
                     stake_account_positions
@@ -399,7 +387,7 @@ pub mod staking {
                     target_account.add_unlocking(amount, current_epoch)?;
                 }
             }
-            PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
+            PositionState::UNLOCKING | PositionState::PREUNLOCKING | PositionState::UNLOCKED => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
             }
         }

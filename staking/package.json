@@ -20,8 +20,7 @@
     "@solana/web3.js": "^1.87.5",
     "encoding": "^0.1.13",
     "ethers": "^6.10.0",
-    "ts-node": "^10.7.0",
-    "typescript": "^4.3.5"
+    "ts-node": "^10.7.0"
   },
   "devDependencies": {
     "@ledgerhq/hw-transport": "^6.27.2",
@@ -41,6 +40,7 @@
     "prettier": "^2.6.2",
     "shelljs": "^0.8.5",
     "ts-mocha": "^9.0.2",
+    "typescript": "^5.5.4",
     "wasm-pack": "^0.10.2"
   },
   "scripts": {
