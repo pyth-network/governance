@@ -230,19 +230,12 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
-
-    await program.methods
       .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
-
+    
     // Make sure than closing a position twice fails
     await expectFail(
       program.methods
@@ -284,22 +277,13 @@ describe("position_lifecycle", async () => {
       await stakeConnection.getTime()
     );
 
-    await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
-
-    await assertBalanceMatches(
-      stakeConnection,
-      owner,
-      { withdrawable: PythBalance.fromString("200") },
-      await stakeConnection.getTime()
-    );
   });
 
   it("another iteration", async () => {
+    await program.methods.mergeTargetPositions({voting:{}}).accounts({
+      stakeAccountPositions: stakeAccountAddress,
+    }).rpc();
+
     await program.methods
       .createPosition(votingProduct, PythBalance.fromString("100").toBN())
       .accounts({
@@ -316,7 +300,7 @@ describe("position_lifecycle", async () => {
       },
       await stakeConnection.getTime()
     );
-
+    
     await program.methods.advanceClock(epochDuration.mul(new BN(1))).rpc();
 
     await assertBalanceMatches(

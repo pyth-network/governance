@@ -3,10 +3,7 @@ use {
         assert_anchor_program_error,
         integrity_pool::{
             instructions::{
-                advance,
-                advance_delegation_record,
-                delegate,
-                undelegate,
+                advance, advance_delegation_record, delegate, merge_delegation_positions, undelegate
             },
             pda::get_delegation_record_address,
         },
@@ -366,17 +363,7 @@ fn test_delegate() {
     )
     .unwrap();
 
-
-    undelegate(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        pool_data_pubkey,
-        stake_account_positions,
-        1,
-        30,
-    )
-    .unwrap();
+    merge_delegation_positions(&mut svm, &payer, publisher_keypair.pubkey(), pool_data_pubkey, stake_account_positions).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -408,8 +395,10 @@ fn test_delegate() {
     assert_eq!(pos0.activation_epoch, 3);
     assert_eq!(pos0.unlocking_start, None);
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
 
     undelegate(
         &mut svm,
@@ -452,6 +441,9 @@ fn test_delegate() {
     assert_eq!(pos0.activation_epoch, 3);
     assert_eq!(pos0.unlocking_start, Some(6));
 
-    let pos1 = positions.read_position(1).unwrap();
-    assert!(pos1.is_none());
+    assert_eq!(
+        positions.read_position(1).unwrap_err(),
+        staking::error::ErrorCode::PositionOutOfBounds.into()
+    );
+
 }
