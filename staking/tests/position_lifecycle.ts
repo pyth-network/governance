@@ -276,9 +276,7 @@ describe("position_lifecycle", async () => {
       { withdrawable: PythBalance.fromString("200") },
       await stakeConnection.getTime()
     );
-  });
 
-  it("another iteration", async () => {
     await program.methods
       .mergeTargetPositions({ voting: {} })
       .accounts({
@@ -286,6 +284,15 @@ describe("position_lifecycle", async () => {
       })
       .rpc();
 
+    await assertBalanceMatches(
+      stakeConnection,
+      owner,
+      { withdrawable: PythBalance.fromString("200") },
+      await stakeConnection.getTime()
+    );
+  });
+
+  it("another iteration", async () => {
     await program.methods
       .createPosition(votingProduct, PythBalance.fromString("100").toBN())
       .accounts({
