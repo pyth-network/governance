@@ -662,9 +662,7 @@ export class StakeConnection {
       await this.withJoinDaoLlc(instructions, stakeAccount.address);
     }
 
-    instructions.push(
-      (await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -850,11 +848,9 @@ export class StakeConnection {
       await this.buildTransferInstruction(stakeAccountAddress, amount.toBN())
     );
 
-        if (stakeAccount) {
-            instructions.push(
-              (await this.buildCleanupUnlockedPositions(stakeAccount))
-            ); // Need to cleanup unlocked positions first
-          }
+    if (stakeAccount) {
+      instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
+    }
 
     instructions.push(
       await this.program.methods
@@ -871,10 +867,10 @@ export class StakeConnection {
   public async buildCleanupUnlockedPositions(
     stakeAccount: StakeAccount
   ): Promise<TransactionInstruction> {
-    return this.program.methods.mergeTargetPositions({"voting":{}}).accounts(
-      { stakeAccountPositions: stakeAccount.address }
-    ).instruction();
-    
+    return this.program.methods
+      .mergeTargetPositions({ voting: {} })
+      .accounts({ stakeAccountPositions: stakeAccount.address })
+      .instruction();
   }
 
   //withdraw tokens
@@ -913,9 +909,7 @@ export class StakeConnection {
       );
     }
 
-    instructions.push(
-      (await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -937,9 +931,7 @@ export class StakeConnection {
   ) {
     const instructions = [];
 
-    instructions.push(
-      (await this.buildCleanupUnlockedPositions(stakeAccount))
-    );
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount));
 
     instructions.push(
       await this.program.methods

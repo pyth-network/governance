@@ -3,7 +3,11 @@ use {
         assert_anchor_program_error,
         integrity_pool::{
             instructions::{
-                advance, advance_delegation_record, delegate, merge_delegation_positions, undelegate
+                advance,
+                advance_delegation_record,
+                delegate,
+                merge_delegation_positions,
+                undelegate,
             },
             pda::get_delegation_record_address,
         },
@@ -363,7 +367,14 @@ fn test_delegate() {
     )
     .unwrap();
 
-    merge_delegation_positions(&mut svm, &payer, publisher_keypair.pubkey(), pool_data_pubkey, stake_account_positions).unwrap();
+    merge_delegation_positions(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+    )
+    .unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(
@@ -445,5 +456,4 @@ fn test_delegate() {
         positions.read_position(1).unwrap_err(),
         staking::error::ErrorCode::PositionOutOfBounds.into()
     );
-
 }
