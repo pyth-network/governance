@@ -187,9 +187,9 @@ impl PoolData {
             self.last_updated_epoch,
             IntegrityPoolError::PoolDataAlreadyUpToDate
         );
-        require_eq!(
-            current_epoch,
+        require_gte!(
             time_to_epoch(publisher_caps.publish_time())?,
+            current_epoch,
             IntegrityPoolError::OutdatedPublisherCaps
         );
 
@@ -249,6 +249,7 @@ impl PoolData {
 
             i += 1;
         }
+
 
         for j in 0..(publisher_caps.num_publishers() as usize) {
             // Silently ignore if there are more publishers than MAX_PUBLISHERS
