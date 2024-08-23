@@ -204,7 +204,10 @@ impl PoolData {
         let mut i = 0;
 
         while i < MAX_PUBLISHERS && self.publishers[i] != Pubkey::default() {
-            let cap_index = Self::get_publisher_cap_index(&self.publishers[i], publisher_caps);
+            let cap_index = publisher_caps
+                .caps()
+                .binary_search_by_key(&self.publishers[i], |cap| cap.pubkey);
+
 
             let publisher_cap = match cap_index {
                 Ok(cap_index) => {
@@ -263,19 +266,6 @@ impl PoolData {
         self.last_updated_epoch = current_epoch;
 
         Ok(())
-    }
-
-    fn get_publisher_cap_index(
-        publisher: &Pubkey,
-        publisher_caps: &PublisherCaps,
-    ) -> Result<usize> {
-        if *publisher == Pubkey::default() {
-            return Err(IntegrityPoolError::ThisCodeShouldBeUnreachable.into());
-        }
-        publisher_caps
-            .caps()
-            .binary_search_by_key(&publisher, |cap| &cap.pubkey)
-            .map_err(|_| IntegrityPoolError::PublisherNotFound.into())
     }
 
     pub fn create_reward_events_for_publisher(
