@@ -29,4 +29,5 @@ pub enum IntegrityPoolError {
     PublisherCustodyAccountRequired,
     #[msg("Delegation fee must not be greater than 100%")]
     InvalidDelegationFee,
+    InvalidPublisher,
 }
