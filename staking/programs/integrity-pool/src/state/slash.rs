@@ -10,11 +10,10 @@ pub struct SlashEvent {
     pub epoch:         u64,
     pub slash_ratio:   frac64,
     pub slash_custody: Pubkey,
-    pub publisher:     Pubkey,
 }
 
 impl SlashEvent {
-    pub const LEN: usize = 8 + 8 + 8 + 32 + 32;
+    pub const LEN: usize = 8 + 8 + 8 + 32;
 }
 
 #[cfg(test)]

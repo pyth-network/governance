@@ -76,7 +76,7 @@ pub mod integrity_pool {
     }
 
     pub fn delegate(ctx: Context<Delegate>, amount: u64) -> Result<()> {
-        let payer = ctx.accounts.payer.clone();
+        let owner = ctx.accounts.owner.clone();
         let pool_config = &ctx.accounts.pool_config;
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
@@ -99,7 +99,7 @@ pub mod integrity_pool {
             stake_account_positions,
             stake_account_metadata,
             stake_account_custody,
-            owner: payer.to_account_info(),
+            owner: owner.to_account_info(),
             target_account: None,
             pool_authority: Some(pool_config.to_account_info()),
             system_program,
@@ -159,7 +159,7 @@ pub mod integrity_pool {
     }
 
     pub fn undelegate(ctx: Context<Undelegate>, position_index: u8, amount: u64) -> Result<()> {
-        let payer = ctx.accounts.payer.clone();
+        let owner = ctx.accounts.owner.clone();
         let pool_config = &ctx.accounts.pool_config;
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
@@ -198,7 +198,7 @@ pub mod integrity_pool {
             };
 
         let cpi_accounts = staking::cpi::accounts::ClosePosition {
-            owner: payer.to_account_info(),
+            owner: owner.to_account_info(),
             config: config_account.clone(),
             stake_account_positions: ctx.accounts.stake_account_positions.to_account_info(),
             stake_account_metadata: stake_account_metadata.clone(),
@@ -364,13 +364,13 @@ pub mod integrity_pool {
         ctx: Context<CreateSlashEvent>,
         index: u64,
         slash_ratio: frac64,
-        publisher: Pubkey,
     ) -> Result<()> {
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let slash_event = &mut ctx.accounts.slash_event;
         let slash_custody = &ctx.accounts.slash_custody;
+        let publisher = &ctx.accounts.publisher.key();
 
-        let publisher_index = pool_data.get_publisher_index(&publisher)?;
+        let publisher_index = pool_data.get_publisher_index(publisher)?;
 
         require_eq!(
             pool_data.num_slash_events[publisher_index],
@@ -383,7 +383,6 @@ pub mod integrity_pool {
         slash_event.epoch = get_current_epoch()?;
         slash_event.slash_ratio = slash_ratio;
         slash_event.slash_custody = slash_custody.key();
-        slash_event.publisher = publisher;
 
         Ok(())
     }

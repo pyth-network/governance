@@ -77,10 +77,12 @@ fn test_advance() {
     let publisher_index = maybe_publisher_index.unwrap();
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
-    let mut publisher_pubkeys = (1..MAX_PUBLISHERS)
+    let mut publisher_pubkeys = (1..MAX_PUBLISHERS - 1)
         .map(get_dummy_publisher)
         .collect::<Vec<Pubkey>>();
     publisher_pubkeys.sort();
+    publisher_pubkeys.push(Pubkey::default());
+
 
     for i in 0..MAX_PUBLISHERS {
         match i {

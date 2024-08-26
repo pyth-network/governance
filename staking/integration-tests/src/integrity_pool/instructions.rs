@@ -261,7 +261,7 @@ pub fn delegate(
 
     let delegate_data = integrity_pool::instruction::Delegate { amount };
     let delegate_accs = integrity_pool::accounts::Delegate {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
@@ -355,7 +355,7 @@ pub fn undelegate(
         amount,
     };
     let undelegate_accs = integrity_pool::accounts::Undelegate {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
@@ -429,11 +429,8 @@ pub fn create_slash_event(
     publisher: Pubkey,
     pool_data: Pubkey,
 ) -> TransactionResult {
-    let create_slash_event_data = integrity_pool::instruction::CreateSlashEvent {
-        index,
-        slash_ratio,
-        publisher,
-    };
+    let create_slash_event_data =
+        integrity_pool::instruction::CreateSlashEvent { index, slash_ratio };
 
     let pool_config = get_pool_config_address();
     let slash_event = get_slash_event_address(index, publisher);
@@ -445,6 +442,7 @@ pub fn create_slash_event(
         reward_program_authority: reward_program_authority.pubkey(),
         pool_config,
         slash_event,
+        publisher,
         system_program: system_program::ID,
     };
 
