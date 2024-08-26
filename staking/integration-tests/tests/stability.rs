@@ -327,8 +327,8 @@ fn sanity_check_publisher(
     let mut total_delegated = 0;
     let mut delta: i64 = 0;
 
-    for stake_acoount in stake_accounts.iter() {
-        let mut stake_positions_account = fetch_positions_account(svm, stake_acoount);
+    for stake_account in stake_accounts.iter() {
+        let mut stake_positions_account = fetch_positions_account(svm, stake_account);
         let positions = stake_positions_account.to_dynamic_position_array();
 
         for i in 0..positions.get_position_capacity() {
@@ -552,7 +552,7 @@ fn test_stability(props: StabilityTestProps) {
 
     for (i, operation) in props.operations.iter().enumerate() {
         if i % 100 == 0 {
-            println!("opertaion {} out of {}", i, props.operations.len());
+            println!("operation {} out of {}", i, props.operations.len());
         }
 
         if i % 100 == 0 {
