@@ -90,25 +90,29 @@ pub fn deserialize_accumulator_update_data(
 }
 
 
-pub fn create_dummy_publisher_caps_message(
+pub fn create_publisher_caps_message(
     svm: &mut LiteSVM,
-    first_publisher: Pubkey,
-    first_publisher_cap: u64,
+    publishers: Vec<Pubkey>,
+    publisher_caps: Vec<u64>,
+    fill_with_dummy: bool,
 ) -> Message {
     let timestamp = svm.get_sysvar::<Clock>().unix_timestamp;
     let mut caps: Vec<PublisherStakeCap> = vec![];
 
-    caps.push(PublisherStakeCap {
-        publisher: first_publisher.to_bytes(),
-        cap:       first_publisher_cap,
-    });
-
-
-    for i in 1..MAX_CAPS {
+    for (publisher, cap) in publishers.iter().zip(publisher_caps.iter()) {
         caps.push(PublisherStakeCap {
-            publisher: get_dummy_publisher(i).to_bytes(),
-            cap:       i as u64,
+            publisher: publisher.to_bytes(),
+            cap:       *cap,
         });
+    }
+
+    if fill_with_dummy {
+        for i in publishers.len()..MAX_CAPS {
+            caps.push(PublisherStakeCap {
+                publisher: get_dummy_publisher(i).to_bytes(),
+                cap:       i as u64,
+            });
+        }
     }
 
     // publisher caps should always be sorted

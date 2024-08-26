@@ -3,7 +3,6 @@ use {
     anchor_lang::{
         prelude::borsh::BorshDeserialize,
         AccountDeserialize,
-        AnchorDeserialize,
     },
     bytemuck::{
         Pod,
@@ -17,7 +16,7 @@ use {
 };
 
 
-pub fn fetch_account_data<T: AnchorDeserialize + AccountDeserialize>(
+pub fn fetch_account_data<T: AccountDeserialize>(
     svm: &mut litesvm::LiteSVM,
     account: &Pubkey,
 ) -> T {

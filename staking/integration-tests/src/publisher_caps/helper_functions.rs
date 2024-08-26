@@ -7,7 +7,7 @@ use {
         },
         utils::{
             build_encoded_vaa_account_from_vaa,
-            create_dummy_publisher_caps_message,
+            create_publisher_caps_message,
             deserialize_accumulator_update_data,
         },
     },
@@ -18,10 +18,13 @@ use {
         PublisherCaps,
         PRICE_FEEDS_EMITTER_ADDRESS,
     },
-    pythnet_sdk::test_utils::{
-        create_accumulator_message,
-        create_dummy_price_feed_message,
-        DataSource,
+    pythnet_sdk::{
+        messages::Message,
+        test_utils::{
+            create_accumulator_message,
+            create_dummy_price_feed_message,
+            DataSource,
+        },
     },
     solana_sdk::{
         pubkey::Pubkey,
@@ -30,14 +33,11 @@ use {
     std::cmp::min,
 };
 
-pub fn post_publisher_caps(
+pub fn write_and_verify_publisher_caps(
     svm: &mut LiteSVM,
     payer: &Keypair,
-    first_publisher: Pubkey,
-    first_publisher_cap: u64,
+    publisher_caps_message: Message,
 ) -> Pubkey {
-    let publisher_caps_message =
-        create_dummy_publisher_caps_message(svm, first_publisher, first_publisher_cap);
     let feed_1 = create_dummy_price_feed_message(100);
     let message = create_accumulator_message(
         &[&feed_1, &publisher_caps_message],
@@ -76,4 +76,26 @@ pub fn post_publisher_caps(
     verify_publisher_caps(svm, payer, publisher_caps, encoded_vaa, merkle_proofs).unwrap();
 
     publisher_caps
+}
+
+pub fn post_publisher_caps(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    publishers: Vec<Pubkey>,
+    publisher_caps: Vec<u64>,
+) -> Pubkey {
+    let publisher_caps_message =
+        create_publisher_caps_message(svm, publishers, publisher_caps, false);
+    write_and_verify_publisher_caps(svm, payer, publisher_caps_message)
+}
+
+pub fn post_dummy_publisher_caps(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    first_publisher: Pubkey,
+    first_publisher_cap: u64,
+) -> Pubkey {
+    let publisher_caps_message =
+        create_publisher_caps_message(svm, vec![first_publisher], vec![first_publisher_cap], true);
+    write_and_verify_publisher_caps(svm, payer, publisher_caps_message)
 }

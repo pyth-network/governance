@@ -8,7 +8,7 @@ use {
             advance_delegation_record,
             delegate,
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -42,7 +42,7 @@ fn test_claim() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -68,7 +68,7 @@ fn test_claim() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -104,7 +104,7 @@ fn test_claim() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -142,7 +142,7 @@ fn test_claim() {
     advance_n_epochs(&mut svm, &payer, 3);
 
     // cap for epoch x + 2 -> x + 4 will be 1.5 PYTH
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -188,7 +188,7 @@ fn test_lost_reward() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -216,7 +216,7 @@ fn test_lost_reward() {
     for _ in 0..20 {
         advance_n_epochs(&mut svm, &payer, 10);
 
-        let publisher_caps = post_publisher_caps(
+        let publisher_caps = post_dummy_publisher_caps(
             &mut svm,
             &payer,
             publisher_keypair.pubkey(),
@@ -262,7 +262,7 @@ fn test_correct_position_states() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -288,7 +288,7 @@ fn test_correct_position_states() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -308,7 +308,7 @@ fn test_correct_position_states() {
 
     advance_n_epochs(&mut svm, &payer, 2);
 
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
@@ -352,7 +352,7 @@ fn test_advance_delegation_record_permissionlessness() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -378,7 +378,7 @@ fn test_advance_delegation_record_permissionlessness() {
 
     advance_n_epochs(&mut svm, &payer, 2);
 
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),

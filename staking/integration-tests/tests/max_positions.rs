@@ -6,7 +6,7 @@ use {
             advance_delegation_record,
             delegate,
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -30,7 +30,7 @@ fn test_max_positions() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -72,7 +72,7 @@ fn test_max_positions() {
     for _ in 0..10 {
         advance_n_epochs(&mut svm, &payer, 10);
 
-        let publisher_caps = post_publisher_caps(
+        let publisher_caps = post_dummy_publisher_caps(
             &mut svm,
             &payer,
             publisher_keypair.pubkey(),
@@ -97,7 +97,7 @@ fn test_max_positions() {
     assert!(res.compute_units_consumed < 1_350_000);
 
     advance_n_epochs(&mut svm, &payer, 10);
-    let publisher_caps = post_publisher_caps(
+    let publisher_caps = post_dummy_publisher_caps(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),

@@ -1,5 +1,4 @@
 use {
-    anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
         assert_anchor_program_error,
@@ -54,7 +53,7 @@ fn test_staking_slash() {
         publisher_keypair,
         pool_data_pubkey: _,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -148,9 +147,7 @@ fn test_staking_slash() {
     assert_eq!(pos1.amount, 75 * FRAC_64_MULTIPLIER);
     assert_eq!(pos1.target_with_parameters, TargetWithParameters::Voting);
 
-    let slash_account_data = svm.get_account(&slash_token_account.pubkey()).unwrap();
-    let slash_account =
-        TokenAccount::try_deserialize(&mut slash_account_data.data.as_slice()).unwrap();
+    let slash_account: TokenAccount = fetch_account_data(&mut svm, &slash_token_account.pubkey());
 
     assert_eq!(slash_account.amount, 25 * FRAC_64_MULTIPLIER);
 

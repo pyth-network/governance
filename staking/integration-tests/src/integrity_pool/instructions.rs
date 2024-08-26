@@ -323,7 +323,10 @@ pub fn merge_delegation_positions(
         merge_delegation_positions_accs.to_account_metas(None),
     );
     let merge_delegation_positions_ix = Transaction::new_signed_with_payer(
-        &[merge_delegation_positions_ix],
+        &[
+            merge_delegation_positions_ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[&payer],
         svm.latest_blockhash(),
@@ -506,7 +509,10 @@ pub fn slash(
     );
 
     let slash_tx = Transaction::new_signed_with_payer(
-        &[slash_ix],
+        &[
+            slash_ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[payer],
         svm.latest_blockhash(),

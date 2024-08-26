@@ -10,7 +10,7 @@ use {
             },
             pda::get_delegation_record_address,
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -52,7 +52,7 @@ fn test_delegate() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index,
+        maybe_publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -60,6 +60,7 @@ fn test_delegate() {
         init_pool_data:  true,
         init_publishers: true,
     });
+    let publisher_index = maybe_publisher_index.unwrap();
 
     let target_with_parameters = TargetWithParameters::IntegrityPool {
         publisher: publisher_keypair.pubkey(),
@@ -237,7 +238,8 @@ fn test_delegate() {
         0
     );
 
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
@@ -330,7 +332,8 @@ fn test_delegate() {
     }
 
     advance_n_epochs(&mut svm, &payer, 2); // two epochs at a time
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
 
