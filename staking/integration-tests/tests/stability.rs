@@ -382,12 +382,12 @@ fn handle_delegate_operation(
     let mut stake_positions_account = fetch_positions_account(svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();
 
-    let mut total_delegate = 0;
+    let mut total_delegated = 0;
 
     for i in 0..positions.get_position_capacity() {
         if let Some(position) = positions.read_position(i).unwrap() {
             if position.target_with_parameters.get_target() == Target::IntegrityPool {
-                total_delegate += position.amount;
+                total_delegated += position.amount;
             }
         }
     }
@@ -401,7 +401,7 @@ fn handle_delegate_operation(
         amount,
     );
 
-    if total_delegate + amount > custody_data.amount {
+    if total_delegated + amount > custody_data.amount {
         assert_anchor_program_error!(res, StakingErrorCode::TooMuchExposureToIntegrityPool, 0);
         false
     } else {
