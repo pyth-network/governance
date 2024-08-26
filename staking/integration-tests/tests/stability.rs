@@ -461,96 +461,12 @@ fn test_stability(props: StabilityTestProps) {
 
     let mut operation_counts: HashMap<String, (u64, u64)> = HashMap::new();
 
-    operation_counts.insert(
-        "Delegate".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::Delegate { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "Undelegate".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::Undelegate { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "AdvanceDelegationRecord".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::AdvanceDelegationRecord { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "Advance".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::Advance { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "Slash".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::Slash { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "MergePositions".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::MergePositions { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "CreateGovernancePosition".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::CreateGovernancePosition { .. }))
-                .count() as u64,
-        ),
-    );
-    operation_counts.insert(
-        "CloseGovernancePosition".to_string(),
-        (
-            0,
-            props
-                .operations
-                .iter()
-                .filter(|op| matches!(op, Operation::CloseGovernancePosition { .. }))
-                .count() as u64,
-        ),
-    );
-
     for (i, operation) in props.operations.iter().enumerate() {
+        operation_counts
+            .entry(operation.get_name())
+            .or_insert((0, 0))
+            .1 += 1;
+
         if i % 100 == 0 {
             println!("operation {} out of {}", i, props.operations.len());
         }
