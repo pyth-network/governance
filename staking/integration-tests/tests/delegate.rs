@@ -68,6 +68,20 @@ fn test_delegate() {
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
 
+    assert_anchor_program_error!(
+        delegate(
+            &mut svm,
+            &payer,
+            Pubkey::default(), // can't delegate to zero pubkey
+            pool_data_pubkey,
+            stake_account_positions,
+            100,
+        ),
+        IntegrityPoolError::InvalidPublisher,
+        0
+    );
+
+
     delegate(
         &mut svm,
         &payer,

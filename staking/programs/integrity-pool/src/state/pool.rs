@@ -305,6 +305,10 @@ impl PoolData {
     }
 
     pub fn get_publisher_index(&self, publisher: &Pubkey) -> Result<usize> {
+        if *publisher == Pubkey::default() {
+            return err!(IntegrityPoolError::InvalidPublisher);
+        }
+
         for i in 0..MAX_PUBLISHERS {
             if self.publishers[i] == *publisher {
                 return Ok(i);

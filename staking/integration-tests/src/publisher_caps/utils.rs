@@ -104,7 +104,8 @@ pub fn create_dummy_publisher_caps_message(
     });
 
 
-    for i in 1..MAX_CAPS {
+    // we leave the last publisher slot empty
+    for i in 1..MAX_CAPS - 1 {
         caps.push(PublisherStakeCap {
             publisher: get_dummy_publisher(i).to_bytes(),
             cap:       i as u64,
