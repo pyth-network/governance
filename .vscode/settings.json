@@ -11,5 +11,31 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"]
+  "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"],
+  "cSpell.words": [
+    "accs",
+    "blockhash",
+    "borsh",
+    "bytemuck",
+    "delegators",
+    "Keypair",
+    "keypairs",
+    "lamports",
+    "litesvm",
+    "Merkle",
+    "Metas",
+    "PREUNLOCKING",
+    "Pubkey",
+    "pyth",
+    "pythnet",
+    "quickcheck",
+    "snapshotted",
+    "solana",
+    "sysvar",
+    "Undelegate",
+    "undelegated",
+    "UNDELEGATION",
+    "vaas",
+    "Zeroable"
+  ]
 }

@@ -180,7 +180,7 @@ pub struct Undelegate<'info> {
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
     pub pool_config: Account<'info, PoolConfig>,
 
-    /// CHECK : The publisher will be checked againts data in the pool_data
+    /// CHECK : The publisher will be checked against data in the pool_data
     pub publisher: AccountInfo<'info>,
 
     #[account(

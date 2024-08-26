@@ -10,7 +10,7 @@ use {
         staking::pda::{
             get_config_address,
             get_stake_account_custody_address,
-            get_stake_account_custory_authority_address,
+            get_stake_account_custody_authority_address,
             get_stake_account_metadata_address,
             get_target_address,
         },
@@ -478,7 +478,7 @@ pub fn slash(
     let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
-    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let custody_authority = get_stake_account_custody_authority_address(stake_account_positions);
     let config = get_config_address();
     let target_account = get_target_address();
 

@@ -4,7 +4,7 @@ use {
         get_config_address_bump,
         get_max_voter_record_address,
         get_stake_account_custody_address,
-        get_stake_account_custory_authority_address,
+        get_stake_account_custody_authority_address,
         get_stake_account_metadata_address,
         get_target_address,
         get_voter_record_address,
@@ -263,7 +263,7 @@ pub fn create_stake_account(
 ) -> TransactionResult {
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
-    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let custody_authority = get_stake_account_custody_authority_address(stake_account_positions);
     let config_account = get_config_address();
 
     let create_stake_account_data = staking::instruction::CreateStakeAccount {
@@ -347,7 +347,7 @@ pub fn slash_staking(
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
     let stake_account_authority =
-        get_stake_account_custory_authority_address(stake_account_positions);
+        get_stake_account_custody_authority_address(stake_account_positions);
 
     let slash_account_accs = staking::accounts::SlashAccount {
         config: config_pubkey,
