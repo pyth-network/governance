@@ -183,22 +183,13 @@ pub struct Undelegate<'info> {
     /// CHECK : The publisher will be checked againts data in the pool_data
     pub publisher: AccountInfo<'info>,
 
-    #[account(
-        seeds = [
-            DELEGATION_RECORD.as_bytes(),
-            publisher.key().as_ref(),
-            stake_account_positions.key().as_ref()
-        ],
-        bump,
-    )]
-    pub delegation_record: Account<'info, DelegationRecord>,
     /// CHECK : This AccountInfo is safe because it's a checked PDA
     #[account(
         seeds = [staking::context::CONFIG_SEED.as_bytes()],
         bump,
         seeds::program = staking_program.key(),
     )]
-    pub config_account:    AccountInfo<'info>,
+    pub config_account: AccountInfo<'info>,
 
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
