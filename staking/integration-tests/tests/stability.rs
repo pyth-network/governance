@@ -730,6 +730,7 @@ fn test_stability(props: StabilityTestProps) {
 /// This stability test runs a large number of random operations on the integrity pool program.
 /// It takes more than 5 minutes to run and is disabled by default.
 #[test]
+#[ignore]
 fn quickcheck_stability() {
     QuickCheck::new()
         .tests(1)
