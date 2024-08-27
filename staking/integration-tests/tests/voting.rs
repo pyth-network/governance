@@ -63,8 +63,8 @@ const MAINNET_ELAPSED_EPOCHS: u64 = 2850;
 /// This test has two purposes:
 /// 1) to test the voting functionality against the deployed governance program and configuration
 /// 2) to test that the new staking account is compatible with stake account positions with the old
-/// fixed sized position array and such accounts can be turned into the new version by calling
-/// merge_target_positions and nothing breaks
+///     fixed sized position array and such accounts can be turned into the new version by calling
+///     merge_target_positions and nothing breaks
 fn test_voting() {
     let SetupResult {
         mut svm,
@@ -73,7 +73,7 @@ fn test_voting() {
         publisher_keypair: _,
         pool_data_pubkey: _,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,

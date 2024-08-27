@@ -76,7 +76,7 @@ pub struct UpdateDelegationFee<'info> {
 #[instruction(amount: u64)]
 pub struct Delegate<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub pool_data: AccountLoader<'info, PoolData>,
@@ -172,7 +172,7 @@ pub struct MergeDelegationPositions<'info> {
 #[instruction(position_index: u8, amount: u64)]
 pub struct Undelegate<'info> {
     #[account(mut)]
-    pub payer: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(mut)]
     pub pool_data: AccountLoader<'info, PoolData>,
@@ -180,7 +180,7 @@ pub struct Undelegate<'info> {
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
     pub pool_config: Account<'info, PoolConfig>,
 
-    /// CHECK : The publisher will be checked againts data in the pool_data
+    /// CHECK : The publisher will be checked against data in the pool_data
     pub publisher: AccountInfo<'info>,
 
     /// CHECK : This AccountInfo is safe because it's a checked PDA
@@ -304,7 +304,7 @@ pub struct AdvanceDelegationRecord<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(index: u64, slash_ratio: u64, publisher: Pubkey)]
+#[instruction(index: u64, slash_ratio: u64)]
 pub struct CreateSlashEvent<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -336,6 +336,9 @@ pub struct CreateSlashEvent<'info> {
         bump,
     )]
     pub slash_event: Account<'info, SlashEvent>,
+
+    /// CHECK : The publisher will be checked against data in the pool_data
+    pub publisher: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>,
 }

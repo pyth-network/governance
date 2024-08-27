@@ -8,7 +8,7 @@ use {
             merge_delegation_positions,
             undelegate,
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -44,7 +44,7 @@ fn test_merge_delegation_positions() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -134,7 +134,8 @@ fn test_merge_delegation_positions() {
 
 
     advance_n_epochs(&mut svm, &payer, 1);
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     assert_anchor_program_error!(
@@ -242,9 +243,9 @@ fn test_merge_delegation_positions() {
     );
 
     advance_n_epochs(&mut svm, &payer, 1);
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
-
 
     delegate(
         &mut svm,
@@ -376,7 +377,8 @@ fn test_merge_delegation_positions() {
     );
 
     advance_n_epochs(&mut svm, &payer, 1);
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(

@@ -38,7 +38,7 @@ fn initialize_pool() {
         publisher_keypair: _,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -74,7 +74,7 @@ fn test_update_y() {
         publisher_keypair: _,
         pool_data_pubkey: _,
         reward_program_authority,
-        publisher_index: _,
+        maybe_publisher_index: _,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,

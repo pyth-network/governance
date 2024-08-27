@@ -10,7 +10,7 @@ use {
         staking::pda::{
             get_config_address,
             get_stake_account_custody_address,
-            get_stake_account_custory_authority_address,
+            get_stake_account_custody_authority_address,
             get_stake_account_metadata_address,
             get_target_address,
         },
@@ -261,7 +261,7 @@ pub fn delegate(
 
     let delegate_data = integrity_pool::instruction::Delegate { amount };
     let delegate_accs = integrity_pool::accounts::Delegate {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
@@ -323,7 +323,10 @@ pub fn merge_delegation_positions(
         merge_delegation_positions_accs.to_account_metas(None),
     );
     let merge_delegation_positions_ix = Transaction::new_signed_with_payer(
-        &[merge_delegation_positions_ix],
+        &[
+            merge_delegation_positions_ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[&payer],
         svm.latest_blockhash(),
@@ -351,7 +354,7 @@ pub fn undelegate(
         amount,
     };
     let undelegate_accs = integrity_pool::accounts::Undelegate {
-        payer: payer.pubkey(),
+        owner: payer.pubkey(),
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
@@ -424,11 +427,8 @@ pub fn create_slash_event(
     publisher: Pubkey,
     pool_data: Pubkey,
 ) -> TransactionResult {
-    let create_slash_event_data = integrity_pool::instruction::CreateSlashEvent {
-        index,
-        slash_ratio,
-        publisher,
-    };
+    let create_slash_event_data =
+        integrity_pool::instruction::CreateSlashEvent { index, slash_ratio };
 
     let pool_config = get_pool_config_address();
     let slash_event = get_slash_event_address(index, publisher);
@@ -440,6 +440,7 @@ pub fn create_slash_event(
         reward_program_authority: reward_program_authority.pubkey(),
         pool_config,
         slash_event,
+        publisher,
         system_program: system_program::ID,
     };
 
@@ -475,7 +476,7 @@ pub fn slash(
     let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
-    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let custody_authority = get_stake_account_custody_authority_address(stake_account_positions);
     let config = get_config_address();
     let target_account = get_target_address();
 
@@ -504,7 +505,10 @@ pub fn slash(
     );
 
     let slash_tx = Transaction::new_signed_with_payer(
-        &[slash_ix],
+        &[
+            slash_ix,
+            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+        ],
         Some(&payer.pubkey()),
         &[payer],
         svm.latest_blockhash(),

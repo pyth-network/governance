@@ -449,7 +449,7 @@ pub struct RecoverAccount<'info> {
 pub struct SlashAccount<'info> {
     pool_authority: Signer<'info>,
 
-    /// CHECK : This AccountInfo is safe because it's checked against target
+    /// CHECK : This AccountInfo is just used to construct the target that will get slashed
     pub publisher: AccountInfo<'info>,
 
     #[account(mut)]

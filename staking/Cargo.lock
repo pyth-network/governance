@@ -1788,6 +1788,8 @@ dependencies = [
  "publisher-caps",
  "pyth-staking-program",
  "pythnet-sdk",
+ "quickcheck",
+ "quickcheck_macros",
  "serde_json",
  "serde_wormhole",
  "solana-cli-output",

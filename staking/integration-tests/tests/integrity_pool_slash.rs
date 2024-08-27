@@ -1,5 +1,4 @@
 use {
-    anchor_lang::AccountDeserialize,
     anchor_spl::token::TokenAccount,
     integration_tests::{
         assert_anchor_program_error,
@@ -17,7 +16,7 @@ use {
                 get_slash_event_address,
             },
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -63,7 +62,7 @@ fn test_create_slash_event() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority,
-        publisher_index,
+        maybe_publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -71,6 +70,7 @@ fn test_create_slash_event() {
         init_pool_data:  true,
         init_publishers: true,
     });
+    let publisher_index = maybe_publisher_index.unwrap();
 
     let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
     let slashed_publisher = publisher_keypair.pubkey();
@@ -189,7 +189,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_0.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_0.slash_ratio, FRAC_64_MULTIPLIER / 2);
     assert_eq!(slash_account_0.slash_custody, slash_custody);
-    assert_eq!(slash_account_0.publisher, slashed_publisher);
 
     let slash_account_1: SlashEvent =
         fetch_account_data(&mut svm, &get_slash_event_address(1, slashed_publisher));
@@ -197,7 +196,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_1.epoch, STARTING_EPOCH);
     assert_eq!(slash_account_1.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_1.slash_custody, slash_custody);
-    assert_eq!(slash_account_1.publisher, slashed_publisher);
 
     let slash_account_2: SlashEvent =
         fetch_account_data(&mut svm, &get_slash_event_address(2, slashed_publisher));
@@ -205,7 +203,6 @@ fn test_create_slash_event() {
     assert_eq!(slash_account_2.epoch, STARTING_EPOCH + 10);
     assert_eq!(slash_account_2.slash_ratio, FRAC_64_MULTIPLIER / 10);
     assert_eq!(slash_account_2.slash_custody, slash_custody);
-    assert_eq!(slash_account_2.publisher, slashed_publisher);
 }
 
 #[test]
@@ -217,7 +214,7 @@ fn test_slash() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority,
-        publisher_index,
+        maybe_publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -225,6 +222,7 @@ fn test_slash() {
         init_pool_data:  true,
         init_publishers: true,
     });
+    let publisher_index = maybe_publisher_index.unwrap();
 
     let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
 
@@ -244,7 +242,8 @@ fn test_slash() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
@@ -283,7 +282,8 @@ fn test_slash() {
         }
     );
 
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
@@ -371,9 +371,7 @@ fn test_slash() {
     )
     .unwrap();
 
-    let slash_custody_data = svm.get_account(&slash_custody).unwrap();
-    let slash_custody_account =
-        TokenAccount::try_deserialize(&mut slash_custody_data.data.as_slice()).unwrap();
+    let slash_custody_account: TokenAccount = fetch_account_data(&mut svm, &slash_custody);
 
     // Slashed for epoch N + 1 -> 10 pyth * 5% = 0.5 pyth
     assert_eq!(slash_custody_account.amount, 10 * FRAC_64_MULTIPLIER / 20);
@@ -409,9 +407,7 @@ fn test_slash() {
     )
     .unwrap();
 
-    let slash_custody_data = svm.get_account(&slash_custody).unwrap();
-    let slash_custody_account =
-        TokenAccount::try_deserialize(&mut slash_custody_data.data.as_slice()).unwrap();
+    let slash_custody_account: TokenAccount = fetch_account_data(&mut svm, &slash_custody);
 
     // slashed for epoch N + 1 -> 9.5 pyth * 50% = 4.75 pyth
     assert_eq!(
