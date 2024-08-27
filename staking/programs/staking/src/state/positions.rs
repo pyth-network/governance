@@ -1387,7 +1387,7 @@ pub mod tests {
             }
         }
 
-        // the returned values are match the position updates
+        // the returned values match the position updates
         if locked_slashed != amount_slashable_locked - post_amount_slashable_locked {
             return false;
         }
