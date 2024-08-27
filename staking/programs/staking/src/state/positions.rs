@@ -886,8 +886,8 @@ pub mod tests {
     }
 
     #[quickcheck]
-    fn optimize_positions(input: (Vec<Position>, u8)) -> bool {
-        let epoch = (input.1 % 8) as u64;
+    fn optimize_positions(positions: Vec<Position>, epoch: u8) -> bool {
+        let epoch = (epoch % 8) as u64;
         let mut fixture = DynamicPositionArrayAccount::default();
         let mut dynamic_position_array = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
@@ -896,7 +896,7 @@ pub mod tests {
             (TargetWithParameters, PositionState, PositionState),
             u64,
         > = HashMap::new();
-        for &position in input.0.iter() {
+        for &position in positions.iter() {
             let current_state = position.get_current_position(epoch, 1).unwrap();
             let previous_state = position
                 .get_current_position(epoch.saturating_sub(1), 1)
@@ -992,12 +992,12 @@ pub mod tests {
 
 
     #[quickcheck]
-    fn slash_positions(input: (Vec<Position>, u8, u64)) -> bool {
-        let epoch = ((input.1 % 7) + 1) as u64;
+    fn slash_position(positions: Vec<Position>, epoch: u8, slash_ratio: u64) -> bool {
+        let epoch = ((epoch % 7) + 1) as u64;
         let mut fixture = DynamicPositionArrayAccount::default();
         let mut dynamic_position_array = fixture.to_dynamic_position_array();
         let mut next_index: u8 = 0;
-        let slash_ratio = input.2 % 1_000_000;
+        let slash_ratio = slash_ratio % 1_000_000;
 
         let mut amount_slashable_locked: u64 = 0;
         let mut amount_slashable_preunlocking: u64 = 0;
@@ -1006,7 +1006,7 @@ pub mod tests {
             (TargetWithParameters, PositionState, PositionState),
             u64,
         > = HashMap::new();
-        for &position in input.0.iter() {
+        for &position in positions.iter() {
             let current_state = position.get_current_position(epoch, 1).unwrap();
             let previous_state = position
                 .get_current_position(epoch.saturating_sub(1), 1)
