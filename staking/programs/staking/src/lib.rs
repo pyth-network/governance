@@ -22,6 +22,7 @@ use {
             DynamicPositionArray,
             Position,
             PositionState,
+            SlashedAmounts,
             TargetWithParameters,
         },
         vesting::VestingSchedule,
@@ -50,7 +51,6 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
-    use state::positions::SlashedAmounts;
 
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
