@@ -11,7 +11,7 @@ use {
 /// Currently we store the last time the target account was updated, the current locked balance
 /// and the amount by which the locked balance will change in the next epoch
 #[account]
-#[derive(BorshSchema)]
+#[derive(BorshSchema, PartialEq)]
 pub struct TargetMetadata {
     pub bump:              u8,
     pub last_update_at:    u64,

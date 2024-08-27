@@ -52,6 +52,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use state::positions::SlashedAmounts;
 
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -814,126 +815,19 @@ pub mod staking {
         let current_epoch = get_current_epoch(&ctx.accounts.config)?;
         let unlocking_duration = ctx.accounts.config.unlocking_duration;
 
-        let mut locked_slashed = 0;
-        let mut unlocking_slashed = 0;
-        let mut preunlocking_slashed = 0;
-
-        let mut i: usize = 0;
-        while i < usize::from(*next_index) {
-            let position = stake_account_positions.read_position(i)?;
-
-            if let Some(position_data) = position {
-                let prev_state =
-                    position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
-                let current_state =
-                    position_data.get_current_position(current_epoch, unlocking_duration)?;
-                if matches!(
-                    position_data.target_with_parameters,
-                    TargetWithParameters::IntegrityPool { publisher: publisher_pubkey } if publisher_pubkey == *publisher.key,
-                ) && (prev_state == PositionState::LOCKED
-                    || prev_state == PositionState::PREUNLOCKING)
-                {
-                    // TODO: use constants
-                    let to_slash: u64 =
-                        ((u128::from(position_data.amount) * u128::from(slash_ratio)) / 1_000_000)
-                            .try_into()?;
-
-                    match current_state {
-                        PositionState::LOCKED => {
-                            locked_slashed += to_slash;
-                        }
-                        PositionState::UNLOCKING => {
-                            unlocking_slashed += to_slash;
-                        }
-                        PositionState::PREUNLOCKING => {
-                            preunlocking_slashed += to_slash;
-                        }
-                        _ => {
-                            return Err(error!(ErrorCode::InvalidPosition));
-                        }
-                    }
-
-                    // position_data.amount >= to_slash since slash_ratio is between 0 and 1
-                    if position_data.amount - to_slash == 0 {
-                        stake_account_positions.make_none(i, next_index)?;
-                        continue;
-                    } else {
-                        stake_account_positions.write_position(
-                            i,
-                            &Position {
-                                amount:                 position_data.amount - to_slash,
-                                target_with_parameters: position_data.target_with_parameters,
-                                activation_epoch:       position_data.activation_epoch,
-                                unlocking_start:        position_data.unlocking_start,
-                            },
-                        )?;
-                    }
-                }
-            }
-            i += 1;
-        }
-
-        let total_amount = ctx.accounts.stake_account_custody.amount;
-        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
-
-        let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
-        if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
-        {
-            let mut i = 0;
-            while i < usize::from(*next_index) && remaining > 0 {
-                if let Some(position) = stake_account_positions.read_position(i)? {
-                    let prev_state =
-                        position.get_current_position(current_epoch - 1, unlocking_duration)?;
-                    let current_state =
-                        position.get_current_position(current_epoch, unlocking_duration)?;
-
-                    if position.target_with_parameters == TargetWithParameters::Voting {
-                        let to_slash = remaining.min(position.amount);
-                        remaining -= to_slash;
-
-                        match prev_state {
-                            PositionState::LOCKED | PositionState::PREUNLOCKING => {
-                                governance_target_account
-                                    .sub_prev_locked(to_slash, current_epoch)?;
-                            }
-                            PositionState::LOCKING
-                            | PositionState::UNLOCKING
-                            | PositionState::UNLOCKED => {}
-                        }
-
-                        match current_state {
-                            PositionState::LOCKING => {
-                                governance_target_account.add_unlocking(to_slash, current_epoch)?;
-                            }
-                            PositionState::LOCKED => {
-                                governance_target_account.sub_locked(to_slash, current_epoch)?;
-                            }
-                            PositionState::PREUNLOCKING => {
-                                governance_target_account.sub_locked(to_slash, current_epoch)?;
-                                governance_target_account.add_locking(to_slash, current_epoch)?;
-                            }
-                            PositionState::UNLOCKING | PositionState::UNLOCKED => {}
-                        }
-
-                        if to_slash == position.amount {
-                            stake_account_positions.make_none(i, next_index)?;
-                            continue;
-                        } else {
-                            stake_account_positions.write_position(
-                                i,
-                                &Position {
-                                    amount:                 position.amount - to_slash,
-                                    target_with_parameters: position.target_with_parameters,
-                                    activation_epoch:       position.activation_epoch,
-                                    unlocking_start:        position.unlocking_start,
-                                },
-                            )?;
-                        }
-                    }
-                }
-                i += 1;
-            }
-        }
+        let SlashedAmounts {
+            total_slashed,
+            locked_slashed,
+            preunlocking_slashed,
+        } = stake_account_positions.slash_positions(
+            current_epoch,
+            unlocking_duration,
+            next_index,
+            ctx.accounts.stake_account_custody.amount,
+            publisher.key,
+            slash_ratio,
+            governance_target_account,
+        )?;
 
         transfer(
             CpiContext::from(&*ctx.accounts).with_signer(&[&[
