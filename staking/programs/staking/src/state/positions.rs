@@ -275,6 +275,8 @@ impl<'a> DynamicPositionArray<'a> {
         slash_ratio: u64,
         governance_target_account: &mut TargetMetadata,
     ) -> Result<SlashedAmounts> {
+        require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
+
         let mut locked_slashed = 0;
         let mut unlocking_slashed = 0;
         let mut preunlocking_slashed = 0;
@@ -335,7 +337,7 @@ impl<'a> DynamicPositionArray<'a> {
             i += 1;
         }
 
-        let governance_exposure = calculate_governance_exposure(&self)?;
+        let governance_exposure = calculate_governance_exposure(self)?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) =
@@ -607,10 +609,7 @@ impl std::fmt::Display for PositionState {
 #[cfg(test)]
 pub mod tests {
     use {
-        super::{
-            DynamicPositionArray,
-            Target,
-        },
+        super::DynamicPositionArray,
         crate::{
             state::{
                 positions::{
@@ -634,7 +633,6 @@ pub mod tests {
         },
         quickcheck_macros::quickcheck,
         rand::Rng,
-        spl_governance::state::governance,
         std::{
             collections::{
                 HashMap,
@@ -1028,7 +1026,7 @@ pub mod tests {
                     publisher: FIRST_PUBLISHER,
                 })
             {
-                if (previous_state == PositionState::LOCKED) {
+                if previous_state == PositionState::LOCKED {
                     amount_slashable_locked += position.amount;
                 }
                 if (previous_state == PositionState::PREUNLOCKING)
@@ -1390,16 +1388,15 @@ pub mod tests {
         }
 
         // the returned values are match the position updates
-        if (locked_slashed != amount_slashable_locked - post_amount_slashable_locked) {
+        if locked_slashed != amount_slashable_locked - post_amount_slashable_locked {
             return false;
         }
 
-        if (preunlocking_slashed
-            != amount_slashable_preunlocking - post_amount_slashed_preunlocking)
+        if preunlocking_slashed != amount_slashable_preunlocking - post_amount_slashed_preunlocking
         {
             return false;
         }
 
-        return true;
+        true
     }
 }

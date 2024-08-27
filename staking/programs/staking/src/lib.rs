@@ -27,13 +27,11 @@ use {
         vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
     },
-    std::convert::TryInto,
     utils::{
         clock::{
             get_current_epoch,
             time_to_epoch,
         },
-        risk::calculate_governance_exposure,
         voter_weight::compute_voter_weight,
     },
 };
@@ -803,8 +801,6 @@ pub mod staking {
         // TODO: use fract64 instead of u64
         slash_ratio: u64,
     ) -> Result<(u64, u64)> {
-        require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
-
         let stake_account_positions =
             &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let governance_target_account = &mut ctx.accounts.governance_target_account;
