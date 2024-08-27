@@ -888,414 +888,6 @@ pub mod tests {
     }
 
     #[quickcheck]
-    fn slash_positions(input: (Vec<Position>, u8, u64)) -> bool {
-        let epoch = ((input.1 % 7) + 1) as u64;
-        let mut fixture = DynamicPositionArrayAccount::default();
-        let mut dynamic_position_array = fixture.to_dynamic_position_array();
-        let mut next_index: u8 = 0;
-        let slash_ratio = input.2 % 1_000_000;
-
-        let mut n_slashable_locked: u64 = 0;
-        let mut n_slashable_preunlocking: u64 = 0;
-
-        let mut amount_slashable_locked: u64 = 0;
-        let mut amount_slashable_preunlocking: u64 = 0;
-
-        let mut pre_position_buckets: HashMap<
-            (TargetWithParameters, PositionState, PositionState),
-            u64,
-        > = HashMap::new();
-        for &position in input.0.iter() {
-            let current_state = position.get_current_position(epoch, 1).unwrap();
-            let previous_state = position
-                .get_current_position(epoch.saturating_sub(1), 1)
-                .unwrap();
-
-            pre_position_buckets
-                .entry((
-                    position.target_with_parameters,
-                    previous_state,
-                    current_state,
-                ))
-                .and_modify(|e| *e += position.amount)
-                .or_insert(position.amount);
-
-            if (position.target_with_parameters
-                == TargetWithParameters::IntegrityPool {
-                    publisher: FIRST_PUBLISHER,
-                })
-            {
-                if (previous_state == PositionState::LOCKED) {
-                    n_slashable_locked += 1;
-                    amount_slashable_locked += position.amount;
-                } else {
-                    n_slashable_preunlocking += 1;
-                    amount_slashable_preunlocking += position.amount;
-                }
-            }
-
-            let index = dynamic_position_array
-                .reserve_new_index(&mut next_index)
-                .unwrap();
-            dynamic_position_array
-                .write_position(index, &position)
-                .unwrap();
-        }
-
-        let mut governance_target_account = {
-            let governance_prev_epoch_locked = pre_position_buckets
-                .iter()
-                .filter(|((target, prev_state, _), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*prev_state == PositionState::LOCKED
-                            || *prev_state == PositionState::PREUNLOCKING)
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-            let governance_locked = pre_position_buckets
-                .iter()
-                .filter(|((target, _, curr_state), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*curr_state == PositionState::LOCKED
-                            || *curr_state == PositionState::PREUNLOCKING)
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-            let governance_delta_locked = pre_position_buckets
-                .iter()
-                .filter(|((target, _, curr_state), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*curr_state == PositionState::PREUNLOCKING
-                            || *curr_state == PositionState::LOCKING)
-                })
-                .map(|((_, _, curr_state), amount)| {
-                    if *curr_state == PositionState::LOCKING {
-                        *amount as i64
-                    } else {
-                        -(*amount as i64)
-                    }
-                })
-                .sum::<i64>();
-
-            TargetMetadata {
-                bump:              0,
-                last_update_at:    epoch,
-                prev_epoch_locked: governance_prev_epoch_locked,
-                locked:            governance_locked,
-                delta_locked:      governance_delta_locked,
-            }
-        };
-
-        let expected_slashed = {
-            let slashable_locked = pre_position_buckets
-                .iter()
-                .filter(|((target, prev_state, _), _)| {
-                    *target
-                        == TargetWithParameters::IntegrityPool {
-                            publisher: FIRST_PUBLISHER,
-                        }
-                        && (*prev_state == PositionState::LOCKED)
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-
-            let slashable_preunlocking = pre_position_buckets
-                .iter()
-                .filter(|((target, prev_state, curr_state), _)| {
-                    *target
-                        == TargetWithParameters::IntegrityPool {
-                            publisher: FIRST_PUBLISHER,
-                        }
-                        && *prev_state == PositionState::PREUNLOCKING
-                        && *curr_state == PositionState::PREUNLOCKING
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-            let locked_slashed = (slash_ratio as u128 * slashable_locked as u128 / 1_000_000)
-                .try_into()
-                .unwrap();
-
-
-            let preunlocking_slashed = (slash_ratio as u128 * slashable_preunlocking as u128
-                / 1_000_000)
-                .try_into()
-                .unwrap();
-
-            let total_slashed = (slash_ratio as u128
-                * (slashable_locked + slashable_preunlocking) as u128
-                / 1_000_000)
-                .try_into()
-                .unwrap();
-
-            SlashedAmounts {
-                total_slashed,
-                locked_slashed,
-                preunlocking_slashed,
-            }
-        };
-
-        let governance_exposure = calculate_governance_exposure(&dynamic_position_array).unwrap();
-
-        let publisher_1_exposure = pre_position_buckets
-            .iter()
-            .filter(|((target, _, _), _)| {
-                *target
-                    == TargetWithParameters::IntegrityPool {
-                        publisher: FIRST_PUBLISHER,
-                    }
-            })
-            .map(|((_, _, _), amount)| *amount)
-            .sum::<u64>();
-
-        let publisher_2_exposure = pre_position_buckets
-            .iter()
-            .filter(|((target, _, _), _)| {
-                *target
-                    == TargetWithParameters::IntegrityPool {
-                        publisher: SECOND_PUBLISHER,
-                    }
-            })
-            .map(|((_, _, _), amount)| *amount)
-            .sum::<u64>();
-
-
-        let custody_account_amount = std::cmp::max(
-            governance_exposure,
-            publisher_1_exposure + publisher_2_exposure,
-        );
-
-        let SlashedAmounts {
-            total_slashed,
-            locked_slashed,
-            preunlocking_slashed,
-        } = dynamic_position_array
-            .slash_positions(
-                epoch,
-                1,
-                &mut next_index,
-                custody_account_amount,
-                &FIRST_PUBLISHER,
-                slash_ratio,
-                &mut governance_target_account,
-            )
-            .unwrap();
-
-
-        let mut post_position_buckets: HashMap<
-            (TargetWithParameters, PositionState, PositionState),
-            u64,
-        > = HashMap::new();
-        for i in 0..next_index {
-            if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
-                let current_state = position.get_current_position(epoch, 1).unwrap();
-                let previous_state = position
-                    .get_current_position(epoch.saturating_sub(1), 1)
-                    .unwrap();
-
-                post_position_buckets
-                    .entry((
-                        position.target_with_parameters,
-                        previous_state,
-                        current_state,
-                    ))
-                    .and_modify(|e| *e += position.amount)
-                    .or_insert(position.amount);
-            }
-        }
-
-
-        // Check the returned amount slashed is as expected
-        if !((expected_slashed.total_slashed >= total_slashed)
-            && (total_slashed
-                >= expected_slashed
-                    .total_slashed
-                    .saturating_sub(n_slashable_locked + n_slashable_preunlocking)))
-        {
-            return false;
-        }
-
-        if !((expected_slashed.locked_slashed >= locked_slashed)
-            && (locked_slashed
-                >= expected_slashed
-                    .locked_slashed
-                    .saturating_sub(n_slashable_locked)))
-        {
-            return false;
-        }
-
-        // if !((expected_slashed.preunlocking_slashed >= preunlocking_slashed)
-        //     && (preunlocking_slashed
-        //         >= expected_slashed
-        //             .preunlocking_slashed
-        //             .saturating_sub(n_slashable_preunlocking)))
-        // {
-
-        //     println!(
-        //         "expected_slashed.preunlocking_slashed: {}",
-        //         expected_slashed.preunlocking_slashed
-        //     );
-        //     println!("preunlocking_slashed: {}", preunlocking_slashed);
-        //     return false;
-        // }
-
-        // check governance exposure has been reduced by the correct amount
-        let post_governance_exposure =
-            calculate_governance_exposure(&dynamic_position_array).unwrap();
-        if post_governance_exposure
-            != std::cmp::min(governance_exposure, custody_account_amount - total_slashed)
-        {
-            return false;
-        }
-
-        // governance accounting update is correct
-        let post_governance_target_account = {
-            let governance_prev_epoch_locked = post_position_buckets
-                .iter()
-                .filter(|((target, prev_state, _), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*prev_state == PositionState::LOCKED
-                            || *prev_state == PositionState::PREUNLOCKING)
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-            let governance_locked = post_position_buckets
-                .iter()
-                .filter(|((target, _, curr_state), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*curr_state == PositionState::LOCKED
-                            || *curr_state == PositionState::PREUNLOCKING)
-                })
-                .map(|((_, _, _), amount)| *amount)
-                .sum::<u64>();
-
-            let governance_delta_locked = post_position_buckets
-                .iter()
-                .filter(|((target, _, curr_state), _)| {
-                    *target == TargetWithParameters::Voting
-                        && (*curr_state == PositionState::PREUNLOCKING
-                            || *curr_state == PositionState::LOCKING)
-                })
-                .map(|((_, _, curr_state), amount)| {
-                    if *curr_state == PositionState::LOCKING {
-                        *amount as i64
-                    } else {
-                        -(*amount as i64)
-                    }
-                })
-                .sum::<i64>();
-
-            TargetMetadata {
-                bump:              0,
-                last_update_at:    epoch,
-                prev_epoch_locked: governance_prev_epoch_locked,
-                locked:            governance_locked,
-                delta_locked:      governance_delta_locked,
-            }
-        };
-
-        if post_governance_target_account != governance_target_account {
-            return false;
-        }
-
-        let mut post_amount_slashable_locked = 0;
-        let mut post_amount_slashed_preunlocking = 0;
-
-        for (target, prev_state, curr_state) in pre_position_buckets.keys() {
-            // slashing doesn't affect this target
-            if (target
-                == &TargetWithParameters::IntegrityPool {
-                    publisher: SECOND_PUBLISHER,
-                })
-                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
-                    != post_position_buckets.get(&(*target, *prev_state, *curr_state))
-            {
-                return false;
-            }
-
-            // slashing doesn't affect positions that are not locked or preunlocking
-            if (target
-                == &TargetWithParameters::IntegrityPool {
-                    publisher: FIRST_PUBLISHER,
-                })
-                && prev_state != &PositionState::LOCKED
-                && prev_state != &PositionState::PREUNLOCKING
-                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
-                    != post_position_buckets.get(&(*target, *prev_state, *curr_state))
-            {
-                return false;
-            }
-
-            // slashing affects positions that are locked or preunlocking with ratio slash_ratio
-            if (target
-                == &TargetWithParameters::IntegrityPool {
-                    publisher: FIRST_PUBLISHER,
-                })
-                && (prev_state == &PositionState::LOCKED
-                    || prev_state == &PositionState::PREUNLOCKING)
-            {
-                let expected_slashed: u64 = (*pre_position_buckets
-                    .get(&(*target, *prev_state, *curr_state))
-                    .unwrap() as u128
-                    * slash_ratio as u128
-                    / 1_000_000)
-                    .try_into()
-                    .unwrap();
-                let pre_slashable = *pre_position_buckets
-                    .get(&(*target, *prev_state, *curr_state))
-                    .unwrap();
-                let post_slashable = *post_position_buckets
-                    .get(&(*target, *prev_state, *curr_state))
-                    .unwrap_or(&0);
-                let slashed = pre_slashable - post_slashable;
-
-                if !((expected_slashed >= slashed)
-                    && (slashed
-                        >= expected_slashed
-                            .saturating_sub(n_slashable_locked + n_slashable_preunlocking)))
-                {
-                    return false;
-                }
-
-                if prev_state == &PositionState::LOCKED {
-                    post_amount_slashable_locked += post_slashable;
-                }
-                if prev_state == &PositionState::PREUNLOCKING
-                    && curr_state == &PositionState::PREUNLOCKING
-                {
-                    post_amount_slashed_preunlocking += post_slashable;
-                }
-            }
-
-
-            // slashing reduces governance positions
-            if (target == &TargetWithParameters::Voting)
-                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
-                    < post_position_buckets.get(&(*target, *prev_state, *curr_state))
-            {
-                return false;
-            }
-        }
-
-        // if (locked_slashed != amount_slashable_locked - post_amount_slashable_locked) {
-        //     return false;
-        // }
-
-        // if (preunlocking_slashed
-        //     != amount_slashable_preunlocking - post_amount_slashed_preunlocking)
-        // {
-        //     return false;
-        // }
-
-        return true;
-    }
-
-
-    #[quickcheck]
     fn optimize_positions(input: (Vec<Position>, u8)) -> bool {
         let epoch = (input.1 % 8) as u64;
         let mut fixture = DynamicPositionArrayAccount::default();
@@ -1398,5 +990,416 @@ pub mod tests {
         }
 
         true
+    }
+
+
+    #[quickcheck]
+    fn slash_positions(input: (Vec<Position>, u8, u64)) -> bool {
+        let epoch = ((input.1 % 7) + 1) as u64;
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut dynamic_position_array = fixture.to_dynamic_position_array();
+        let mut next_index: u8 = 0;
+        let slash_ratio = input.2 % 1_000_000;
+
+        let mut amount_slashable_locked: u64 = 0;
+        let mut amount_slashable_preunlocking: u64 = 0;
+
+        let mut pre_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
+        for &position in input.0.iter() {
+            let current_state = position.get_current_position(epoch, 1).unwrap();
+            let previous_state = position
+                .get_current_position(epoch.saturating_sub(1), 1)
+                .unwrap();
+
+            pre_position_buckets
+                .entry((
+                    position.target_with_parameters,
+                    previous_state,
+                    current_state,
+                ))
+                .and_modify(|e| *e += position.amount)
+                .or_insert(position.amount);
+
+            if (position.target_with_parameters
+                == TargetWithParameters::IntegrityPool {
+                    publisher: FIRST_PUBLISHER,
+                })
+            {
+                if (previous_state == PositionState::LOCKED) {
+                    amount_slashable_locked += position.amount;
+                }
+                if (previous_state == PositionState::PREUNLOCKING)
+                    && (current_state == PositionState::PREUNLOCKING)
+                {
+                    amount_slashable_preunlocking += position.amount;
+                }
+            }
+
+            let index = dynamic_position_array
+                .reserve_new_index(&mut next_index)
+                .unwrap();
+            dynamic_position_array
+                .write_position(index, &position)
+                .unwrap();
+        }
+
+        let mut governance_target_account = {
+            let governance_prev_epoch_locked = pre_position_buckets
+                .iter()
+                .filter(|((target, prev_state, _), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*prev_state == PositionState::LOCKED
+                            || *prev_state == PositionState::PREUNLOCKING)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let governance_locked = pre_position_buckets
+                .iter()
+                .filter(|((target, _, curr_state), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*curr_state == PositionState::LOCKED
+                            || *curr_state == PositionState::PREUNLOCKING)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let governance_delta_locked = pre_position_buckets
+                .iter()
+                .filter(|((target, _, curr_state), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*curr_state == PositionState::PREUNLOCKING
+                            || *curr_state == PositionState::LOCKING)
+                })
+                .map(|((_, _, curr_state), amount)| {
+                    if *curr_state == PositionState::LOCKING {
+                        *amount as i64
+                    } else {
+                        -(*amount as i64)
+                    }
+                })
+                .sum::<i64>();
+
+            TargetMetadata {
+                bump:              0,
+                last_update_at:    epoch,
+                prev_epoch_locked: governance_prev_epoch_locked,
+                locked:            governance_locked,
+                delta_locked:      governance_delta_locked,
+            }
+        };
+
+        let expected_slashed = {
+            let slashable_locked = pre_position_buckets
+                .iter()
+                .filter(|((target, prev_state, _), _)| {
+                    *target
+                        == TargetWithParameters::IntegrityPool {
+                            publisher: FIRST_PUBLISHER,
+                        }
+                        && (*prev_state == PositionState::LOCKED)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+
+            let slashable_preunlocking = pre_position_buckets
+                .iter()
+                .filter(|((target, prev_state, curr_state), _)| {
+                    *target
+                        == TargetWithParameters::IntegrityPool {
+                            publisher: FIRST_PUBLISHER,
+                        }
+                        && *prev_state == PositionState::PREUNLOCKING
+                        && *curr_state == PositionState::PREUNLOCKING
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let slashable_total = pre_position_buckets
+                .iter()
+                .filter(|((target, prev_state, _), _)| {
+                    *target
+                        == TargetWithParameters::IntegrityPool {
+                            publisher: FIRST_PUBLISHER,
+                        }
+                        && (*prev_state == PositionState::LOCKED
+                            || *prev_state == PositionState::PREUNLOCKING)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let locked_slashed = (slash_ratio as u128 * slashable_locked as u128 / 1_000_000)
+                .try_into()
+                .unwrap();
+
+
+            let preunlocking_slashed = (slash_ratio as u128 * slashable_preunlocking as u128
+                / 1_000_000)
+                .try_into()
+                .unwrap();
+
+            let total_slashed = (slash_ratio as u128 * slashable_total as u128 / 1_000_000)
+                .try_into()
+                .unwrap();
+
+            SlashedAmounts {
+                total_slashed,
+                locked_slashed,
+                preunlocking_slashed,
+            }
+        };
+
+        let governance_exposure = calculate_governance_exposure(&dynamic_position_array).unwrap();
+
+        let publisher_1_exposure = pre_position_buckets
+            .iter()
+            .filter(|((target, _, _), _)| {
+                *target
+                    == TargetWithParameters::IntegrityPool {
+                        publisher: FIRST_PUBLISHER,
+                    }
+            })
+            .map(|((_, _, _), amount)| *amount)
+            .sum::<u64>();
+
+        let publisher_2_exposure = pre_position_buckets
+            .iter()
+            .filter(|((target, _, _), _)| {
+                *target
+                    == TargetWithParameters::IntegrityPool {
+                        publisher: SECOND_PUBLISHER,
+                    }
+            })
+            .map(|((_, _, _), amount)| *amount)
+            .sum::<u64>();
+
+
+        let custody_account_amount = std::cmp::max(
+            governance_exposure,
+            publisher_1_exposure + publisher_2_exposure,
+        );
+
+        let SlashedAmounts {
+            total_slashed,
+            locked_slashed,
+            preunlocking_slashed,
+        } = dynamic_position_array
+            .slash_positions(
+                epoch,
+                1,
+                &mut next_index,
+                custody_account_amount,
+                &FIRST_PUBLISHER,
+                slash_ratio,
+                &mut governance_target_account,
+            )
+            .unwrap();
+
+
+        let mut post_position_buckets: HashMap<
+            (TargetWithParameters, PositionState, PositionState),
+            u64,
+        > = HashMap::new();
+        for i in 0..next_index {
+            if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
+                let current_state = position.get_current_position(epoch, 1).unwrap();
+                let previous_state = position
+                    .get_current_position(epoch.saturating_sub(1), 1)
+                    .unwrap();
+
+                post_position_buckets
+                    .entry((
+                        position.target_with_parameters,
+                        previous_state,
+                        current_state,
+                    ))
+                    .and_modify(|e| *e += position.amount)
+                    .or_insert(position.amount);
+            }
+        }
+
+
+        // Check the returned amount slashed is as expected
+        if !((expected_slashed.total_slashed >= total_slashed)
+            && (total_slashed
+                >= expected_slashed
+                    .total_slashed
+                    .saturating_sub(next_index.into())))
+        {
+            return false;
+        }
+
+        if !((expected_slashed.locked_slashed >= locked_slashed)
+            && (locked_slashed
+                >= expected_slashed
+                    .locked_slashed
+                    .saturating_sub(next_index.into())))
+        {
+            return false;
+        }
+
+        if !((expected_slashed.preunlocking_slashed >= preunlocking_slashed)
+            && (preunlocking_slashed
+                >= expected_slashed
+                    .preunlocking_slashed
+                    .saturating_sub(next_index.into())))
+        {
+            return false;
+        }
+
+        // check governance exposure has been reduced by the correct amount
+        let post_governance_exposure =
+            calculate_governance_exposure(&dynamic_position_array).unwrap();
+        if post_governance_exposure
+            != std::cmp::min(governance_exposure, custody_account_amount - total_slashed)
+        {
+            return false;
+        }
+
+        // governance accounting update is correct
+        let post_governance_target_account = {
+            let governance_prev_epoch_locked = post_position_buckets
+                .iter()
+                .filter(|((target, prev_state, _), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*prev_state == PositionState::LOCKED
+                            || *prev_state == PositionState::PREUNLOCKING)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let governance_locked = post_position_buckets
+                .iter()
+                .filter(|((target, _, curr_state), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*curr_state == PositionState::LOCKED
+                            || *curr_state == PositionState::PREUNLOCKING)
+                })
+                .map(|((_, _, _), amount)| *amount)
+                .sum::<u64>();
+
+            let governance_delta_locked = post_position_buckets
+                .iter()
+                .filter(|((target, _, curr_state), _)| {
+                    *target == TargetWithParameters::Voting
+                        && (*curr_state == PositionState::PREUNLOCKING
+                            || *curr_state == PositionState::LOCKING)
+                })
+                .map(|((_, _, curr_state), amount)| {
+                    if *curr_state == PositionState::LOCKING {
+                        *amount as i64
+                    } else {
+                        -(*amount as i64)
+                    }
+                })
+                .sum::<i64>();
+
+            TargetMetadata {
+                bump:              0,
+                last_update_at:    epoch,
+                prev_epoch_locked: governance_prev_epoch_locked,
+                locked:            governance_locked,
+                delta_locked:      governance_delta_locked,
+            }
+        };
+
+        if post_governance_target_account != governance_target_account {
+            return false;
+        }
+
+        let mut post_amount_slashable_locked = 0;
+        let mut post_amount_slashed_preunlocking = 0;
+
+        for (target, prev_state, curr_state) in pre_position_buckets.keys() {
+            // slashing doesn't affect this target
+            if (target
+                == &TargetWithParameters::IntegrityPool {
+                    publisher: SECOND_PUBLISHER,
+                })
+                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
+                    != post_position_buckets.get(&(*target, *prev_state, *curr_state))
+            {
+                return false;
+            }
+
+            // slashing doesn't affect positions that are not locked or preunlocking in the previous
+            // epoch
+            if (target
+                == &TargetWithParameters::IntegrityPool {
+                    publisher: FIRST_PUBLISHER,
+                })
+                && prev_state != &PositionState::LOCKED
+                && prev_state != &PositionState::PREUNLOCKING
+                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
+                    != post_position_buckets.get(&(*target, *prev_state, *curr_state))
+            {
+                return false;
+            }
+
+            // slashing affects positions that are locked or preunlocking with ratio slash_ratio
+            if (target
+                == &TargetWithParameters::IntegrityPool {
+                    publisher: FIRST_PUBLISHER,
+                })
+                && (prev_state == &PositionState::LOCKED
+                    || prev_state == &PositionState::PREUNLOCKING)
+            {
+                let expected_slashed: u64 = (*pre_position_buckets
+                    .get(&(*target, *prev_state, *curr_state))
+                    .unwrap() as u128
+                    * slash_ratio as u128
+                    / 1_000_000)
+                    .try_into()
+                    .unwrap();
+                let pre_slashable = *pre_position_buckets
+                    .get(&(*target, *prev_state, *curr_state))
+                    .unwrap();
+                let post_slashable = *post_position_buckets
+                    .get(&(*target, *prev_state, *curr_state))
+                    .unwrap_or(&0);
+                let slashed = pre_slashable - post_slashable;
+
+                if !((expected_slashed >= slashed)
+                    && (slashed >= expected_slashed.saturating_sub(next_index.into())))
+                {
+                    return false;
+                }
+
+                if prev_state == &PositionState::LOCKED {
+                    post_amount_slashable_locked += post_slashable;
+                }
+                if prev_state == &PositionState::PREUNLOCKING
+                    && curr_state == &PositionState::PREUNLOCKING
+                {
+                    post_amount_slashed_preunlocking += post_slashable;
+                }
+            }
+
+
+            // slashing reduces governance positions
+            if (target == &TargetWithParameters::Voting)
+                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
+                    < post_position_buckets.get(&(*target, *prev_state, *curr_state))
+            {
+                return false;
+            }
+        }
+
+        // the returned values are match the position updates
+        if (locked_slashed != amount_slashable_locked - post_amount_slashable_locked) {
+            return false;
+        }
+
+        if (preunlocking_slashed
+            != amount_slashable_preunlocking - post_amount_slashed_preunlocking)
+        {
+            return false;
+        }
+
+        return true;
     }
 }
