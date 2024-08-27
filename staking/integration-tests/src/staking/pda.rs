@@ -45,7 +45,7 @@ pub fn get_stake_account_custody_address(stake_account_positions: Pubkey) -> Pub
     .0
 }
 
-pub fn get_stake_account_custory_authority_address(stake_account_positions: Pubkey) -> Pubkey {
+pub fn get_stake_account_custody_authority_address(stake_account_positions: Pubkey) -> Pubkey {
     Pubkey::find_program_address(
         &[
             staking::context::AUTHORITY_SEED.as_bytes(),
