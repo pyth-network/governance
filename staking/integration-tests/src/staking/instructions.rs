@@ -4,7 +4,7 @@ use {
         get_config_address_bump,
         get_max_voter_record_address,
         get_stake_account_custody_address,
-        get_stake_account_custory_authority_address,
+        get_stake_account_custody_authority_address,
         get_stake_account_metadata_address,
         get_target_address,
         get_voter_record_address,
@@ -197,6 +197,64 @@ pub fn create_position(
     svm.send_transaction(create_position_tx).unwrap();
 }
 
+pub fn close_position(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+    target_with_parameters: TargetWithParameters,
+    pool_authority: Option<&Keypair>,
+    amount: frac64,
+    index: u8,
+) -> TransactionResult {
+    let config_pubkey = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
+
+    let close_position_data = staking::instruction::ClosePosition {
+        target_with_parameters,
+        amount,
+        index,
+    };
+
+    let target_account = match target_with_parameters {
+        TargetWithParameters::Voting => Some(get_target_address()),
+        TargetWithParameters::IntegrityPool { .. } => None,
+    };
+
+    let close_position_accs = staking::accounts::ClosePosition {
+        config: config_pubkey,
+        stake_account_metadata,
+        stake_account_positions,
+        stake_account_custody,
+        owner: payer.pubkey(),
+        target_account,
+        pool_authority: pool_authority.map(|k| k.pubkey()),
+        system_program: system_program::ID,
+    };
+
+    let create_position_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &close_position_data.data(),
+        close_position_accs.to_account_metas(None),
+    );
+
+
+    let mut signing_keypairs: Vec<&Keypair> = vec![&payer];
+
+    if let Some(pool_authority) = pool_authority {
+        signing_keypairs.push(pool_authority);
+    }
+
+    let create_position_tx = Transaction::new_signed_with_payer(
+        &[create_position_ix],
+        Some(&payer.pubkey()),
+        signing_keypairs.as_slice(),
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(create_position_tx)
+}
+
 pub fn create_stake_account(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
@@ -205,7 +263,7 @@ pub fn create_stake_account(
 ) -> TransactionResult {
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
-    let custody_authority = get_stake_account_custory_authority_address(stake_account_positions);
+    let custody_authority = get_stake_account_custody_authority_address(stake_account_positions);
     let config_account = get_config_address();
 
     let create_stake_account_data = staking::instruction::CreateStakeAccount {
@@ -289,7 +347,7 @@ pub fn slash_staking(
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
     let stake_account_authority =
-        get_stake_account_custory_authority_address(stake_account_positions);
+        get_stake_account_custody_authority_address(stake_account_positions);
 
     let slash_account_accs = staking::accounts::SlashAccount {
         config: config_pubkey,

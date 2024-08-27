@@ -7,7 +7,7 @@ use {
                 create_pool_data_account,
             },
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         solana::{
             instructions::init_mint_account,
             utils::fetch_account_data_bytemuck,
@@ -36,7 +36,7 @@ pub struct SetupResult {
     pub publisher_keypair:        Keypair,
     pub pool_data_pubkey:         Pubkey,
     pub reward_program_authority: Keypair,
-    pub publisher_index:          usize,
+    pub maybe_publisher_index:    Option<usize>,
 }
 
 pub struct SetupProps {
@@ -106,18 +106,18 @@ pub fn setup(props: SetupProps) -> SetupResult {
 
     advance_n_epochs(&mut svm, &payer, 1);
     if init_publishers {
-        initialize_pool_reward_custody(&mut svm, &payer, pyth_token_mint.pubkey());
-        let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 100);
+        initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint);
+        let publisher_caps =
+            post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 100);
         advance(&mut svm, &payer, publisher_caps).unwrap();
     }
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_keypair.pubkey());
 
-    let publisher_index = pool_data
+    let maybe_publisher_index = pool_data
         .publishers
         .iter()
-        .position(|&x| x == publisher_keypair.pubkey())
-        .unwrap();
+        .position(|&x| x == publisher_keypair.pubkey());
 
     SetupResult {
         svm,
@@ -126,6 +126,6 @@ pub fn setup(props: SetupProps) -> SetupResult {
         publisher_keypair,
         pool_data_pubkey: pool_data_keypair.pubkey(),
         reward_program_authority,
-        publisher_index,
+        maybe_publisher_index,
     }
 }

@@ -96,7 +96,7 @@ pub fn init_mint_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token
             spl_token::instruction::initialize_mint(
                 &spl_token::id(),
                 &pyth_token_mint.pubkey(),
-                &payer.pubkey(),
+                &pyth_token_mint.pubkey(),
                 None,
                 0,
             )
@@ -113,22 +113,22 @@ pub fn airdrop_spl(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     destination: Pubkey,
-    mint: Pubkey,
+    mint: &Keypair,
     amount: u64,
 ) {
     let mint_to_ix = spl_token::instruction::mint_to(
         &spl_token::id(),
-        &mint,
+        &mint.pubkey(),
         &destination,
-        &payer.pubkey(),
-        &[&payer.pubkey()],
+        &mint.pubkey(),
+        &[&payer.pubkey(), &mint.pubkey()],
         amount,
     )
     .unwrap();
     let mint_to_tx = Transaction::new_signed_with_payer(
         &[mint_to_ix],
         Some(&payer.pubkey()),
-        &[&payer],
+        &[&payer, &mint],
         svm.latest_blockhash(),
     );
     svm.send_transaction(mint_to_tx).unwrap();

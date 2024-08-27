@@ -9,7 +9,7 @@ use {
             set_publisher_stake_account,
             undelegate,
         },
-        publisher_caps::helper_functions::post_publisher_caps,
+        publisher_caps::helper_functions::post_dummy_publisher_caps,
         setup::{
             setup,
             SetupProps,
@@ -43,7 +43,7 @@ fn test_set_publisher_stake_account() {
         publisher_keypair,
         pool_data_pubkey,
         reward_program_authority: _,
-        publisher_index,
+        maybe_publisher_index,
     } = setup(SetupProps {
         init_config:     true,
         init_target:     true,
@@ -51,6 +51,7 @@ fn test_set_publisher_stake_account() {
         init_pool_data:  true,
         init_publishers: true,
     });
+    let publisher_index = maybe_publisher_index.unwrap();
 
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
@@ -288,7 +289,8 @@ fn test_set_publisher_stake_account() {
 
     // new epoch
     advance_n_epochs(&mut svm, &payer, 1);
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     advance_delegation_record(
@@ -340,7 +342,8 @@ fn test_set_publisher_stake_account() {
 
     // new epoch
     advance_n_epochs(&mut svm, &payer, 1);
-    let publisher_caps = post_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);

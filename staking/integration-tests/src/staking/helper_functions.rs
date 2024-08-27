@@ -16,7 +16,6 @@ use {
     solana_sdk::{
         pubkey::Pubkey,
         signature::Keypair,
-        signer::Signer,
     },
 };
 
@@ -48,7 +47,7 @@ pub fn initialize_new_stake_account(
             svm,
             payer,
             stake_account_custody,
-            pyth_token_mint.pubkey(),
+            pyth_token_mint,
             STAKED_TOKENS,
         );
     }
