@@ -3,17 +3,14 @@ use {
         state::positions::{
             DynamicPositionArray,
             Target,
-            TargetWithParameters,
         },
         ErrorCode::{
-            GenericOverflow,
             TokensNotYetVested,
             TooMuchExposureToGovernance,
             TooMuchExposureToIntegrityPool,
         },
     },
     anchor_lang::prelude::*,
-    solana_program::stake,
     std::cmp,
 };
 
