@@ -230,13 +230,6 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
-      .accounts({
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
-
-    await program.methods
       .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
@@ -285,7 +278,7 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
+      .mergeTargetPositions({ voting: {} })
       .accounts({
         stakeAccountPositions: stakeAccountAddress,
       })

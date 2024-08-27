@@ -662,9 +662,7 @@ export class StakeConnection {
       await this.withJoinDaoLlc(instructions, stakeAccount.address);
     }
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -851,10 +849,9 @@ export class StakeConnection {
     );
 
     if (stakeAccount) {
-      instructions.push(
-        ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-      ); // Need to cleanup unlocked positions first
+      instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
     }
+
     instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amount.toBN())
@@ -869,42 +866,11 @@ export class StakeConnection {
 
   public async buildCleanupUnlockedPositions(
     stakeAccount: StakeAccount
-  ): Promise<TransactionInstruction[]> {
-    const time = await this.getTime();
-    const currentEpoch = time.div(this.config.epochDuration);
-
-    const unlockedPositions = stakeAccount.stakeAccountPositionsJs.positions
-      .map((value, index) => {
-        return { index, value };
-      })
-      .filter((el) => el.value) // position not null
-      .filter(
-        (
-          el // position is voting
-        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
-      )
-      .filter(
-        (
-          el // position is unlocked
-        ) =>
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
-            el.index,
-            BigInt(currentEpoch.toString()),
-            this.config.unlockingDuration
-          ) === wasm.PositionState.UNLOCKED
-      )
-      .reverse(); // reverse so that earlier deletions don't affect later ones
-
-    // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we return
-    return await Promise.all(
-      unlockedPositions.map((position) =>
-        this.buildCloseInstruction(
-          stakeAccount.address,
-          position.index,
-          position.value.amount
-        )
-      )
-    );
+  ): Promise<TransactionInstruction> {
+    return this.program.methods
+      .mergeTargetPositions({ voting: {} })
+      .accounts({ stakeAccountPositions: stakeAccount.address })
+      .instruction();
   }
 
   //withdraw tokens
@@ -943,9 +909,7 @@ export class StakeConnection {
       );
     }
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -967,9 +931,7 @@ export class StakeConnection {
   ) {
     const instructions = [];
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    );
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount));
 
     instructions.push(
       await this.program.methods
