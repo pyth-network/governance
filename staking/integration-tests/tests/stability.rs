@@ -534,17 +534,6 @@ fn test_stability(props: StabilityTestProps) {
                     }
                 }
 
-                advance_delegation_record(
-                    &mut svm,
-                    &props.delegators[*delegator].0,
-                    props.publishers[*publisher].0.pubkey(),
-                    stake_account_positions[*delegator],
-                    pyth_token_mint.pubkey(),
-                    pool_data_pubkey,
-                    None,
-                )
-                .unwrap();
-
                 if position_value == 0 {
                     continue;
                 }
@@ -741,7 +730,6 @@ fn test_stability(props: StabilityTestProps) {
 /// This stability test runs a large number of random operations on the integrity pool program.
 /// It takes more than 5 minutes to run and is disabled by default.
 #[test]
-#[ignore]
 fn quickcheck_stability() {
     QuickCheck::new()
         .tests(1)
