@@ -33,7 +33,6 @@ use {
             get_current_epoch,
             time_to_epoch,
         },
-        risk::calculate_governance_exposure,
         voter_weight::compute_voter_weight,
     },
 };
@@ -52,6 +51,7 @@ pub mod staking {
 
     /// Creates a global config for the program
     use super::*;
+    use state::positions::Target;
 
 
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
@@ -227,6 +227,8 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         if let Some(target_account) = maybe_target_account {
@@ -406,6 +408,7 @@ pub mod staking {
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.owner;
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
 
         let unvested_balance = ctx
@@ -427,8 +430,14 @@ pub mod staking {
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
-        if utils::risk::validate(stake_account_positions, remaining_balance, unvested_balance)
-            .is_err()
+        if utils::risk::validate(
+            stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
         {
             return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
@@ -448,6 +457,8 @@ pub mod staking {
             stake_account_positions,
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )
         .is_err()
         {
@@ -489,6 +500,8 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         let epoch_of_snapshot: u64;
@@ -638,6 +651,7 @@ pub mod staking {
      */
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
         let split_request = &ctx.accounts.source_stake_account_split_request;
         require!(
@@ -674,6 +688,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
@@ -727,6 +743,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         utils::risk::validate(
@@ -739,6 +757,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         // Delete current request
@@ -862,7 +882,11 @@ pub mod staking {
         }
 
         let total_amount = ctx.accounts.stake_account_custody.amount;
-        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
+        let governance_exposure = stake_account_positions.get_target_exposure(
+            &Target::Voting,
+            current_epoch,
+            unlocking_duration,
+        )?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
@@ -875,7 +899,9 @@ pub mod staking {
                     let current_state =
                         position.get_current_position(current_epoch, unlocking_duration)?;
 
-                    if position.target_with_parameters == TargetWithParameters::Voting {
+                    if position.target_with_parameters == TargetWithParameters::Voting
+                        && current_state != PositionState::UNLOCKED
+                    {
                         let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
 

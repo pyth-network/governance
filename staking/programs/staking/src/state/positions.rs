@@ -205,6 +205,28 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(false)
     }
 
+    pub fn get_target_exposure(
+        &self,
+        target: &Target,
+        current_epoch: u64,
+        unlocking_duration: u8,
+    ) -> Result<u64> {
+        let mut exposure: u64 = 0;
+        for i in 0..self.get_position_capacity() {
+            if let Some(position) = self.read_position(i)? {
+                if position.target_with_parameters.get_target() == *target
+                    && position.get_current_position(current_epoch, unlocking_duration)?
+                        != PositionState::UNLOCKED
+                {
+                    exposure = exposure
+                        .checked_add(position.amount)
+                        .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+                }
+            }
+        }
+        Ok(exposure)
+    }
+
     /// This function is used to reduce the number of positions in the array by merging equivalent
     /// positions. Sometimes some positions have the same `target_with_parameters`,
     /// `activation_epoch` and `unlocking_start`. These can obviously be merged, but this is not
