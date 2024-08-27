@@ -1,9 +1,6 @@
 use {
     super::target::TargetMetadata,
-    crate::{
-        error::ErrorCode,
-        utils::risk::calculate_governance_exposure,
-    },
+    crate::error::ErrorCode,
     anchor_lang::{
         prelude::{
             borsh::BorshSchema,
@@ -359,7 +356,8 @@ impl<'a> DynamicPositionArray<'a> {
             i += 1;
         }
 
-        let governance_exposure = calculate_governance_exposure(self)?;
+        let governance_exposure =
+            self.get_target_exposure(&Target::Voting, current_epoch, unlocking_duration)?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) =
@@ -373,7 +371,9 @@ impl<'a> DynamicPositionArray<'a> {
                     let current_state =
                         position.get_current_position(current_epoch, unlocking_duration)?;
 
-                    if position.target_with_parameters == TargetWithParameters::Voting {
+                    if position.target_with_parameters == TargetWithParameters::Voting
+                        && (current_state != PositionState::UNLOCKED)
+                    {
                         let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
 
