@@ -32,8 +32,8 @@ pub fn compute_voter_weight(
             }
         }
     }
-    let voter_weight: u64 = ((raw_voter_weight as u128) * (total_supply as u128))
-        .checked_div(current_locked as u128)
+    let voter_weight: u64 = ((u128::from(raw_voter_weight)) * (u128::from(total_supply)))
+        .checked_div(u128::from(current_locked))
         .unwrap_or(0_u128)
         .try_into()
         .map_err(|_| ErrorCode::GenericOverflow)?;

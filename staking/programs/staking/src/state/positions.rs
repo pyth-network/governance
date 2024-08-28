@@ -172,13 +172,13 @@ impl<'a> DynamicPositionArray<'a> {
 
     // Makes position at index i none, and swaps positions to preserve the invariant
     pub fn make_none(&mut self, i: usize, next_index: &mut u8) -> Result<()> {
-        if (*next_index as usize) <= i {
+        if usize::from(*next_index) <= i {
             return Err(error!(ErrorCode::PositionOutOfBounds));
         }
         *next_index -= 1;
         let positions = self.get_positions_slice()?;
-        positions[i] = positions[*next_index as usize];
-        None::<Option<Position>>.try_write(&mut positions[*next_index as usize])
+        positions[i] = positions[usize::from(*next_index)];
+        None::<Option<Position>>.try_write(&mut positions[usize::from(*next_index)])
     }
 
     pub fn write_position(&mut self, i: usize, &position: &Position) -> Result<()> {
@@ -248,7 +248,7 @@ impl<'a> DynamicPositionArray<'a> {
         next_index: &mut u8,
         target_with_parameters: TargetWithParameters,
     ) -> Result<()> {
-        let mut i = *next_index as usize;
+        let mut i = usize::from(*next_index);
         while i >= 1 {
             i -= 1;
             if let Some(position) = self.read_position(i)? {
@@ -571,7 +571,7 @@ impl Position {
                     let has_activated: bool = self.activation_epoch <= current_epoch;
                     let unlock_started: bool = unlocking_start <= current_epoch;
                     let unlock_ended: bool =
-                        unlocking_start + unlocking_duration as u64 <= current_epoch;
+                        unlocking_start + u64::from(unlocking_duration) <= current_epoch;
 
                     if has_activated && !unlock_started {
                         Ok(PositionState::PREUNLOCKING)
