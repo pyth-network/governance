@@ -7,7 +7,6 @@ use {
 };
 
 pub const EPOCH_DURATION: u64 = 60 * 60 * 24 * 7; // 1 week
-pub const UNLOCKING_DURATION: u8 = 1; // 1 epoch
 
 /// Computes Pyth clock.
 /// Right now it's just the current Unix timestamp divided by the epoch duration.

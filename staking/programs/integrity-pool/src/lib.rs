@@ -7,10 +7,7 @@ use {
         TargetWithParameters,
     },
     utils::{
-        clock::{
-            get_current_epoch,
-            UNLOCKING_DURATION,
-        },
+        clock::get_current_epoch,
         constants::{
             MAX_PUBLISHERS,
             POOL_CONFIG,
@@ -177,8 +174,7 @@ pub mod integrity_pool {
             .read_position(position_index.into())?
             .ok_or(IntegrityPoolError::ThisCodeShouldBeUnreachable)?;
 
-        let position_state =
-            position.get_current_position(get_current_epoch()?, UNLOCKING_DURATION)?;
+        let position_state = position.get_current_position(get_current_epoch()?)?;
         pool_data.remove_delegation(
             publisher.key,
             &ctx.accounts.stake_account_positions.key(),

@@ -6,10 +6,7 @@ use {
     crate::{
         error::IntegrityPoolError,
         utils::{
-            clock::{
-                time_to_epoch,
-                UNLOCKING_DURATION,
-            },
+            clock::time_to_epoch,
             constants::{
                 MAX_EVENTS,
                 MAX_PUBLISHERS,
@@ -142,8 +139,7 @@ impl PoolData {
                     break;
                 }
 
-                let position_state =
-                    position.get_current_position(event.epoch, UNLOCKING_DURATION)?;
+                let position_state = position.get_current_position(event.epoch)?;
 
                 match position_state {
                     PositionState::LOCKED | PositionState::PREUNLOCKING => {}

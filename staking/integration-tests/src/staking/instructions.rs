@@ -26,10 +26,7 @@ use {
     },
     anchor_spl::token::spl_token,
     integrity_pool::utils::{
-        clock::{
-            EPOCH_DURATION,
-            UNLOCKING_DURATION,
-        },
+        clock::EPOCH_DURATION,
         types::frac64,
     },
     litesvm::types::TransactionResult,
@@ -59,7 +56,7 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             governance_authority: payer.pubkey(),
             pyth_token_mint,
             pyth_governance_realm: MAINNET_REALM_ID,
-            unlocking_duration: UNLOCKING_DURATION,
+            unlocking_duration: 1,
             epoch_duration: EPOCH_DURATION,
             freeze: false,
             pda_authority: payer.pubkey(),

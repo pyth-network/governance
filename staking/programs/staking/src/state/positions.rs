@@ -1,6 +1,9 @@
 use {
     super::target::TargetMetadata,
-    crate::error::ErrorCode,
+    crate::{
+        error::ErrorCode,
+        utils::clock::UNLOCKING_DURATION,
+    },
     anchor_lang::{
         prelude::{
             borsh::BorshSchema,
@@ -209,18 +212,12 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(false)
     }
 
-    pub fn get_target_exposure(
-        &self,
-        target: &Target,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<u64> {
+    pub fn get_target_exposure(&self, target: &Target, current_epoch: u64) -> Result<u64> {
         let mut exposure: u64 = 0;
         for i in 0..self.get_position_capacity() {
             if let Some(position) = self.read_position(i)? {
                 if position.target_with_parameters.get_target() == *target
-                    && position.get_current_position(current_epoch, unlocking_duration)?
-                        != PositionState::UNLOCKED
+                    && position.get_current_position(current_epoch)? != PositionState::UNLOCKED
                 {
                     exposure = exposure
                         .checked_add(position.amount)
@@ -244,7 +241,6 @@ impl<'a> DynamicPositionArray<'a> {
     pub fn merge_target_positions(
         &mut self,
         current_epoch: u64,
-        unlocking_duration: u8,
         next_index: &mut u8,
         target_with_parameters: TargetWithParameters,
     ) -> Result<()> {
@@ -253,18 +249,12 @@ impl<'a> DynamicPositionArray<'a> {
             i -= 1;
             if let Some(position) = self.read_position(i)? {
                 if position.target_with_parameters == target_with_parameters {
-                    if position.get_current_position(current_epoch, unlocking_duration)?
-                        == PositionState::UNLOCKED
-                    {
+                    if position.get_current_position(current_epoch)? == PositionState::UNLOCKED {
                         self.make_none(i, next_index)?;
                     } else {
                         for j in 0..i {
                             if let Some(mut other_position) = self.read_position(j)? {
-                                if position.is_equivalent(
-                                    &other_position,
-                                    current_epoch,
-                                    unlocking_duration,
-                                ) {
+                                if position.is_equivalent(&other_position, current_epoch) {
                                     self.make_none(i, next_index)?;
                                     other_position.amount += position.amount;
                                     other_position.activation_epoch = std::cmp::min(
@@ -287,7 +277,6 @@ impl<'a> DynamicPositionArray<'a> {
     pub fn slash_positions(
         &mut self,
         current_epoch: u64,
-        unlocking_duration: u8,
         next_index: &mut u8,
         custody_account_amount: u64,
         publisher: &Pubkey,
@@ -306,10 +295,8 @@ impl<'a> DynamicPositionArray<'a> {
             let position = self.read_position(i)?;
 
             if let Some(position_data) = position {
-                let prev_state =
-                    position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
-                let current_state =
-                    position_data.get_current_position(current_epoch, unlocking_duration)?;
+                let prev_state = position_data.get_current_position(current_epoch - 1)?;
+                let current_state = position_data.get_current_position(current_epoch)?;
                 if matches!(
                     position_data.target_with_parameters,
                     TargetWithParameters::IntegrityPool { publisher: publisher_pubkey } if publisher_pubkey == *publisher,
@@ -356,8 +343,7 @@ impl<'a> DynamicPositionArray<'a> {
             i += 1;
         }
 
-        let governance_exposure =
-            self.get_target_exposure(&Target::Voting, current_epoch, unlocking_duration)?;
+        let governance_exposure = self.get_target_exposure(&Target::Voting, current_epoch)?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) =
@@ -366,10 +352,8 @@ impl<'a> DynamicPositionArray<'a> {
             let mut i = 0;
             while i < usize::from(*next_index) && remaining > 0 {
                 if let Some(position) = self.read_position(i)? {
-                    let prev_state =
-                        position.get_current_position(current_epoch - 1, unlocking_duration)?;
-                    let current_state =
-                        position.get_current_position(current_epoch, unlocking_duration)?;
+                    let prev_state = position.get_current_position(current_epoch - 1)?;
+                    let current_state = position.get_current_position(current_epoch)?;
 
                     if position.target_with_parameters == TargetWithParameters::Voting
                         && current_state != PositionState::UNLOCKED
@@ -557,11 +541,7 @@ impl Position {
     /// next epoch boundary. In order to get the actual current state, we need the current
     /// epoch. This encapsulates that logic so that other parts of the code can use the actual
     /// state.
-    pub fn get_current_position(
-        &self,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> Result<PositionState> {
+    pub fn get_current_position(&self, current_epoch: u64) -> Result<PositionState> {
         if current_epoch < self.activation_epoch {
             Ok(PositionState::LOCKING)
         } else {
@@ -570,8 +550,7 @@ impl Position {
                 Some(unlocking_start) => {
                     let has_activated: bool = self.activation_epoch <= current_epoch;
                     let unlock_started: bool = unlocking_start <= current_epoch;
-                    let unlock_ended: bool =
-                        unlocking_start + u64::from(unlocking_duration) <= current_epoch;
+                    let unlock_ended: bool = unlocking_start + UNLOCKING_DURATION <= current_epoch;
 
                     if has_activated && !unlock_started {
                         Ok(PositionState::PREUNLOCKING)
@@ -592,16 +571,10 @@ impl Position {
      * pool, therefore `pool_authority` should ensure rewards have been claimed before
      * allowing merging positions.
      */
-    pub fn is_equivalent(
-        &self,
-        other: &Position,
-        current_epoch: u64,
-        unlocking_duration: u8,
-    ) -> bool {
-        self.get_current_position(current_epoch, unlocking_duration)
-            == other.get_current_position(current_epoch, unlocking_duration)
-            && self.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
-                == other.get_current_position(current_epoch.saturating_sub(1), unlocking_duration)
+    pub fn is_equivalent(&self, other: &Position, current_epoch: u64) -> bool {
+        self.get_current_position(current_epoch) == other.get_current_position(current_epoch)
+            && self.get_current_position(current_epoch.saturating_sub(1))
+                == other.get_current_position(current_epoch.saturating_sub(1))
             && self.target_with_parameters == other.target_with_parameters
     }
 
@@ -669,30 +642,21 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::Voting,
             amount:                 10,
         };
+        assert_eq!(PositionState::LOCKING, p.get_current_position(0).unwrap());
+        assert_eq!(PositionState::LOCKING, p.get_current_position(7).unwrap());
         assert_eq!(
-            PositionState::LOCKING,
-            p.get_current_position(0, 2).unwrap()
-        );
-        assert_eq!(
-            PositionState::LOCKING,
-            p.get_current_position(7, 2).unwrap()
+            PositionState::PREUNLOCKING,
+            p.get_current_position(8).unwrap()
         );
         assert_eq!(
             PositionState::PREUNLOCKING,
-            p.get_current_position(8, 2).unwrap()
-        );
-        assert_eq!(
-            PositionState::PREUNLOCKING,
-            p.get_current_position(11, 2).unwrap()
+            p.get_current_position(11).unwrap()
         );
         assert_eq!(
             PositionState::UNLOCKING,
-            p.get_current_position(13, 2).unwrap()
+            p.get_current_position(12).unwrap()
         );
-        assert_eq!(
-            PositionState::UNLOCKED,
-            p.get_current_position(14, 2).unwrap()
-        );
+        assert_eq!(PositionState::UNLOCKED, p.get_current_position(13).unwrap());
     }
 
     #[test]
@@ -703,23 +667,11 @@ pub mod tests {
             target_with_parameters: TargetWithParameters::Voting,
             amount:                 10,
         };
-        assert_eq!(
-            PositionState::LOCKING,
-            p.get_current_position(0, 2).unwrap()
-        );
-        assert_eq!(
-            PositionState::LOCKING,
-            p.get_current_position(7, 2).unwrap()
-        );
-        assert_eq!(PositionState::LOCKED, p.get_current_position(8, 2).unwrap());
-        assert_eq!(
-            PositionState::LOCKED,
-            p.get_current_position(11, 2).unwrap()
-        );
-        assert_eq!(
-            PositionState::LOCKED,
-            p.get_current_position(300, 2).unwrap()
-        );
+        assert_eq!(PositionState::LOCKING, p.get_current_position(0).unwrap());
+        assert_eq!(PositionState::LOCKING, p.get_current_position(7).unwrap());
+        assert_eq!(PositionState::LOCKED, p.get_current_position(8).unwrap());
+        assert_eq!(PositionState::LOCKED, p.get_current_position(11).unwrap());
+        assert_eq!(PositionState::LOCKED, p.get_current_position(300).unwrap());
     }
     #[test]
     #[allow(deprecated)]
@@ -917,9 +869,9 @@ pub mod tests {
             u64,
         > = HashMap::new();
         for &position in positions.iter() {
-            let current_state = position.get_current_position(epoch, 1).unwrap();
+            let current_state = position.get_current_position(epoch).unwrap();
             let previous_state = position
-                .get_current_position(epoch.saturating_sub(1), 1)
+                .get_current_position(epoch.saturating_sub(1))
                 .unwrap();
 
             if current_state != PositionState::UNLOCKED {
@@ -944,7 +896,6 @@ pub mod tests {
         dynamic_position_array
             .merge_target_positions(
                 epoch,
-                1,
                 &mut next_index,
                 TargetWithParameters::IntegrityPool {
                     publisher: FIRST_PUBLISHER,
@@ -952,12 +903,11 @@ pub mod tests {
             )
             .unwrap();
         dynamic_position_array
-            .merge_target_positions(epoch, 1, &mut next_index, TargetWithParameters::Voting)
+            .merge_target_positions(epoch, &mut next_index, TargetWithParameters::Voting)
             .unwrap();
         dynamic_position_array
             .merge_target_positions(
                 epoch,
-                1,
                 &mut next_index,
                 TargetWithParameters::IntegrityPool {
                     publisher: SECOND_PUBLISHER,
@@ -973,9 +923,9 @@ pub mod tests {
         > = HashMap::new();
         for i in 0..next_index {
             if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
-                let current_state = position.get_current_position(epoch, 1).unwrap();
+                let current_state = position.get_current_position(epoch).unwrap();
                 let previous_state = position
-                    .get_current_position(epoch.saturating_sub(1), 1)
+                    .get_current_position(epoch.saturating_sub(1))
                     .unwrap();
 
                 if hash_set.contains(&(
@@ -1027,9 +977,9 @@ pub mod tests {
             u64,
         > = HashMap::new();
         for &position in positions.iter() {
-            let current_state = position.get_current_position(epoch, 1).unwrap();
+            let current_state = position.get_current_position(epoch).unwrap();
             let previous_state = position
-                .get_current_position(epoch.saturating_sub(1), 1)
+                .get_current_position(epoch.saturating_sub(1))
                 .unwrap();
 
             pre_position_buckets
@@ -1172,7 +1122,7 @@ pub mod tests {
         };
 
         let governance_exposure = dynamic_position_array
-            .get_target_exposure(&Target::Voting, epoch, 1)
+            .get_target_exposure(&Target::Voting, epoch)
             .unwrap();
 
         let publisher_1_exposure = pre_position_buckets
@@ -1210,7 +1160,6 @@ pub mod tests {
         } = dynamic_position_array
             .slash_positions(
                 epoch,
-                1,
                 &mut next_index,
                 custody_account_amount,
                 &FIRST_PUBLISHER,
@@ -1226,9 +1175,9 @@ pub mod tests {
         > = HashMap::new();
         for i in 0..next_index {
             if let Some(position) = dynamic_position_array.read_position(i as usize).unwrap() {
-                let current_state = position.get_current_position(epoch, 1).unwrap();
+                let current_state = position.get_current_position(epoch).unwrap();
                 let previous_state = position
-                    .get_current_position(epoch.saturating_sub(1), 1)
+                    .get_current_position(epoch.saturating_sub(1))
                     .unwrap();
 
                 post_position_buckets
@@ -1273,7 +1222,7 @@ pub mod tests {
 
         // check governance exposure has been reduced by the correct amount
         let post_governance_exposure = dynamic_position_array
-            .get_target_exposure(&Target::Voting, epoch, 1)
+            .get_target_exposure(&Target::Voting, epoch)
             .unwrap();
 
         if post_governance_exposure
