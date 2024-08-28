@@ -81,6 +81,9 @@ describe("fills a stake account with positions", async () => {
       ) {
         await provider.sendAndConfirm(transaction, [], {});
         transaction = new Transaction();
+        transaction.instructions.push(
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })
+        );
         budgetRemaining = 1_400_000;
       }
       transaction.instructions.push(createPosIx);

@@ -226,6 +226,8 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         if let Some(target_account) = maybe_target_account {
@@ -405,6 +407,7 @@ pub mod staking {
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.owner;
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
 
         let unvested_balance = ctx
@@ -426,8 +429,14 @@ pub mod staking {
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
-        if utils::risk::validate(stake_account_positions, remaining_balance, unvested_balance)
-            .is_err()
+        if utils::risk::validate(
+            stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
+        )
+        .is_err()
         {
             return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
@@ -447,6 +456,8 @@ pub mod staking {
             stake_account_positions,
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )
         .is_err()
         {
@@ -488,6 +499,8 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         let epoch_of_snapshot: u64;
@@ -637,6 +650,7 @@ pub mod staking {
      */
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
         let split_request = &ctx.accounts.source_stake_account_split_request;
         require!(
@@ -673,6 +687,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
@@ -726,6 +742,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         utils::risk::validate(
@@ -738,6 +756,8 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
+            config.unlocking_duration,
         )?;
 
         // Delete current request

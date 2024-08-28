@@ -1,9 +1,6 @@
 use {
     super::target::TargetMetadata,
-    crate::{
-        error::ErrorCode,
-        utils::risk::calculate_governance_exposure,
-    },
+    crate::error::ErrorCode,
     anchor_lang::{
         prelude::{
             borsh::BorshSchema,
@@ -212,6 +209,28 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(false)
     }
 
+    pub fn get_target_exposure(
+        &self,
+        target: &Target,
+        current_epoch: u64,
+        unlocking_duration: u8,
+    ) -> Result<u64> {
+        let mut exposure: u64 = 0;
+        for i in 0..self.get_position_capacity() {
+            if let Some(position) = self.read_position(i)? {
+                if position.target_with_parameters.get_target() == *target
+                    && position.get_current_position(current_epoch, unlocking_duration)?
+                        != PositionState::UNLOCKED
+                {
+                    exposure = exposure
+                        .checked_add(position.amount)
+                        .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;
+                }
+            }
+        }
+        Ok(exposure)
+    }
+
     /// This function is used to reduce the number of positions in the array by merging equivalent
     /// positions. Sometimes some positions have the same `target_with_parameters`,
     /// `activation_epoch` and `unlocking_start`. These can obviously be merged, but this is not
@@ -337,7 +356,8 @@ impl<'a> DynamicPositionArray<'a> {
             i += 1;
         }
 
-        let governance_exposure = calculate_governance_exposure(self)?;
+        let governance_exposure =
+            self.get_target_exposure(&Target::Voting, current_epoch, unlocking_duration)?;
 
         let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
         if let Some(mut remaining) =
@@ -351,7 +371,9 @@ impl<'a> DynamicPositionArray<'a> {
                     let current_state =
                         position.get_current_position(current_epoch, unlocking_duration)?;
 
-                    if position.target_with_parameters == TargetWithParameters::Voting {
+                    if position.target_with_parameters == TargetWithParameters::Voting
+                        && current_state != PositionState::UNLOCKED
+                    {
                         let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
 
@@ -610,21 +632,19 @@ impl std::fmt::Display for PositionState {
 pub mod tests {
     use {
         super::DynamicPositionArray,
-        crate::{
-            state::{
-                positions::{
-                    DynamicPositionArrayAccount,
-                    Position,
-                    PositionData,
-                    PositionState,
-                    SlashedAmounts,
-                    TargetWithParameters,
-                    TryBorsh,
-                    POSITION_BUFFER_SIZE,
-                },
-                target::TargetMetadata,
+        crate::state::{
+            positions::{
+                DynamicPositionArrayAccount,
+                Position,
+                PositionData,
+                PositionState,
+                SlashedAmounts,
+                Target,
+                TargetWithParameters,
+                TryBorsh,
+                POSITION_BUFFER_SIZE,
             },
-            utils::risk::calculate_governance_exposure,
+            target::TargetMetadata,
         },
         anchor_lang::prelude::*,
         quickcheck::{
@@ -1151,7 +1171,9 @@ pub mod tests {
             }
         };
 
-        let governance_exposure = calculate_governance_exposure(&dynamic_position_array).unwrap();
+        let governance_exposure = dynamic_position_array
+            .get_target_exposure(&Target::Voting, epoch, 1)
+            .unwrap();
 
         let publisher_1_exposure = pre_position_buckets
             .iter()
@@ -1250,8 +1272,10 @@ pub mod tests {
         }
 
         // check governance exposure has been reduced by the correct amount
-        let post_governance_exposure =
-            calculate_governance_exposure(&dynamic_position_array).unwrap();
+        let post_governance_exposure = dynamic_position_array
+            .get_target_exposure(&Target::Voting, epoch, 1)
+            .unwrap();
+
         if post_governance_exposure
             != std::cmp::min(governance_exposure, custody_account_amount - total_slashed)
         {
@@ -1382,6 +1406,14 @@ pub mod tests {
             if (target == &TargetWithParameters::Voting)
                 && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
                     < post_position_buckets.get(&(*target, *prev_state, *curr_state))
+            {
+                return false;
+            }
+
+            if target == &TargetWithParameters::Voting
+                && curr_state == &PositionState::UNLOCKED
+                && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
+                    != post_position_buckets.get(&(*target, *prev_state, *curr_state))
             {
                 return false;
             }

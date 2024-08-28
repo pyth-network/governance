@@ -3,10 +3,8 @@ use {
         state::positions::{
             DynamicPositionArray,
             Target,
-            TargetWithParameters,
         },
         ErrorCode::{
-            GenericOverflow,
             TokensNotYetVested,
             TooMuchExposureToGovernance,
             TooMuchExposureToIntegrityPool,
@@ -15,23 +13,6 @@ use {
     anchor_lang::prelude::*,
     std::cmp,
 };
-
-pub fn calculate_governance_exposure(positions: &DynamicPositionArray) -> Result<u64> {
-    let mut governance_exposure: u64 = 0;
-    for i in 0..positions.get_position_capacity() {
-        if let Some(position) = positions.read_position(i)? {
-            if matches!(
-                position.target_with_parameters,
-                TargetWithParameters::Voting
-            ) {
-                governance_exposure = governance_exposure
-                    .checked_add(position.amount)
-                    .ok_or_else(|| error!(GenericOverflow))?;
-            }
-        }
-    }
-    Ok(governance_exposure)
-}
 
 /// Validates that a proposed set of positions meets all risk requirements
 /// stake_account_positions is untrusted, while everything else is trusted
@@ -42,26 +23,19 @@ pub fn validate(
     stake_account_positions: &DynamicPositionArray,
     total_balance: u64,
     unvested_balance: u64,
+    current_epoch: u64,
+    unlocking_duration: u8,
 ) -> Result<u64> {
-    let mut governance_exposure: u64 = 0;
-    let mut integrity_pool_exposure: u64 = 0;
-
-    for i in 0..stake_account_positions.get_position_capacity() {
-        if let Some(position) = stake_account_positions.read_position(i)? {
-            match position.target_with_parameters.get_target() {
-                Target::Voting => {
-                    governance_exposure = governance_exposure
-                        .checked_add(position.amount)
-                        .ok_or_else(|| error!(GenericOverflow))?;
-                }
-                Target::IntegrityPool { .. } => {
-                    integrity_pool_exposure = integrity_pool_exposure
-                        .checked_add(position.amount)
-                        .ok_or_else(|| error!(GenericOverflow))?;
-                }
-            }
-        }
-    }
+    let governance_exposure: u64 = stake_account_positions.get_target_exposure(
+        &Target::Voting,
+        current_epoch,
+        unlocking_duration,
+    )?;
+    let integrity_pool_exposure: u64 = stake_account_positions.get_target_exposure(
+        &Target::IntegrityPool,
+        current_epoch,
+        unlocking_duration,
+    )?;
 
     let vested_balance = total_balance
         .checked_sub(unvested_balance)
@@ -145,7 +119,6 @@ pub mod tests {
             (0, PositionState::LOCKING),
             (44, PositionState::PREUNLOCKING),
             (50, PositionState::UNLOCKING),
-            (51, PositionState::UNLOCKED),
         ];
         for (current_epoch, desired_state) in tests {
             assert_eq!(
@@ -156,12 +129,29 @@ pub mod tests {
                     .unwrap(),
                 desired_state
             );
-            assert_eq!(validate(&pd, 15, 0).unwrap(), 5); // 10 vested
-            assert_eq!(validate(&pd, 10, 0).unwrap(), 0); // 10 vested, the limit
-            assert_eq!(validate(&pd, 13, 3).unwrap(), 0); // 7 vested
-            assert!(validate(&pd, 9, 0).is_err());
-            assert!(validate(&pd, 13, 4).is_err());
+            assert_eq!(validate(&pd, 15, 0, current_epoch, 1).unwrap(), 5); // 10 staked
+            assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0); // 10 staked, the limit
+            assert_eq!(validate(&pd, 13, 3, current_epoch, 1).unwrap(), 0); // 3 locked, 10 staked
+            assert!(validate(&pd, 9, 0, current_epoch, 1).is_err()); // 9 tokens but needs 10 staked, should fail
+            assert!(validate(&pd, 13, 4, current_epoch, 1).is_err()); // 4 locked, 9 unlocked but
+                                                                      // needs 10 for staking,
+                                                                      // should fail
         }
+
+        let (current_epoch, desired_state) = (51u64, PositionState::UNLOCKED);
+        assert_eq!(
+            pd.read_position(0)
+                .unwrap()
+                .unwrap()
+                .get_current_position(current_epoch, 1)
+                .unwrap(),
+            desired_state
+        );
+        assert_eq!(validate(&pd, 15, 0, current_epoch, 1).unwrap(), 15);
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 10);
+        assert_eq!(validate(&pd, 13, 3, current_epoch, 1).unwrap(), 10);
+        assert_eq!(validate(&pd, 9, 0, current_epoch, 1).unwrap(), 9);
+        assert_eq!(validate(&pd, 13, 4, current_epoch, 1).unwrap(), 9);
     }
 
     #[test]
@@ -191,12 +181,13 @@ pub mod tests {
             },
         )
         .unwrap();
-        assert_eq!(validate(&pd, 10, 0).unwrap(), 3);
-        assert_eq!(validate(&pd, 7, 0).unwrap(), 0);
-        assert_eq!(validate(&pd, 7, 4).unwrap(), 0);
-        assert!(validate(&pd, 6, 0).is_err());
+        let current_epoch = 44;
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 3);
+        assert_eq!(validate(&pd, 7, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 7, 4, current_epoch, 1).unwrap(), 0);
+        assert!(validate(&pd, 6, 0, current_epoch, 1).is_err());
         // only 2 vested:
-        assert!(validate(&pd, 10, 8).is_err());
+        assert!(validate(&pd, 10, 8, current_epoch, 1).is_err());
     }
     #[test]
     fn test_double_integrity_pool() {
@@ -227,11 +218,12 @@ pub mod tests {
             },
         )
         .unwrap();
-        assert_eq!(validate(&pd, 10, 0).unwrap(), 0);
-        assert_eq!(validate(&pd, 12, 0).unwrap(), 2);
-        assert!(validate(&pd, 12, 4).is_err());
-        assert!(validate(&pd, 9, 0).is_err());
-        assert!(validate(&pd, 20, 11).is_err());
+        let current_epoch = 44;
+        assert_eq!(validate(&pd, 10, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 12, 0, current_epoch, 1).unwrap(), 2);
+        assert!(validate(&pd, 12, 4, current_epoch, 1).is_err());
+        assert!(validate(&pd, 9, 0, current_epoch, 1).is_err());
+        assert!(validate(&pd, 20, 11, current_epoch, 1).is_err());
     }
     #[test]
     fn test_multiple_integrity_pool() {
@@ -251,7 +243,8 @@ pub mod tests {
             )
             .unwrap();
         }
-        assert_eq!(validate(&pd, 50, 0).unwrap(), 0);
+        let current_epoch = 44;
+        assert_eq!(validate(&pd, 50, 0, current_epoch, 1).unwrap(), 0);
         // Now we have 6 integrity pool positions, so 50 tokens is not enough
         pd.write_position(
             7,
@@ -265,10 +258,10 @@ pub mod tests {
             },
         )
         .unwrap();
-        assert!(validate(&pd, 50, 0).is_err());
+        assert!(validate(&pd, 50, 0, current_epoch, 1).is_err());
         // But 60 should be
-        assert_eq!(validate(&pd, 60, 0).unwrap(), 0);
-        assert_eq!(validate(&pd, 65, 0).unwrap(), 5);
+        assert_eq!(validate(&pd, 60, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 65, 0, current_epoch, 1).unwrap(), 5);
     }
     #[test]
     fn test_multiple_voting() {
@@ -286,10 +279,11 @@ pub mod tests {
             )
             .unwrap();
         }
-        assert_eq!(validate(&pd, 100, 0).unwrap(), 50);
-        assert_eq!(validate(&pd, 50, 0).unwrap(), 0);
-        assert_eq!(validate(&pd, 60, 51).unwrap(), 9);
-        assert!(validate(&pd, 49, 0).is_err());
+        let current_epoch = 44;
+        assert_eq!(validate(&pd, 100, 0, current_epoch, 1).unwrap(), 50);
+        assert_eq!(validate(&pd, 50, 0, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 60, 51, current_epoch, 1).unwrap(), 9);
+        assert!(validate(&pd, 49, 0, current_epoch, 1).is_err());
     }
 
     #[test]
@@ -309,7 +303,8 @@ pub mod tests {
             .unwrap();
         }
         // Overflows in the total governance computation
-        assert!(validate(&pd, u64::MAX, 0).is_err());
+        let current_epoch = 44;
+        assert!(validate(&pd, u64::MAX, 0, current_epoch, 1).is_err());
     }
 
     #[test]
@@ -330,14 +325,16 @@ pub mod tests {
             )
             .unwrap();
         }
+        let current_epoch = 44;
         // Overflows in the aggregation computation
-        assert!(validate(&pd, u64::MAX, 0).is_err());
+        assert!(validate(&pd, u64::MAX, 0, current_epoch, 1).is_err());
     }
 
     #[test]
     fn test_multiple_voting_and_integrity_pool() {
         let mut fixture = DynamicPositionArrayAccount::default();
         let mut pd = fixture.to_dynamic_position_array();
+        let current_epoch = 1;
         // We need at least 4 vested, 10 total
         pd.write_position(
             0,
@@ -384,11 +381,11 @@ pub mod tests {
         )
         .unwrap();
 
-        assert_eq!(validate(&pd, 10, 6).unwrap(), 0);
-        assert_eq!(validate(&pd, 10, 4).unwrap(), 0);
-        assert_eq!(validate(&pd, 11, 7).unwrap(), 0);
-        assert_eq!(validate(&pd, 11, 6).unwrap(), 1);
-        assert!(validate(&pd, 10, 7).is_err()); // breaks the integrity pool inequality
-        assert!(validate(&pd, 4, 0).is_err()); // breaks the voting inequality
+        assert_eq!(validate(&pd, 10, 6, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 10, 4, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 11, 7, current_epoch, 1).unwrap(), 0);
+        assert_eq!(validate(&pd, 11, 6, current_epoch, 1).unwrap(), 1);
+        assert!(validate(&pd, 10, 7, current_epoch, 1).is_err()); // breaks the integrity pool inequality
+        assert!(validate(&pd, 4, 0, current_epoch, 1).is_err()); // breaks the voting inequality
     }
 }

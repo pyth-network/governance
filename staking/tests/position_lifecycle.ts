@@ -342,20 +342,13 @@ describe("position_lifecycle", async () => {
   it("withdraws everything", async () => {
     const stakeAccount = await stakeConnection.getMainAccount(owner);
 
-    await expectFail(
-      stakeConnection.program.methods
-        .withdrawStake(PythBalance.fromString("200").toBN())
-        .accounts({
-          stakeAccountPositions: stakeAccount.address,
-          destination: ownerAta,
-        }),
-      "Insufficient balance to cover the withdrawal"
-    ); // This will fail because we need to clean up the unlocked position first
-
-    await stakeConnection.withdrawTokens(
-      stakeAccount,
-      PythBalance.fromString("200")
-    );
+    await stakeConnection.program.methods
+      .withdrawStake(PythBalance.fromString("200").toBN())
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        destination: ownerAta,
+      })
+      .rpc();
 
     await assertBalanceMatches(
       stakeConnection,
