@@ -37,7 +37,10 @@ use {
     },
     std::{
         cmp::min,
-        convert::TryInto,
+        convert::{
+            TryFrom,
+            TryInto,
+        },
     },
 };
 
@@ -121,11 +124,11 @@ impl PoolData {
                 _ => continue,
             }
 
-            let mut last_event_index: usize = self.num_events as usize;
+            let mut last_event_index: usize = self.num_events.try_into()?;
             loop {
                 // prevent infinite loop and double counting events
                 // by breaking the loop when visiting all events
-                if self.num_events as usize == last_event_index + MAX_EVENTS {
+                if usize::try_from(self.num_events)? == last_event_index + MAX_EVENTS {
                     break;
                 }
 
@@ -195,7 +198,7 @@ impl PoolData {
 
         for epoch in self.last_updated_epoch..current_epoch {
             let event =
-                self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize);
+                self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?);
             event.epoch = epoch;
             event.y = y;
         }
@@ -253,7 +256,7 @@ impl PoolData {
             i += 1;
         }
 
-        for j in 0..(publisher_caps.num_publishers() as usize) {
+        for j in 0..publisher_caps.num_publishers() as usize {
             // Silently ignore if there are more publishers than MAX_PUBLISHERS
             if !existing_publishers.get(j) && i < MAX_PUBLISHERS {
                 self.publishers[i] = publisher_caps.get_cap(j).pubkey;
@@ -294,7 +297,7 @@ impl PoolData {
             .unwrap_or(0)
             .try_into()?;
 
-            self.get_event_mut((self.num_events + epoch - self.last_updated_epoch) as usize)
+            self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?)
                 .event_data[publisher_index] = PublisherEventData {
                 self_reward_ratio,
                 other_reward_ratio,

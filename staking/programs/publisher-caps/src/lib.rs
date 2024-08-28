@@ -19,7 +19,10 @@ use {
             WormholePayload,
         },
     },
-    std::convert::TryInto,
+    std::convert::{
+        TryFrom,
+        TryInto,
+    },
     wormhole_solana_vaas::zero_copy::VaaAccount,
 };
 
@@ -69,7 +72,7 @@ pub mod publisher_caps {
         let account_info = ctx.accounts.publisher_caps.to_account_info();
         sol_memcpy(
             &mut account_info.try_borrow_mut_data().unwrap()
-                [PublisherCaps::HEADER_LEN + index as usize..],
+                [PublisherCaps::HEADER_LEN + usize::try_from(index)?..],
             &data,
             data.len(),
         );

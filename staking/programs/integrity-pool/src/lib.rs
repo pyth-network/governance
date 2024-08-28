@@ -174,7 +174,7 @@ pub mod integrity_pool {
 
         // update publisher accounting
         let position = stake_account_positions
-            .read_position(position_index as usize)?
+            .read_position(position_index.into())?
             .ok_or(IntegrityPoolError::ThisCodeShouldBeUnreachable)?;
 
         let position_state =

@@ -169,9 +169,10 @@ impl VestingSchedule {
                 // accounts simpler.
                 let remaining_periods = num_periods.saturating_sub(periods_passed);
 
-                (((remaining_periods as u128) * (initial_balance as u128)) / (num_periods as u128))
-                    .try_into()
-                    .unwrap()
+                (((u128::from(remaining_periods)) * (u128::from(initial_balance)))
+                    / (u128::from(num_periods)))
+                .try_into()
+                .unwrap()
             }
         }
     }
@@ -257,15 +258,18 @@ impl VestingSchedule {
                 num_periods,
             } => Ok((
                 VestingSchedule::PeriodicVesting {
-                    initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
-                        / (total_amount as u128)) as u64,
+                    initial_balance: (u128::from(remaining_amount) * u128::from(*initial_balance)
+                        / u128::from(total_amount))
+                    .try_into()?,
                     start_date:      *start_date,
                     period_duration: *period_duration,
                     num_periods:     *num_periods,
                 },
                 VestingSchedule::PeriodicVesting {
-                    initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
-                        / (total_amount as u128)) as u64,
+                    initial_balance: (u128::from(transferred_amount)
+                        * u128::from(*initial_balance)
+                        / u128::from(total_amount))
+                    .try_into()?,
                     start_date:      *start_date,
                     period_duration: *period_duration,
                     num_periods:     *num_periods,
@@ -277,14 +281,17 @@ impl VestingSchedule {
                 num_periods,
             } => Ok((
                 VestingSchedule::PeriodicVestingAfterListing {
-                    initial_balance: ((remaining_amount as u128) * (*initial_balance as u128)
-                        / (total_amount as u128)) as u64,
+                    initial_balance: (u128::from(remaining_amount) * u128::from(*initial_balance)
+                        / u128::from(total_amount))
+                    .try_into()?,
                     period_duration: *period_duration,
                     num_periods:     *num_periods,
                 },
                 VestingSchedule::PeriodicVestingAfterListing {
-                    initial_balance: ((transferred_amount as u128) * (*initial_balance as u128)
-                        / (total_amount as u128)) as u64,
+                    initial_balance: (u128::from(transferred_amount)
+                        * u128::from(*initial_balance)
+                        / u128::from(total_amount))
+                    .try_into()?,
                     period_duration: *period_duration,
                     num_periods:     *num_periods,
                 },
