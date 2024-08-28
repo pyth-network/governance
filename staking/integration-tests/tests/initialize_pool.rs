@@ -19,6 +19,7 @@ use {
     integrity_pool::{
         error::IntegrityPoolError,
         state::pool::PoolConfig,
+        utils::types::FRAC_64_MULTIPLIER,
     },
     solana_sdk::{
         program_error::ProgramError,
@@ -99,6 +100,17 @@ fn test_update_y() {
     assert_anchor_program_error!(
         update_y(&mut svm, &payer, &wrong_authority, 456),
         IntegrityPoolError::InvalidRewardProgramAuthority,
+        0
+    );
+
+    assert_anchor_program_error!(
+        update_y(
+            &mut svm,
+            &payer,
+            &reward_program_authority,
+            FRAC_64_MULTIPLIER / 100 + 1
+        ),
+        IntegrityPoolError::InvalidY,
         0
     );
 }

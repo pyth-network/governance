@@ -36,6 +36,8 @@ pub mod integrity_pool {
         pyth_token_mint: Pubkey,
         y: frac64,
     ) -> Result<()> {
+        require_gte!(FRAC_64_MULTIPLIER / 100, y, IntegrityPoolError::InvalidY);
+
         let pool_config = &mut ctx.accounts.pool_config;
         pool_config.pool_data = ctx.accounts.pool_data.key();
         pool_config.reward_program_authority = reward_program_authority;
@@ -49,6 +51,8 @@ pub mod integrity_pool {
     }
 
     pub fn update_y(ctx: Context<UpdateY>, y: frac64) -> Result<()> {
+        require_gte!(FRAC_64_MULTIPLIER / 100, y, IntegrityPoolError::InvalidY);
+
         ctx.accounts.pool_config.y = y;
         Ok(())
     }
