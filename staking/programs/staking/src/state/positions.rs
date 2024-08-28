@@ -372,7 +372,7 @@ impl<'a> DynamicPositionArray<'a> {
                         position.get_current_position(current_epoch, unlocking_duration)?;
 
                     if position.target_with_parameters == TargetWithParameters::Voting
-                        && (current_state != PositionState::UNLOCKED)
+                        && current_state != PositionState::UNLOCKED
                     {
                         let to_slash = remaining.min(position.amount);
                         remaining -= to_slash;
@@ -1410,7 +1410,8 @@ pub mod tests {
                 return false;
             }
 
-            if (target == &TargetWithParameters::Voting && curr_state == &PositionState::UNLOCKED)
+            if target == &TargetWithParameters::Voting
+                && curr_state == &PositionState::UNLOCKED
                 && pre_position_buckets.get(&(*target, *prev_state, *curr_state))
                     != post_position_buckets.get(&(*target, *prev_state, *curr_state))
             {
