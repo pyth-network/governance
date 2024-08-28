@@ -163,7 +163,6 @@ pub mod integrity_pool {
         let pool_config = &ctx.accounts.pool_config;
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
-        let delegation_record = &ctx.accounts.delegation_record;
 
         let config_account = ctx.accounts.config_account.clone();
         let staking_program = &ctx.accounts.staking_program;
@@ -172,9 +171,6 @@ pub mod integrity_pool {
         let stake_account_positions =
             &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let system_program = ctx.accounts.system_program.to_account_info();
-
-        // assert delegator record is up to date
-        delegation_record.assert_up_to_date(get_current_epoch()?)?;
 
         // update publisher accounting
         let position = stake_account_positions

@@ -344,7 +344,6 @@ pub fn undelegate(
     position_index: u8,
     amount: u64,
 ) -> TransactionResult {
-    let delegation_record = get_delegation_record_address(publisher, stake_account_positions);
     let pool_config_pubkey = get_pool_config_address();
     let config_account = get_config_address();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
@@ -359,7 +358,6 @@ pub fn undelegate(
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,
-        delegation_record,
         config_account,
         stake_account_positions,
         stake_account_metadata,

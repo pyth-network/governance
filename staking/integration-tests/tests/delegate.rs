@@ -172,7 +172,7 @@ fn test_delegate() {
             0,
             50,
         ),
-        anchor_lang::error::ErrorCode::AccountNotInitialized,
+        IntegrityPoolError::PublisherNotFound,
         0
     );
 
@@ -224,20 +224,6 @@ fn test_delegate() {
 
     advance_n_epochs(&mut svm, &payer, 1);
 
-    assert_anchor_program_error!(
-        undelegate(
-            &mut svm,
-            &payer,
-            publisher_keypair.pubkey(),
-            pool_data_pubkey,
-            stake_account_positions,
-            0,
-            10,
-        ),
-        IntegrityPoolError::OutdatedDelegatorAccounting,
-        0
-    );
-
     svm.expire_blockhash();
     assert_anchor_program_error!(
         advance_delegation_record(
@@ -277,24 +263,6 @@ fn test_delegate() {
         assert_eq!(pool_data.del_state[i], DelegationState::default());
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
-
-    svm.expire_blockhash();
-    advance_delegation_record(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        stake_account_positions,
-        pyth_token_mint.pubkey(),
-        pool_data_pubkey,
-        None,
-    )
-    .unwrap();
-
-    let delegation_record: DelegationRecord = fetch_account_data(
-        &mut svm,
-        &get_delegation_record_address(publisher_keypair.pubkey(), stake_account_positions),
-    );
-    assert_eq!(delegation_record.last_epoch, 3);
 
     undelegate(
         &mut svm,

@@ -534,17 +534,6 @@ fn test_stability(props: StabilityTestProps) {
                     }
                 }
 
-                advance_delegation_record(
-                    &mut svm,
-                    &props.delegators[*delegator].0,
-                    props.publishers[*publisher].0.pubkey(),
-                    stake_account_positions[*delegator],
-                    pyth_token_mint.pubkey(),
-                    pool_data_pubkey,
-                    None,
-                )
-                .unwrap();
-
                 if position_value == 0 {
                     continue;
                 }
