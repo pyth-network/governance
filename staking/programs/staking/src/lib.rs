@@ -190,6 +190,10 @@ pub mod staking {
 
         if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
+                maybe_target_account.is_none(),
+                ErrorCode::UnexpectedTargetAccount
+            );
+            require!(
                 ctx.accounts
                     .pool_authority
                     .as_ref()

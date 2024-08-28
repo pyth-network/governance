@@ -148,7 +148,7 @@ pub fn create_position(
     target_with_parameters: TargetWithParameters,
     pool_authority: Option<&Keypair>,
     amount: frac64,
-) {
+) -> TransactionResult {
     let config_pubkey = get_config_address();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
@@ -194,7 +194,7 @@ pub fn create_position(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(create_position_tx).unwrap();
+    svm.send_transaction(create_position_tx)
 }
 
 pub fn close_position(

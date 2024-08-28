@@ -2600,6 +2600,11 @@ export type Staking = {
     },
     {
       "code": 6039,
+      "name": "unexpectedTargetAccount",
+      "msg": "The target account is not allowed for this operation"
+    },
+    {
+      "code": 6040,
       "name": "other",
       "msg": "other"
     }
