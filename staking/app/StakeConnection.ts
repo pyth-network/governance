@@ -418,8 +418,7 @@ export class StakeConnection {
           [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
             stakeAccount.stakeAccountPositionsWasm.getPositionState(
               el.index,
-              BigInt(currentEpoch.toString()),
-              this.config.unlockingDuration
+              BigInt(currentEpoch.toString())
             )
           )
       )
@@ -1060,13 +1059,10 @@ export class StakeConnection {
 
     const time = new BN(Date.now() / 1000);
     const currentEpoch = time.div(this.config.epochDuration);
-    const unlockingDuration = this.config.unlockingDuration;
     const currentEpochBI = BigInt(currentEpoch.toString());
 
-    const lockedBalanceSummary = positionAccountWasm.getLockedBalanceSummary(
-      currentEpochBI,
-      unlockingDuration
-    );
+    const lockedBalanceSummary =
+      positionAccountWasm.getLockedBalanceSummary(currentEpochBI);
 
     const epochOfFirstStake: BN = positionAccountJs.positions.reduce(
       (prev: BN | undefined, curr) => {
@@ -1250,15 +1246,11 @@ export class StakeAccount {
     );
 
     const currentEpoch = unixTime.div(this.config.epochDuration);
-    const unlockingDuration = this.config.unlockingDuration;
     const currentEpochBI = BigInt(currentEpoch.toString());
 
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI =
-      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
-        currentEpochBI,
-        unlockingDuration
-      );
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(currentEpochBI);
 
     let lockingBN = new BN(lockedSummaryBI.locking.toString());
     let lockedBN = new BN(lockedSummaryBI.locked.toString());
@@ -1372,11 +1364,9 @@ export class StakeAccount {
 
   public getVoterWeight(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
-    let unlockingDuration = this.config.unlockingDuration;
 
     const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
       BigInt(currentEpoch.toString()),
-      unlockingDuration,
       BigInt(
         this.votingAccountMetadataWasm.getCurrentAmountLocked(
           BigInt(currentEpoch.toString())
@@ -1430,11 +1420,7 @@ export class StakeAccount {
   }
 
   private addUnlockingPeriod(unixTime: BN) {
-    return unixTime.add(
-      this.config.epochDuration.mul(
-        new BN(this.config.unlockingDuration).add(new BN(1))
-      )
-    );
+    return unixTime.add(this.config.epochDuration.mul(new BN(2)));
   }
 
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
