@@ -1209,8 +1209,10 @@ export type Staking = {
       "accounts": [
         {
           "name": "owner",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's checked against stake_account_metadata"
+          ],
           "writable": true,
-          "signer": true,
           "relations": [
             "stakeAccountMetadata"
           ]
