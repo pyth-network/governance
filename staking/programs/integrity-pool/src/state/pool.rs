@@ -531,6 +531,7 @@ mod tests {
         pool_data.publisher_stake_accounts[publisher_index] = publisher_key;
         pool_data.publishers[publisher_index] = publisher_key;
 
+
         let mut event = Event {
             epoch:       1,
             y:           FRAC_64_MULTIPLIER / 10, // 10%
@@ -632,6 +633,7 @@ mod tests {
 
         assert_eq!(delegator_reward, 94 * FRAC_64_MULTIPLIER);
 
+
         // test many events
         pool_data.num_events = 100;
         pool_data.last_updated_epoch = 101;
@@ -681,8 +683,18 @@ mod tests {
 
         for (index, cap) in caps.iter().enumerate() {
             pool_data.publishers[index] = cap.pubkey;
+            let eligible_delegation_data = EligibleDelegationData::from_delegation_data(
+                pool_data.self_del_state[index].total_delegation,
+                pool_data.del_state[index].total_delegation,
+                cap.cap,
+            );
             pool_data
-                .create_reward_events_for_publisher(1, 2, index, cap.cap, YIELD)
+                .create_reward_events_for_publisher(
+                    1,
+                    2,
+                    index,
+                    eligible_delegation_data.get_reward_ratios().unwrap(),
+                )
                 .unwrap();
         }
 
@@ -724,8 +736,18 @@ mod tests {
 
         for (index, cap) in caps.iter().enumerate() {
             pool_data.publishers[index] = cap.pubkey;
+            let eligible_delegation_data = EligibleDelegationData::from_delegation_data(
+                pool_data.self_del_state[index].total_delegation,
+                pool_data.del_state[index].total_delegation,
+                cap.cap,
+            );
             pool_data
-                .create_reward_events_for_publisher(1, 2, index, cap.cap, FRAC_64_MULTIPLIER / 100)
+                .create_reward_events_for_publisher(
+                    1,
+                    2,
+                    index,
+                    eligible_delegation_data.get_reward_ratios().unwrap(),
+                )
                 .unwrap();
         }
 
