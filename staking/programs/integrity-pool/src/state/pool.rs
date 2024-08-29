@@ -330,33 +330,6 @@ impl PoolData {
         Ok(())
     }
 
-    pub fn get_publisher_reward_ratios(
-        &self,
-        publisher_index: usize,
-        publisher_cap: u64,
-    ) -> Result<(u64, u64)> {
-        let self_delegation = self.self_del_state[publisher_index].total_delegation;
-        let self_eligible_delegation = min(publisher_cap, self_delegation);
-        // the order of the operation matters to avoid floating point precision issues
-        let self_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
-            * u128::from(self_eligible_delegation))
-        .checked_div(u128::from(self_delegation))
-        .unwrap_or(0)
-        .try_into()?;
-
-        let other_delegation = self.del_state[publisher_index].total_delegation;
-        let other_eligible_delegation =
-            min(publisher_cap - self_eligible_delegation, other_delegation);
-        // the order of the operation matters to avoid floating point precision issues
-        let other_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
-            * u128::from(other_eligible_delegation))
-        .checked_div(u128::from(other_delegation))
-        .unwrap_or(0)
-        .try_into()?;
-
-        Ok((self_reward_ratio, other_reward_ratio))
-    }
-
     pub fn create_reward_events_for_publisher(
         &mut self,
         epoch_from: u64,
@@ -372,7 +345,6 @@ impl PoolData {
                 delegation_fee:     self.delegation_fees[publisher_index],
             };
         }
-
         Ok(())
     }
 
