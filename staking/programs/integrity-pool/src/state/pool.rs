@@ -221,6 +221,7 @@ impl PoolData {
         Ok((delegator_reward, publisher_reward))
     }
 
+
     pub fn advance(
         &mut self,
         publisher_caps: &PublisherCaps,
@@ -281,8 +282,8 @@ impl PoolData {
             self.create_reward_events_for_publisher(
                 self.last_updated_epoch,
                 self.last_updated_epoch + 1,
-                eligible_delegation_data.get_reward_ratios()?,
                 i,
+                eligible_delegation_data.get_reward_ratios()?,
             )?;
 
             self.del_state[i] = DelegationState {
@@ -310,8 +311,8 @@ impl PoolData {
             self.create_reward_events_for_publisher(
                 self.last_updated_epoch + 1,
                 current_epoch,
-                eligible_delegation_data.get_reward_ratios()?,
                 i,
+                eligible_delegation_data.get_reward_ratios()?,
             )?;
             i += 1;
         }
@@ -334,8 +335,8 @@ impl PoolData {
         &mut self,
         epoch_from: u64,
         epoch_to: u64,
-        reward_ratios: RewardRatios,
         publisher_index: usize,
+        reward_ratios: RewardRatios,
     ) -> Result<()> {
         for epoch in epoch_from..epoch_to {
             self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?)
