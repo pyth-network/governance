@@ -668,7 +668,8 @@ fn test_stability(props: StabilityTestProps) {
                     TargetWithParameters::Voting {},
                     None,
                     *amount,
-                );
+                )
+                .unwrap();
                 operation_counts.get_mut(&operation.get_name()).unwrap().0 += 1;
             }
             Operation::CloseGovernancePosition { delegator, amount } => {

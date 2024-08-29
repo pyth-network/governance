@@ -99,7 +99,8 @@ fn test_merge_delegation_positions() {
         TargetWithParameters::Voting,
         None,
         3,
-    );
+    )
+    .unwrap();
 
     let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = stake_positions_account.to_dynamic_position_array();
@@ -179,7 +180,8 @@ fn test_merge_delegation_positions() {
         TargetWithParameters::Voting,
         None,
         5,
-    );
+    )
+    .unwrap();
 
     delegate(
         &mut svm,

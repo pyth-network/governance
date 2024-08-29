@@ -80,7 +80,8 @@ fn test_staking_slash() {
         },
         Some(&pool_authority),
         50 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
     create_position(
         &mut svm,
         &payer,
@@ -88,7 +89,8 @@ fn test_staking_slash() {
         staking::state::positions::TargetWithParameters::Voting,
         None,
         10 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
     svm.expire_blockhash();
 
     create_position(
@@ -98,7 +100,8 @@ fn test_staking_slash() {
         staking::state::positions::TargetWithParameters::Voting,
         None,
         80 * FRAC_64_MULTIPLIER,
-    );
+    )
+    .unwrap();
 
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let metadata_account: StakeAccountMetadataV2 =

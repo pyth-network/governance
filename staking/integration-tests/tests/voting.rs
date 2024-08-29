@@ -63,8 +63,8 @@ const MAINNET_ELAPSED_EPOCHS: u64 = 2850;
 /// This test has two purposes:
 /// 1) to test the voting functionality against the deployed governance program and configuration
 /// 2) to test that the new staking account is compatible with stake account positions with the old
-///     fixed sized position array and such accounts can be turned into the new version by calling
-///     merge_target_positions and nothing breaks
+///    fixed sized position array and such accounts can be turned into the new version by calling
+///    merge_target_positions and nothing breaks
 fn test_voting() {
     let SetupResult {
         mut svm,
@@ -135,7 +135,8 @@ fn test_voting() {
         TargetWithParameters::Voting,
         None,
         100,
-    );
+    )
+    .unwrap();
 
     let mut positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
     let positions = positions_account.to_dynamic_position_array();
