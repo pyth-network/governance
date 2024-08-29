@@ -283,7 +283,7 @@ pub mod integrity_pool {
 
     pub fn advance_delegation_record(ctx: Context<AdvanceDelegationRecord>) -> Result<()> {
         let delegation_record = &mut ctx.accounts.delegation_record;
-        let pool_data = &ctx.accounts.pool_data.load()?;
+        let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let pool_config = &ctx.accounts.pool_config;
         let stake_account_positions =
             &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
@@ -304,6 +304,7 @@ pub mod integrity_pool {
             &publisher.key(),
             get_current_epoch()?,
         )?;
+        pool_data.claimable_rewards -= delegator_reward + publisher_reward;
 
         // transfer delegator reward from pool_reward_custody to stake_account_custody
         let cpi_accounts = anchor_spl::token::Transfer {

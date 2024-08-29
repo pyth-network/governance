@@ -250,6 +250,7 @@ pub struct AdvanceDelegationRecord<'info> {
 
     pub stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
 
+    #[account(mut)]
     pub pool_data: AccountLoader<'info, PoolData>,
 
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
