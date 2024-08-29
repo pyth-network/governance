@@ -6,18 +6,18 @@ use {
 #[account]
 #[derive(Default, BorshSchema)]
 pub struct GlobalConfig {
-    pub bump:                  u8,
-    pub governance_authority:  Pubkey,
-    pub pyth_token_mint:       Pubkey,
-    pub pyth_governance_realm: Pubkey,
-    // unlocking_duration is deprecated, but we need to keep it for account structure
-    pub unlocking_duration:    u8,
-    pub epoch_duration:        u64, // epoch duration in seconds
-    pub freeze:                bool,
-    pub pda_authority:         Pubkey, /* Authority that can authorize the transfer of
-                                        * locked
-                                        * tokens */
-    pub governance_program:    Pubkey, // Governance program id
+    pub bump:                       u8,
+    pub governance_authority:       Pubkey,
+    pub pyth_token_mint:            Pubkey,
+    pub pyth_governance_realm:      Pubkey,
+    // unlocking_duration is deprecated, but we need to keep the space for account structure
+    pub removed_unlocking_duration: u8,
+    pub epoch_duration:             u64, // epoch duration in seconds
+    pub freeze:                     bool,
+    pub pda_authority:              Pubkey, /* Authority that can authorize the transfer of
+                                             * locked
+                                             * tokens */
+    pub governance_program:         Pubkey, // Governance program id
 
     /// Once the pyth token is listed, governance can update the config to set this value.
     /// Once this value is set, vesting schedules that depend on the token list date can start
