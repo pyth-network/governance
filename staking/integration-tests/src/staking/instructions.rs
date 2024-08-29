@@ -56,7 +56,7 @@ pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_tok
             governance_authority: payer.pubkey(),
             pyth_token_mint,
             pyth_governance_realm: MAINNET_REALM_ID,
-            unlocking_duration: 1,
+            removed_unlocking_duration: 1,
             epoch_duration: EPOCH_DURATION,
             freeze: false,
             pda_authority: payer.pubkey(),

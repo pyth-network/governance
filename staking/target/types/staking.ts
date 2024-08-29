@@ -2627,7 +2627,7 @@ export type Staking = {
             "type": "pubkey"
           },
           {
-            "name": "unlockingDuration",
+            "name": "removedUnlockingDuration",
             "type": "u8"
           },
           {
