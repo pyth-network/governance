@@ -193,21 +193,21 @@ fn test_pool_authority() {
         system_program: system_program::ID,
     };
 
-    let create_position_ix = Instruction::new_with_bytes(
+    let close_position_ix = Instruction::new_with_bytes(
         staking::ID,
         &close_position_data.data(),
         close_position_accs.to_account_metas(None),
     );
 
-    let create_position_tx = Transaction::new_signed_with_payer(
-        &[create_position_ix],
+    let close_position_tx = Transaction::new_signed_with_payer(
+        &[close_position_ix],
         Some(&payer.pubkey()),
         &[&payer, &pool_authority],
         svm.latest_blockhash(),
     );
 
     assert_anchor_program_error!(
-        svm.send_transaction(create_position_tx),
+        svm.send_transaction(close_position_tx),
         ErrorCode::UnexpectedTargetAccount,
         0
     );
