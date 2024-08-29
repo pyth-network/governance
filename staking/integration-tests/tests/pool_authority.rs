@@ -14,6 +14,7 @@ use {
         staking::{
             helper_functions::initialize_new_stake_account,
             instructions::{
+                close_position,
                 create_position,
                 update_pool_authority,
             },
@@ -127,6 +128,76 @@ fn test_pool_authority() {
         create_position_accs.to_account_metas(None),
     );
 
+
+    let create_position_tx = Transaction::new_signed_with_payer(
+        &[create_position_ix],
+        Some(&payer.pubkey()),
+        &[&payer, &pool_authority],
+        svm.latest_blockhash(),
+    );
+
+    assert_anchor_program_error!(
+        svm.send_transaction(create_position_tx),
+        ErrorCode::UnexpectedTargetAccount,
+        0
+    );
+
+    assert_anchor_program_error!(
+        close_position(
+            &mut svm,
+            &payer,
+            stake_account_positions,
+            staking::state::positions::TargetWithParameters::IntegrityPool {
+                publisher: publisher_keypair.pubkey(),
+            },
+            None,
+            50 * FRAC_64_MULTIPLIER,
+            1,
+        ),
+        ErrorCode::InvalidPoolAuthority,
+        0
+    );
+
+    assert_anchor_program_error!(
+        close_position(
+            &mut svm,
+            &payer,
+            stake_account_positions,
+            staking::state::positions::TargetWithParameters::IntegrityPool {
+                publisher: publisher_keypair.pubkey(),
+            },
+            Some(&Keypair::new()),
+            50 * FRAC_64_MULTIPLIER,
+            1,
+        ),
+        ErrorCode::InvalidPoolAuthority,
+        0
+    );
+
+    let close_position_data = staking::instruction::ClosePosition {
+        target_with_parameters: staking::state::positions::TargetWithParameters::IntegrityPool {
+            publisher: publisher_keypair.pubkey(),
+        },
+        amount:                 10 * FRAC_64_MULTIPLIER,
+        index:                  1,
+    };
+
+    let close_position_accs = staking::accounts::ClosePosition {
+        config: config_pubkey,
+        stake_account_metadata,
+        stake_account_positions,
+        stake_account_custody,
+        owner: payer.pubkey(),
+        target_account: Some(voting_target_account),
+        pool_authority: Some(pool_authority.pubkey()),
+        system_program: system_program::ID,
+    };
+
+    let create_position_ix = Instruction::new_with_bytes(
+        staking::ID,
+        &close_position_data.data(),
+        close_position_accs.to_account_metas(None),
+    );
 
     let create_position_tx = Transaction::new_signed_with_payer(
         &[create_position_ix],
