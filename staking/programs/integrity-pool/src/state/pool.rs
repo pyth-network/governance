@@ -14,7 +14,6 @@ use {
             types::{
                 frac64,
                 BoolArray,
-                FRAC_64_MULTIPLIER,
                 FRAC_64_MULTIPLIER_U128,
             },
         },
