@@ -251,12 +251,18 @@ export class StakeConnection {
     user: PublicKey
   ): Promise<StakeAccount | undefined> {
     const accounts = await this.getStakeAccounts(user);
+
     if (accounts.length == 0) {
       return undefined;
     } else {
+      let currentTime = await this.getTime();
       return accounts.reduce(
         (prev: StakeAccount, curr: StakeAccount): StakeAccount => {
-          return prev.tokenBalance.lt(curr.tokenBalance) ? curr : prev;
+          return prev
+            .getVoterWeight(currentTime)
+            .lt(curr.getVoterWeight(currentTime))
+            ? curr
+            : prev;
         }
       );
     }
