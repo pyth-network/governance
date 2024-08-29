@@ -13,14 +13,13 @@ use {
 pub fn compute_voter_weight(
     stake_account_positions: &DynamicPositionArray,
     current_epoch: u64,
-    unlocking_duration: u8,
     current_locked: u64,
     total_supply: u64,
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
     for i in 0..stake_account_positions.get_position_capacity() {
         if let Some(position) = stake_account_positions.read_position(i)? {
-            match position.get_current_position(current_epoch, unlocking_duration)? {
+            match position.get_current_position(current_epoch)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
                         // position.amount is trusted, so I don't think this can overflow,
@@ -104,19 +103,19 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 0, 100, 150).unwrap();
         assert_eq!(weight, 0);
 
-        let weight = compute_voter_weight(&pd, 1, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 1, 100, 150).unwrap();
         assert_eq!(weight, 7 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 2, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 2, 100, 150).unwrap();
         assert_eq!(weight, 12 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 3, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 3, 100, 150).unwrap();
         assert_eq!(weight, 8 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 4, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 4, 100, 150).unwrap();
         assert_eq!(weight, 3 * 150 / 100);
     }
 
@@ -135,7 +134,7 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
+        let weight = compute_voter_weight(&pd, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
     }
 
@@ -154,7 +153,7 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
+        let weight = compute_voter_weight(&pd, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);
     }
 }

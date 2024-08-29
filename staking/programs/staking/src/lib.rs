@@ -52,14 +52,12 @@ pub mod staking {
     /// Creates a global config for the program
     use super::*;
 
-
     pub fn init_config(ctx: Context<InitConfig>, global_config: GlobalConfig) -> Result<()> {
         let config_account = &mut ctx.accounts.config_account;
         config_account.bump = ctx.bumps.config_account;
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
-        config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
         config_account.pda_authority = global_config.pda_authority;
@@ -227,7 +225,6 @@ pub mod staking {
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
-            config.unlocking_duration,
         )?;
 
         if let Some(target_account) = maybe_target_account {
@@ -262,7 +259,6 @@ pub mod staking {
 
         stake_account_positions.merge_target_positions(
             current_epoch,
-            config.unlocking_duration,
             &mut stake_account_metadata.next_index,
             target_with_parameters,
         )?;
@@ -322,7 +318,7 @@ pub mod staking {
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::AmountBiggerThanPosition))?;
 
-        match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
+        match current_position.get_current_position(current_epoch)? {
             PositionState::LOCKED => {
                 // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
@@ -434,7 +430,6 @@ pub mod staking {
             remaining_balance,
             unvested_balance,
             current_epoch,
-            config.unlocking_duration,
         )
         .is_err()
         {
@@ -457,7 +452,6 @@ pub mod staking {
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
             current_epoch,
-            config.unlocking_duration,
         )
         .is_err()
         {
@@ -500,7 +494,6 @@ pub mod staking {
             stake_account_custody.amount,
             unvested_balance,
             current_epoch,
-            config.unlocking_duration,
         )?;
 
         let epoch_of_snapshot: u64;
@@ -573,7 +566,6 @@ pub mod staking {
         voter_record.voter_weight = compute_voter_weight(
             stake_account_positions,
             epoch_of_snapshot,
-            config.unlocking_duration,
             governance_target.get_current_amount_locked(epoch_of_snapshot)?,
             MAX_VOTER_WEIGHT,
         )?;
@@ -688,7 +680,6 @@ pub mod staking {
                     config.pyth_token_list_time,
                 )?,
             current_epoch,
-            config.unlocking_duration,
         )?;
 
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
@@ -743,7 +734,6 @@ pub mod staking {
                     config.pyth_token_list_time,
                 )?,
             current_epoch,
-            config.unlocking_duration,
         )?;
 
         utils::risk::validate(
@@ -757,7 +747,6 @@ pub mod staking {
                     config.pyth_token_list_time,
                 )?,
             current_epoch,
-            config.unlocking_duration,
         )?;
 
         // Delete current request
@@ -817,7 +806,6 @@ pub mod staking {
         let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
 
         let current_epoch = get_current_epoch(&ctx.accounts.config)?;
-        let unlocking_duration = ctx.accounts.config.unlocking_duration;
 
         let SlashedAmounts {
             total_slashed,
@@ -825,7 +813,6 @@ pub mod staking {
             preunlocking_slashed,
         } = stake_account_positions.slash_positions(
             current_epoch,
-            unlocking_duration,
             next_index,
             ctx.accounts.stake_account_custody.amount,
             publisher.key,

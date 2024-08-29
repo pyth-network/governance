@@ -55,22 +55,20 @@ impl WasmPositionData {
         &self,
         index: u16,
         current_epoch: u64,
-        unlocking_duration: u8,
     ) -> Result<PositionState, JsValue> {
-        convert_error(self.get_position_state_impl(index, current_epoch, unlocking_duration))
+        convert_error(self.get_position_state_impl(index, current_epoch))
     }
     fn get_position_state_impl(
         &self,
         index: u16,
         current_epoch: u64,
-        unlocking_duration: u8,
     ) -> anchor_lang::Result<PositionState> {
         let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         account
             .to_dynamic_position_array()
             .read_position(index as usize)?
             .ok_or_else(|| error!(ErrorCode::PositionNotInUse))?
-            .get_current_position(current_epoch, unlocking_duration)
+            .get_current_position(current_epoch)
     }
     #[wasm_bindgen(js_name=isPositionVoting)]
     pub fn is_position_voting(&self, index: u16) -> Result<bool, JsValue> {
@@ -93,14 +91,12 @@ impl WasmPositionData {
     pub fn get_locked_balance_summary(
         &self,
         current_epoch: u64,
-        unlocking_duration: u8,
     ) -> Result<LockedBalanceSummary, JsValue> {
-        convert_error(self.get_locked_balance_summary_impl(current_epoch, unlocking_duration))
+        convert_error(self.get_locked_balance_summary_impl(current_epoch))
     }
     fn get_locked_balance_summary_impl(
         &self,
         current_epoch: u64,
-        unlocking_duration: u8,
     ) -> anchor_lang::Result<LockedBalanceSummary> {
         let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         let positions = account.to_dynamic_position_array();
@@ -112,7 +108,7 @@ impl WasmPositionData {
 
         for i in 0..positions.get_position_capacity() {
             if let Some(position) = positions.read_position(i)? {
-                match position.get_current_position(current_epoch, unlocking_duration)? {
+                match position.get_current_position(current_epoch)? {
                     PositionState::LOCKING => {
                         locking = locking
                             .checked_add(position.amount)
@@ -149,14 +145,12 @@ impl WasmPositionData {
     pub fn get_voter_weight(
         &self,
         current_epoch: u64,
-        unlocking_duration: u8,
         current_locked: u64,
     ) -> Result<u64, JsValue> {
         let mut account = DynamicPositionArrayAccount::default_with_data(&self.wrapped);
         convert_error(crate::utils::voter_weight::compute_voter_weight(
             &account.to_dynamic_position_array(),
             current_epoch,
-            unlocking_duration,
             current_locked,
             MAX_VOTER_WEIGHT,
         ))

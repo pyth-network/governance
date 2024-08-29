@@ -45,7 +45,6 @@ use {
     integrity_pool::{
         state::pool::PoolData,
         utils::{
-            clock::UNLOCKING_DURATION,
             constants::MAX_PUBLISHERS,
             types::FRAC_64_MULTIPLIER,
         },
@@ -334,7 +333,7 @@ fn sanity_check_publisher(
         for i in 0..positions.get_position_capacity() {
             if let Some(position) = positions.read_position(i).unwrap() {
                 let position_state = position
-                    .get_current_position(get_current_epoch(svm), UNLOCKING_DURATION)
+                    .get_current_position(get_current_epoch(svm))
                     .unwrap();
                 if matches!(position, Position {
                         target_with_parameters: TargetWithParameters::IntegrityPool { publisher: p, .. },
@@ -518,7 +517,7 @@ fn test_stability(props: StabilityTestProps) {
                 for i in 0..positions.get_position_capacity() {
                     if let Some(position) = positions.read_position(i).unwrap() {
                         let position_state = position
-                            .get_current_position(get_current_epoch(&mut svm), UNLOCKING_DURATION)
+                            .get_current_position(get_current_epoch(&mut svm))
                             .unwrap();
                         if matches!(position, Position {
                                 target_with_parameters: TargetWithParameters::IntegrityPool { publisher: p, .. },
@@ -682,7 +681,7 @@ fn test_stability(props: StabilityTestProps) {
                 for i in 0..positions.get_position_capacity() {
                     if let Some(position) = positions.read_position(i).unwrap() {
                         let position_state = position
-                            .get_current_position(get_current_epoch(&mut svm), UNLOCKING_DURATION)
+                            .get_current_position(get_current_epoch(&mut svm))
                             .unwrap();
                         if matches!(
                             position,
