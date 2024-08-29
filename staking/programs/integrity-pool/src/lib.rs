@@ -45,7 +45,7 @@ pub mod integrity_pool {
         pool_config.y = y;
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
-        pool_data.last_updated_epoch = get_current_epoch()?;
+        pool_data.last_updated_epoch = get_current_epoch()? - 1;
 
         Ok(())
     }

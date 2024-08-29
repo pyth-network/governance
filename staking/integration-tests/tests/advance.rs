@@ -180,25 +180,29 @@ fn test_advance_reward_events() {
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
-    assert_eq!(pool_data.events[0].epoch, 1);
+    assert_eq!(pool_data.events[0].epoch, 0);
     assert_eq!(pool_data.events[0].y, YIELD);
     assert_eq!(pool_data.events[0].event_data[0].other_reward_ratio, 0);
     assert_eq!(pool_data.events[0].event_data[0].self_reward_ratio, 0);
-    assert_eq!(pool_data.events[1].epoch, 2);
+    assert_eq!(pool_data.events[1].epoch, 1);
     assert_eq!(pool_data.events[1].y, YIELD);
     assert_eq!(pool_data.events[1].event_data[0].other_reward_ratio, 0);
     assert_eq!(pool_data.events[1].event_data[0].self_reward_ratio, 0);
-    assert_eq!(pool_data.events[2].epoch, 3);
+    assert_eq!(pool_data.events[2].epoch, 2);
     assert_eq!(pool_data.events[2].y, YIELD);
+    assert_eq!(pool_data.events[2].event_data[0].other_reward_ratio, 0);
+    assert_eq!(pool_data.events[2].event_data[0].self_reward_ratio, 0);
+    assert_eq!(pool_data.events[3].epoch, 3);
+    assert_eq!(pool_data.events[3].y, YIELD);
     assert_eq!(
-        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
+        pool_data.events[3].event_data[publisher_index].other_reward_ratio,
         1_000_000
     );
     assert_eq!(
-        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
+        pool_data.events[3].event_data[publisher_index].self_reward_ratio,
         0
     );
-    for i in 3..11 {
+    for i in 4..12 {
         assert_eq!(
             pool_data.events[i].event_data[publisher_index].other_reward_ratio,
             500_000,
@@ -207,10 +211,10 @@ fn test_advance_reward_events() {
             pool_data.events[i].event_data[publisher_index].self_reward_ratio,
             0
         );
-        assert_eq!(pool_data.events[i].epoch, STARTING_EPOCH + i as u64 - 1);
+        assert_eq!(pool_data.events[i].epoch, STARTING_EPOCH + i as u64 - 2);
         assert_eq!(pool_data.events[i].y, YIELD);
     }
-    for i in 11..MAX_EVENTS {
+    for i in 12..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())
     }
 }
@@ -291,18 +295,18 @@ fn test_reward_events_with_delegation_fee() {
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
-    assert_eq!(pool_data.events[2].epoch, 3);
-    assert_eq!(pool_data.events[2].y, YIELD);
+    assert_eq!(pool_data.events[3].epoch, 3);
+    assert_eq!(pool_data.events[3].y, YIELD);
     assert_eq!(
-        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
+        pool_data.events[3].event_data[publisher_index].other_reward_ratio,
         FRAC_64_MULTIPLIER,
     );
     assert_eq!(
-        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
+        pool_data.events[3].event_data[publisher_index].self_reward_ratio,
         FRAC_64_MULTIPLIER,
     );
     assert_eq!(
-        pool_data.events[2].event_data[publisher_index].delegation_fee,
+        pool_data.events[3].event_data[publisher_index].delegation_fee,
         FRAC_64_MULTIPLIER / 20,
     );
 
