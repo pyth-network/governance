@@ -257,7 +257,6 @@ impl PoolData {
         let epochs_passed = current_epoch - self.last_updated_epoch;
         let mut i = 0;
 
-        let mut total_eligible_delegation = 0;
         while i < MAX_PUBLISHERS && self.publishers[i] != Pubkey::default() {
             let cap_index = publisher_caps
                 .caps()
