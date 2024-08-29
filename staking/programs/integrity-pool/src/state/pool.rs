@@ -69,8 +69,17 @@ pub struct EligibleDelegationData {
     pub other_eligible_delegation: u64,
 }
 
+pub struct RewardRatios {
+    pub self_reward_ratio:  frac64,
+    pub other_reward_ratio: frac64,
+}
+
 impl EligibleDelegationData {
-    pub fn new(self_delegation: u64, other_delegation: u64, publisher_cap: u64) -> Self {
+    pub fn from_delegation_data(
+        self_delegation: u64,
+        other_delegation: u64,
+        publisher_cap: u64,
+    ) -> Self {
         let self_eligible_delegation = min(publisher_cap, self_delegation);
         let other_eligible_delegation =
             min(publisher_cap - self_eligible_delegation, other_delegation);
@@ -82,7 +91,7 @@ impl EligibleDelegationData {
         }
     }
 
-    pub fn get_reward_ratios(&self) -> Result<(u64, u64)> {
+    pub fn get_reward_ratios(&self) -> Result<RewardRatios> {
         let self_reward_ratio: frac64 = (FRAC_64_MULTIPLIER_U128
             * u128::from(self.self_eligible_delegation))
         .checked_div(u128::from(self.self_delegation))
@@ -93,7 +102,10 @@ impl EligibleDelegationData {
         .checked_div(u128::from(self.other_delegation))
         .unwrap_or(0)
         .try_into()?;
-        Ok((self_reward_ratio, other_reward_ratio))
+        Ok(RewardRatios {
+            self_reward_ratio,
+            other_reward_ratio,
+        })
     }
 
     pub fn get_total_eligible_delegation(&self) -> u64 {
@@ -261,7 +273,7 @@ impl PoolData {
 
             // create the reward event for last_updated_epoch using current del_state before
             // updating which corresponds to del_state at the last_updated_epoch
-            let eligible_delegation_data = EligibleDelegationData::new(
+            let eligible_delegation_data = EligibleDelegationData::from_delegation_data(
                 self.self_del_state[i].total_delegation,
                 self.del_state[i].total_delegation,
                 publisher_cap,
@@ -291,7 +303,7 @@ impl PoolData {
 
             // for every event that was missed, create a reward event using del_state after update
             // which corresponds to the del_state of all the epochs after last_updated_epoch
-            let eligible_delegation_data = EligibleDelegationData::new(
+            let eligible_delegation_data = EligibleDelegationData::from_delegation_data(
                 self.self_del_state[i].total_delegation,
                 self.del_state[i].total_delegation,
                 publisher_cap,
@@ -358,14 +370,14 @@ impl PoolData {
         &mut self,
         epoch_from: u64,
         epoch_to: u64,
-        reward_ratios: (u64, u64),
+        reward_ratios: RewardRatios,
         publisher_index: usize,
     ) -> Result<()> {
         for epoch in epoch_from..epoch_to {
             self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?)
                 .event_data[publisher_index] = PublisherEventData {
-                self_reward_ratio:  reward_ratios.0,
-                other_reward_ratio: reward_ratios.1,
+                self_reward_ratio:  reward_ratios.self_reward_ratio,
+                other_reward_ratio: reward_ratios.other_reward_ratio,
                 delegation_fee:     self.delegation_fees[publisher_index],
             };
         }
