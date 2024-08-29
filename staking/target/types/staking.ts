@@ -1210,10 +1210,7 @@ export type Staking = {
         {
           "name": "owner",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "stakeAccountMetadata"
-          ]
+          "signer": true
         },
         {
           "name": "stakeAccountPositions",

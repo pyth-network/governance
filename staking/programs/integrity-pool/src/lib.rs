@@ -304,7 +304,6 @@ pub mod integrity_pool {
             &publisher.key(),
             get_current_epoch()?,
         )?;
-        pool_data.claimable_rewards -= delegator_reward + publisher_reward;
 
         // transfer delegator reward from pool_reward_custody to stake_account_custody
         let cpi_accounts = anchor_spl::token::Transfer {

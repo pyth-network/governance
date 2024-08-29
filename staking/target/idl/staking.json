@@ -1204,10 +1204,7 @@
         {
           "name": "owner",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "stake_account_metadata"
-          ]
+          "signer": true
         },
         {
           "name": "stake_account_positions",
