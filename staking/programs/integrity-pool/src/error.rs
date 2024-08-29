@@ -30,4 +30,6 @@ pub enum IntegrityPoolError {
     #[msg("Delegation fee must not be greater than 100%")]
     InvalidDelegationFee,
     InvalidPublisher,
+    #[msg("Y should not be greater than 1%")]
+    InvalidY,
 }
