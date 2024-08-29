@@ -456,7 +456,6 @@ pub struct PoolConfig {
     pub reward_program_authority: Pubkey,
     pub pyth_token_mint:          Pubkey,
     pub y:                        frac64,
-    pub unclaimed_rewards:        u64, // an upper bound on the number of unclaimed rewards
 }
 
 impl PoolConfig {
@@ -478,9 +477,6 @@ mod tests {
         },
         staking::state::positions::DynamicPositionArrayAccount,
     };
-
-    pub const YIELD: frac64 = FRAC_64_MULTIPLIER / 100;
-
 
     #[test]
     #[allow(deprecated)]
