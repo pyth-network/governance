@@ -367,9 +367,12 @@ impl PoolData {
     pub fn adjust_rewards_if_needed(
         &self,
         y: u64,
-        rewards_to_be_distributed: u64,
+        total_eligible_delegation: u64,
         pool_reward_custody_balance: u64,
     ) -> Result<(u64, u64)> {
+        let rewards_to_be_distributed: u64 =
+            ((u128::from(total_eligible_delegation) * u128::from(y)) / FRAC_64_MULTIPLIER_U128)
+                .try_into()?;
         if rewards_to_be_distributed + self.claimable_rewards > pool_reward_custody_balance {
             let adjusted_y = ((u128::from(y)
                 * u128::from(pool_reward_custody_balance - self.claimable_rewards))

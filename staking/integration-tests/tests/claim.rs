@@ -14,6 +14,7 @@ use {
             SetupProps,
             SetupResult,
         },
+        solana::utils::fetch_account_data_bytemuck,
         staking::{
             helper_functions::initialize_new_stake_account,
             pda::get_stake_account_custody_address,
@@ -26,7 +27,10 @@ use {
             },
         },
     },
-    integrity_pool::utils::types::FRAC_64_MULTIPLIER,
+    integrity_pool::{
+        state::pool::PoolData,
+        utils::types::FRAC_64_MULTIPLIER,
+    },
     solana_sdk::{
         signature::Keypair,
         signer::Signer,
@@ -76,6 +80,9 @@ fn test_claim() {
     );
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
+
     advance_delegation_record(
         &mut svm,
         &payer,
@@ -111,6 +118,10 @@ fn test_claim() {
         1 * FRAC_64_MULTIPLIER / 2,
     );
     advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    // there are claimable rewards now
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, YIELD * 1 / 2);
 
     advance_delegation_record(
         &mut svm,
