@@ -2,13 +2,16 @@ use {
     anchor_lang::AccountDeserialize,
     integration_tests::{
         assert_anchor_program_error,
-        integrity_pool::instructions::{
-            advance,
-            advance_delegation_record,
-            delegate,
-            set_publisher_stake_account,
-            undelegate,
-            update_delegation_fee,
+        integrity_pool::{
+            instructions::{
+                advance,
+                advance_delegation_record,
+                delegate,
+                set_publisher_stake_account,
+                undelegate,
+                update_delegation_fee,
+            },
+            pda::get_pool_reward_custody_address,
         },
         publisher_caps::{
             helper_functions::post_dummy_publisher_caps,
@@ -20,7 +23,10 @@ use {
             SetupResult,
             STARTING_EPOCH,
         },
-        solana::utils::fetch_account_data_bytemuck,
+        solana::{
+            instructions::airdrop_spl,
+            utils::fetch_account_data_bytemuck,
+        },
         staking::{
             helper_functions::initialize_new_stake_account,
             pda::get_stake_account_custody_address,
@@ -67,11 +73,12 @@ fn test_advance() {
         reward_program_authority: _,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let publisher_index = maybe_publisher_index.unwrap();
@@ -126,11 +133,12 @@ fn test_advance_reward_events() {
         reward_program_authority: _,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let publisher_index = maybe_publisher_index.unwrap();
@@ -231,11 +239,12 @@ fn test_reward_events_with_delegation_fee() {
         reward_program_authority,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
     let publisher_index = maybe_publisher_index.unwrap();
 
@@ -393,11 +402,12 @@ fn test_reward_after_undelegate() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =
@@ -478,4 +488,106 @@ fn test_reward_after_undelegate() {
 
     // reward should be given even when it's undelegating
     assert_eq!(custody_data.amount, STAKED_TOKENS + 50 * YIELD);
+}
+
+#[test]
+fn test_not_enough_rewards() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        publisher_keypair,
+        pool_data_pubkey,
+        reward_program_authority: _,
+        maybe_publisher_index,
+    } = setup(SetupProps {
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: Some(FRAC_64_MULTIPLIER * 2),
+    });
+
+    let publisher_index = maybe_publisher_index.unwrap();
+    let stake_account_positions =
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        STAKED_TOKENS,
+    )
+    .unwrap();
+
+    advance_n_epochs(&mut svm, &payer, 1);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
+
+    let publisher_caps = post_dummy_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        STAKED_TOKENS * 2,
+    );
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    delegate(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+        STAKED_TOKENS,
+    )
+    .unwrap();
+
+    // not enough rewards
+    advance_n_epochs(&mut svm, &payer, 8);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
+
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    // nothing left
+    advance_n_epochs(&mut svm, &payer, 1);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
+
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+
+    assert_eq!(pool_data.events[0].epoch, 0);
+    assert_eq!(pool_data.events[0].y, YIELD);
+    assert_eq!(pool_data.events[0].event_data[0].other_reward_ratio, 0);
+    assert_eq!(pool_data.events[0].event_data[0].self_reward_ratio, 0);
+    assert_eq!(pool_data.events[1].epoch, 1);
+    assert_eq!(pool_data.events[1].y, YIELD);
+    assert_eq!(pool_data.events[1].event_data[0].other_reward_ratio, 0);
+    assert_eq!(pool_data.events[1].event_data[0].self_reward_ratio, 0);
+    assert_eq!(pool_data.events[2].epoch, 2);
+    assert_eq!(pool_data.events[2].y, YIELD);
+    assert_eq!(pool_data.events[2].event_data[0].other_reward_ratio, 0);
+    assert_eq!(pool_data.events[2].event_data[0].self_reward_ratio, 0);
+    assert_eq!(pool_data.events[3].y, YIELD);
+    assert_eq!(pool_data.events[3].event_data[0].other_reward_ratio, 0);
+    assert_eq!(pool_data.events[3].event_data[0].self_reward_ratio, 0);
+
+    for i in 4..11 {
+        assert_eq!(pool_data.events[i].epoch, i as u64);
+        assert_eq!(pool_data.events[i].y, YIELD / 15);
+    }
+
+    assert_eq!(pool_data.events[12].epoch, 12);
+    assert_eq!(pool_data.events[12].y, 0);
+
+
+    for i in 12..MAX_EVENTS {
+        assert_eq!(pool_data.events[i], Event::default())
+    }
 }

@@ -19,6 +19,7 @@ pub fn initialize_pool_reward_custody(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     pyth_token_mint: &Keypair,
+    reward_amount_override: Option<u64>,
 ) {
     let pool_config_pubkey = get_pool_config_address();
 
@@ -30,6 +31,6 @@ pub fn initialize_pool_reward_custody(
         payer,
         get_pool_reward_custody_address(pyth_token_mint.pubkey()),
         pyth_token_mint,
-        1_000_000 * FRAC_64_MULTIPLIER,
+        reward_amount_override.unwrap_or(1_000_000 * FRAC_64_MULTIPLIER),
     );
 }

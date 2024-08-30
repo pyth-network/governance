@@ -40,11 +40,12 @@ pub struct SetupResult {
 }
 
 pub struct SetupProps {
-    pub init_config:     bool,
-    pub init_target:     bool,
-    pub init_mint:       bool,
-    pub init_pool_data:  bool,
-    pub init_publishers: bool,
+    pub init_config:            bool,
+    pub init_target:            bool,
+    pub init_mint:              bool,
+    pub init_pool_data:         bool,
+    pub init_publishers:        bool,
+    pub reward_amount_override: Option<u64>,
 }
 
 pub fn setup(props: SetupProps) -> SetupResult {
@@ -54,6 +55,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
         init_mint,
         init_pool_data,
         init_publishers,
+        reward_amount_override,
     } = props;
 
     let pyth_token_mint = Keypair::new();
@@ -106,7 +108,7 @@ pub fn setup(props: SetupProps) -> SetupResult {
 
     advance_n_epochs(&mut svm, &payer, 1);
     if init_publishers {
-        initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint);
+        initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint, reward_amount_override);
         let publisher_caps =
             post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 100);
         advance(&mut svm, &payer, publisher_caps).unwrap();

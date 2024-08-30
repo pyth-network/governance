@@ -41,11 +41,12 @@ fn initialize_pool() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     // Pool data should be setup correctly
@@ -77,11 +78,12 @@ fn test_update_y() {
         reward_program_authority,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let pool_config_pubkey = get_pool_config_address();

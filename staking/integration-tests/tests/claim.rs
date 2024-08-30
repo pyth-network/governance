@@ -48,11 +48,12 @@ fn test_claim() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =
@@ -143,6 +144,10 @@ fn test_claim() {
     )
     .unwrap();
 
+    // we claimed everything
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
+
     // duting epoch x + 2, the reward for epoch x + 1 can be claimed
     // y = YIELD, cap = 0.5 PYTH, delegated = 1 PYTH
     // reward = cap * YIELD
@@ -161,6 +166,10 @@ fn test_claim() {
     );
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
+    // claimable rewards matches what we are going to distribute
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 3 * YIELD * 1);
+
     advance_delegation_record(
         &mut svm,
         &payer,
@@ -171,6 +180,10 @@ fn test_claim() {
         None,
     )
     .unwrap();
+
+    // we claimed everything
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
 
     let custody_data = anchor_spl::token::TokenAccount::try_deserialize(
         &mut svm
@@ -201,11 +214,12 @@ fn test_lost_reward() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =
@@ -275,11 +289,12 @@ fn test_correct_position_states() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =
@@ -365,11 +380,12 @@ fn test_advance_delegation_record_permissionlessness() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =
