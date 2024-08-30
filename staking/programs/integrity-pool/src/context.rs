@@ -123,7 +123,10 @@ pub struct Delegate<'info> {
 
 #[derive(Accounts)]
 pub struct MergeDelegationPositions<'info> {
-    pub owner: Signer<'info>,
+    /// CHECK : This instruction is permissionless, this account will be checked against
+    /// stake_account_metadata in the CPI
+    #[account(mut)]
+    pub owner: AccountInfo<'info>,
 
     pub pool_data: AccountLoader<'info, PoolData>,
 

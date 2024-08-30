@@ -206,8 +206,9 @@ pub struct CreatePosition<'info> {
 
 #[derive(Accounts)]
 pub struct MergeTargetPositions<'info> {
+    /// CHECK : This AccountInfo is safe because it's checked against stake_account_metadata
     #[account(mut)]
-    pub owner:                   Signer<'info>,
+    pub owner:                   AccountInfo<'info>,
     // Stake program accounts:
     #[account(mut)]
     pub stake_account_positions: AccountLoader<'info, positions::PositionData>,

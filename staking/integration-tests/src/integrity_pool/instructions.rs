@@ -42,6 +42,7 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
+    staking::state::stake_account::StakeAccountMetadataV2,
     std::convert::TryInto,
 };
 
@@ -304,10 +305,13 @@ pub fn merge_delegation_positions(
     let config_account = get_config_address();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
 
+    let stake_account_metadata_data: StakeAccountMetadataV2 =
+        fetch_account_data::<StakeAccountMetadataV2>(svm, &stake_account_metadata);
+
     let merge_delegation_positions_data = integrity_pool::instruction::MergeDelegationPositions {};
 
     let merge_delegation_positions_accs = integrity_pool::accounts::MergeDelegationPositions {
-        owner: payer.pubkey(),
+        owner: stake_account_metadata_data.owner,
         pool_data,
         pool_config: pool_config_pubkey,
         publisher,

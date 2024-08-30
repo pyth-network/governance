@@ -24,8 +24,10 @@ use {
     },
     integrity_pool::error::IntegrityPoolError,
     solana_sdk::{
+        native_token::LAMPORTS_PER_SOL,
         pubkey::Pubkey,
         rent::Rent,
+        signature::Keypair,
         signer::Signer,
     },
     staking::state::positions::{
@@ -467,5 +469,73 @@ fn test_merge_delegation_positions() {
     assert_eq!(
         stake_positions_account.data.len(),
         40 + 5 * POSITION_BUFFER_SIZE
+    );
+
+    //anyone can call merge_delegation_positions
+    let payer_2 = Keypair::new();
+    svm.airdrop(&payer_2.pubkey(), LAMPORTS_PER_SOL).unwrap();
+    merge_delegation_positions(
+        &mut svm,
+        &payer_2,
+        publisher_keypair.pubkey(),
+        pool_data_pubkey,
+        stake_account_positions,
+    )
+    .unwrap();
+
+    // account is unchanged
+    let mut stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+    let positions = stake_positions_account.to_dynamic_position_array();
+
+    let pos0 = positions.read_position(0).unwrap().unwrap();
+
+    assert_eq!(pos0.amount, 2);
+    assert_eq!(pos0.target_with_parameters, target_with_parameters);
+    assert_eq!(pos0.activation_epoch, STARTING_EPOCH + 1);
+    assert_eq!(pos0.unlocking_start, Some(STARTING_EPOCH + 3));
+
+    let pos1 = positions.read_position(1).unwrap().unwrap();
+
+    assert_eq!(pos1.amount, 11);
+    assert_eq!(pos1.target_with_parameters, target_with_parameters);
+    assert_eq!(pos1.activation_epoch, STARTING_EPOCH + 1);
+    assert_eq!(pos1.unlocking_start, None);
+
+
+    let pos2 = positions.read_position(2).unwrap().unwrap();
+
+    assert_eq!(pos2.amount, 3);
+    assert_eq!(pos2.target_with_parameters, TargetWithParameters::Voting);
+    assert_eq!(pos2.activation_epoch, STARTING_EPOCH + 1);
+    assert_eq!(pos2.unlocking_start, None);
+
+    let pos3 = positions.read_position(3).unwrap().unwrap();
+
+    assert_eq!(pos3.amount, 15);
+    assert_eq!(pos3.target_with_parameters, target_with_parameters);
+    assert_eq!(pos3.activation_epoch, STARTING_EPOCH + 3);
+    assert_eq!(pos3.unlocking_start, None);
+
+    let pos4 = positions.read_position(4).unwrap().unwrap();
+
+    assert_eq!(pos4.amount, 5);
+    assert_eq!(pos4.target_with_parameters, TargetWithParameters::Voting);
+    assert_eq!(pos4.activation_epoch, STARTING_EPOCH + 2);
+    assert_eq!(pos4.unlocking_start, None);
+
+    let balance = svm.get_balance(&stake_account_positions).unwrap();
+    let stake_positions_account = fetch_positions_account(&mut svm, &stake_account_positions);
+
+    assert_eq!(
+        balance,
+        Rent::default().minimum_balance(40 + 5 * POSITION_BUFFER_SIZE)
+    );
+    assert_eq!(
+        stake_positions_account.data.len(),
+        40 + 5 * POSITION_BUFFER_SIZE
+    );
+    assert_eq!(
+        svm.get_balance(&payer.pubkey()).unwrap(),
+        payer_balance_after
     );
 }

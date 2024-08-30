@@ -112,7 +112,7 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(Self { acc_info })
     }
 
-    pub fn adjust_rent_if_needed(&self, payer: &Signer<'a>) -> Result<()> {
+    pub fn adjust_rent_if_needed(&self, payer: &AccountInfo<'a>) -> Result<()> {
         let rent = Rent::get()?;
         let amount_required = rent.minimum_balance(self.data_len());
         let amount_to_transfer = amount_required.saturating_sub(self.acc_info.lamports());
