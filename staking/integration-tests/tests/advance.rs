@@ -506,7 +506,7 @@ fn test_not_enough_rewards() {
         init_mint:              true,
         init_pool_data:         true,
         init_publishers:        true,
-        reward_amount_override: Some(FRAC_64_MULTIPLIER * 2),
+        reward_amount_override: Some(FRAC_64_MULTIPLIER),
     });
 
     let publisher_index = maybe_publisher_index.unwrap();
@@ -548,44 +548,104 @@ fn test_not_enough_rewards() {
     advance_n_epochs(&mut svm, &payer, 8);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
 
-    let publisher_caps =
-        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps = post_dummy_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        STAKED_TOKENS * 2,
+    );
     advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    let expected_claimable = (STAKED_TOKENS * 15 * (YIELD / 15)) / FRAC_64_MULTIPLIER;
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, expected_claimable);
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
 
     // nothing left
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
 
-    let publisher_caps =
-        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
+    let publisher_caps = post_dummy_publisher_caps(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        STAKED_TOKENS * 2,
+    );
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
     assert_eq!(pool_data.events[0].epoch, 0);
     assert_eq!(pool_data.events[0].y, YIELD);
-    assert_eq!(pool_data.events[0].event_data[0].other_reward_ratio, 0);
-    assert_eq!(pool_data.events[0].event_data[0].self_reward_ratio, 0);
+    assert_eq!(
+        pool_data.events[0].event_data[publisher_index].other_reward_ratio,
+        0
+    );
+    assert_eq!(
+        pool_data.events[0].event_data[publisher_index].self_reward_ratio,
+        0
+    );
     assert_eq!(pool_data.events[1].epoch, 1);
     assert_eq!(pool_data.events[1].y, YIELD);
-    assert_eq!(pool_data.events[1].event_data[0].other_reward_ratio, 0);
-    assert_eq!(pool_data.events[1].event_data[0].self_reward_ratio, 0);
+    assert_eq!(
+        pool_data.events[1].event_data[publisher_index].other_reward_ratio,
+        0
+    );
+    assert_eq!(
+        pool_data.events[1].event_data[publisher_index].self_reward_ratio,
+        0
+    );
     assert_eq!(pool_data.events[2].epoch, 2);
     assert_eq!(pool_data.events[2].y, YIELD);
-    assert_eq!(pool_data.events[2].event_data[0].other_reward_ratio, 0);
-    assert_eq!(pool_data.events[2].event_data[0].self_reward_ratio, 0);
-    assert_eq!(pool_data.events[3].y, YIELD);
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
+        0
+    );
+    assert_eq!(
+        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
+        0
+    );
+    assert_eq!(pool_data.events[3].epoch, 3);
+    assert_eq!(pool_data.events[3].y, YIELD / 15);
     assert_eq!(pool_data.events[3].event_data[0].other_reward_ratio, 0);
-    assert_eq!(pool_data.events[3].event_data[0].self_reward_ratio, 0);
+    assert_eq!(
+        pool_data.events[3].event_data[publisher_index].other_reward_ratio,
+        1_000_000
+    );
+    assert_eq!(
+        pool_data.events[3].event_data[publisher_index].self_reward_ratio,
+        0
+    );
 
     for i in 4..11 {
         assert_eq!(pool_data.events[i].epoch, i as u64);
         assert_eq!(pool_data.events[i].y, YIELD / 15);
+        assert_eq!(
+            pool_data.events[3].event_data[publisher_index].other_reward_ratio,
+            1_000_000
+        );
+        assert_eq!(
+            pool_data.events[3].event_data[publisher_index].self_reward_ratio,
+            0
+        );
     }
 
-    assert_eq!(pool_data.events[12].epoch, 12);
-    assert_eq!(pool_data.events[12].y, 0);
-
+    let expected_yield =
+        (YIELD * (FRAC_64_MULTIPLIER - expected_claimable)) / (2 * FRAC_64_MULTIPLIER);
+    assert_eq!(pool_data.events[11].epoch, 11);
+    assert_eq!(pool_data.events[11].y, expected_yield);
 
     for i in 12..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())
