@@ -5,6 +5,7 @@ use {
     },
     crate::{
         error::IntegrityPoolError,
+        state::pool,
         utils::{
             clock::time_to_epoch,
             constants::{
@@ -226,6 +227,7 @@ impl PoolData {
         publisher_caps: &PublisherCaps,
         y: frac64,
         current_epoch: u64,
+        pool_reward_custody_balance: u64,
     ) -> Result<()> {
         let mut existing_publishers = BoolArray::new(MAX_CAPS);
 
@@ -246,16 +248,10 @@ impl PoolData {
             IntegrityPoolError::OutdatedPublisherCaps
         );
 
-        for epoch in self.last_updated_epoch..current_epoch {
-            let event =
-                self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?);
-            event.epoch = epoch;
-            event.y = y;
-        }
-
         let epochs_passed = current_epoch - self.last_updated_epoch;
         let mut i = 0;
 
+        let mut total_eligible_delegation: u64 = 0;
         while i < MAX_PUBLISHERS && self.publishers[i] != Pubkey::default() {
             let cap_index = publisher_caps
                 .caps()
@@ -283,6 +279,7 @@ impl PoolData {
                 i,
                 eligible_delegation_data.get_reward_ratios()?,
             )?;
+            total_eligible_delegation += eligible_delegation_data.get_total_eligible_delegation();
 
             self.del_state[i] = DelegationState {
                 total_delegation: (TryInto::<i64>::try_into(self.del_state[i].total_delegation)?
@@ -312,8 +309,24 @@ impl PoolData {
                 i,
                 eligible_delegation_data.get_reward_ratios()?,
             )?;
+            total_eligible_delegation +=
+                eligible_delegation_data.get_total_eligible_delegation() * (epochs_passed - 1);
             i += 1;
         }
+
+        let (adjusted_y, adjusted_rewards_to_be_distributed) = self.adjust_rewards_if_needed(
+            y,
+            total_eligible_delegation,
+            pool_reward_custody_balance,
+        )?;
+        for epoch in self.last_updated_epoch..current_epoch {
+            let event =
+                self.get_event_mut((self.num_events + epoch - self.last_updated_epoch).try_into()?);
+            event.epoch = epoch;
+            event.y = adjusted_y;
+        }
+        self.claimable_rewards += adjusted_rewards_to_be_distributed;
+
 
         for j in 0..publisher_caps.num_publishers() as usize {
             // Silently ignore if there are more publishers than MAX_PUBLISHERS
@@ -345,6 +358,30 @@ impl PoolData {
             };
         }
         Ok(())
+    }
+
+    /**
+     * Adjusts the rewards to be distributed if the pool reward custody balance is not enough to
+     * cover the rewards
+     */
+    pub fn adjust_rewards_if_needed(
+        &self,
+        y: u64,
+        rewards_to_be_distributed: u64,
+        pool_reward_custody_balance: u64,
+    ) -> Result<(u64, u64)> {
+        if rewards_to_be_distributed + self.claimable_rewards > pool_reward_custody_balance {
+            let adjusted_y = ((u128::from(y)
+                * u128::from(pool_reward_custody_balance - self.claimable_rewards))
+                / u128::from(rewards_to_be_distributed))
+            .try_into()?;
+            let adjusted_rewards_to_be_distributed =
+                ((u128::from(rewards_to_be_distributed) * u128::from(adjusted_y)) / u128::from(y))
+                    .try_into()?;
+            Ok((adjusted_y, adjusted_rewards_to_be_distributed))
+        } else {
+            Ok((y, rewards_to_be_distributed))
+        }
     }
 
     pub fn get_publisher_index(&self, publisher: &Pubkey) -> Result<usize> {
