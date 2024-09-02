@@ -5,7 +5,6 @@ use {
     },
     crate::{
         error::IntegrityPoolError,
-        state::pool,
         utils::{
             clock::time_to_epoch,
             constants::{
