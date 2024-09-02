@@ -1,5 +1,6 @@
 use {
     anchor_lang::AccountDeserialize,
+    anchor_spl::token::TokenAccount,
     integration_tests::{
         assert_anchor_program_error,
         integrity_pool::{
@@ -25,7 +26,10 @@ use {
         },
         solana::{
             instructions::airdrop_spl,
-            utils::fetch_account_data_bytemuck,
+            utils::{
+                fetch_account_data,
+                fetch_account_data_bytemuck,
+            },
         },
         staking::{
             helper_functions::initialize_new_stake_account,
@@ -512,26 +516,21 @@ fn test_not_enough_rewards() {
     let publisher_index = maybe_publisher_index.unwrap();
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
-
     delegate(
         &mut svm,
         &payer,
         publisher_keypair.pubkey(),
         pool_data_pubkey,
         stake_account_positions,
-        STAKED_TOKENS,
+        STAKED_TOKENS / 2,
     )
     .unwrap();
 
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 1);
 
-    let publisher_caps = post_dummy_publisher_caps(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        STAKED_TOKENS * 2,
-    );
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     delegate(
@@ -540,7 +539,7 @@ fn test_not_enough_rewards() {
         publisher_keypair.pubkey(),
         pool_data_pubkey,
         stake_account_positions,
-        STAKED_TOKENS,
+        STAKED_TOKENS / 2,
     )
     .unwrap();
 
@@ -548,41 +547,8 @@ fn test_not_enough_rewards() {
     advance_n_epochs(&mut svm, &payer, 8);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 9);
 
-    let publisher_caps = post_dummy_publisher_caps(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        STAKED_TOKENS * 2,
-    );
-    advance(&mut svm, &payer, publisher_caps).unwrap();
-
-    let expected_claimable = (STAKED_TOKENS * 15 * (YIELD / 15)) / FRAC_64_MULTIPLIER;
-    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
-    assert_eq!(pool_data.claimable_rewards, expected_claimable);
-
-    advance_delegation_record(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        stake_account_positions,
-        pyth_token_mint.pubkey(),
-        pool_data_pubkey,
-        None,
-    )
-    .unwrap();
-    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
-    assert_eq!(pool_data.claimable_rewards, 0);
-
-    // nothing left
-    advance_n_epochs(&mut svm, &payer, 1);
-    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
-
-    let publisher_caps = post_dummy_publisher_caps(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        STAKED_TOKENS * 2,
-    );
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
@@ -617,37 +583,157 @@ fn test_not_enough_rewards() {
         pool_data.events[2].event_data[publisher_index].self_reward_ratio,
         0
     );
-    assert_eq!(pool_data.events[3].epoch, 3);
-    assert_eq!(pool_data.events[3].y, YIELD / 15);
-    assert_eq!(pool_data.events[3].event_data[0].other_reward_ratio, 0);
-    assert_eq!(
-        pool_data.events[3].event_data[publisher_index].other_reward_ratio,
-        1_000_000
-    );
-    assert_eq!(
-        pool_data.events[3].event_data[publisher_index].self_reward_ratio,
-        0
-    );
 
-    for i in 4..11 {
+    for i in 3..11 {
         assert_eq!(pool_data.events[i].epoch, i as u64);
-        assert_eq!(pool_data.events[i].y, YIELD / 15);
+        assert_eq!(pool_data.events[i].y, 2 * YIELD / 15);
         assert_eq!(
-            pool_data.events[3].event_data[publisher_index].other_reward_ratio,
+            pool_data.events[i].event_data[publisher_index].other_reward_ratio,
             1_000_000
         );
         assert_eq!(
-            pool_data.events[3].event_data[publisher_index].self_reward_ratio,
+            pool_data.events[i].event_data[publisher_index].self_reward_ratio,
             0
         );
     }
 
+
+    for i in 11..MAX_EVENTS {
+        assert_eq!(pool_data.events[i], Event::default())
+    }
+
+    let expected_claimable_rewards =
+        (15 * (STAKED_TOKENS / 2) * (2 * YIELD / 15)) / FRAC_64_MULTIPLIER;
+    assert_eq!(expected_claimable_rewards, pool_data.claimable_rewards);
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
+
+    let remaining_rewards: u64 = fetch_account_data::<TokenAccount>(
+        &mut svm,
+        &get_pool_reward_custody_address(pyth_token_mint.pubkey()),
+    )
+    .amount;
+    assert_eq!(
+        remaining_rewards,
+        FRAC_64_MULTIPLIER - expected_claimable_rewards
+    ); // 250u64
+
+    // nothing left
+    advance_n_epochs(&mut svm, &payer, 1);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
+
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
     let expected_yield =
-        (YIELD * (FRAC_64_MULTIPLIER - expected_claimable)) / (2 * FRAC_64_MULTIPLIER);
+        (YIELD * remaining_rewards) / ((YIELD * STAKED_TOKENS) / FRAC_64_MULTIPLIER);
+    let expected_claimable_rewards_2 = (STAKED_TOKENS * expected_yield) / FRAC_64_MULTIPLIER;
+
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+
     assert_eq!(pool_data.events[11].epoch, 11);
     assert_eq!(pool_data.events[11].y, expected_yield);
-
+    assert_eq!(
+        pool_data.events[11].event_data[publisher_index].other_reward_ratio,
+        1_000_000
+    );
+    assert_eq!(
+        pool_data.events[11].event_data[publisher_index].self_reward_ratio,
+        0
+    );
     for i in 12..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())
     }
+
+    assert_eq!(expected_claimable_rewards_2, pool_data.claimable_rewards);
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
+
+
+    let remaining_rewards: u64 = fetch_account_data::<TokenAccount>(
+        &mut svm,
+        &get_pool_reward_custody_address(pyth_token_mint.pubkey()),
+    )
+    .amount;
+    assert_eq!(
+        remaining_rewards,
+        FRAC_64_MULTIPLIER - expected_claimable_rewards_2 - expected_claimable_rewards
+    ); // 50u64
+
+    // yield should be zero now
+    advance_n_epochs(&mut svm, &payer, 1);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 11);
+
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.events[12].epoch, 12);
+    assert_eq!(pool_data.events[12].y, 0);
+    assert_eq!(
+        pool_data.events[12].event_data[publisher_index].other_reward_ratio,
+        1_000_000
+    );
+    assert_eq!(
+        pool_data.events[12].event_data[publisher_index].self_reward_ratio,
+        0
+    );
+    for i in 13..MAX_EVENTS {
+        assert_eq!(pool_data.events[i], Event::default())
+    }
+    assert_eq!(pool_data.claimable_rewards, 0);
+
+    // now airdrop, back to normal
+    airdrop_spl(
+        &mut svm,
+        &payer,
+        get_pool_reward_custody_address(pyth_token_mint.pubkey()),
+        &pyth_token_mint,
+        FRAC_64_MULTIPLIER,
+    );
+    advance_n_epochs(&mut svm, &payer, 1);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 12);
+    let publisher_caps =
+        post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
+    advance(&mut svm, &payer, publisher_caps).unwrap();
+
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.events[13].epoch, 13);
+    assert_eq!(pool_data.events[13].y, YIELD);
+    assert_eq!(
+        pool_data.events[13].event_data[publisher_index].other_reward_ratio,
+        1_000_000
+    );
+    assert_eq!(
+        pool_data.events[13].event_data[publisher_index].self_reward_ratio,
+        0
+    );
+    for i in 14..MAX_EVENTS {
+        assert_eq!(pool_data.events[i], Event::default())
+    }
+    assert_eq!(pool_data.claimable_rewards, FRAC_64_MULTIPLIER);
 }

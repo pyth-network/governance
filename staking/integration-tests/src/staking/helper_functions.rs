@@ -48,7 +48,7 @@ pub fn initialize_new_stake_account(
             payer,
             stake_account_custody,
             pyth_token_mint,
-            STAKED_TOKENS * 2,
+            STAKED_TOKENS,
         );
     }
 

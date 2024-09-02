@@ -378,10 +378,11 @@ impl PoolData {
                 * u128::from(pool_reward_custody_balance - self.claimable_rewards))
                 / u128::from(rewards_to_be_distributed))
             .try_into()?;
-            let adjusted_rewards_to_be_distributed =
-                ((u128::from(rewards_to_be_distributed) * u128::from(adjusted_y)) / u128::from(y))
-                    .try_into()?;
-            Ok((adjusted_y, adjusted_rewards_to_be_distributed))
+            let adjusted_reward_to_be_distributed = ((u128::from(total_eligible_delegation)
+                * u128::from(adjusted_y))
+                / FRAC_64_MULTIPLIER_U128)
+                .try_into()?;
+            Ok((adjusted_y, adjusted_reward_to_be_distributed))
         } else {
             Ok((y, rewards_to_be_distributed))
         }
