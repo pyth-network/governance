@@ -419,12 +419,11 @@ fn test_stability(props: StabilityTestProps) {
         reward_program_authority,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:            true,
-        init_target:            true,
-        init_mint:              true,
-        init_pool_data:         true,
-        init_publishers:        false,
-        reward_amount_override: Some((MAX_DELEGATION_AMOUNT * Y) / FRAC_64_MULTIPLIER),
+        init_config:     true,
+        init_target:     true,
+        init_mint:       true,
+        init_pool_data:  true,
+        init_publishers: false,
     });
 
     props.delegators.iter().for_each(|delegator| {
@@ -447,7 +446,7 @@ fn test_stability(props: StabilityTestProps) {
         })
         .collect();
 
-    initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint, None);
+    initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint);
 
     update_y(&mut svm, &payer, &reward_program_authority, Y).unwrap();
 
@@ -731,6 +730,7 @@ fn test_stability(props: StabilityTestProps) {
 /// This stability test runs a large number of random operations on the integrity pool program.
 /// It takes more than 5 minutes to run and is disabled by default.
 #[test]
+#[ignore]
 fn quickcheck_stability() {
     QuickCheck::new()
         .tests(1)
