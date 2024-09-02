@@ -11,7 +11,7 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useSplitRequest } from 'hooks/useSplitRequest'
 
-async function getStakeAccountsPubkeys(user: PublicKey, stakeConnection : StakeConnection){
+export async function getStakeAccountsPubkeys(user: PublicKey, stakeConnection : StakeConnection){
   const program = stakeConnection.program;
   const res = await stakeConnection.program.provider.connection.getProgramAccounts(
     program.programId,
@@ -62,12 +62,10 @@ const ApproveSplit: NextPage = () => {
   const handleSelectStakeAccount = (event: any) => {
     const loadStakeAccount = async () => {
     if (stakeAccounts && stakeConnection){
-      for (const stakeAccount of stakeAccounts) {
-        if (stakeAccount.toString() === event.target.value) {
+        const stakeAccount = stakeAccounts.find(s => s.toString() === event.target.value)
+        if (stakeAccount) {
           setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccount))
-          break
         }
-      }
     }
     }
     loadStakeAccount()
@@ -78,7 +76,11 @@ const ApproveSplit: NextPage = () => {
       if (stakeConnection && anchorWallet && owner) {
         const stakeAccounts = await getStakeAccountsPubkeys(new PublicKey(owner), stakeConnection)
         setStakeAccounts(stakeAccounts)
-        setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccounts[0]))
+        if (stakeAccounts.length > 0){
+          setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccounts[0]))
+        } else {
+          setSelectStakeAccount(undefined)
+        }
       } else {
         setStakeAccounts(undefined)
       }
