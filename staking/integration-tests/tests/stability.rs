@@ -419,11 +419,12 @@ fn test_stability(props: StabilityTestProps) {
         reward_program_authority,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: false,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        false,
+        reward_amount_override: None,
     });
 
     props.delegators.iter().for_each(|delegator| {
@@ -446,7 +447,7 @@ fn test_stability(props: StabilityTestProps) {
         })
         .collect();
 
-    initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint);
+    initialize_pool_reward_custody(&mut svm, &payer, &pyth_token_mint, None);
 
     update_y(&mut svm, &payer, &reward_program_authority, Y).unwrap();
 

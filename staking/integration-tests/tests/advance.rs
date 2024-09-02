@@ -551,42 +551,28 @@ fn test_not_enough_rewards() {
         post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
-    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    let expected_yield =
+        YIELD * FRAC_64_MULTIPLIER / (((15 * STAKED_TOKENS / 2) * YIELD) / FRAC_64_MULTIPLIER); // 2 * Y / 15
+    let expected_claimable_rewards =
+        (15 * (STAKED_TOKENS / 2) * expected_yield) / FRAC_64_MULTIPLIER;
 
-    assert_eq!(pool_data.events[0].epoch, 0);
-    assert_eq!(pool_data.events[0].y, YIELD);
-    assert_eq!(
-        pool_data.events[0].event_data[publisher_index].other_reward_ratio,
-        0
-    );
-    assert_eq!(
-        pool_data.events[0].event_data[publisher_index].self_reward_ratio,
-        0
-    );
-    assert_eq!(pool_data.events[1].epoch, 1);
-    assert_eq!(pool_data.events[1].y, YIELD);
-    assert_eq!(
-        pool_data.events[1].event_data[publisher_index].other_reward_ratio,
-        0
-    );
-    assert_eq!(
-        pool_data.events[1].event_data[publisher_index].self_reward_ratio,
-        0
-    );
-    assert_eq!(pool_data.events[2].epoch, 2);
-    assert_eq!(pool_data.events[2].y, YIELD);
-    assert_eq!(
-        pool_data.events[2].event_data[publisher_index].other_reward_ratio,
-        0
-    );
-    assert_eq!(
-        pool_data.events[2].event_data[publisher_index].self_reward_ratio,
-        0
-    );
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    for i in 0..3 {
+        assert_eq!(pool_data.events[i].epoch, i as u64);
+        assert_eq!(pool_data.events[i].y, YIELD);
+        assert_eq!(
+            pool_data.events[i].event_data[publisher_index].other_reward_ratio,
+            0
+        );
+        assert_eq!(
+            pool_data.events[i].event_data[publisher_index].self_reward_ratio,
+            0
+        );
+    }
 
     for i in 3..11 {
         assert_eq!(pool_data.events[i].epoch, i as u64);
-        assert_eq!(pool_data.events[i].y, 2 * YIELD / 15);
+        assert_eq!(pool_data.events[i].y, expected_yield);
         assert_eq!(
             pool_data.events[i].event_data[publisher_index].other_reward_ratio,
             1_000_000
@@ -602,8 +588,6 @@ fn test_not_enough_rewards() {
         assert_eq!(pool_data.events[i], Event::default())
     }
 
-    let expected_claimable_rewards =
-        (15 * (STAKED_TOKENS / 2) * (2 * YIELD / 15)) / FRAC_64_MULTIPLIER;
     assert_eq!(expected_claimable_rewards, pool_data.claimable_rewards);
 
     advance_delegation_record(
@@ -616,6 +600,7 @@ fn test_not_enough_rewards() {
         None,
     )
     .unwrap();
+
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
     assert_eq!(pool_data.claimable_rewards, 0);
 
@@ -638,8 +623,8 @@ fn test_not_enough_rewards() {
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
     let expected_yield =
-        (YIELD * remaining_rewards) / ((YIELD * STAKED_TOKENS) / FRAC_64_MULTIPLIER);
-    let expected_claimable_rewards_2 = (STAKED_TOKENS * expected_yield) / FRAC_64_MULTIPLIER;
+        (YIELD * remaining_rewards) / ((YIELD * STAKED_TOKENS) / FRAC_64_MULTIPLIER); // 2u64
+    let expected_claimable_rewards_2 = (STAKED_TOKENS * expected_yield) / FRAC_64_MULTIPLIER; // 200u64
 
     let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
 
@@ -748,4 +733,17 @@ fn test_not_enough_rewards() {
         assert_eq!(pool_data.events[i], Event::default())
     }
     assert_eq!(pool_data.claimable_rewards, 2 * FRAC_64_MULTIPLIER);
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+    let pool_data = fetch_account_data_bytemuck::<PoolData>(&mut svm, &pool_data_pubkey);
+    assert_eq!(pool_data.claimable_rewards, 0);
 }
