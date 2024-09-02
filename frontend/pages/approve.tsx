@@ -62,12 +62,13 @@ const ApproveSplit: NextPage = () => {
   const handleSelectStakeAccount = (event: any) => {
     const loadStakeAccount = async () => {
     if (stakeAccounts && stakeConnection){
-      for (const stakeAccount of stakeAccounts) {
-        if (stakeAccount.toString() === event.target.value) {
+        const stakeAccount = stakeAccounts.find(s => s.toString() === event.target.value)
+        if (stakeAccount) {
           setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccount))
-          break
         }
-      }
+        else {
+          setSelectStakeAccount(undefined)
+        }
     }
     }
     loadStakeAccount()
@@ -78,7 +79,11 @@ const ApproveSplit: NextPage = () => {
       if (stakeConnection && anchorWallet && owner) {
         const stakeAccounts = await getStakeAccountsPubkeys(new PublicKey(owner), stakeConnection)
         setStakeAccounts(stakeAccounts)
-        setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccounts[0]))
+        if (stakeAccounts.length > 0){
+          setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccounts[0]))
+        } else {
+          setSelectStakeAccount(undefined)
+        }
       } else {
         setStakeAccounts(undefined)
       }
