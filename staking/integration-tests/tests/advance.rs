@@ -713,10 +713,10 @@ fn test_not_enough_rewards() {
         &payer,
         get_pool_reward_custody_address(pyth_token_mint.pubkey()),
         &pyth_token_mint,
-        FRAC_64_MULTIPLIER,
+        2 * FRAC_64_MULTIPLIER,
     );
-    advance_n_epochs(&mut svm, &payer, 1);
-    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 12);
+    advance_n_epochs(&mut svm, &payer, 2);
+    assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 13);
     let publisher_caps =
         post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), STAKED_TOKENS);
     advance(&mut svm, &payer, publisher_caps).unwrap();
@@ -732,8 +732,20 @@ fn test_not_enough_rewards() {
         pool_data.events[13].event_data[publisher_index].self_reward_ratio,
         0
     );
-    for i in 14..MAX_EVENTS {
+
+    assert_eq!(pool_data.events[14].epoch, 14);
+    assert_eq!(pool_data.events[14].y, YIELD);
+    assert_eq!(
+        pool_data.events[14].event_data[publisher_index].other_reward_ratio,
+        1_000_000
+    );
+    assert_eq!(
+        pool_data.events[14].event_data[publisher_index].self_reward_ratio,
+        0
+    );
+
+    for i in 15..MAX_EVENTS {
         assert_eq!(pool_data.events[i], Event::default())
     }
-    assert_eq!(pool_data.claimable_rewards, FRAC_64_MULTIPLIER);
+    assert_eq!(pool_data.claimable_rewards, 2 * FRAC_64_MULTIPLIER);
 }
