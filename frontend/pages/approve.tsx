@@ -66,9 +66,6 @@ const ApproveSplit: NextPage = () => {
         if (stakeAccount) {
           setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccount))
         }
-        else {
-          setSelectStakeAccount(undefined)
-        }
     }
     }
     loadStakeAccount()
