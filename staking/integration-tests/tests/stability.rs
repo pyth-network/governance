@@ -424,7 +424,7 @@ fn test_stability(props: StabilityTestProps) {
         init_mint:              true,
         init_pool_data:         true,
         init_publishers:        false,
-        reward_amount_override: None,
+        reward_amount_override: Some((MAX_DELEGATION_AMOUNT * Y) / FRAC_64_MULTIPLIER),
     });
 
     props.delegators.iter().for_each(|delegator| {
@@ -731,7 +731,6 @@ fn test_stability(props: StabilityTestProps) {
 /// This stability test runs a large number of random operations on the integrity pool program.
 /// It takes more than 5 minutes to run and is disabled by default.
 #[test]
-#[ignore]
 fn quickcheck_stability() {
     QuickCheck::new()
         .tests(1)
