@@ -629,7 +629,7 @@ fn test_not_enough_rewards() {
         FRAC_64_MULTIPLIER - expected_claimable_rewards
     ); // 250u64
 
-    // nothing left
+    // yield should be very low now
     advance_n_epochs(&mut svm, &payer, 1);
     assert_eq!(get_current_epoch(&mut svm), STARTING_EPOCH + 10);
 
