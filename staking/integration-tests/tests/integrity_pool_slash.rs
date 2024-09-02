@@ -64,11 +64,12 @@ fn test_create_slash_event() {
         reward_program_authority,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
     let publisher_index = maybe_publisher_index.unwrap();
 
@@ -216,11 +217,12 @@ fn test_slash() {
         reward_program_authority,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
     let publisher_index = maybe_publisher_index.unwrap();
 

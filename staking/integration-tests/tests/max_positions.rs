@@ -32,11 +32,12 @@ fn test_max_positions() {
         reward_program_authority: _,
         maybe_publisher_index: _,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
 
     let stake_account_positions =

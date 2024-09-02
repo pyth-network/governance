@@ -45,11 +45,12 @@ fn test_set_publisher_stake_account() {
         reward_program_authority: _,
         maybe_publisher_index,
     } = setup(SetupProps {
-        init_config:     true,
-        init_target:     true,
-        init_mint:       true,
-        init_pool_data:  true,
-        init_publishers: true,
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
     });
     let publisher_index = maybe_publisher_index.unwrap();
 
