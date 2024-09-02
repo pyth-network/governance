@@ -11,7 +11,7 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 import { useSplitRequest } from 'hooks/useSplitRequest'
 
-async function getStakeAccountsPubkeys(user: PublicKey, stakeConnection : StakeConnection){
+export async function getStakeAccountsPubkeys(user: PublicKey, stakeConnection : StakeConnection){
   const program = stakeConnection.program;
   const res = await stakeConnection.program.provider.connection.getProgramAccounts(
     program.programId,
