@@ -4,6 +4,7 @@ use {
         integrity_pool::{
             instructions::{
                 create_pool_data_account,
+                update_pyth_token_mint,
                 update_y,
             },
             pda::get_pool_config_address,
@@ -113,6 +114,44 @@ fn test_update_y() {
             FRAC_64_MULTIPLIER / 100 + 1
         ),
         IntegrityPoolError::InvalidY,
+        0
+    );
+}
+
+#[test]
+fn test_update_pyth_token_mint() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        reward_program_authority,
+        ..
+    } = setup(SetupProps {
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
+    });
+
+    let pool_config_pubkey = get_pool_config_address();
+    let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
+
+    assert!(pool_config.pyth_token_mint == pyth_token_mint.pubkey());
+
+    let new_mint = Pubkey::new_unique();
+    update_pyth_token_mint(&mut svm, &payer, &reward_program_authority, new_mint).unwrap();
+
+    let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
+    assert!(pool_config.pyth_token_mint == new_mint);
+
+    // Trying to update the pyth token mint without the correct authority should fail
+    let wrong_authority = Keypair::new();
+
+    assert_anchor_program_error!(
+        update_pyth_token_mint(&mut svm, &payer, &wrong_authority, new_mint),
+        IntegrityPoolError::InvalidRewardProgramAuthority,
         0
     );
 }

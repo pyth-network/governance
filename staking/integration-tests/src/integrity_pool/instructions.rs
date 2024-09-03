@@ -132,7 +132,7 @@ pub fn create_pool_data_account(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(initialize_pool_tx.clone())
+    svm.send_transaction(initialize_pool_tx)
 }
 
 pub fn update_y(
@@ -164,7 +164,39 @@ pub fn update_y(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(update_y_tx.clone())
+    svm.send_transaction(update_y_tx)
+}
+
+pub fn update_pyth_token_mint(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    reward_program_authority: &Keypair,
+    pyth_token_mint: Pubkey,
+) -> TransactionResult {
+    let pool_config_pubkey = get_pool_config_address();
+
+    let instruction_data = integrity_pool::instruction::UpdatePythTokenMint { pyth_token_mint };
+
+    let instruction_accs = integrity_pool::accounts::UpdatePythTokenMint {
+        pool_config:              pool_config_pubkey,
+        reward_program_authority: reward_program_authority.pubkey(),
+        system_program:           system_program::ID,
+    };
+
+    let instruction = Instruction::new_with_bytes(
+        integrity_pool::ID,
+        &instruction_data.data(),
+        instruction_accs.to_account_metas(None),
+    );
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&payer.pubkey()),
+        &[payer, reward_program_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(transaction)
 }
 
 pub fn update_delegation_fee(
@@ -199,7 +231,7 @@ pub fn update_delegation_fee(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(update_delegation_fee_tx.clone())
+    svm.send_transaction(update_delegation_fee_tx)
 }
 
 
