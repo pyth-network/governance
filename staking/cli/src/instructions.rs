@@ -257,8 +257,6 @@ pub fn process_write_encoded_vaa(
         data:       wormhole_core_bridge_solana::instruction::VerifyEncodedVaaV1 {}.data(),
     };
 
-
-    // 2nd transaction
     process_transaction(
         rpc_client,
         &[
