@@ -12,7 +12,7 @@ governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 chat = "gCHAtYKrUUktTVzE4hEnZdLV4LXrdBf6Hh9qMaJALET"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
-integrity_pool = "poo1zPoi5xrNzi4yk4i23oWcJrNNkDYAniBCewJY8kb"
+integrity_pool = "pyti8TM4zRVBjmarcgAPmTNNAXYKJv7WVHrkrm6woLN"
 publisher_caps = "pytcD8uUjPxSLMsNqoVnm9dXQw9tKJJf3CQnGwa8oL7"
 
 [programs.devnet]
@@ -20,7 +20,7 @@ staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
-integrity_pool = "poo1zPoi5xrNzi4yk4i23oWcJrNNkDYAniBCewJY8kb"
+integrity_pool = "pyti8TM4zRVBjmarcgAPmTNNAXYKJv7WVHrkrm6woLN"
 publisher_caps = "pytcD8uUjPxSLMsNqoVnm9dXQw9tKJJf3CQnGwa8oL7"
 
 
@@ -29,7 +29,7 @@ staking = "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ"
 governance = "pytGY6tWRgGinSCvRLnSv4fHfBTMoiDGiCsesmHWM6U"
 wallet_tester = "tstPARXbQ5yxVkRU2UcZRbYphzbUEW6t5ihzpLaafgz"
 profile = "prfmVhiQTN5Spgoxa8uZJba35V1s7XXReqbBiqPDWeJ"
-integrity_pool = "poo1zPoi5xrNzi4yk4i23oWcJrNNkDYAniBCewJY8kb"
+integrity_pool = "pyti8TM4zRVBjmarcgAPmTNNAXYKJv7WVHrkrm6woLN"
 publisher_caps = "pytcD8uUjPxSLMsNqoVnm9dXQw9tKJJf3CQnGwa8oL7"
 
 
