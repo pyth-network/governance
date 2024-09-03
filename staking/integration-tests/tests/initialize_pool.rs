@@ -151,7 +151,7 @@ fn test_update_reward_program_authority() {
     let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
     assert!(pool_config.reward_program_authority == new_reward_program_authority);
 
-    // Trying to update the pyth token mint without the correct authority should fail
+    // Trying to update the reward program authority without the correct authority should fail
     let wrong_authority = Keypair::new();
 
     assert_anchor_program_error!(
