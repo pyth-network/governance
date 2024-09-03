@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "integration-tests",
+    "cli",
     "programs/*"
 ]
 

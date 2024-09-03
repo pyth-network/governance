@@ -1,0 +1,28 @@
+[package]
+name = "remote-executor-cli"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+solana-sdk = {workspace = true}
+pyth-staking-program = {path = "../programs/staking"}
+integrity-pool = {path = "../programs/integrity-pool"}
+publisher-caps = {path = "../programs/publisher-caps"}
+integration-tests = {path = "../integration-tests"}
+anchor-lang = {workspace = true}
+anchor-spl = {workspace = true}
+clap = {version ="3.2.22", features = ["derive"]}
+solana-client = "1.18.0"
+shellexpand = "3.1.0"
+pythnet-sdk = {version = "2.3.0", features = ["test-utils"]}
+bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
+byteorder = "1.4.3"
+wormhole-vaas-serde =  "0.1.0"
+wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}
+serde_wormhole = "0.1.0"
+serde_json = "1.0.125"
+solana-cli-output = "1.18.16"
+spl-governance = { version = "4.0.0", features = ["no-entrypoint"] }
+wormhole-core-bridge-solana = {git = "https://github.com/guibescos/wormhole", rev = "af311c20f657571460b62d20aaa8d9fce541bfde"}
+wormhole-solana = { git = "https://github.com/guibescos/wormhole", branch = "reisen/sdk-solana"}
+base64 = "0.22.1"
