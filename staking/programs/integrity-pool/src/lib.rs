@@ -57,6 +57,14 @@ pub mod integrity_pool {
         Ok(())
     }
 
+    pub fn update_pyth_token_mint(
+        ctx: Context<UpdatePythTokenMint>,
+        pyth_token_mint: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.pool_config.pyth_token_mint = pyth_token_mint;
+        Ok(())
+    }
+
     pub fn update_delegation_fee(
         ctx: Context<UpdateDelegationFee>,
         delegation_fee: frac64,

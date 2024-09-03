@@ -54,6 +54,21 @@ pub struct UpdateY<'info> {
 }
 
 #[derive(Accounts)]
+pub struct UpdatePythTokenMint<'info> {
+    pub reward_program_authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [POOL_CONFIG.as_bytes()],
+        bump,
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
+    )]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
 pub struct UpdateDelegationFee<'info> {
     pub reward_program_authority: Signer<'info>,
 
