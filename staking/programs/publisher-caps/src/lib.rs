@@ -26,7 +26,7 @@ use {
     wormhole_solana_vaas::zero_copy::VaaAccount,
 };
 
-declare_id!("BZ1jqX41oh3NaF7FmkrCWUrd4eQZQqid1edPLGxzJMc2");
+declare_id!("pytcD8uUjPxSLMsNqoVnm9dXQw9tKJJf3CQnGwa8oL7");
 
 pub const WORMHOLE_RECEIVER: Pubkey = pubkey!("HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ");
 pub const PRICE_FEEDS_EMITTER_ADDRESS: Pubkey =
