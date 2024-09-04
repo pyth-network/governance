@@ -152,14 +152,14 @@ fn test_update_reward_program_authority() {
     assert!(pool_config.reward_program_authority == new_reward_program_authority);
 
     // Trying to update the reward program authority without the correct authority should fail
-    let wrong_authority = Keypair::new();
+    let new_reward_program_authority2 = Keypair::new();
 
     assert_anchor_program_error!(
         update_reward_program_authority(
             &mut svm,
             &payer,
-            &wrong_authority,
-            new_reward_program_authority
+            &reward_program_authority,
+            new_reward_program_authority2.pubkey(),
         ),
         IntegrityPoolError::InvalidRewardProgramAuthority,
         0
