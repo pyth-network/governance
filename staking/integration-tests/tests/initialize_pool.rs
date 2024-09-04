@@ -36,11 +36,8 @@ fn initialize_pool() {
     let SetupResult {
         mut svm,
         payer,
-        pyth_token_mint,
-        publisher_keypair: _,
         pool_data_pubkey,
-        reward_program_authority: _,
-        maybe_publisher_index: _,
+        ..
     } = setup(SetupProps {
         init_config:            true,
         init_target:            true,
@@ -58,13 +55,8 @@ fn initialize_pool() {
 
     // Trying to initialize the pool again should fail
     let pool_data2_keypair = Keypair::new();
-    let initialize_pool_2_res = create_pool_data_account(
-        &mut svm,
-        &payer,
-        &pool_data2_keypair,
-        Pubkey::new_unique(),
-        pyth_token_mint.pubkey(),
-    );
+    let initialize_pool_2_res =
+        create_pool_data_account(&mut svm, &payer, &pool_data2_keypair, Pubkey::new_unique());
     assert_anchor_program_error!(initialize_pool_2_res, ProgramError::Custom(0), 1);
 }
 

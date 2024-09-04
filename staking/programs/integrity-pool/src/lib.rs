@@ -33,15 +33,16 @@ pub mod integrity_pool {
     pub fn initialize_pool(
         ctx: Context<InitializePool>,
         reward_program_authority: Pubkey,
-        pyth_token_mint: Pubkey,
         y: frac64,
     ) -> Result<()> {
+        let global_config = &ctx.accounts.config_account;
+        let pool_config = &mut ctx.accounts.pool_config;
+
         require_gte!(FRAC_64_MULTIPLIER / 100, y, IntegrityPoolError::InvalidY);
 
-        let pool_config = &mut ctx.accounts.pool_config;
         pool_config.pool_data = ctx.accounts.pool_data.key();
         pool_config.reward_program_authority = reward_program_authority;
-        pool_config.pyth_token_mint = pyth_token_mint;
+        pool_config.pyth_token_mint = global_config.pyth_token_mint;
         pool_config.y = y;
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
