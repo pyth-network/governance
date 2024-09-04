@@ -90,9 +90,9 @@ pub fn create_pool_data_account(
     payer: &Keypair,
     pool_data_keypair: &Keypair,
     reward_program_authority: Pubkey,
-    pyth_token_mint: Pubkey,
 ) -> TransactionResult {
     let pool_data_space: u64 = PoolData::LEN.try_into().unwrap();
+    let global_config = get_config_address();
 
     let rent = svm.minimum_balance_for_rent_exemption(pool_data_space.try_into().unwrap());
 
@@ -107,7 +107,6 @@ pub fn create_pool_data_account(
     let pool_config_pubkey = get_pool_config_address();
 
     let initialize_pool_data = integrity_pool::instruction::InitializePool {
-        pyth_token_mint,
         reward_program_authority,
         y: YIELD,
     };
@@ -116,6 +115,7 @@ pub fn create_pool_data_account(
         payer:          payer.pubkey(),
         pool_data:      pool_data_keypair.pubkey(),
         pool_config:    pool_config_pubkey,
+        config_account: global_config,
         system_program: system_program::ID,
     };
 
@@ -132,7 +132,7 @@ pub fn create_pool_data_account(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(initialize_pool_tx.clone())
+    svm.send_transaction(initialize_pool_tx)
 }
 
 pub fn update_y(
@@ -164,7 +164,7 @@ pub fn update_y(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(update_y_tx.clone())
+    svm.send_transaction(update_y_tx)
 }
 
 pub fn update_reward_program_authority(
@@ -233,7 +233,7 @@ pub fn update_delegation_fee(
         svm.latest_blockhash(),
     );
 
-    svm.send_transaction(update_delegation_fee_tx.clone())
+    svm.send_transaction(update_delegation_fee_tx)
 }
 
 
