@@ -54,7 +54,7 @@ pub struct UpdateY<'info> {
 }
 
 #[derive(Accounts)]
-pub struct UpdatePythTokenMint<'info> {
+pub struct UpdateRewardProgramAuthority<'info> {
     pub reward_program_authority: Signer<'info>,
 
     #[account(

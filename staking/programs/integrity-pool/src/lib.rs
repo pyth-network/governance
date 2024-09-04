@@ -57,11 +57,11 @@ pub mod integrity_pool {
         Ok(())
     }
 
-    pub fn update_pyth_token_mint(
-        ctx: Context<UpdatePythTokenMint>,
-        pyth_token_mint: Pubkey,
+    pub fn update_reward_program_authority(
+        ctx: Context<UpdateRewardProgramAuthority>,
+        reward_program_authority: Pubkey,
     ) -> Result<()> {
-        ctx.accounts.pool_config.pyth_token_mint = pyth_token_mint;
+        ctx.accounts.pool_config.reward_program_authority = reward_program_authority;
         Ok(())
     }
 
