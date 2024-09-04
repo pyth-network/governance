@@ -9,9 +9,12 @@ use {
         token::spl_token,
     },
     base64::Engine,
-    integration_tests::integrity_pool::pda::{
-        get_pool_config_address,
-        get_pool_reward_custody_address,
+    integration_tests::{
+        integrity_pool::pda::{
+            get_pool_config_address,
+            get_pool_reward_custody_address,
+        },
+        staking::pda::get_config_address,
     },
     integrity_pool::state::pool::{
         PoolConfig,
@@ -339,42 +342,15 @@ pub fn advance(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) 
     );
 }
 
-pub fn update_pyth_token_mint(rpc_client: &RpcClient, payer: &Keypair, pyth_token_mint: Pubkey) {
-    let pool_config = get_pool_config_address();
-
-    let accounts = integrity_pool::accounts::UpdatePythTokenMint {
-        reward_program_authority: payer.pubkey(),
-        system_program: system_program::ID,
-        pool_config,
-    };
-
-    let instruction_data = integrity_pool::instruction::UpdatePythTokenMint { pyth_token_mint };
-
-    let instruction = Instruction {
-        program_id: integrity_pool::ID,
-        accounts:   accounts.to_account_metas(None),
-        data:       instruction_data.data(),
-    };
-
-    process_transaction(
-        rpc_client,
-        &[
-            instruction,
-            ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
-        ],
-        &[payer],
-    )
-}
-
 pub fn initialize_pool(
     rpc_client: &RpcClient,
     payer: &Keypair,
     pool_data_keypair: &Keypair,
-    pyth_token_mint: Pubkey,
     reward_program_authority: Pubkey,
     y: u64,
 ) {
     let pool_data_space: u64 = PoolData::LEN.try_into().unwrap();
+    let config_address = get_config_address();
 
     let rent = rpc_client
         .get_minimum_balance_for_rent_exemption(pool_data_space.try_into().unwrap())
@@ -391,7 +367,6 @@ pub fn initialize_pool(
     let pool_config_pubkey = get_pool_config_address();
 
     let initialize_pool_data = integrity_pool::instruction::InitializePool {
-        pyth_token_mint,
         reward_program_authority,
         y,
     };
@@ -400,6 +375,7 @@ pub fn initialize_pool(
         payer:          payer.pubkey(),
         pool_data:      pool_data_keypair.pubkey(),
         pool_config:    pool_config_pubkey,
+        config_account: config_address,
         system_program: system_program::ID,
     };
 

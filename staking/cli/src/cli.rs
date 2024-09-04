@@ -52,8 +52,6 @@ pub enum Action {
         y:                        u64,
         #[clap(long, help = "Reward program authority parameter")]
         reward_program_authority: Pubkey,
-        #[clap(long, help = "Pyth token mint")]
-        pyth_token_mint:          Pubkey,
     },
     Advance {
         #[clap(long, help = "Url to the hermes to fetch publisher caps")]
@@ -63,8 +61,4 @@ pub enum Action {
         wormhole: Pubkey,
     },
     InitializePoolRewardCustody {},
-    UpdatePythTokenMint {
-        #[clap(long, help = "Pyth token mint")]
-        pyth_token_mint: Pubkey,
-    },
 }
