@@ -57,6 +57,14 @@ pub mod integrity_pool {
         Ok(())
     }
 
+    pub fn update_reward_program_authority(
+        ctx: Context<UpdateRewardProgramAuthority>,
+        reward_program_authority: Pubkey,
+    ) -> Result<()> {
+        ctx.accounts.pool_config.reward_program_authority = reward_program_authority;
+        Ok(())
+    }
+
     pub fn update_delegation_fee(
         ctx: Context<UpdateDelegationFee>,
         delegation_fee: frac64,

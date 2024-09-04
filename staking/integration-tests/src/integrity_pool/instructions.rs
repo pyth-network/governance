@@ -167,6 +167,40 @@ pub fn update_y(
     svm.send_transaction(update_y_tx.clone())
 }
 
+pub fn update_reward_program_authority(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    reward_program_authority: &Keypair,
+    new_reward_program_authority: Pubkey,
+) -> TransactionResult {
+    let pool_config_pubkey = get_pool_config_address();
+
+    let instruction_data = integrity_pool::instruction::UpdateRewardProgramAuthority {
+        reward_program_authority: new_reward_program_authority,
+    };
+
+    let instruction_accs = integrity_pool::accounts::UpdateRewardProgramAuthority {
+        pool_config:              pool_config_pubkey,
+        reward_program_authority: reward_program_authority.pubkey(),
+        system_program:           system_program::ID,
+    };
+
+    let instruction = Instruction::new_with_bytes(
+        integrity_pool::ID,
+        &instruction_data.data(),
+        instruction_accs.to_account_metas(None),
+    );
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&payer.pubkey()),
+        &[payer, reward_program_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(transaction)
+}
+
 pub fn update_delegation_fee(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
