@@ -64,7 +64,8 @@ use {
     },
 };
 
-pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: &Keypair) {
+pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &Keypair) -> Pubkey {
+    let publisher_caps = Keypair::new();
     let create_account_ix = create_account(
         &payer.pubkey(),
         &publisher_caps.pubkey(),
@@ -95,8 +96,10 @@ pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_ca
             instruction,
             ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
         ],
-        &[payer, publisher_caps],
+        &[payer, &publisher_caps],
     );
+
+    publisher_caps.pubkey()
 }
 
 pub fn write_publisher_caps(
@@ -413,10 +416,7 @@ pub fn fetch_publisher_caps_and_advance(
     let encoded_vaa = process_write_encoded_vaa(rpc_client, vaa.as_slice(), wormhole, payer);
 
 
-    let publisher_caps = Keypair::new();
-
-
-    init_publisher_caps(rpc_client, payer, &publisher_caps);
+    let publisher_caps = init_publisher_caps(rpc_client, payer);
 
 
     let publisher_caps_message_bytes =
@@ -427,13 +427,13 @@ pub fn fetch_publisher_caps_and_advance(
         let chunk =
             &publisher_caps_message_bytes[i..min(i + 1000, publisher_caps_message_bytes.len())];
 
-        write_publisher_caps(rpc_client, payer, publisher_caps.pubkey(), i, chunk);
+        write_publisher_caps(rpc_client, payer, publisher_caps, i, chunk);
     }
 
     verify_publisher_caps(
         rpc_client,
         payer,
-        publisher_caps.pubkey(),
+        publisher_caps,
         encoded_vaa,
         merkle_proofs,
     );
@@ -441,8 +441,8 @@ pub fn fetch_publisher_caps_and_advance(
 
     println!(
         "Initialized publisher caps with pubkey : {:?}",
-        publisher_caps.pubkey()
+        publisher_caps
     );
 
-    advance(rpc_client, payer, publisher_caps.pubkey());
+    advance(rpc_client, payer, publisher_caps);
 }
