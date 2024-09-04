@@ -90,9 +90,9 @@ pub fn create_pool_data_account(
     payer: &Keypair,
     pool_data_keypair: &Keypair,
     reward_program_authority: Pubkey,
-    pyth_token_mint: Pubkey,
 ) -> TransactionResult {
     let pool_data_space: u64 = PoolData::LEN.try_into().unwrap();
+    let global_config = get_config_address();
 
     let rent = svm.minimum_balance_for_rent_exemption(pool_data_space.try_into().unwrap());
 
@@ -107,7 +107,6 @@ pub fn create_pool_data_account(
     let pool_config_pubkey = get_pool_config_address();
 
     let initialize_pool_data = integrity_pool::instruction::InitializePool {
-        pyth_token_mint,
         reward_program_authority,
         y: YIELD,
     };
@@ -116,6 +115,7 @@ pub fn create_pool_data_account(
         payer:          payer.pubkey(),
         pool_data:      pool_data_keypair.pubkey(),
         pool_config:    pool_config_pubkey,
+        config_account: global_config,
         system_program: system_program::ID,
     };
 
@@ -167,17 +167,19 @@ pub fn update_y(
     svm.send_transaction(update_y_tx)
 }
 
-pub fn update_pyth_token_mint(
+pub fn update_reward_program_authority(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
     reward_program_authority: &Keypair,
-    pyth_token_mint: Pubkey,
+    new_reward_program_authority: Pubkey,
 ) -> TransactionResult {
     let pool_config_pubkey = get_pool_config_address();
 
-    let instruction_data = integrity_pool::instruction::UpdatePythTokenMint { pyth_token_mint };
+    let instruction_data = integrity_pool::instruction::UpdateRewardProgramAuthority {
+        reward_program_authority: new_reward_program_authority,
+    };
 
-    let instruction_accs = integrity_pool::accounts::UpdatePythTokenMint {
+    let instruction_accs = integrity_pool::accounts::UpdateRewardProgramAuthority {
         pool_config:              pool_config_pubkey,
         reward_program_authority: reward_program_authority.pubkey(),
         system_program:           system_program::ID,

@@ -101,7 +101,6 @@ pub fn setup(props: SetupProps) -> SetupResult {
             &payer,
             &pool_data_keypair,
             reward_program_authority.pubkey(),
-            pyth_token_mint.pubkey(),
         )
         .unwrap();
     }

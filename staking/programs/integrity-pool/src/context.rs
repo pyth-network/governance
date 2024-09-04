@@ -29,6 +29,13 @@ pub struct InitializePool<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    #[account(
+        seeds = [staking::context::CONFIG_SEED.as_bytes()],
+        bump,
+        seeds::program = staking::ID,
+    )]
+    pub config_account: Account<'info, staking::state::global_config::GlobalConfig>,
+
     #[account(zero)]
     pub pool_data: AccountLoader<'info, PoolData>,
 
@@ -54,7 +61,7 @@ pub struct UpdateY<'info> {
 }
 
 #[derive(Accounts)]
-pub struct UpdatePythTokenMint<'info> {
+pub struct UpdateRewardProgramAuthority<'info> {
     pub reward_program_authority: Signer<'info>,
 
     #[account(

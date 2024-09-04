@@ -4,7 +4,7 @@ use {
         integrity_pool::{
             instructions::{
                 create_pool_data_account,
-                update_pyth_token_mint,
+                update_reward_program_authority,
                 update_y,
             },
             pda::get_pool_config_address,
@@ -36,11 +36,8 @@ fn initialize_pool() {
     let SetupResult {
         mut svm,
         payer,
-        pyth_token_mint,
-        publisher_keypair: _,
         pool_data_pubkey,
-        reward_program_authority: _,
-        maybe_publisher_index: _,
+        ..
     } = setup(SetupProps {
         init_config:            true,
         init_target:            true,
@@ -58,13 +55,8 @@ fn initialize_pool() {
 
     // Trying to initialize the pool again should fail
     let pool_data2_keypair = Keypair::new();
-    let initialize_pool_2_res = create_pool_data_account(
-        &mut svm,
-        &payer,
-        &pool_data2_keypair,
-        Pubkey::new_unique(),
-        pyth_token_mint.pubkey(),
-    );
+    let initialize_pool_2_res =
+        create_pool_data_account(&mut svm, &payer, &pool_data2_keypair, Pubkey::new_unique());
     assert_anchor_program_error!(initialize_pool_2_res, ProgramError::Custom(0), 1);
 }
 
@@ -119,11 +111,10 @@ fn test_update_y() {
 }
 
 #[test]
-fn test_update_pyth_token_mint() {
+fn test_update_reward_program_authority() {
     let SetupResult {
         mut svm,
         payer,
-        pyth_token_mint,
         reward_program_authority,
         ..
     } = setup(SetupProps {
@@ -138,19 +129,30 @@ fn test_update_pyth_token_mint() {
     let pool_config_pubkey = get_pool_config_address();
     let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
 
-    assert!(pool_config.pyth_token_mint == pyth_token_mint.pubkey());
+    assert!(pool_config.reward_program_authority == reward_program_authority.pubkey());
 
-    let new_mint = Pubkey::new_unique();
-    update_pyth_token_mint(&mut svm, &payer, &reward_program_authority, new_mint).unwrap();
+    let new_reward_program_authority = Pubkey::new_unique();
+    update_reward_program_authority(
+        &mut svm,
+        &payer,
+        &reward_program_authority,
+        new_reward_program_authority,
+    )
+    .unwrap();
 
     let pool_config: PoolConfig = fetch_account_data(&mut svm, &pool_config_pubkey);
-    assert!(pool_config.pyth_token_mint == new_mint);
+    assert!(pool_config.reward_program_authority == new_reward_program_authority);
 
-    // Trying to update the pyth token mint without the correct authority should fail
-    let wrong_authority = Keypair::new();
+    // Trying to update the reward program authority without the correct authority should fail
+    let new_reward_program_authority2 = Keypair::new();
 
     assert_anchor_program_error!(
-        update_pyth_token_mint(&mut svm, &payer, &wrong_authority, new_mint),
+        update_reward_program_authority(
+            &mut svm,
+            &payer,
+            &reward_program_authority,
+            new_reward_program_authority2.pubkey(),
+        ),
         IntegrityPoolError::InvalidRewardProgramAuthority,
         0
     );
