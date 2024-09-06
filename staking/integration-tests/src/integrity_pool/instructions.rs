@@ -10,10 +10,7 @@ use {
     },
     crate::{
         solana::{
-            instructions::{
-                airdrop_spl,
-                initialize_ata,
-            },
+            instructions::initialize_ata,
             utils::fetch_account_data,
         },
         staking::pda::{

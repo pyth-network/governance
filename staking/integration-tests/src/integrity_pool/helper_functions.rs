@@ -43,5 +43,5 @@ pub fn get_default_slash_custody(
     reward_program_authority: &Pubkey,
     pyth_token_mint: &Pubkey,
 ) -> Pubkey {
-    get_associated_token_address(&reward_program_authority, &pyth_token_mint)
+    get_associated_token_address(reward_program_authority, pyth_token_mint)
 }
