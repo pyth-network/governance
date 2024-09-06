@@ -125,6 +125,7 @@ pub fn create_pool_data_account(
         y: YIELD,
     };
 
+    // initialize slash custody
     initialize_ata(
         svm,
         payer,

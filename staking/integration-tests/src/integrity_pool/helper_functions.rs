@@ -37,6 +37,8 @@ pub fn initialize_pool_reward_custody(
     );
 }
 
+/// Default slash custody in the tests is the associated token account of the reward program
+/// authority
 pub fn get_default_slash_custody(
     reward_program_authority: &Pubkey,
     pyth_token_mint: &Pubkey,
