@@ -1,12 +1,21 @@
 use {
-    super::pda::{
-        get_delegation_record_address,
-        get_pool_config_address,
-        get_pool_reward_custody_address,
-        get_slash_event_address,
+    super::{
+        helper_functions::get_default_slash_custody,
+        pda::{
+            get_delegation_record_address,
+            get_pool_config_address,
+            get_pool_reward_custody_address,
+            get_slash_event_address,
+        },
     },
     crate::{
-        solana::utils::fetch_account_data,
+        solana::{
+            instructions::{
+                airdrop_spl,
+                initialize_ata,
+            },
+            utils::fetch_account_data,
+        },
         staking::pda::{
             get_config_address,
             get_stake_account_custody_address,
@@ -42,7 +51,10 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::state::stake_account::StakeAccountMetadataV2,
+    staking::state::{
+        global_config::GlobalConfig,
+        stake_account::StakeAccountMetadataV2,
+    },
     std::convert::TryInto,
 };
 
@@ -94,6 +106,8 @@ pub fn create_pool_data_account(
     let pool_data_space: u64 = PoolData::LEN.try_into().unwrap();
     let global_config = get_config_address();
 
+    let global_config_data = fetch_account_data::<GlobalConfig>(svm, &global_config);
+
     let rent = svm.minimum_balance_for_rent_exemption(pool_data_space.try_into().unwrap());
 
     let create_pool_data_acc_ix = create_account(
@@ -111,11 +125,23 @@ pub fn create_pool_data_account(
         y: YIELD,
     };
 
+    initialize_ata(
+        svm,
+        payer,
+        global_config_data.pyth_token_mint,
+        reward_program_authority,
+    )
+    .unwrap();
+
     let initialize_pool_accs = integrity_pool::accounts::InitializePool {
         payer:          payer.pubkey(),
         pool_data:      pool_data_keypair.pubkey(),
         pool_config:    pool_config_pubkey,
         config_account: global_config,
+        slash_custody:  get_default_slash_custody(
+            &reward_program_authority,
+            &global_config_data.pyth_token_mint,
+        ),
         system_program: system_program::ID,
     };
 

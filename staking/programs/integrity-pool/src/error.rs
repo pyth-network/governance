@@ -32,4 +32,5 @@ pub enum IntegrityPoolError {
     InvalidPublisher,
     #[msg("Y should not be greater than 1%")]
     InvalidY,
+    InvalidSlashCustodyAccount,
 }

@@ -52,6 +52,8 @@ pub enum Action {
         y:                        u64,
         #[clap(long, help = "Reward program authority parameter")]
         reward_program_authority: Pubkey,
+        #[clap(long, help = "Slash custody parameter")]
+        slash_custody:            Pubkey,
     },
     Advance {
         #[clap(long, help = "Url to the hermes to fetch publisher caps")]

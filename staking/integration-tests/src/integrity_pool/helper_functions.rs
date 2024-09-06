@@ -7,8 +7,10 @@ use {
         airdrop_spl,
         initialize_ata,
     },
+    anchor_spl::associated_token::get_associated_token_address,
     integrity_pool::utils::types::FRAC_64_MULTIPLIER,
     solana_sdk::{
+        pubkey::Pubkey,
         signature::Keypair,
         signer::Signer,
     },
@@ -33,4 +35,11 @@ pub fn initialize_pool_reward_custody(
         pyth_token_mint,
         reward_amount_override.unwrap_or(1_000_000 * FRAC_64_MULTIPLIER),
     );
+}
+
+pub fn get_default_slash_custody(
+    reward_program_authority: &Pubkey,
+    pyth_token_mint: &Pubkey,
+) -> Pubkey {
+    get_associated_token_address(&reward_program_authority, &pyth_token_mint)
 }
