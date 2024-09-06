@@ -371,3 +371,60 @@ fn test_set_publisher_stake_account() {
         assert_eq!(pool_data.self_del_state[i], DelegationState::default());
     }
 }
+
+
+#[test]
+fn test_set_publisher_stake_account_reward_authority() {
+    let SetupResult {
+        mut svm,
+        payer,
+        pyth_token_mint,
+        publisher_keypair,
+        pool_data_pubkey,
+        reward_program_authority,
+        maybe_publisher_index,
+    } = setup(SetupProps {
+        init_config:            true,
+        init_target:            true,
+        init_mint:              true,
+        init_pool_data:         true,
+        init_publishers:        true,
+        reward_amount_override: None,
+    });
+    let publisher_index = maybe_publisher_index.unwrap();
+
+    let stake_account_positions =
+        initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);
+
+    set_publisher_stake_account(
+        &mut svm,
+        &payer,
+        &reward_program_authority,
+        publisher_keypair.pubkey(),
+        None,
+        stake_account_positions,
+    )
+    .unwrap();
+
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    assert_eq!(
+        pool_data.publisher_stake_accounts[publisher_index],
+        stake_account_positions,
+    );
+
+    // can't set it once it's set
+    svm.expire_blockhash();
+    assert_anchor_program_error!(
+        set_publisher_stake_account(
+            &mut svm,
+            &payer,
+            &reward_program_authority,
+            publisher_keypair.pubkey(),
+            None,
+            stake_account_positions,
+        ),
+        ErrorCode::AccountNotEnoughKeys,
+        0
+    );
+}
