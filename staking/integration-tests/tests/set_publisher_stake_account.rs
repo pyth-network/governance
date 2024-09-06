@@ -71,7 +71,7 @@ fn test_set_publisher_stake_account() {
             None,
             stake_account_positions,
         ),
-        IntegrityPoolError::PublisherNeedsToSign,
+        IntegrityPoolError::PublisherOrRewardAuthorityNeedsToSign,
         0
     );
 
@@ -414,17 +414,16 @@ fn test_set_publisher_stake_account_reward_authority() {
     );
 
     // can't set it once it's set
-    svm.expire_blockhash();
     assert_anchor_program_error!(
         set_publisher_stake_account(
             &mut svm,
             &payer,
             &reward_program_authority,
             publisher_keypair.pubkey(),
-            None,
+            Some(stake_account_positions),
             stake_account_positions,
         ),
-        ErrorCode::AccountNotEnoughKeys,
+        IntegrityPoolError::StakeAccountOwnerNeedsToSign,
         0
     );
 }

@@ -243,7 +243,7 @@ pub mod integrity_pool {
             require!(
                 signer.key() == publisher.key()
                     || signer.key() == pool_config.reward_program_authority,
-                IntegrityPoolError::PublisherNeedsToSign
+                IntegrityPoolError::PublisherOrRewardAuthorityNeedsToSign
             );
         } else if let Some(current_stake_account_positions) =
             &ctx.accounts.current_stake_account_positions_option
