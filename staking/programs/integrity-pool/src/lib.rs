@@ -28,10 +28,7 @@ declare_id!("pyti8TM4zRVBjmarcgAPmTNNAXYKJv7WVHrkrm6woLN");
 
 #[program]
 pub mod integrity_pool {
-    use {
-        super::*,
-        state::pool,
-    };
+    use super::*;
 
     pub fn initialize_pool(
         ctx: Context<InitializePool>,
