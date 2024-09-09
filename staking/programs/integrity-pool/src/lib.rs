@@ -226,6 +226,7 @@ pub mod integrity_pool {
         let signer = &ctx.accounts.signer;
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
+        let pool_config = &ctx.accounts.pool_config;
         let new_stake_account =
             DynamicPositionArray::load(&ctx.accounts.new_stake_account_positions)?;
 
@@ -236,10 +237,10 @@ pub mod integrity_pool {
         let publisher_index = pool_data.get_publisher_index(publisher.key)?;
 
         if pool_data.publisher_stake_accounts[publisher_index] == Pubkey::default() {
-            require_eq!(
-                signer.key(),
-                publisher.key(),
-                IntegrityPoolError::PublisherNeedsToSign
+            require!(
+                signer.key() == publisher.key()
+                    || signer.key() == pool_config.reward_program_authority,
+                IntegrityPoolError::PublisherOrRewardAuthorityNeedsToSign
             );
         } else if let Some(current_stake_account_positions) =
             &ctx.accounts.current_stake_account_positions_option

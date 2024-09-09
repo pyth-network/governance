@@ -3,7 +3,7 @@ use anchor_lang::error_code;
 #[error_code]
 pub enum IntegrityPoolError {
     PublisherNotFound,
-    PublisherNeedsToSign,
+    PublisherOrRewardAuthorityNeedsToSign,
     StakeAccountOwnerNeedsToSign,
     OutdatedPublisherAccounting,
     TooManyPublishers,
