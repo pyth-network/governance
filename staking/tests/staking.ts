@@ -125,7 +125,7 @@ describe("staking", async () => {
         owner,
         lock: { fullyVested: {} },
         nextIndex: 0,
-        transferEpoch: null,
+        deprecated: null,
         signedAgreementHash: null,
       })
     );

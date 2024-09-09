@@ -2859,7 +2859,7 @@ export type Staking = {
             "type": "u8"
           },
           {
-            "name": "transferEpoch",
+            "name": "deprecated",
             "type": {
               "option": "u64"
             }

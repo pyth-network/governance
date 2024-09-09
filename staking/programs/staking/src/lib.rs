@@ -565,12 +565,6 @@ pub mod staking {
             return Err(error!(ErrorCode::InvalidVotingEpoch));
         }
 
-        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
-            if epoch_of_snapshot <= transfer_epoch {
-                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
-            }
-        }
-
         voter_record.voter_weight = compute_voter_weight(
             stake_account_positions,
             epoch_of_snapshot,
