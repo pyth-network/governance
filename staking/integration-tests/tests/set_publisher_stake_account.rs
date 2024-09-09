@@ -69,7 +69,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             publisher_keypair.pubkey(),
             None,
-            stake_account_positions,
+            Some(stake_account_positions),
         ),
         IntegrityPoolError::PublisherOrRewardAuthorityNeedsToSign,
         0
@@ -82,7 +82,7 @@ fn test_set_publisher_stake_account() {
         &publisher_keypair,
         publisher_keypair.pubkey(),
         None,
-        stake_account_positions,
+        Some(stake_account_positions),
     )
     .unwrap();
 
@@ -101,7 +101,7 @@ fn test_set_publisher_stake_account() {
             &publisher_keypair,
             publisher_keypair.pubkey(),
             Some(stake_account_positions),
-            stake_account_positions_2,
+            Some(stake_account_positions_2),
         ),
         IntegrityPoolError::StakeAccountOwnerNeedsToSign,
         0
@@ -115,7 +115,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             publisher_keypair.pubkey(),
             None,
-            stake_account_positions_2,
+            Some(stake_account_positions_2),
         ),
         ErrorCode::AccountNotEnoughKeys,
         0
@@ -129,7 +129,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             publisher_keypair.pubkey(),
             Some(stake_account_positions_2),
-            stake_account_positions_2,
+            Some(stake_account_positions_2),
         ),
         IntegrityPoolError::PublisherStakeAccountMismatch,
         0
@@ -153,7 +153,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             publisher_keypair.pubkey(),
             Some(stake_account_positions),
-            stake_account_positions_3,
+            Some(stake_account_positions_3),
         ),
         IntegrityPoolError::NewStakeAccountShouldBeUndelegated,
         0
@@ -167,7 +167,7 @@ fn test_set_publisher_stake_account() {
         &payer,
         publisher_keypair.pubkey(),
         Some(stake_account_positions),
-        stake_account_positions_2,
+        Some(stake_account_positions_2),
     )
     .unwrap();
 
@@ -196,7 +196,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             publisher_keypair.pubkey(),
             Some(stake_account_positions_2),
-            stake_account_positions_3,
+            Some(stake_account_positions_3),
         ),
         IntegrityPoolError::CurrentStakeAccountShouldBeUndelegated,
         0
@@ -210,7 +210,7 @@ fn test_set_publisher_stake_account() {
             &payer,
             Pubkey::new_unique(),
             Some(stake_account_positions),
-            stake_account_positions_2,
+            Some(stake_account_positions_2),
         ),
         IntegrityPoolError::PublisherNotFound,
         0
@@ -402,7 +402,7 @@ fn test_set_publisher_stake_account_reward_authority() {
         &reward_program_authority,
         publisher_keypair.pubkey(),
         None,
-        stake_account_positions,
+        Some(stake_account_positions),
     )
     .unwrap();
 
@@ -421,9 +421,27 @@ fn test_set_publisher_stake_account_reward_authority() {
             &reward_program_authority,
             publisher_keypair.pubkey(),
             Some(stake_account_positions),
-            stake_account_positions,
+            Some(stake_account_positions),
         ),
         IntegrityPoolError::StakeAccountOwnerNeedsToSign,
         0
+    );
+
+    // publisher can opt out
+    set_publisher_stake_account(
+        &mut svm,
+        &payer,
+        &payer,
+        publisher_keypair.pubkey(),
+        Some(stake_account_positions),
+        None,
+    )
+    .unwrap();
+
+    let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
+
+    assert_eq!(
+        pool_data.publisher_stake_accounts[publisher_index],
+        Pubkey::default(),
     );
 }
