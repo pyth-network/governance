@@ -351,6 +351,7 @@ pub fn initialize_pool(
     pool_data_keypair: &Keypair,
     reward_program_authority: Pubkey,
     y: u64,
+    slash_custody: Pubkey,
 ) {
     let pool_data_space: u64 = PoolData::LEN.try_into().unwrap();
     let config_address = get_config_address();
@@ -375,10 +376,11 @@ pub fn initialize_pool(
     };
 
     let initialize_pool_accs = integrity_pool::accounts::InitializePool {
-        payer:          payer.pubkey(),
-        pool_data:      pool_data_keypair.pubkey(),
-        pool_config:    pool_config_pubkey,
+        payer: payer.pubkey(),
+        pool_data: pool_data_keypair.pubkey(),
+        pool_config: pool_config_pubkey,
         config_account: config_address,
+        slash_custody,
         system_program: system_program::ID,
     };
 

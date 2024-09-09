@@ -30,6 +30,7 @@ fn main() {
             pool_data_keypair,
             reward_program_authority,
             y,
+            slash_custody,
         } => {
             initialize_pool(
                 &rpc_client,
@@ -37,6 +38,7 @@ fn main() {
                 &pool_data_keypair,
                 reward_program_authority,
                 y,
+                slash_custody,
             );
         }
         Action::Advance {

@@ -3,6 +3,7 @@ use {
     integration_tests::{
         assert_anchor_program_error,
         integrity_pool::{
+            helper_functions::get_default_slash_custody,
             instructions::{
                 advance,
                 advance_delegation_record,
@@ -73,7 +74,13 @@ fn test_create_slash_event() {
     });
     let publisher_index = maybe_publisher_index.unwrap();
 
-    let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
+    let slash_custody = get_default_slash_custody(
+        &reward_program_authority.pubkey(),
+        &pyth_token_mint.pubkey(),
+    );
+    let bad_slash_custody =
+        create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
+
     let slashed_publisher = publisher_keypair.pubkey();
 
     assert_anchor_program_error!(
@@ -88,6 +95,21 @@ fn test_create_slash_event() {
             pool_data_pubkey,
         ),
         IntegrityPoolError::InvalidSlashEventIndex,
+        0
+    );
+
+    assert_anchor_program_error!(
+        create_slash_event(
+            &mut svm,
+            &payer,
+            &reward_program_authority,
+            0,
+            FRAC_64_MULTIPLIER / 2,
+            bad_slash_custody,
+            slashed_publisher,
+            pool_data_pubkey,
+        ),
+        IntegrityPoolError::InvalidSlashCustodyAccount,
         0
     );
 
@@ -226,7 +248,10 @@ fn test_slash() {
     });
     let publisher_index = maybe_publisher_index.unwrap();
 
-    let slash_custody = create_token_account(&mut svm, &payer, &pyth_token_mint.pubkey()).pubkey();
+    let slash_custody = get_default_slash_custody(
+        &reward_program_authority.pubkey(),
+        &pyth_token_mint.pubkey(),
+    );
 
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &payer, &pyth_token_mint, true, true);

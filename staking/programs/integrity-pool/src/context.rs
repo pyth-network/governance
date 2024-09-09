@@ -42,6 +42,11 @@ pub struct InitializePool<'info> {
     #[account(init, payer = payer, seeds = [POOL_CONFIG.as_bytes()], space = PoolConfig::LEN, bump)]
     pub pool_config: Account<'info, PoolConfig>,
 
+    #[account(
+        token::mint = config_account.pyth_token_mint,
+    )]
+    pub slash_custody: Account<'info, TokenAccount>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -358,6 +363,7 @@ pub struct CreateSlashEvent<'info> {
         bump,
         has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
         has_one = pool_data @ IntegrityPoolError::InvalidPoolDataAccount,
+        has_one = slash_custody @ IntegrityPoolError::InvalidSlashCustodyAccount,
     )]
     pub pool_config: Account<'info, PoolConfig>,
 

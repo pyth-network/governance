@@ -44,6 +44,7 @@ pub mod integrity_pool {
         pool_config.reward_program_authority = reward_program_authority;
         pool_config.pyth_token_mint = global_config.pyth_token_mint;
         pool_config.y = y;
+        pool_config.slash_custody = ctx.accounts.slash_custody.key();
 
         let mut pool_data = ctx.accounts.pool_data.load_init()?;
         pool_data.last_updated_epoch = get_current_epoch()? - 1;
