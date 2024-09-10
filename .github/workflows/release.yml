@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - v*
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,10 +21,9 @@ jobs:
         working-directory: ./staking
         run: solana-verify build
       - name: Publish program binaries
-        working-directory: ./staking
         uses: svenstaro/upload-release-action@133984371c30d34e38222a64855679a414cb7575
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./target/deploy/*.so
+          file: ./staking/target/deploy/*.so
           tag: ${{ github.ref }}
           file_glob: true
