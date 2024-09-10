@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+chmod 777 target/deploy
 if [ ! -f target/deploy/governance.so ]
 then
 	# This is the real governance
