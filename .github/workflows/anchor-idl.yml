@@ -1,4 +1,4 @@
-name: Anchor Test CI
+name: Anchor IDL CI
 
 on:
   push:
@@ -22,17 +22,12 @@ jobs:
         run: |
           sh -c "$(curl -sSfL https://release.solana.com/v1.18.16/install)"
           echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-      - name: Install Solana Verify CLI
-        run: |
-          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 098551f
-      - name: Javascript tests
+      - name: Install Anchor
         working-directory: ./staking
-        run: npm run test:ci
-      # Remove debug folder to avoid hitting space limit in ci
-      - name: Clean up
+        run: npm i -g @coral-xyz/anchor-cli@0.30.1
+      - name: Build IDL
         working-directory: ./staking
-        run: rm -r ./target/debug
-      # Anchor test will build the program, so we can run the tests here
-      - name: Cargo tests
+        run: anchor build
+      - name: Check commited idl is up to date
         working-directory: ./staking
-        run: RUST_MIN_STACK=33554432 cargo test
+        run: git diff -G".*" --exit-code target/*
