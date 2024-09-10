@@ -409,6 +409,9 @@ pub mod integrity_pool {
 
         let current_epoch = get_current_epoch()?;
 
+        // assert delegator record is up to date
+        delegation_record.assert_up_to_date(current_epoch)?;
+
         require_gte!(
             current_epoch,
             slash_event.epoch,

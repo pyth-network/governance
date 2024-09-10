@@ -313,17 +313,6 @@ fn test_slash() {
         post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 50);
     advance(&mut svm, &payer, publisher_caps).unwrap();
 
-    advance_delegation_record(
-        &mut svm,
-        &payer,
-        publisher_keypair.pubkey(),
-        stake_account_positions,
-        pyth_token_mint.pubkey(),
-        pool_data_pubkey,
-        None,
-    )
-    .unwrap();
-
     // undelegate 2 PYTH at epoch N + 2
     undelegate(
         &mut svm,
@@ -378,6 +367,32 @@ fn test_slash() {
             &mut svm,
             &payer,
             stake_account_positions,
+            0,
+            slash_custody,
+            publisher_keypair.pubkey(),
+            pool_data_pubkey,
+        ),
+        IntegrityPoolError::OutdatedDelegatorAccounting,
+        0
+    );
+    svm.expire_blockhash();
+
+    advance_delegation_record(
+        &mut svm,
+        &payer,
+        publisher_keypair.pubkey(),
+        stake_account_positions,
+        pyth_token_mint.pubkey(),
+        pool_data_pubkey,
+        None,
+    )
+    .unwrap();
+
+    assert_anchor_program_error!(
+        slash(
+            &mut svm,
+            &payer,
+            stake_account_positions,
             1,
             slash_custody,
             publisher_keypair.pubkey(),
@@ -386,6 +401,7 @@ fn test_slash() {
         IntegrityPoolError::WrongSlashEventOrder,
         0
     );
+
 
     slash(
         &mut svm,
