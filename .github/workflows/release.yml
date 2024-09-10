@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  tags:
+    - v*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18.19.1"
+      - name: Install Solana Verify CLI
+        run: |
+          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 098551f
+      - name: Build
+        working-directory: ./staking
+        run: solana-verify build
+      - name: Publish program binaries
+        working-directory: ./staking
+        uses: svenstaro/upload-release-action@133984371c30d34e38222a64855679a414cb7575
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./target/deploy/*.so
+          tag: ${{ github.ref }}
+          file_glob: true
