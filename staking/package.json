@@ -44,11 +44,10 @@
     "wasm-pack": "^0.10.2"
   },
   "scripts": {
-    "test": "npm run build_wasm && anchor build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000",
-    "test:ci": "npm run build_wasm && mkdir -p target/debug && mkdir -p target/deploy && solana-verify build -- --features mock-clock && npm run dump_governance && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
+    "test": "npm run build_wasm && anchor build -- --features mock-clock && ts-mocha --parallel -p ./tsconfig.json -t 1000000",
+    "test:ci": "npm run build_wasm && mkdir -p target/debug && solana-verify build -- --features mock-clock && ts-mocha --parallel -p ./tsconfig.json -t 1000000 tests/*.ts",
     "build": "npm run build_wasm && tsc -p tsconfig.api.json",
     "build_wasm": "./scripts/build_wasm.sh",
-    "localnet": "anchor build && npm run dump_governance && ts-node ./app/scripts/localnet.ts",
-    "dump_governance": "./clone_programs.sh"
+    "localnet": "anchor build && ts-node ./app/scripts/localnet.ts"
   }
 }

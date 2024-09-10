@@ -50,8 +50,8 @@ ledger_dir = "./.anchor/test-ledger"
 [path]
 idl_path = "./target/idl/staking.json"
 binary_path = "./target/deploy/staking.so"
-governance_path = "./target/deploy/governance.so"
-chat_path = "./target/deploy/chat.so"
+governance_path = "./tests/programs/governance.so" # This is the version of governance with the extra instructions for testing, check PR 184 for more info
+chat_path = "./tests/programs/chat.so"
 wallet_tester_path = "./target/deploy/wallet_tester.so"
 profile_path = "./target/deploy/profile.so"
 integrity_pool_path = "./target/deploy/integrity_pool.so"
