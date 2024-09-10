@@ -23,8 +23,8 @@ jobs:
         working-directory: ./staking
         run: solana-verify build
       - name: Publish program binaries
-        working-directory: ./staking
         uses: svenstaro/upload-release-action@133984371c30d34e38222a64855679a414cb7575
+        working-directory: ./staking
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ./target/deploy/*.so
