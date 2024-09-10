@@ -228,8 +228,6 @@ pub mod integrity_pool {
         let publisher = &ctx.accounts.publisher;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let pool_config = &ctx.accounts.pool_config;
-        let new_stake_account =
-            DynamicPositionArray::load(&ctx.accounts.new_stake_account_positions)?;
 
         let publisher_target = TargetWithParameters::IntegrityPool {
             publisher: publisher.key(),
@@ -269,15 +267,21 @@ pub mod integrity_pool {
             return Err(ErrorCode::AccountNotEnoughKeys.into());
         }
 
+        if let Some(new_stake_account_positions) = &ctx.accounts.new_stake_account_positions_option
+        {
+            let new_stake_account = DynamicPositionArray::load(new_stake_account_positions)?;
 
-        // new stake account should be undelegated
-        require!(
-            !new_stake_account.has_target_with_parameters_exposure(publisher_target)?,
-            IntegrityPoolError::NewStakeAccountShouldBeUndelegated
-        );
+            // new stake account should be undelegated
+            require!(
+                !new_stake_account.has_target_with_parameters_exposure(publisher_target)?,
+                IntegrityPoolError::NewStakeAccountShouldBeUndelegated
+            );
 
-        pool_data.publisher_stake_accounts[publisher_index] =
-            ctx.accounts.new_stake_account_positions.key();
+            pool_data.publisher_stake_accounts[publisher_index] = new_stake_account_positions.key();
+        } else {
+            pool_data.publisher_stake_accounts[publisher_index] = Pubkey::default();
+        }
+
 
         Ok(())
     }
