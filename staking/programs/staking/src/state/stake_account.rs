@@ -23,8 +23,7 @@ pub struct StakeAccountMetadataV2 {
     pub owner:                 Pubkey,
     pub lock:                  VestingSchedule,
     pub next_index:            u8,
-    pub transfer_epoch:        Option<u64>, /* null if the account was created, some epoch if
-                                             * the account received a transfer */
+    pub _deprecated:           Option<u64>,
     pub signed_agreement_hash: Option<[u8; 32]>,
 }
 
@@ -56,7 +55,7 @@ impl StakeAccountMetadataV2 {
         self.voter_bump = 0;
         self.owner = *owner;
         self.next_index = 0;
-        self.transfer_epoch = None;
+        self._deprecated = None;
         self.signed_agreement_hash = None;
     }
 
@@ -96,7 +95,7 @@ pub mod tests {
             owner:                 Pubkey::default(),
             lock:                  VestingSchedule::FullyVested,
             next_index:            0,
-            transfer_epoch:        None,
+            _deprecated:           None,
             signed_agreement_hash: Some([0; 32]),
         };
         assert!(stake_account_metadata_llc_member
@@ -116,7 +115,7 @@ pub mod tests {
             owner:                 Pubkey::default(),
             lock:                  VestingSchedule::FullyVested,
             next_index:            0,
-            transfer_epoch:        None,
+            _deprecated:           None,
             signed_agreement_hash: None,
         };
         assert!(stake_account_metadata_non_llc_member
