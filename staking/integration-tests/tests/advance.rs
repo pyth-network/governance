@@ -272,7 +272,7 @@ fn test_reward_events_with_delegation_fee() {
         &publisher_keypair,
         publisher_keypair.pubkey(),
         None,
-        publisher_stake_account_positions,
+        Some(publisher_stake_account_positions),
     )
     .unwrap();
 

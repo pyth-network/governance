@@ -454,7 +454,7 @@ pub fn set_publisher_stake_account(
     signer: &Keypair,
     publisher: Pubkey,
     current_stake_account_positions_option: Option<Pubkey>,
-    new_stake_account_positions: Pubkey,
+    new_stake_account_positions_option: Option<Pubkey>,
 ) -> TransactionResult {
     let pool_config = get_pool_config_address();
     let pool_data: Pubkey = fetch_account_data::<PoolConfig>(svm, &pool_config).pool_data;
@@ -465,7 +465,7 @@ pub fn set_publisher_stake_account(
         publisher,
         pool_data,
         current_stake_account_positions_option,
-        new_stake_account_positions,
+        new_stake_account_positions_option,
         pool_config,
     };
 

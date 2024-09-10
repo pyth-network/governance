@@ -255,7 +255,8 @@ pub struct SetPublisherStakeAccount<'info> {
     pub pool_data:                              AccountLoader<'info, PoolData>,
     #[account(seeds = [POOL_CONFIG.as_bytes()], bump, has_one = pool_data)]
     pub pool_config:                            Account<'info, PoolConfig>,
-    pub new_stake_account_positions: AccountLoader<'info, staking::state::positions::PositionData>,
+    pub new_stake_account_positions_option:
+        Option<AccountLoader<'info, staking::state::positions::PositionData>>,
     pub current_stake_account_positions_option:
         Option<AccountLoader<'info, staking::state::positions::PositionData>>,
 }
