@@ -56,7 +56,11 @@ pub enum Action {
         slash_custody:            Pubkey,
     },
     Advance {
-        #[clap(long, help = "Url to the hermes to fetch publisher caps")]
+        #[clap(
+            long,
+            help = "Url of hermes to fetch publisher caps",
+            default_value = "https://hermes-beta.pyth.network/"
+        )]
         hermes_url: String,
 
         #[clap(long, default_value = "3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5")]

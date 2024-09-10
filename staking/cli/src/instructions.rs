@@ -26,6 +26,7 @@ use {
         MerklePriceUpdate,
         Proof,
     },
+    reqwest::blocking::Client,
     serde_wormhole::RawMessage,
     solana_client::{
         rpc_client::RpcClient,
@@ -272,7 +273,7 @@ pub fn process_write_encoded_vaa(
             verify_encoded_vaa_instruction,
             request_compute_units_instruction,
         ],
-        &[payer],
+        &[payer, &encoded_vaa_keypair],
     );
 
 
@@ -402,10 +403,19 @@ pub fn fetch_publisher_caps_and_advance(
     rpc_client: &RpcClient,
     payer: &Keypair,
     wormhole: Pubkey,
-    _hermes_url: String,
+    hermes_url: String,
 ) {
-    //TODO: actually fetch the message from hermes
-    let encoded_message = "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";
+    let client = Client::new();
+    let response = client
+        .get(format!(
+            "{}v2/updates/publisher_stake_caps/latest?encoding=base64",
+            hermes_url
+        ))
+        .send()
+        .unwrap();
+
+    let json: serde_json::Value = response.json().unwrap();
+    let encoded_message = json["binary"]["data"][0].as_str().unwrap();
 
     //decode tmp from base64
     let message = base64::prelude::BASE64_STANDARD
