@@ -301,7 +301,7 @@ pub mod integrity_pool {
         Ok(())
     }
 
-    pub fn advance_delegation_record(ctx: Context<AdvanceDelegationRecord>) -> Result<()> {
+    pub fn advance_delegation_record(ctx: Context<AdvanceDelegationRecord>) -> Result<frac64> {
         let delegation_record = &mut ctx.accounts.delegation_record;
         let pool_data = &mut ctx.accounts.pool_data.load_mut()?;
         let pool_config = &ctx.accounts.pool_config;
@@ -374,7 +374,7 @@ pub mod integrity_pool {
         }
 
         delegation_record.advance(get_current_epoch()?)?;
-        Ok(())
+        Ok(delegator_reward)
     }
 
     pub fn create_slash_event(
