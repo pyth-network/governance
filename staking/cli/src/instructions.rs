@@ -458,3 +458,32 @@ pub fn fetch_publisher_caps_and_advance(
 
     advance(rpc_client, payer, publisher_caps);
 }
+
+pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation_fee: u64) {
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig { pool_data, .. } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let accounts = integrity_pool::accounts::UpdateDelegationFee {
+        reward_program_authority: payer.pubkey(),
+        pool_config,
+        pool_data,
+        system_program: system_program::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::UpdateDelegationFee { delegation_fee };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[payer]);
+}

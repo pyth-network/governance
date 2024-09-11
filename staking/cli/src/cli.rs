@@ -67,4 +67,8 @@ pub enum Action {
         wormhole: Pubkey,
     },
     InitializePoolRewardCustody {},
+    UpdateDelegationFee {
+        #[clap(long, help = "New fee")]
+        delegation_fee: u64,
+    },
 }

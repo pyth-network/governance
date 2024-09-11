@@ -11,6 +11,7 @@ use {
         fetch_publisher_caps_and_advance,
         initialize_pool,
         initialize_reward_custody,
+        update_delegation_fee,
     },
     solana_client::rpc_client::RpcClient,
     solana_sdk::commitment_config::CommitmentConfig,
@@ -49,6 +50,9 @@ fn main() {
         }
         Action::InitializePoolRewardCustody {} => {
             initialize_reward_custody(&rpc_client, &keypair);
+        }
+        Action::UpdateDelegationFee { delegation_fee } => {
+            update_delegation_fee(&rpc_client, &keypair, delegation_fee)
         }
     }
 }
