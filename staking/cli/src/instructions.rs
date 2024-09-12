@@ -13,6 +13,7 @@ use {
         integrity_pool::pda::{
             get_pool_config_address,
             get_pool_reward_custody_address,
+            get_slash_event_address,
         },
         staking::pda::get_config_address,
     },
@@ -486,4 +487,93 @@ pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation
     };
 
     process_transaction(rpc_client, &[instruction], &[payer]);
+}
+
+pub fn set_publisher_stake_account(
+    rpc_client: &RpcClient,
+    signer: &Keypair,
+    publisher: &Pubkey,
+    stake_account_positions: &Pubkey,
+) {
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig { pool_data, .. } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let accounts = integrity_pool::accounts::SetPublisherStakeAccount {
+        signer: signer.pubkey(),
+        publisher: *publisher,
+        current_stake_account_positions_option: None,
+        new_stake_account_positions_option: Some(*stake_account_positions),
+        pool_config,
+        pool_data,
+    };
+
+    let instruction_data = integrity_pool::instruction::SetPublisherStakeAccount {};
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[signer]);
+}
+
+pub fn create_slash_event(
+    rpc_client: &RpcClient,
+    signer: &Keypair,
+    publisher: &Pubkey,
+    slash_ratio: u64,
+) {
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig {
+        pool_data: pool_data_address,
+        slash_custody,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let pool_data = PoolData::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_data_address)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let publisher_index = pool_data.get_publisher_index(publisher).unwrap();
+    let index = pool_data.num_slash_events[publisher_index];
+
+    let accounts = integrity_pool::accounts::CreateSlashEvent {
+        payer: signer.pubkey(),
+        reward_program_authority: signer.pubkey(),
+        publisher: *publisher,
+        slash_custody,
+        pool_config,
+        pool_data: pool_data_address,
+        slash_event: get_slash_event_address(index, *publisher),
+        system_program: system_program::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::CreateSlashEvent { index, slash_ratio };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[signer]);
 }
