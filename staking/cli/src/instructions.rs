@@ -11,15 +11,25 @@ use {
     base64::Engine,
     integration_tests::{
         integrity_pool::pda::{
+            get_delegation_record_address,
             get_pool_config_address,
             get_pool_reward_custody_address,
             get_slash_event_address,
         },
-        staking::pda::get_config_address,
+        staking::pda::{
+            get_config_address,
+            get_stake_account_custody_address,
+            get_stake_account_custody_authority_address,
+            get_stake_account_metadata_address,
+            get_target_address,
+        },
     },
-    integrity_pool::state::pool::{
-        PoolConfig,
-        PoolData,
+    integrity_pool::state::{
+        delegation_record::DelegationRecord,
+        pool::{
+            PoolConfig,
+            PoolData,
+        },
     },
     publisher_caps::PublisherCaps,
     pythnet_sdk::wire::v1::{
@@ -51,6 +61,7 @@ use {
     std::{
         cmp::min,
         convert::TryInto,
+        mem::size_of,
     },
     wormhole_core_bridge_solana::sdk::{
         WriteEncodedVaaArgs,
@@ -546,10 +557,8 @@ pub fn create_slash_event(
     .unwrap();
 
     let pool_data = PoolData::try_deserialize(
-        &mut rpc_client
-            .get_account_data(&pool_data_address)
-            .unwrap()
-            .as_slice(),
+        &mut rpc_client.get_account_data(&pool_data_address).unwrap()[..8 + size_of::<PoolData>()]
+            .as_ref(),
     )
     .unwrap();
 
@@ -593,6 +602,80 @@ pub fn update_reward_program_authority(
 
     let instruction_data = integrity_pool::instruction::UpdateRewardProgramAuthority {
         reward_program_authority: *new_reward_program_authority,
+    };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[signer]);
+}
+
+pub fn slash(
+    rpc_client: &RpcClient,
+    signer: &Keypair,
+    publisher: &Pubkey,
+    stake_account_positions: &Pubkey,
+) {
+    let pool_config = get_pool_config_address();
+    let PoolConfig {
+        pool_data,
+        slash_custody,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let delegation_record = get_delegation_record_address(*publisher, *stake_account_positions);
+    let DelegationRecord {
+        next_slash_event_index,
+        ..
+    } = {
+        let delegation_record_account_data = rpc_client.get_account_data(&delegation_record);
+        if let Ok(data) = delegation_record_account_data {
+            DelegationRecord::try_deserialize(&mut data.as_slice()).unwrap()
+        } else {
+            DelegationRecord {
+                last_epoch:             0,
+                next_slash_event_index: 0,
+            }
+        }
+    };
+
+
+    let stake_account_metadata = get_stake_account_metadata_address(*stake_account_positions);
+    let stake_account_custody = get_stake_account_custody_address(*stake_account_positions);
+    let custody_authority = get_stake_account_custody_authority_address(*stake_account_positions);
+    let config_account = get_config_address();
+    let governance_target_account = get_target_address();
+
+
+    let accounts = integrity_pool::accounts::Slash {
+        signer: signer.pubkey(),
+        pool_data,
+        pool_config,
+        slash_event: get_slash_event_address(next_slash_event_index, *publisher),
+        delegation_record,
+        publisher: *publisher,
+        stake_account_positions: *stake_account_positions,
+        stake_account_metadata,
+        stake_account_custody,
+        config_account,
+        governance_target_account,
+        slash_custody,
+        custody_authority,
+        staking_program: staking::ID,
+        token_program: spl_token::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::Slash {
+        index: next_slash_event_index,
     };
 
     let instruction = Instruction {

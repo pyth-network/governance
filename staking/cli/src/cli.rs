@@ -87,4 +87,10 @@ pub enum Action {
         #[clap(long, help = "New reward program authority")]
         new_reward_program_authority: Pubkey,
     },
+    Slash {
+        #[clap(long, help = "Publisher")]
+        publisher:               Pubkey,
+        #[clap(long, help = "Stake account positions")]
+        stake_account_positions: Pubkey,
+    },
 }

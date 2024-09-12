@@ -13,6 +13,7 @@ use {
         initialize_pool,
         initialize_reward_custody,
         set_publisher_stake_account,
+        slash,
         update_delegation_fee,
         update_reward_program_authority,
     },
@@ -70,5 +71,9 @@ fn main() {
         Action::UpdateRewardProgramAuthority {
             new_reward_program_authority,
         } => update_reward_program_authority(&rpc_client, &keypair, &new_reward_program_authority),
+        Action::Slash {
+            publisher,
+            stake_account_positions,
+        } => slash(&rpc_client, &keypair, &publisher, &stake_account_positions),
     }
 }
