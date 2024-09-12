@@ -14,6 +14,7 @@ use {
         initialize_reward_custody,
         set_publisher_stake_account,
         update_delegation_fee,
+        update_reward_program_authority,
     },
     solana_client::rpc_client::RpcClient,
     solana_sdk::commitment_config::CommitmentConfig,
@@ -66,5 +67,8 @@ fn main() {
             publisher,
             slash_ratio,
         } => create_slash_event(&rpc_client, &keypair, &publisher, slash_ratio),
+        Action::UpdateRewardProgramAuthority {
+            new_reward_program_authority,
+        } => update_reward_program_authority(&rpc_client, &keypair, &new_reward_program_authority),
     }
 }

@@ -83,4 +83,8 @@ pub enum Action {
         #[clap(long, help = "Amount")]
         slash_ratio: u64,
     },
+    UpdateRewardProgramAuthority {
+        #[clap(long, help = "New reward program authority")]
+        new_reward_program_authority: Pubkey,
+    },
 }

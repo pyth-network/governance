@@ -577,3 +577,29 @@ pub fn create_slash_event(
 
     process_transaction(rpc_client, &[instruction], &[signer]);
 }
+
+pub fn update_reward_program_authority(
+    rpc_client: &RpcClient,
+    signer: &Keypair,
+    new_reward_program_authority: &Pubkey,
+) {
+    let pool_config = get_pool_config_address();
+
+    let accounts = integrity_pool::accounts::UpdateRewardProgramAuthority {
+        reward_program_authority: signer.pubkey(),
+        pool_config,
+        system_program: system_program::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::UpdateRewardProgramAuthority {
+        reward_program_authority: *new_reward_program_authority,
+    };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[signer]);
+}
