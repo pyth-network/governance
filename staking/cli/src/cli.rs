@@ -71,4 +71,30 @@ pub enum Action {
         #[clap(long, help = "New fee")]
         delegation_fee: u64,
     },
+    SetPublisherStakeAccount {
+        #[clap(long, help = "Publisher")]
+        publisher:               Pubkey,
+        #[clap(long, help = "Stake account positions")]
+        stake_account_positions: Pubkey,
+    },
+    CreateSlashEvent {
+        #[clap(long, help = "Publisher")]
+        publisher:   Pubkey,
+        #[clap(long, help = "Amount")]
+        slash_ratio: u64,
+    },
+    UpdateRewardProgramAuthority {
+        #[clap(long, help = "New reward program authority")]
+        new_reward_program_authority: Pubkey,
+    },
+    Slash {
+        #[clap(long, help = "Publisher")]
+        publisher:               Pubkey,
+        #[clap(long, help = "Stake account positions")]
+        stake_account_positions: Pubkey,
+    },
+    UpdateY {
+        #[clap(long, help = "New Y")]
+        y: u64,
+    },
 }
