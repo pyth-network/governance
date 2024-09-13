@@ -58,7 +58,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the setting of Entropy request fees for each of the blockchains where Entropy is available
         - the setting of pool capacity parameters in OIS
         - the setting of delegation fee for stake delegators in OIS
-        - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://www.notion.so/pyth-network/Rulebook-Pyth-Staking-and-Slashing-for-Data-Integrity-52686ae9ffef4ef999c2febccecc3f5e](TempLink)
+        - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
