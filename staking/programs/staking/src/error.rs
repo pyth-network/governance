@@ -82,6 +82,8 @@ pub enum ErrorCode {
     MissingTargetAccount,
     #[msg("The slash ratio should be between 0 and 1")] // 6038
     InvalidSlashRatio,
-    #[msg("Other")] //6039
+    #[msg("The target account is only expected when dealing with the governance target")] // 6039
+    UnexpectedTargetAccount,
+    #[msg("Other")] //6040
     Other,
 }

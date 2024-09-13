@@ -31,7 +31,6 @@ describe("position_lifecycle", async () => {
   let owner: PublicKey;
   let ownerAta: PublicKey;
   let stakeConnection: StakeConnection;
-  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
     await abortUnlessDetached(portNumber, controller);
@@ -52,8 +51,6 @@ describe("position_lifecycle", async () => {
     );
 
     epochDuration = stakeConnection.config.epochDuration;
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("deposits tokens and locks", async () => {
@@ -89,7 +86,6 @@ describe("position_lifecycle", async () => {
       program.methods
         .closePosition(0, PythBalance.fromString("201").toBN(), votingProduct)
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Amount to unlock bigger than position"
@@ -102,9 +98,8 @@ describe("position_lifecycle", async () => {
         .closePosition(1, PythBalance.fromString("200").toBN(), votingProduct)
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          targetAccount: votingProductMetadataAccount,
         }),
-      "Position not in use"
+      "Position out of bounds"
     );
   });
 
@@ -112,7 +107,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .closePosition(0, PythBalance.fromString("200").toBN(), votingProduct)
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -129,7 +123,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .createPosition(votingProduct, PythBalance.fromString("200").toBN())
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -146,7 +139,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .closePosition(0, PythBalance.fromString("10").toBN(), votingProduct)
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -178,7 +170,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .closePosition(0, PythBalance.fromString("50").toBN(), votingProduct)
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -239,17 +230,8 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(1, PythBalance.fromString("50").toBN(), votingProduct)
-      .accounts({
-        targetAccount: votingProductMetadataAccount,
-        stakeAccountPositions: stakeAccountAddress,
-      })
-      .rpc();
-
-    await program.methods
       .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -259,7 +241,6 @@ describe("position_lifecycle", async () => {
       program.methods
         .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Position already unlocking"
@@ -297,9 +278,8 @@ describe("position_lifecycle", async () => {
     );
 
     await program.methods
-      .closePosition(0, PythBalance.fromString("140").toBN(), votingProduct)
+      .mergeTargetPositions({ voting: {} })
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -316,7 +296,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .createPosition(votingProduct, PythBalance.fromString("100").toBN())
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -346,7 +325,6 @@ describe("position_lifecycle", async () => {
     await program.methods
       .closePosition(0, PythBalance.fromString("100").toBN(), votingProduct)
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .rpc();
@@ -364,20 +342,13 @@ describe("position_lifecycle", async () => {
   it("withdraws everything", async () => {
     const stakeAccount = await stakeConnection.getMainAccount(owner);
 
-    await expectFail(
-      stakeConnection.program.methods
-        .withdrawStake(PythBalance.fromString("200").toBN())
-        .accounts({
-          stakeAccountPositions: stakeAccount.address,
-          destination: ownerAta,
-        }),
-      "Insufficient balance to cover the withdrawal"
-    ); // This will fail because we need to clean up the unlocked position first
-
-    await stakeConnection.withdrawTokens(
-      stakeAccount,
-      PythBalance.fromString("200")
-    );
+    await stakeConnection.program.methods
+      .withdrawStake(PythBalance.fromString("200").toBN())
+      .accounts({
+        stakeAccountPositions: stakeAccount.address,
+        destination: ownerAta,
+      })
+      .rpc();
 
     await assertBalanceMatches(
       stakeConnection,

@@ -180,6 +180,7 @@ impl<'a, 'b, 'c, 'info> From<&WithdrawStake<'info>>
 #[instruction(target_with_parameters:   positions::TargetWithParameters, amount : u64)]
 pub struct CreatePosition<'info> {
     // Native payer:
+    #[account(mut)]
     pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
@@ -199,6 +200,22 @@ pub struct CreatePosition<'info> {
         seeds = [TARGET_SEED.as_bytes(), VOTING_TARGET_SEED.as_bytes()],
         bump = target_account.bump)]
     pub target_account:          Option<Account<'info, target::TargetMetadata>>,
+    pub pool_authority:          Option<Signer<'info>>,
+    pub system_program:          Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct MergeTargetPositions<'info> {
+    /// CHECK : This AccountInfo is safe because it's checked against stake_account_metadata
+    #[account(mut)]
+    pub owner:                   AccountInfo<'info>,
+    // Stake program accounts:
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+    #[account(mut, seeds = [STAKE_ACCOUNT_METADATA_SEED.as_bytes(), stake_account_positions.key().as_ref()], bump = stake_account_metadata.metadata_bump, has_one = owner)]
+    pub stake_account_metadata:  Account<'info, stake_account::StakeAccountMetadataV2>,
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump)]
+    pub config:                  Account<'info, global_config::GlobalConfig>,
     pub pool_authority:          Option<Signer<'info>>,
 }
 
@@ -207,6 +224,7 @@ pub struct CreatePosition<'info> {
                                                                                                   // checks
 pub struct ClosePosition<'info> {
     // Native payer:
+    #[account(mut)]
     pub owner:                   Signer<'info>,
     // Stake program accounts:
     #[account(mut)]
@@ -227,6 +245,7 @@ pub struct ClosePosition<'info> {
         bump = target_account.bump)]
     pub target_account:          Option<Account<'info, target::TargetMetadata>>,
     pub pool_authority:          Option<Signer<'info>>,
+    pub system_program:          Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -431,7 +450,7 @@ pub struct RecoverAccount<'info> {
 pub struct SlashAccount<'info> {
     pool_authority: Signer<'info>,
 
-    /// CHECK : This AccountInfo is safe because it's checked against target
+    /// CHECK : This AccountInfo is just used to construct the target that will get slashed
     pub publisher: AccountInfo<'info>,
 
     #[account(mut)]

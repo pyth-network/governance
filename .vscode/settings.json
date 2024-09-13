@@ -1,13 +1,45 @@
 {
   "terminal.integrated.env.osx": {
-    "RUST_MIN_STACK": "10485760"
+    // 32MB
+    "RUST_MIN_STACK": "33554432"
   },
   "terminal.integrated.env.linux": {
-    "RUST_MIN_STACK": "10485760"
+    // 32MB
+    "RUST_MIN_STACK": "33554432"
   },
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"]
+  "rust-analyzer.rustfmt.overrideCommand": ["rustfmt", "+nightly"],
+  "cSpell.words": [
+    "accs",
+    "blockhash",
+    "borsh",
+    "bytemuck",
+    "delegators",
+    "funder",
+    "Keypair",
+    "keypairs",
+    "lamports",
+    "litesvm",
+    "Merkle",
+    "Metas",
+    "PREUNLOCKING",
+    "Pubkey",
+    "pubkeys",
+    "pyth",
+    "pythnet",
+    "quickcheck",
+    "reqwest",
+    "shellexpand",
+    "snapshotted",
+    "solana",
+    "sysvar",
+    "Undelegate",
+    "undelegated",
+    "UNDELEGATION",
+    "vaas",
+    "Zeroable"
+  ]
 }

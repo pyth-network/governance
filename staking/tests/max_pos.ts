@@ -1,7 +1,12 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Staking } from "../target/types/staking";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  ComputeBudgetInstruction,
+  ComputeBudgetProgram,
+  PublicKey,
+  Transaction,
+} from "@solana/web3.js";
 import { expectFail, getTargetAccount } from "./utils/utils";
 import path from "path";
 import { StakeConnection, PythBalance } from "../app";
@@ -24,7 +29,6 @@ describe("fills a stake account with positions", async () => {
   let stakeAccountAddress: PublicKey;
   let stakeConnection: StakeConnection;
   let controller: CustomAbortController;
-  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
     await abortUnlessDetached(portNumber, controller);
@@ -34,11 +38,9 @@ describe("fills a stake account with positions", async () => {
     program = stakeConnection.program;
     provider = stakeConnection.provider;
 
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
-
     await stakeConnection.depositTokens(
       undefined,
-      PythBalance.fromString("102")
+      PythBalance.fromString("257")
     );
     stakeAccountAddress = (
       await stakeConnection.getMainAccount(provider.wallet.publicKey)
@@ -49,7 +51,6 @@ describe("fills a stake account with positions", async () => {
     let createPosIx = await program.methods
       .createPosition(votingProduct, PythBalance.fromString("1").toBN())
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountAddress,
       })
       .instruction();
@@ -64,24 +65,26 @@ describe("fills a stake account with positions", async () => {
       if (m != null) costs.push(parseInt(m.groups["consumed"]));
     }
 
-    let budgetRemaining = 200_000;
+    let budgetRemaining = 1_400_000;
     let ixCost = costs[0];
     let maxInstructions = 10; // Based on txn size
     let deltaCost = costs[1] - costs[0]; // adding more positions increases the cost
 
     let transaction = new Transaction();
-    for (
-      let numPositions = 0;
-      numPositions < Constants.MAX_POSITIONS();
-      numPositions++
-    ) {
+    transaction.instructions.push(
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })
+    );
+    for (let numPositions = 0; numPositions < 255; numPositions++) {
       if (
         budgetRemaining < ixCost ||
         transaction.instructions.length == maxInstructions
       ) {
         await provider.sendAndConfirm(transaction, [], {});
         transaction = new Transaction();
-        budgetRemaining = 200_000;
+        transaction.instructions.push(
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 1_400_000 })
+        );
+        budgetRemaining = 1_400_000;
       }
       transaction.instructions.push(createPosIx);
       budgetRemaining -= ixCost;
@@ -94,7 +97,6 @@ describe("fills a stake account with positions", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("1").toBN())
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountAddress,
         }),
       "Number of position limit reached"

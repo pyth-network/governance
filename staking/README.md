@@ -1,6 +1,15 @@
 # Staking Program
 
-This repository contains the Staking Program.
+This repository contains several programs that compose the $PYTH staking smart contract stack. The programs are:
+
+- Staking Program: This program is responsible for custodying the staked tokens and to track the state of staked tokens (for example which target they are staked to, whether they are active or in warmup or cooldown). There are currently two targets: integrity pool and governance. Additionally users staking to integrity pool have to choose a specific publisher to stake with.
+- Integrity Pool: This program is responsible for distributing rewards to stakers that choose to stake their tokens to integrity pool based on the publisher they chose; it can also slash stakers. The Integrity Pool program reads the state of staked tokens from the Staking Program accounts, in order to distribute the rewards proportionally to each user's stake. Additionally users can only update their stake to integrity pool by calling the Integrity Pool Program which will CPI into the Staking Program. This differs from governance where users can stake and unstake directly from the Staking Program.
+- Publisher Caps: This program is responsible for receiving Publisher Caps Messages from Wormhole. This messages are real-time metrics of the publishers that are consumed by the Integrity Pool program to compute each publisher's rewards.
+
+Additionally, the repo contains two small programs:
+
+- Wallet Tester: A program that can be used to test smart contract interaction with a wallet.
+- Profile: A program that can be used to map a Solana wallet to wallets on other blockchain networks.
 
 ## Prerequisites
 

@@ -19,21 +19,20 @@ use {
         global_config::GlobalConfig,
         max_voter_weight_record::MAX_VOTER_WEIGHT,
         positions::{
+            DynamicPositionArray,
             Position,
-            PositionData,
             PositionState,
+            SlashedAmounts,
             TargetWithParameters,
         },
         vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
     },
-    std::convert::TryInto,
     utils::{
         clock::{
             get_current_epoch,
             time_to_epoch,
         },
-        risk::calculate_governance_exposure,
         voter_weight::compute_voter_weight,
     },
 };
@@ -59,7 +58,6 @@ pub mod staking {
         config_account.governance_authority = global_config.governance_authority;
         config_account.pyth_token_mint = global_config.pyth_token_mint;
         config_account.pyth_governance_realm = global_config.pyth_governance_realm;
-        config_account.unlocking_duration = global_config.unlocking_duration;
         config_account.epoch_duration = global_config.epoch_duration;
         config_account.freeze = global_config.freeze;
         config_account.pda_authority = global_config.pda_authority;
@@ -142,8 +140,9 @@ pub mod staking {
         );
         stake_account_metadata.set_lock(lock);
 
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_init()?;
-        stake_account_positions.initialize(&owner);
+        let stake_account_positions =
+            DynamicPositionArray::load_init(&ctx.accounts.stake_account_positions)?;
+        stake_account_positions.set_owner(&owner)?;
 
         Ok(())
     }
@@ -173,7 +172,8 @@ pub mod staking {
 
         // TODO: Should we check that target is legitimate?
         // I don't think anyone has anything to gain from adding a position to a fake target
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
@@ -187,6 +187,10 @@ pub mod staking {
         }
 
         if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
+            require!(
+                maybe_target_account.is_none(),
+                ErrorCode::UnexpectedTargetAccount
+            );
             require!(
                 ctx.accounts
                     .pool_authority
@@ -207,10 +211,8 @@ pub mod staking {
             unlocking_start: None,
         };
 
-        let i = PositionData::reserve_new_index(
-            stake_account_positions,
-            &mut ctx.accounts.stake_account_metadata.next_index,
-        )?;
+        let i = stake_account_positions
+            .reserve_new_index(&mut ctx.accounts.stake_account_metadata.next_index)?;
         stake_account_positions.write_position(i, &new_position)?;
 
         let unvested_balance = ctx
@@ -226,11 +228,47 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
         )?;
 
         if let Some(target_account) = maybe_target_account {
             target_account.add_locking(amount, current_epoch)?;
         }
+
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
+
+        Ok(())
+    }
+
+    pub fn merge_target_positions(
+        ctx: Context<MergeTargetPositions>,
+        target_with_parameters: TargetWithParameters,
+    ) -> Result<()> {
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+        let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
+
+
+        if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
+            require!(
+                ctx.accounts
+                    .pool_authority
+                    .as_ref()
+                    .map_or(false, |x| x.key() == config.pool_authority),
+                ErrorCode::InvalidPoolAuthority
+            )
+        }
+
+        stake_account_positions.merge_target_positions(
+            current_epoch,
+            &mut stake_account_metadata.next_index,
+            target_with_parameters,
+        )?;
+
+        stake_account_positions.realloc(&stake_account_metadata.next_index)?;
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
@@ -247,7 +285,8 @@ pub mod staking {
 
 
         let i: usize = index.into();
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
         let maybe_target_account = &mut ctx.accounts.target_account;
@@ -260,6 +299,10 @@ pub mod staking {
         }
 
         if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
+            require!(
+                maybe_target_account.is_none(),
+                ErrorCode::UnexpectedTargetAccount
+            );
             require!(
                 ctx.accounts
                     .pool_authority
@@ -283,7 +326,7 @@ pub mod staking {
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::AmountBiggerThanPosition))?;
 
-        match current_position.get_current_position(current_epoch, config.unlocking_duration)? {
+        match current_position.get_current_position(current_epoch)? {
             PositionState::LOCKED => {
                 // If remaining amount is 0 keep only 1 position
                 if remaining_amount == 0 {
@@ -304,10 +347,8 @@ pub mod staking {
                     current_position.amount = remaining_amount;
                     stake_account_positions.write_position(i, &current_position)?;
 
-                    let j = PositionData::reserve_new_index(
-                        stake_account_positions,
-                        &mut ctx.accounts.stake_account_metadata.next_index,
-                    )?;
+                    let j = stake_account_positions
+                        .reserve_new_index(&mut ctx.accounts.stake_account_metadata.next_index)?;
                     stake_account_positions.write_position(
                         j,
                         &Position {
@@ -339,18 +380,6 @@ pub mod staking {
                     target_account.add_unlocking(amount, current_epoch)?;
                 }
             }
-
-            // For this case, we don't need to create new positions because the "closed"
-            // tokens become "free"
-            PositionState::UNLOCKED => {
-                if remaining_amount == 0 {
-                    stake_account_positions
-                        .make_none(i, &mut ctx.accounts.stake_account_metadata.next_index)?;
-                } else {
-                    current_position.amount = remaining_amount;
-                    stake_account_positions.write_position(i, &current_position)?;
-                }
-            }
             PositionState::LOCKING => {
                 if remaining_amount == 0 {
                     stake_account_positions
@@ -363,22 +392,26 @@ pub mod staking {
                     target_account.add_unlocking(amount, current_epoch)?;
                 }
             }
-            PositionState::UNLOCKING | PositionState::PREUNLOCKING => {
+            PositionState::UNLOCKING | PositionState::PREUNLOCKING | PositionState::UNLOCKED => {
                 return Err(error!(ErrorCode::AlreadyUnlocking));
             }
         }
+
+        stake_account_positions.adjust_rent_if_needed(&ctx.accounts.owner)?;
 
         Ok(())
     }
 
     pub fn withdraw_stake(ctx: Context<WithdrawStake>, amount: u64) -> Result<()> {
-        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let stake_account_positions =
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let stake_account_metadata = &ctx.accounts.stake_account_metadata;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
 
         let destination_account = &ctx.accounts.destination;
         let signer = &ctx.accounts.owner;
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
 
         let unvested_balance = ctx
@@ -400,8 +433,13 @@ pub mod staking {
             .amount
             .checked_sub(amount)
             .ok_or_else(|| error!(ErrorCode::InsufficientWithdrawableBalance))?;
-        if utils::risk::validate(stake_account_positions, remaining_balance, unvested_balance)
-            .is_err()
+        if utils::risk::validate(
+            stake_account_positions,
+            remaining_balance,
+            unvested_balance,
+            current_epoch,
+        )
+        .is_err()
         {
             return Err(error!(ErrorCode::InsufficientWithdrawableBalance));
         }
@@ -421,6 +459,7 @@ pub mod staking {
             stake_account_positions,
             ctx.accounts.stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
         )
         .is_err()
         {
@@ -434,7 +473,8 @@ pub mod staking {
         ctx: Context<UpdateVoterWeight>,
         action: VoterWeightAction,
     ) -> Result<()> {
-        let stake_account_positions = &ctx.accounts.stake_account_positions.load()?;
+        let stake_account_positions =
+            &DynamicPositionArray::load(&ctx.accounts.stake_account_positions)?;
         let stake_account_custody = &ctx.accounts.stake_account_custody;
         let voter_record = &mut ctx.accounts.voter_record;
         let config = &ctx.accounts.config;
@@ -461,6 +501,7 @@ pub mod staking {
             stake_account_positions,
             stake_account_custody.amount,
             unvested_balance,
+            current_epoch,
         )?;
 
         let epoch_of_snapshot: u64;
@@ -524,16 +565,9 @@ pub mod staking {
             return Err(error!(ErrorCode::InvalidVotingEpoch));
         }
 
-        if let Some(transfer_epoch) = ctx.accounts.stake_account_metadata.transfer_epoch {
-            if epoch_of_snapshot <= transfer_epoch {
-                return Err(error!(ErrorCode::VoteDuringTransferEpoch));
-            }
-        }
-
         voter_record.voter_weight = compute_voter_weight(
             stake_account_positions,
             epoch_of_snapshot,
-            config.unlocking_duration,
             governance_target.get_current_amount_locked(epoch_of_snapshot)?,
             MAX_VOTER_WEIGHT,
         )?;
@@ -610,6 +644,7 @@ pub mod staking {
      */
     pub fn accept_split(ctx: Context<AcceptSplit>, amount: u64, recipient: Pubkey) -> Result<()> {
         let config = &ctx.accounts.config;
+        let current_epoch = get_current_epoch(config)?;
 
         let split_request = &ctx.accounts.source_stake_account_split_request;
         require!(
@@ -626,15 +661,16 @@ pub mod staking {
         );
 
         let new_stake_account_positions =
-            &mut ctx.accounts.new_stake_account_positions.load_init()?;
-        new_stake_account_positions.initialize(&split_request.recipient);
+            &mut DynamicPositionArray::load_init(&ctx.accounts.new_stake_account_positions)?;
+        new_stake_account_positions.set_owner(&split_request.recipient)?;
 
         // Pre-check invariants
         // Note that the accept operation requires the positions account to be empty, which should
         // trivially pass this invariant check. However, we explicitly check invariants
         // everywhere else, so may as well check in this operation also.
         let source_stake_account_positions =
-            &mut ctx.accounts.source_stake_account_positions.load_mut()?;
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.source_stake_account_positions)?;
+
         utils::risk::validate(
             source_stake_account_positions,
             ctx.accounts.source_stake_account_custody.amount,
@@ -645,6 +681,7 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
         )?;
 
         // Check that there aren't any positions (i.e., staked tokens) in the source account.
@@ -698,6 +735,7 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
         )?;
 
         utils::risk::validate(
@@ -710,6 +748,7 @@ pub mod staking {
                     utils::clock::get_current_time(config),
                     config.pyth_token_list_time,
                 )?,
+            current_epoch,
         )?;
 
         // Delete current request
@@ -747,8 +786,9 @@ pub mod staking {
         let new_owner = ctx.accounts.owner.owner;
 
         ctx.accounts.stake_account_metadata.owner = new_owner;
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
-        stake_account_positions.owner = new_owner;
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
+        stake_account_positions.set_owner(&new_owner)?;
         ctx.accounts.voter_record.governing_token_owner = new_owner;
 
         Ok(())
@@ -759,138 +799,28 @@ pub mod staking {
         // a number between 0 and 1 with 6 decimals of precision
         // TODO: use fract64 instead of u64
         slash_ratio: u64,
-    ) -> Result<(u64, u64, u64)> {
-        require_gte!(1_000_000, slash_ratio, ErrorCode::InvalidSlashRatio);
-
-        let stake_account_positions = &mut ctx.accounts.stake_account_positions.load_mut()?;
+    ) -> Result<(u64, u64)> {
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
         let governance_target_account = &mut ctx.accounts.governance_target_account;
         let publisher = &ctx.accounts.publisher;
 
         let next_index = &mut ctx.accounts.stake_account_metadata.next_index;
 
         let current_epoch = get_current_epoch(&ctx.accounts.config)?;
-        let unlocking_duration = ctx.accounts.config.unlocking_duration;
 
-        let mut locked_slashed = 0;
-        let mut unlocking_slashed = 0;
-        let mut preunlocking_slashed = 0;
-
-        let mut i: usize = 0;
-        while i < usize::from(*next_index) {
-            let position = stake_account_positions.read_position(i)?;
-
-            if let Some(position_data) = position {
-                let prev_state =
-                    position_data.get_current_position(current_epoch - 1, unlocking_duration)?;
-                let current_state =
-                    position_data.get_current_position(current_epoch, unlocking_duration)?;
-                if matches!(
-                    position_data.target_with_parameters,
-                    TargetWithParameters::IntegrityPool { publisher: publisher_pubkey } if publisher_pubkey == *publisher.key,
-                ) && (prev_state == PositionState::LOCKED
-                    || prev_state == PositionState::PREUNLOCKING)
-                {
-                    // TODO: use constants
-                    let to_slash: u64 =
-                        ((u128::from(position_data.amount) * u128::from(slash_ratio)) / 1_000_000)
-                            .try_into()?;
-
-                    match current_state {
-                        PositionState::LOCKED => {
-                            locked_slashed += to_slash;
-                        }
-                        PositionState::UNLOCKING => {
-                            unlocking_slashed += to_slash;
-                        }
-                        PositionState::PREUNLOCKING => {
-                            preunlocking_slashed += to_slash;
-                        }
-                        _ => {
-                            return Err(error!(ErrorCode::InvalidPosition));
-                        }
-                    }
-
-                    // position_data.amount >= to_slash since slash_ratio is between 0 and 1
-                    if position_data.amount - to_slash == 0 {
-                        stake_account_positions.make_none(i, next_index)?;
-                        continue;
-                    } else {
-                        stake_account_positions.write_position(
-                            i,
-                            &Position {
-                                amount:                 position_data.amount - to_slash,
-                                target_with_parameters: position_data.target_with_parameters,
-                                activation_epoch:       position_data.activation_epoch,
-                                unlocking_start:        position_data.unlocking_start,
-                            },
-                        )?;
-                    }
-                }
-            }
-            i += 1;
-        }
-
-        let total_amount = ctx.accounts.stake_account_custody.amount;
-        let governance_exposure = calculate_governance_exposure(stake_account_positions)?;
-
-        let total_slashed = locked_slashed + unlocking_slashed + preunlocking_slashed;
-        if let Some(mut remaining) = (governance_exposure + total_slashed).checked_sub(total_amount)
-        {
-            let mut i = 0;
-            while i < usize::from(*next_index) && remaining > 0 {
-                if let Some(position) = stake_account_positions.read_position(i)? {
-                    let prev_state =
-                        position.get_current_position(current_epoch - 1, unlocking_duration)?;
-                    let current_state =
-                        position.get_current_position(current_epoch, unlocking_duration)?;
-
-                    if position.target_with_parameters == TargetWithParameters::Voting {
-                        let to_slash = remaining.min(position.amount);
-                        remaining -= to_slash;
-
-                        match prev_state {
-                            PositionState::LOCKED | PositionState::PREUNLOCKING => {
-                                governance_target_account
-                                    .sub_prev_locked(to_slash, current_epoch)?;
-                            }
-                            PositionState::LOCKING
-                            | PositionState::UNLOCKING
-                            | PositionState::UNLOCKED => {}
-                        }
-
-                        match current_state {
-                            PositionState::LOCKING => {
-                                governance_target_account.add_unlocking(to_slash, current_epoch)?;
-                            }
-                            PositionState::LOCKED => {
-                                governance_target_account.sub_locked(to_slash, current_epoch)?;
-                            }
-                            PositionState::PREUNLOCKING => {
-                                governance_target_account.sub_locked(to_slash, current_epoch)?;
-                                governance_target_account.add_locking(to_slash, current_epoch)?;
-                            }
-                            PositionState::UNLOCKING | PositionState::UNLOCKED => {}
-                        }
-
-                        if to_slash == position.amount {
-                            stake_account_positions.make_none(i, next_index)?;
-                            continue;
-                        } else {
-                            stake_account_positions.write_position(
-                                i,
-                                &Position {
-                                    amount:                 position.amount - to_slash,
-                                    target_with_parameters: position.target_with_parameters,
-                                    activation_epoch:       position.activation_epoch,
-                                    unlocking_start:        position.unlocking_start,
-                                },
-                            )?;
-                        }
-                    }
-                }
-                i += 1;
-            }
-        }
+        let SlashedAmounts {
+            total_slashed,
+            locked_slashed,
+            preunlocking_slashed,
+        } = stake_account_positions.slash_positions(
+            current_epoch,
+            next_index,
+            ctx.accounts.stake_account_custody.amount,
+            publisher.key,
+            slash_ratio,
+            governance_target_account,
+        )?;
 
         transfer(
             CpiContext::from(&*ctx.accounts).with_signer(&[&[
@@ -901,7 +831,7 @@ pub mod staking {
             total_slashed,
         )?;
 
-        Ok((locked_slashed, preunlocking_slashed, unlocking_slashed))
+        Ok((locked_slashed, preunlocking_slashed))
     }
 
     // Hack to allow exporting the Position type in the IDL

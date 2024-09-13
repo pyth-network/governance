@@ -10,6 +10,8 @@ use {
     std::convert::TryInto,
 };
 
+pub const UNLOCKING_DURATION: u64 = 1; // 1 epoch
+
 /// Computes Pyth clock.
 /// Right now it's just the current Unix timestamp divided by the epoch length
 pub fn get_current_epoch(global_config: &GlobalConfig) -> Result<u64> {

@@ -2,9 +2,8 @@ use {
     crate::{
         error::ErrorCode,
         state::positions::{
-            PositionData,
+            DynamicPositionArray,
             PositionState,
-            MAX_POSITIONS,
         },
     },
     anchor_lang::prelude::*,
@@ -12,16 +11,15 @@ use {
 };
 
 pub fn compute_voter_weight(
-    stake_account_positions: &PositionData,
+    stake_account_positions: &DynamicPositionArray,
     current_epoch: u64,
-    unlocking_duration: u8,
     current_locked: u64,
     total_supply: u64,
 ) -> Result<u64> {
     let mut raw_voter_weight = 0u64;
-    for i in 0..MAX_POSITIONS {
+    for i in 0..stake_account_positions.get_position_capacity() {
         if let Some(position) = stake_account_positions.read_position(i)? {
-            match position.get_current_position(current_epoch, unlocking_duration)? {
+            match position.get_current_position(current_epoch)? {
                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
                     if position.is_voting() {
                         // position.amount is trusted, so I don't think this can overflow,
@@ -33,8 +31,8 @@ pub fn compute_voter_weight(
             }
         }
     }
-    let voter_weight: u64 = ((raw_voter_weight as u128) * (total_supply as u128))
-        .checked_div(current_locked as u128)
+    let voter_weight: u64 = ((u128::from(raw_voter_weight)) * (u128::from(total_supply)))
+        .checked_div(u128::from(current_locked))
         .unwrap_or(0_u128)
         .try_into()
         .map_err(|_| ErrorCode::GenericOverflow)?;
@@ -46,8 +44,8 @@ pub mod tests {
     use {
         crate::{
             state::positions::{
+                DynamicPositionArrayAccount,
                 Position,
-                PositionData,
                 TargetWithParameters,
             },
             utils::voter_weight::compute_voter_weight,
@@ -58,8 +56,8 @@ pub mod tests {
 
     #[test]
     fn test_compute_voter_weight() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -105,26 +103,26 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 0, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 0, 100, 150).unwrap();
         assert_eq!(weight, 0);
 
-        let weight = compute_voter_weight(&pd, 1, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 1, 100, 150).unwrap();
         assert_eq!(weight, 7 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 2, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 2, 100, 150).unwrap();
         assert_eq!(weight, 12 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 3, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 3, 100, 150).unwrap();
         assert_eq!(weight, 8 * 150 / 100);
 
-        let weight = compute_voter_weight(&pd, 4, 1, 100, 150).unwrap();
+        let weight = compute_voter_weight(&pd, 4, 100, 150).unwrap();
         assert_eq!(weight, 3 * 150 / 100);
     }
 
     #[test]
     fn test_overflow() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -136,14 +134,14 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 1, 1, u64::MAX / 2, u64::MAX).unwrap();
+        let weight = compute_voter_weight(&pd, 1, u64::MAX / 2, u64::MAX).unwrap();
         assert_eq!(weight, u64::MAX);
     }
 
     #[test]
     fn test_locked_amount_zero() {
-        let mut pd = PositionData::default();
-
+        let mut fixture = DynamicPositionArrayAccount::default();
+        let mut pd = fixture.to_dynamic_position_array();
         pd.write_position(
             0,
             &Position {
@@ -155,7 +153,7 @@ pub mod tests {
         )
         .unwrap();
 
-        let weight = compute_voter_weight(&pd, 1, 1, 0, u64::MAX).unwrap();
+        let weight = compute_voter_weight(&pd, 1, 0, u64::MAX).unwrap();
         assert_eq!(weight, 0);
     }
 }

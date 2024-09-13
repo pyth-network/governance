@@ -21,7 +21,4 @@ publisher-caps = {path = "../publisher-caps", features = ["no-entrypoint"]}
 
 
 [dev-dependencies]
-litesvm = "0.1.0"
-solana-program = { workspace = true }
 solana-sdk = { workspace = true }
-spl-token = "4.0.1"
