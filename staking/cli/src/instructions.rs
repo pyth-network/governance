@@ -141,6 +141,24 @@ pub fn write_publisher_caps(
     process_transaction(rpc_client, &[instruction], &[payer]);
 }
 
+pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) {
+    let accounts = publisher_caps::accounts::ClosePublisherCaps {
+        write_authority: payer.pubkey(),
+        publisher_caps,
+    };
+
+    let instruction_data = publisher_caps::instruction::ClosePublisherCaps {};
+
+    let instruction = Instruction {
+        program_id: publisher_caps::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[payer]);
+}
+
+
 pub fn verify_publisher_caps(
     rpc_client: &RpcClient,
     payer: &Keypair,
