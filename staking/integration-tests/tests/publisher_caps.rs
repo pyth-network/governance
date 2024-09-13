@@ -38,6 +38,9 @@ fn test_close_publisher_caps() {
     let publisher_caps =
         post_dummy_publisher_caps(&mut svm, &payer, publisher_keypair.pubkey(), 10);
 
+    assert!(svm.get_account(&publisher_caps).unwrap().lamports > 0);
+    let payer_balance_before = svm.get_account(&payer.pubkey()).unwrap().lamports;
+
     assert_anchor_program_error!(
         close_publisher_caps(&mut svm, &Keypair::new(), &payer, publisher_caps),
         PublisherCapsError::WrongWriteAuthority,
@@ -47,4 +50,6 @@ fn test_close_publisher_caps() {
     close_publisher_caps(&mut svm, &payer, &payer, publisher_caps).unwrap();
     assert_eq!(svm.get_account(&publisher_caps).unwrap().data.len(), 0);
     assert_eq!(svm.get_account(&publisher_caps).unwrap().lamports, 0);
+
+    assert!(svm.get_account(&payer.pubkey()).unwrap().lamports > payer_balance_before);
 }
