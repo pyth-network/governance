@@ -63,7 +63,7 @@ pub mod integrity_pool {
         ctx: Context<UpdateRewardProgramAuthority>,
         reward_program_authority: Pubkey,
     ) -> Result<()> {
-        ctx.accounts.pool_config.slash_custody = reward_program_authority;
+        ctx.accounts.pool_config.reward_program_authority = reward_program_authority;
         Ok(())
     }
 
