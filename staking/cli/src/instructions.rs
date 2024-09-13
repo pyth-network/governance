@@ -257,23 +257,23 @@ pub fn process_write_encoded_vaa(
         data:       wormhole_core_bridge_solana::instruction::InitEncodedVaa.data(),
     };
 
-    let write_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::WriteEncodedVaa {
-        write_authority: payer.pubkey(),
-        draft_vaa:       encoded_vaa_keypair.pubkey(),
-    }
-    .to_account_metas(None);
+    process_transaction(
+        rpc_client,
+        &[create_encoded_vaa, init_encoded_vaa_instruction],
+        &[payer, &encoded_vaa_keypair],
+    );
 
-    let write_encoded_vaa_accounts_instruction = Instruction {
-        program_id: wormhole,
-        accounts:   write_encoded_vaa_accounts.clone(),
-        data:       wormhole_core_bridge_solana::instruction::WriteEncodedVaa {
-            args: WriteEncodedVaaArgs {
-                index: 0,
-                data:  vaa.to_vec(),
-            },
-        }
-        .data(),
-    };
+    for i in (0..vaa.len()).step_by(1000) {
+        let chunk = &vaa[i..min(i + 1000, vaa.len())];
+
+        write_encoded_vaa(
+            rpc_client,
+            payer,
+            &encoded_vaa_keypair.pubkey(),
+            &wormhole,
+            chunk,
+        );
+    }
 
     let (header, _): (Header, Body<&RawMessage>) = serde_wormhole::from_slice(vaa).unwrap();
     let guardian_set = GuardianSet::key(&wormhole, header.guardian_set_index);
@@ -297,17 +297,46 @@ pub fn process_write_encoded_vaa(
     process_transaction(
         rpc_client,
         &[
-            create_encoded_vaa,
-            init_encoded_vaa_instruction,
-            write_encoded_vaa_accounts_instruction,
             verify_encoded_vaa_instruction,
             request_compute_units_instruction,
         ],
-        &[payer, &encoded_vaa_keypair],
+        &[payer],
     );
 
 
     encoded_vaa_keypair.pubkey()
+}
+
+pub fn write_encoded_vaa(
+    rpc_client: &RpcClient,
+    payer: &Keypair,
+    encoded_vaa: &Pubkey,
+    wormhole: &Pubkey,
+    chunk: &[u8],
+) {
+    let write_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::WriteEncodedVaa {
+        write_authority: payer.pubkey(),
+        draft_vaa:       *encoded_vaa,
+    }
+    .to_account_metas(None);
+
+    let write_encoded_vaa_accounts_instruction = Instruction {
+        program_id: *wormhole,
+        accounts:   write_encoded_vaa_accounts.clone(),
+        data:       wormhole_core_bridge_solana::instruction::WriteEncodedVaa {
+            args: WriteEncodedVaaArgs {
+                index: 0,
+                data:  chunk.to_vec(),
+            },
+        }
+        .data(),
+    };
+
+    process_transaction(
+        rpc_client,
+        &[write_encoded_vaa_accounts_instruction],
+        &[payer],
+    );
 }
 
 pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &Keypair) {
