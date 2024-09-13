@@ -123,6 +123,10 @@ pub mod publisher_caps {
 
         Ok(())
     }
+
+    pub fn close_publisher_caps(_ctx: Context<ClosePublisherCaps>) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[repr(C)]
@@ -221,6 +225,14 @@ pub struct VerifyPublisherCaps<'info> {
     #[account(owner = WORMHOLE_RECEIVER @ PublisherCapsError::WrongVaaOwner)]
     pub encoded_vaa:    AccountInfo<'info>,
 }
+
+#[derive(Accounts)]
+pub struct ClosePublisherCaps<'info> {
+    pub write_authority: Signer<'info>,
+    #[account(mut, close = write_authority, has_one = write_authority @ PublisherCapsError::WrongWriteAuthority)]
+    pub publisher_caps:  AccountLoader<'info, PublisherCaps>,
+}
+
 
 #[error_code]
 pub enum PublisherCapsError {
