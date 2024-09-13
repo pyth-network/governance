@@ -117,3 +117,32 @@ pub fn verify_publisher_caps(
     );
     svm.send_transaction(transaction)
 }
+
+pub fn close_publisher_caps(
+    svm: &mut LiteSVM,
+    signer: &Keypair,
+    payer: &Keypair,
+    publisher_caps: Pubkey,
+) -> TransactionResult {
+    let accounts = publisher_caps::accounts::ClosePublisherCaps {
+        write_authority: signer.pubkey(),
+        publisher_caps,
+    };
+
+    let instruction_data = publisher_caps::instruction::ClosePublisherCaps {};
+
+    let instruction = Instruction {
+        program_id: publisher_caps::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&payer.pubkey()),
+        &[payer, signer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(transaction)
+}
