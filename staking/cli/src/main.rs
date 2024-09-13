@@ -16,6 +16,7 @@ use {
         slash,
         update_delegation_fee,
         update_reward_program_authority,
+        update_y,
     },
     solana_client::rpc_client::RpcClient,
     solana_sdk::commitment_config::CommitmentConfig,
@@ -75,5 +76,6 @@ fn main() {
             publisher,
             stake_account_positions,
         } => slash(&rpc_client, &keypair, &publisher, &stake_account_positions),
+        Action::UpdateY { y } => update_y(&rpc_client, &keypair, y),
     }
 }

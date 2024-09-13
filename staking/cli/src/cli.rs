@@ -93,4 +93,8 @@ pub enum Action {
         #[clap(long, help = "Stake account positions")]
         stake_account_positions: Pubkey,
     },
+    UpdateY {
+        #[clap(long, help = "New Y")]
+        y: u64,
+    },
 }

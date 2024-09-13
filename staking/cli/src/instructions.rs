@@ -686,3 +686,23 @@ pub fn slash(
 
     process_transaction(rpc_client, &[instruction], &[signer]);
 }
+
+pub fn update_y(rpc_client: &RpcClient, signer: &Keypair, y: u64) {
+    let pool_config = get_pool_config_address();
+
+    let accounts = integrity_pool::accounts::UpdateY {
+        reward_program_authority: signer.pubkey(),
+        pool_config,
+        system_program: system_program::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::UpdateY { y };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[signer]);
+}
