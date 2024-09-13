@@ -516,6 +516,7 @@ pub fn fetch_publisher_caps_and_advance(
     );
 
     advance(rpc_client, payer, publisher_caps);
+    close_publisher_caps(rpc_client, payer, publisher_caps);
 }
 
 pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation_fee: u64) {
