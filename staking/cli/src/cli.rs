@@ -97,4 +97,8 @@ pub enum Action {
         #[clap(long, help = "New Y")]
         y: u64,
     },
+    ClosePublisherCaps {
+        #[clap(long, help = "Publisher caps")]
+        publisher_caps: Pubkey,
+    },
 }

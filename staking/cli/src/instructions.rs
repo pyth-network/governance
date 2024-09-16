@@ -141,6 +141,24 @@ pub fn write_publisher_caps(
     process_transaction(rpc_client, &[instruction], &[payer]);
 }
 
+pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) {
+    let accounts = publisher_caps::accounts::ClosePublisherCaps {
+        write_authority: payer.pubkey(),
+        publisher_caps,
+    };
+
+    let instruction_data = publisher_caps::instruction::ClosePublisherCaps {};
+
+    let instruction = Instruction {
+        program_id: publisher_caps::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    process_transaction(rpc_client, &[instruction], &[payer]);
+}
+
+
 pub fn verify_publisher_caps(
     rpc_client: &RpcClient,
     payer: &Keypair,
@@ -239,23 +257,24 @@ pub fn process_write_encoded_vaa(
         data:       wormhole_core_bridge_solana::instruction::InitEncodedVaa.data(),
     };
 
-    let write_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::WriteEncodedVaa {
-        write_authority: payer.pubkey(),
-        draft_vaa:       encoded_vaa_keypair.pubkey(),
-    }
-    .to_account_metas(None);
+    process_transaction(
+        rpc_client,
+        &[create_encoded_vaa, init_encoded_vaa_instruction],
+        &[payer, &encoded_vaa_keypair],
+    );
 
-    let write_encoded_vaa_accounts_instruction = Instruction {
-        program_id: wormhole,
-        accounts:   write_encoded_vaa_accounts.clone(),
-        data:       wormhole_core_bridge_solana::instruction::WriteEncodedVaa {
-            args: WriteEncodedVaaArgs {
-                index: 0,
-                data:  vaa.to_vec(),
-            },
-        }
-        .data(),
-    };
+    for i in (0..vaa.len()).step_by(1000) {
+        let chunk = &vaa[i..min(i + 1000, vaa.len())];
+
+        write_encoded_vaa(
+            rpc_client,
+            payer,
+            &encoded_vaa_keypair.pubkey(),
+            &wormhole,
+            i,
+            chunk,
+        );
+    }
 
     let (header, _): (Header, Body<&RawMessage>) = serde_wormhole::from_slice(vaa).unwrap();
     let guardian_set = GuardianSet::key(&wormhole, header.guardian_set_index);
@@ -279,17 +298,63 @@ pub fn process_write_encoded_vaa(
     process_transaction(
         rpc_client,
         &[
-            create_encoded_vaa,
-            init_encoded_vaa_instruction,
-            write_encoded_vaa_accounts_instruction,
             verify_encoded_vaa_instruction,
             request_compute_units_instruction,
         ],
-        &[payer, &encoded_vaa_keypair],
+        &[payer],
     );
 
 
     encoded_vaa_keypair.pubkey()
+}
+
+pub fn write_encoded_vaa(
+    rpc_client: &RpcClient,
+    payer: &Keypair,
+    encoded_vaa: &Pubkey,
+    wormhole: &Pubkey,
+    index: usize,
+    chunk: &[u8],
+) {
+    let write_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::WriteEncodedVaa {
+        write_authority: payer.pubkey(),
+        draft_vaa:       *encoded_vaa,
+    }
+    .to_account_metas(None);
+
+    let write_encoded_vaa_accounts_instruction = Instruction {
+        program_id: *wormhole,
+        accounts:   write_encoded_vaa_accounts.clone(),
+        data:       wormhole_core_bridge_solana::instruction::WriteEncodedVaa {
+            args: WriteEncodedVaaArgs {
+                index: index as u32,
+                data:  chunk.to_vec(),
+            },
+        }
+        .data(),
+    };
+
+    process_transaction(
+        rpc_client,
+        &[write_encoded_vaa_accounts_instruction],
+        &[payer],
+    );
+}
+
+pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &Keypair, encoded_vaa: Pubkey) {
+    let close_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::CloseEncodedVaa {
+        write_authority: payer.pubkey(),
+        encoded_vaa,
+    }
+    .to_account_metas(None);
+
+    let close_encoded_vaa_instruction = Instruction {
+        program_id: wormhole_core_bridge_solana::ID,
+        accounts:   close_encoded_vaa_accounts,
+        data:       wormhole_core_bridge_solana::instruction::CloseEncodedVaa {}.data(),
+    };
+
+    process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer]);
 }
 
 pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &Keypair) {
@@ -469,6 +534,8 @@ pub fn fetch_publisher_caps_and_advance(
     );
 
     advance(rpc_client, payer, publisher_caps);
+    close_publisher_caps(rpc_client, payer, publisher_caps);
+    close_encoded_vaa(rpc_client, payer, encoded_vaa);
 }
 
 pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation_fee: u64) {

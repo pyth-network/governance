@@ -3372,31 +3372,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a66a03ae7c801facd77a29370b4faec201768915ac14a721ba36f20bc9c209b"
 
 [[package]]
-name = "remote-executor-cli"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "base64 0.22.1",
- "byteorder",
- "clap 3.2.25",
- "integration-tests",
- "integrity-pool",
- "publisher-caps",
- "pyth-staking-program",
- "pythnet-sdk",
- "reqwest",
- "serde_json",
- "serde_wormhole",
- "shellexpand",
- "solana-client",
- "solana-sdk",
- "wormhole-core-bridge-solana",
- "wormhole-solana",
- "wormhole-vaas-serde",
-]
-
-[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5339,6 +5314,31 @@ dependencies = [
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
+]
+
+[[package]]
+name = "staking-cli"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "base64 0.22.1",
+ "byteorder",
+ "clap 3.2.25",
+ "integration-tests",
+ "integrity-pool",
+ "publisher-caps",
+ "pyth-staking-program",
+ "pythnet-sdk",
+ "reqwest",
+ "serde_json",
+ "serde_wormhole",
+ "shellexpand",
+ "solana-client",
+ "solana-sdk",
+ "wormhole-core-bridge-solana",
+ "wormhole-solana",
+ "wormhole-vaas-serde",
 ]
 
 [[package]]

@@ -8,6 +8,7 @@ use {
         Cli,
     },
     instructions::{
+        close_publisher_caps,
         create_slash_event,
         fetch_publisher_caps_and_advance,
         initialize_pool,
@@ -77,5 +78,8 @@ fn main() {
             stake_account_positions,
         } => slash(&rpc_client, &keypair, &publisher, &stake_account_positions),
         Action::UpdateY { y } => update_y(&rpc_client, &keypair, y),
+        Action::ClosePublisherCaps { publisher_caps } => {
+            close_publisher_caps(&rpc_client, &keypair, publisher_caps)
+        }
     }
 }
