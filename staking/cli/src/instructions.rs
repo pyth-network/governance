@@ -271,6 +271,7 @@ pub fn process_write_encoded_vaa(
             payer,
             &encoded_vaa_keypair.pubkey(),
             &wormhole,
+            i,
             chunk,
         );
     }
@@ -312,6 +313,7 @@ pub fn write_encoded_vaa(
     payer: &Keypair,
     encoded_vaa: &Pubkey,
     wormhole: &Pubkey,
+    index: usize,
     chunk: &[u8],
 ) {
     let write_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::WriteEncodedVaa {
@@ -325,7 +327,7 @@ pub fn write_encoded_vaa(
         accounts:   write_encoded_vaa_accounts.clone(),
         data:       wormhole_core_bridge_solana::instruction::WriteEncodedVaa {
             args: WriteEncodedVaaArgs {
-                index: 0,
+                index: index as u32,
                 data:  chunk.to_vec(),
             },
         }
