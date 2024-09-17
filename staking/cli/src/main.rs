@@ -20,13 +20,7 @@ use {
         update_y,
     },
     solana_client::rpc_client::RpcClient,
-    solana_remote_wallet::locator::Locator,
-    solana_sdk::{
-        commitment_config::CommitmentConfig,
-        signature::Keypair,
-        signer::Signer,
-    },
-    std::convert::TryFrom,
+    solana_sdk::commitment_config::CommitmentConfig,
 };
 
 

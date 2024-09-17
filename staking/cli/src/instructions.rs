@@ -203,10 +203,10 @@ pub fn deserialize_accumulator_update_data(
     }
 }
 
-pub fn process_transaction<'a>(
+pub fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
-    signers: &[&'a dyn Signer],
+    signers: &[&dyn Signer],
 ) {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
     transaction.sign(signers, rpc_client.get_latest_blockhash().unwrap());
