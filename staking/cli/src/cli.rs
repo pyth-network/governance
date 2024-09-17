@@ -119,30 +119,32 @@ pub enum SignerSource {
     },
 }
 
-pub fn get_signer_source(source: &str) -> SignerSource {
+pub fn get_signer_source_from_path(source: &str) -> Result<SignerSource, String> {
     match uriparse::URIReference::try_from(source) {
         Ok(uri) => {
             if let Some(scheme) = uri.scheme() {
                 match scheme.as_str() {
-                    "file" => SignerSource::Filepath(uri.path().to_string()),
-                    "usb" => SignerSource::Usb {
+                    "usb" => Ok(SignerSource::Usb {
                         locator:         Locator::new_from_uri(&uri).unwrap(),
                         derivation_path: DerivationPath::from_uri_any_query(&uri).unwrap(),
-                    },
-                    _ => todo!(),
+                    }),
+                    _ => Err(format!("Unsupported scheme: {}", scheme)),
                 }
             } else {
-                panic!("Invalid keypair source")
+                Ok(std::fs::metadata(shellexpand::tilde(source).to_string())
+                    .map(|_| SignerSource::Filepath(source.to_string()))
+                    .map_err(|_| format!("Invalid keypair path: {}", source))
+                    .unwrap())
             }
         }
-        Err(_) => panic!("Invalid keypair source"),
+        Err(e) => Err(format!("Invalid keypair source: {}", e)),
     }
 }
 
 pub fn get_signer_from_path(source: &str) -> Result<Box<dyn Signer>, String> {
-    let signer_source = get_signer_source(source);
+    let signer_source = get_signer_source_from_path(source)?;
     match signer_source {
-        SignerSource::Filepath(path) => Ok(get_keypair_from_file(&path).unwrap().into()),
+        SignerSource::Filepath(path) => Ok(get_keypair_from_file(&path)?.into()),
         SignerSource::Usb {
             locator,
             derivation_path,
