@@ -141,6 +141,8 @@ pub fn get_signer_source_from_path(source: &str) -> Result<SignerSource, String>
     }
 }
 
+/// This is mostly borrowed from https://github.com/solana-labs/solana/blob/master/clap-utils/src/keypair.rs#L753
+/// To use ledger use `usb://ledger` or `usb://ledger?key=0/0`.
 pub fn get_signer_from_path(source: &str) -> Result<Box<dyn Signer>, String> {
     let signer_source = get_signer_source_from_path(source)?;
     match signer_source {
