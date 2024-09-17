@@ -341,7 +341,12 @@ pub fn write_encoded_vaa(
     );
 }
 
-pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &dyn Signer, encoded_vaa: Pubkey) {
+pub fn close_encoded_vaa(
+    rpc_client: &RpcClient,
+    payer: &dyn Signer,
+    encoded_vaa: Pubkey,
+    wormhole: &Pubkey,
+) {
     let close_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::CloseEncodedVaa {
         write_authority: payer.pubkey(),
         encoded_vaa,
@@ -349,7 +354,7 @@ pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &dyn Signer, encoded_vaa
     .to_account_metas(None);
 
     let close_encoded_vaa_instruction = Instruction {
-        program_id: wormhole_core_bridge_solana::ID,
+        program_id: *wormhole,
         accounts:   close_encoded_vaa_accounts,
         data:       wormhole_core_bridge_solana::instruction::CloseEncodedVaa {}.data(),
     };
@@ -533,9 +538,8 @@ pub fn fetch_publisher_caps_and_advance(
         publisher_caps
     );
 
-    advance(rpc_client, payer, publisher_caps);
     close_publisher_caps(rpc_client, payer, publisher_caps);
-    close_encoded_vaa(rpc_client, payer, encoded_vaa);
+    close_encoded_vaa(rpc_client, payer, encoded_vaa, &wormhole);
 }
 
 pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &dyn Signer, delegation_fee: u64) {
