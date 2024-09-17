@@ -426,7 +426,7 @@ pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubke
 pub fn initialize_pool(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
-    pool_data_keypair: &dyn Signer,
+    pool_data_keypair: &Keypair,
     reward_program_authority: Pubkey,
     y: u64,
     slash_custody: Pubkey,

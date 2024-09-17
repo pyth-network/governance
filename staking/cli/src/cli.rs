@@ -53,9 +53,9 @@ pub enum Action {
         #[clap(
             long,
             help = "Keypair pool data account",
-            parse(try_from_str = get_signer_from_path)
+            parse(try_from_str = get_keypair_from_file)
         )]
-        pool_data_keypair:        Box<dyn Signer>,
+        pool_data_keypair:        Keypair,
         #[clap(long, help = "Y parameter")]
         y:                        u64,
         #[clap(long, help = "Reward program authority parameter")]

@@ -48,7 +48,7 @@ fn main() {
             initialize_pool(
                 &rpc_client,
                 keypair.as_ref(),
-                pool_data_keypair.as_ref(),
+                &pool_data_keypair,
                 reward_program_authority,
                 y,
                 slash_custody,
