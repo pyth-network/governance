@@ -538,6 +538,7 @@ pub fn fetch_publisher_caps_and_advance(
         publisher_caps
     );
 
+    advance(rpc_client, payer, publisher_caps);
     close_publisher_caps(rpc_client, payer, publisher_caps);
     close_encoded_vaa(rpc_client, payer, encoded_vaa, &wormhole);
 }
