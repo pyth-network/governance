@@ -4,13 +4,21 @@ use {
         Parser,
         Subcommand,
     },
+    solana_remote_wallet::{
+        locator::Locator,
+        remote_keypair::generate_remote_keypair,
+        remote_wallet::maybe_wallet_manager,
+    },
     solana_sdk::{
+        derivation_path::DerivationPath,
         pubkey::Pubkey,
         signature::{
             read_keypair_file,
             Keypair,
         },
+        signer::Signer,
     },
+    std::convert::TryFrom,
 };
 
 #[derive(Parser, Debug)]
@@ -25,9 +33,9 @@ pub struct Cli {
         long,
         default_value = "~/.config/solana/id.json",
         help = "Keypair file the funder of the transaction",
-        parse(try_from_str = get_keypair_from_file)
+        parse(try_from_str = get_signer_from_path)
     )]
-    pub keypair: Keypair,
+    pub keypair: Box<dyn Signer>,
     #[clap(subcommand)]
     pub action:  Action,
 }
@@ -45,9 +53,9 @@ pub enum Action {
         #[clap(
             long,
             help = "Keypair pool data account",
-            parse(try_from_str = get_keypair_from_file)
+            parse(try_from_str = get_signer_from_path)
         )]
-        pool_data_keypair:        Keypair,
+        pool_data_keypair:        Box<dyn Signer>,
         #[clap(long, help = "Y parameter")]
         y:                        u64,
         #[clap(long, help = "Reward program authority parameter")]
@@ -101,4 +109,52 @@ pub enum Action {
         #[clap(long, help = "Publisher caps")]
         publisher_caps: Pubkey,
     },
+}
+
+pub enum SignerSource {
+    Filepath(String),
+    Usb {
+        locator:         Locator,
+        derivation_path: Option<DerivationPath>,
+    },
+}
+
+pub fn get_signer_source(source: &str) -> SignerSource {
+    match uriparse::URIReference::try_from(source) {
+        Ok(uri) => {
+            if let Some(scheme) = uri.scheme() {
+                match scheme.as_str() {
+                    "file" => SignerSource::Filepath(uri.path().to_string()),
+                    "usb" => SignerSource::Usb {
+                        locator:         Locator::new_from_uri(&uri).unwrap(),
+                        derivation_path: DerivationPath::from_uri_any_query(&uri).unwrap(),
+                    },
+                    _ => todo!(),
+                }
+            } else {
+                panic!("Invalid keypair source")
+            }
+        }
+        Err(_) => panic!("Invalid keypair source"),
+    }
+}
+
+pub fn get_signer_from_path(source: &str) -> Result<Box<dyn Signer>, String> {
+    let signer_source = get_signer_source(source);
+    match signer_source {
+        SignerSource::Filepath(path) => Ok(get_keypair_from_file(&path).unwrap().into()),
+        SignerSource::Usb {
+            locator,
+            derivation_path,
+        } => Ok(Box::new(
+            generate_remote_keypair(
+                locator,
+                derivation_path.unwrap_or_default(),
+                &maybe_wallet_manager().unwrap().unwrap(),
+                false,
+                "",
+            )
+            .unwrap(),
+        )),
+    }
 }
