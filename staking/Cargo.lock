@@ -250,7 +250,7 @@ dependencies = [
  "borsh 0.10.3",
  "bytemuck",
  "getrandom 0.2.15",
- "solana-program 1.18.23",
+ "solana-program",
  "thiserror",
 ]
 
@@ -1898,6 +1898,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
+name = "hidapi"
+version = "2.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03b876ecf37e86b359573c16c8366bc3eba52b689884a0fc42ba3f67203d2a8b"
+dependencies = [
+ "cc",
+ "cfg-if",
+ "libc",
+ "pkg-config",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "histogram"
 version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2385,7 +2398,7 @@ dependencies = [
  "solana-bpf-loader-program",
  "solana-compute-budget-program",
  "solana-loader-v4-program",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-program-runtime",
  "solana-sdk",
  "solana-system-program",
@@ -3075,7 +3088,7 @@ dependencies = [
  "quickcheck",
  "quickcheck_macros",
  "rand 0.8.5",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-governance",
  "wasm-bindgen",
 ]
@@ -3100,7 +3113,7 @@ dependencies = [
  "serde_wormhole",
  "sha3 0.10.8",
  "slow_primes",
- "solana-program 2.0.8",
+ "solana-program",
  "thiserror",
  "wormhole-vaas-serde",
 ]
@@ -3984,7 +3997,7 @@ dependencies = [
  "serde",
  "solana-frozen-abi",
  "solana-frozen-abi-macro",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-program-runtime",
  "solana-sdk",
  "thiserror",
@@ -4333,57 +4346,11 @@ dependencies = [
  "sha3 0.10.8",
  "solana-frozen-abi",
  "solana-frozen-abi-macro",
- "solana-sdk-macro 1.18.23",
+ "solana-sdk-macro",
  "thiserror",
  "tiny-bip39",
  "wasm-bindgen",
  "zeroize",
-]
-
-[[package]]
-name = "solana-program"
-version = "2.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d899c2a1d37290dcfeeb9d1c0032915a29bd48f35759f19ff1e0f6b096eca0b"
-dependencies = [
- "ark-bn254",
- "ark-ec",
- "ark-ff",
- "ark-serialize",
- "base64 0.22.1",
- "bincode",
- "bitflags 2.6.0",
- "blake3",
- "borsh 0.10.3",
- "borsh 1.5.1",
- "bs58 0.5.1",
- "bv",
- "bytemuck",
- "bytemuck_derive",
- "console_error_panic_hook",
- "console_log",
- "curve25519-dalek",
- "getrandom 0.2.15",
- "js-sys",
- "lazy_static",
- "libsecp256k1 0.6.0",
- "log",
- "memoffset 0.9.1",
- "num-bigint 0.4.6",
- "num-derive 0.4.2",
- "num-traits",
- "parking_lot",
- "rand 0.8.5",
- "rustc_version",
- "rustversion",
- "serde",
- "serde_bytes",
- "serde_derive",
- "sha2 0.10.8",
- "sha3 0.10.8",
- "solana-sdk-macro 2.0.8",
- "thiserror",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -4484,6 +4451,7 @@ checksum = "9651b3f2c3df39a1a6fc87fe792bdb3ec3d84a8169c0a57c86335b48d6cb1491"
 dependencies = [
  "console",
  "dialoguer",
+ "hidapi",
  "log",
  "num-derive 0.4.2",
  "num-traits",
@@ -4604,8 +4572,8 @@ dependencies = [
  "solana-frozen-abi",
  "solana-frozen-abi-macro",
  "solana-logger",
- "solana-program 1.18.23",
- "solana-sdk-macro 1.18.23",
+ "solana-program",
+ "solana-sdk-macro",
  "thiserror",
  "uriparse",
  "wasm-bindgen",
@@ -4618,19 +4586,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a8613ca80150f7e277e773620ba65d2c5fcc3a08eb8026627d601421ab43aef"
 dependencies = [
  "bs58 0.4.0",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 2.0.77",
-]
-
-[[package]]
-name = "solana-sdk-macro"
-version = "2.0.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23198ed620c4a61c97fe49bd907fc965659aea9a5ed0ea0cf90084eecc72a3c1"
-dependencies = [
- "bs58 0.5.1",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -4801,7 +4756,7 @@ dependencies = [
  "solana-frozen-abi",
  "solana-frozen-abi-macro",
  "solana-metrics",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-program-runtime",
  "solana-sdk",
  "thiserror",
@@ -4829,7 +4784,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha3 0.9.1",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-sdk",
  "subtle",
  "thiserror",
@@ -4887,7 +4842,7 @@ dependencies = [
  "borsh 0.10.3",
  "num-derive 0.4.2",
  "num-traits",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-token",
  "spl-token-2022 1.0.0",
  "thiserror",
@@ -4903,7 +4858,7 @@ dependencies = [
  "borsh 1.5.1",
  "num-derive 0.4.2",
  "num-traits",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-token",
  "spl-token-2022 3.0.4",
  "thiserror",
@@ -4916,7 +4871,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cce5d563b58ef1bb2cdbbfe0dfb9ffdc24903b10ae6a4df2d8f425ece375033f"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator-derive 0.1.2",
 ]
 
@@ -4927,7 +4882,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "210101376962bb22bb13be6daea34656ea1cbc248fce2164b146e39203b55e03"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator-derive 0.2.0",
 ]
 
@@ -4992,7 +4947,7 @@ dependencies = [
  "num-traits",
  "serde",
  "serde_derive",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-governance-addin-api",
  "spl-governance-tools",
  "spl-token",
@@ -5006,7 +4961,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9dc1be90f8b71e336933fedbe17f645cd33d36e8451dfb6ce1210ef585dc73b6"
 dependencies = [
  "borsh 0.10.3",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-governance-tools",
 ]
 
@@ -5023,7 +4978,7 @@ dependencies = [
  "num-traits",
  "serde",
  "serde_derive",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-token",
  "thiserror",
 ]
@@ -5034,7 +4989,7 @@ version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f180b03318c3dbab3ef4e1e4d46d5211ae3c780940dd0a28695aba4b59a75a"
 dependencies = [
- "solana-program 1.18.23",
+ "solana-program",
 ]
 
 [[package]]
@@ -5045,7 +5000,7 @@ checksum = "2881dddfca792737c0706fa0175345ab282b1b0879c7d877bad129645737c079"
 dependencies = [
  "borsh 0.10.3",
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-zk-token-sdk",
  "spl-program-error 0.3.0",
 ]
@@ -5058,7 +5013,7 @@ checksum = "c52d84c55efeef8edcc226743dc089d7e3888b8e3474569aa3eff152b37b9996"
 dependencies = [
  "borsh 1.5.1",
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-zk-token-sdk",
  "spl-program-error 0.4.4",
 ]
@@ -5071,7 +5026,7 @@ checksum = "249e0318493b6bcf27ae9902600566c689b7dfba9f1bdff5893e92253374e78c"
 dependencies = [
  "num-derive 0.4.2",
  "num-traits",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-program-error-derive 0.3.2",
  "thiserror",
 ]
@@ -5084,7 +5039,7 @@ checksum = "e45a49acb925db68aa501b926096b2164adbdcade7a0c24152af9f0742d0a602"
 dependencies = [
  "num-derive 0.4.2",
  "num-traits",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-program-error-derive 0.4.1",
  "thiserror",
 ]
@@ -5120,7 +5075,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "615d381f48ddd2bb3c57c7f7fb207591a2a05054639b18a62e785117dd7a8683"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.1.0",
  "spl-pod 0.1.0",
  "spl-program-error 0.3.0",
@@ -5134,7 +5089,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fab8edfd37be5fa17c9e42c1bff86abbbaf0494b031b37957f2728ad2ff842ba"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
@@ -5152,7 +5107,7 @@ dependencies = [
  "num-derive 0.3.3",
  "num-traits",
  "num_enum 0.6.1",
- "solana-program 1.18.23",
+ "solana-program",
  "thiserror",
 ]
 
@@ -5167,7 +5122,7 @@ dependencies = [
  "num-derive 0.4.2",
  "num-traits",
  "num_enum 0.7.3",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-security-txt",
  "solana-zk-token-sdk",
  "spl-memo",
@@ -5191,7 +5146,7 @@ dependencies = [
  "num-derive 0.4.2",
  "num-traits",
  "num_enum 0.7.3",
- "solana-program 1.18.23",
+ "solana-program",
  "solana-security-txt",
  "solana-zk-token-sdk",
  "spl-memo",
@@ -5211,7 +5166,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b889509d49fa74a4a033ca5dae6c2307e9e918122d97e58562f5c4ffa795c75d"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.1.0",
  "spl-pod 0.1.0",
  "spl-program-error 0.3.0",
@@ -5224,7 +5179,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "014817d6324b1e20c4bbc883e8ee30a5faa13e59d91d1b2b95df98b920150c17"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
@@ -5237,7 +5192,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c16ce3ba6979645fb7627aa1e435576172dd63088dc7848cb09aa331fa1fe4f"
 dependencies = [
  "borsh 0.10.3",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.1.0",
  "spl-pod 0.1.0",
  "spl-program-error 0.3.0",
@@ -5251,7 +5206,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3da00495b602ebcf5d8ba8b3ecff1ee454ce4c125c9077747be49c2d62335ba"
 dependencies = [
  "borsh 1.5.1",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
@@ -5266,7 +5221,7 @@ checksum = "7aabdb7c471566f6ddcee724beb8618449ea24b399e58d464d6b5bc7db550259"
 dependencies = [
  "arrayref",
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.1.0",
  "spl-pod 0.1.0",
  "spl-program-error 0.3.0",
@@ -5282,7 +5237,7 @@ checksum = "a9b5c08a89838e5a2931f79b17f611857f281a14a2100968a3ccef352cb7414b"
 dependencies = [
  "arrayref",
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
@@ -5297,7 +5252,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a468e6f6371f9c69aae760186ea9f1a01c2908351b06a5e0026d21cfc4d7ecac"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.1.0",
  "spl-pod 0.1.0",
  "spl-program-error 0.3.0",
@@ -5310,7 +5265,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c872f93d0600e743116501eba2d53460e73a12c9a496875a42a7d70e034fe06d"
 dependencies = [
  "bytemuck",
- "solana-program 1.18.23",
+ "solana-program",
  "spl-discriminator 0.2.5",
  "spl-pod 0.2.5",
  "spl-program-error 0.4.4",
@@ -5335,7 +5290,9 @@ dependencies = [
  "serde_wormhole",
  "shellexpand",
  "solana-client",
+ "solana-remote-wallet",
  "solana-sdk",
+ "uriparse",
  "wormhole-core-bridge-solana",
  "wormhole-solana",
  "wormhole-vaas-serde",
@@ -6279,7 +6236,7 @@ dependencies = [
  "cfg-if",
  "hex",
  "ruint",
- "solana-program 1.18.23",
+ "solana-program",
  "wormhole-io",
  "wormhole-raw-vaas 0.1.3",
 ]
@@ -6319,7 +6276,7 @@ dependencies = [
  "nom",
  "primitive-types",
  "sha3 0.10.8",
- "solana-program 1.18.23",
+ "solana-program",
  "thiserror",
  "wormhole-core",
 ]
@@ -6331,7 +6288,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "95ae70b3233a1d2e799276528ad7ec0a55c9929f8eae41683a5d6f0e8ba37649"
 dependencies = [
  "cfg-if",
- "solana-program 1.18.23",
+ "solana-program",
 ]
 
 [[package]]
@@ -6342,7 +6299,7 @@ checksum = "a1e8610ed0dcf4582e38910e2fc63fa7176d0919e73718e076d8a7e11b803f57"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.3",
- "solana-program 1.18.23",
+ "solana-program",
  "wormhole-raw-vaas 0.3.0-alpha.1",
  "wormhole-solana-consts",
 ]

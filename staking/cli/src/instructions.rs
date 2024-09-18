@@ -77,7 +77,7 @@ use {
     },
 };
 
-pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &Keypair) -> Pubkey {
+pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey {
     let publisher_caps = Keypair::new();
     let create_account_ix = create_account(
         &payer.pubkey(),
@@ -117,7 +117,7 @@ pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &Keypair) -> Pubkey {
 
 pub fn write_publisher_caps(
     rpc_client: &RpcClient,
-    payer: &Keypair,
+    payer: &dyn Signer,
     publisher_caps: Pubkey,
     index: usize,
     chunk: &[u8],
@@ -141,7 +141,7 @@ pub fn write_publisher_caps(
     process_transaction(rpc_client, &[instruction], &[payer]);
 }
 
-pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) {
+pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
     let accounts = publisher_caps::accounts::ClosePublisherCaps {
         write_authority: payer.pubkey(),
         publisher_caps,
@@ -161,7 +161,7 @@ pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &Keypair, publisher_c
 
 pub fn verify_publisher_caps(
     rpc_client: &RpcClient,
-    payer: &Keypair,
+    payer: &dyn Signer,
     publisher_caps: Pubkey,
     encoded_vaa: Pubkey,
     merkle_proofs: Vec<MerklePriceUpdate>,
@@ -206,7 +206,7 @@ pub fn deserialize_accumulator_update_data(
 pub fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
-    signers: &[&Keypair],
+    signers: &[&dyn Signer],
 ) {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
     transaction.sign(signers, rpc_client.get_latest_blockhash().unwrap());
@@ -233,7 +233,7 @@ pub fn process_write_encoded_vaa(
     rpc_client: &RpcClient,
     vaa: &[u8],
     wormhole: Pubkey,
-    payer: &Keypair,
+    payer: &dyn Signer,
 ) -> Pubkey {
     let encoded_vaa_keypair = Keypair::new();
     let encoded_vaa_size: usize = vaa.len() + VAA_START;
@@ -310,7 +310,7 @@ pub fn process_write_encoded_vaa(
 
 pub fn write_encoded_vaa(
     rpc_client: &RpcClient,
-    payer: &Keypair,
+    payer: &dyn Signer,
     encoded_vaa: &Pubkey,
     wormhole: &Pubkey,
     index: usize,
@@ -341,7 +341,12 @@ pub fn write_encoded_vaa(
     );
 }
 
-pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &Keypair, encoded_vaa: Pubkey) {
+pub fn close_encoded_vaa(
+    rpc_client: &RpcClient,
+    payer: &dyn Signer,
+    encoded_vaa: Pubkey,
+    wormhole: &Pubkey,
+) {
     let close_encoded_vaa_accounts = wormhole_core_bridge_solana::accounts::CloseEncodedVaa {
         write_authority: payer.pubkey(),
         encoded_vaa,
@@ -349,7 +354,7 @@ pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &Keypair, encoded_vaa: P
     .to_account_metas(None);
 
     let close_encoded_vaa_instruction = Instruction {
-        program_id: wormhole_core_bridge_solana::ID,
+        program_id: *wormhole,
         accounts:   close_encoded_vaa_accounts,
         data:       wormhole_core_bridge_solana::instruction::CloseEncodedVaa {}.data(),
     };
@@ -357,7 +362,7 @@ pub fn close_encoded_vaa(rpc_client: &RpcClient, payer: &Keypair, encoded_vaa: P
     process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer]);
 }
 
-pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &Keypair) {
+pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig {
@@ -380,7 +385,7 @@ pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &Keypair) {
     process_transaction(rpc_client, &[create_ata_ix], &[payer]);
 }
 
-pub fn advance(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) {
+pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig {
@@ -425,7 +430,7 @@ pub fn advance(rpc_client: &RpcClient, payer: &Keypair, publisher_caps: Pubkey) 
 
 pub fn initialize_pool(
     rpc_client: &RpcClient,
-    payer: &Keypair,
+    payer: &dyn Signer,
     pool_data_keypair: &Keypair,
     reward_program_authority: Pubkey,
     y: u64,
@@ -478,7 +483,7 @@ pub fn initialize_pool(
 
 pub fn fetch_publisher_caps_and_advance(
     rpc_client: &RpcClient,
-    payer: &Keypair,
+    payer: &dyn Signer,
     wormhole: Pubkey,
     hermes_url: String,
 ) {
@@ -535,10 +540,10 @@ pub fn fetch_publisher_caps_and_advance(
 
     advance(rpc_client, payer, publisher_caps);
     close_publisher_caps(rpc_client, payer, publisher_caps);
-    close_encoded_vaa(rpc_client, payer, encoded_vaa);
+    close_encoded_vaa(rpc_client, payer, encoded_vaa, &wormhole);
 }
 
-pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation_fee: u64) {
+pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &dyn Signer, delegation_fee: u64) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig { pool_data, .. } = PoolConfig::try_deserialize(
@@ -569,7 +574,7 @@ pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &Keypair, delegation
 
 pub fn set_publisher_stake_account(
     rpc_client: &RpcClient,
-    signer: &Keypair,
+    signer: &dyn Signer,
     publisher: &Pubkey,
     stake_account_positions: &Pubkey,
 ) {
@@ -605,7 +610,7 @@ pub fn set_publisher_stake_account(
 
 pub fn create_slash_event(
     rpc_client: &RpcClient,
-    signer: &Keypair,
+    signer: &dyn Signer,
     publisher: &Pubkey,
     slash_ratio: u64,
 ) {
@@ -656,7 +661,7 @@ pub fn create_slash_event(
 
 pub fn update_reward_program_authority(
     rpc_client: &RpcClient,
-    signer: &Keypair,
+    signer: &dyn Signer,
     new_reward_program_authority: &Pubkey,
 ) {
     let pool_config = get_pool_config_address();
@@ -682,7 +687,7 @@ pub fn update_reward_program_authority(
 
 pub fn slash(
     rpc_client: &RpcClient,
-    signer: &Keypair,
+    signer: &dyn Signer,
     publisher: &Pubkey,
     stake_account_positions: &Pubkey,
 ) {
@@ -754,7 +759,7 @@ pub fn slash(
     process_transaction(rpc_client, &[instruction], &[signer]);
 }
 
-pub fn update_y(rpc_client: &RpcClient, signer: &Keypair, y: u64) {
+pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
     let pool_config = get_pool_config_address();
 
     let accounts = integrity_pool::accounts::UpdateY {
