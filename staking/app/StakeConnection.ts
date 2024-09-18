@@ -35,9 +35,7 @@ import {
   withCreateTokenOwnerRecord,
 } from "@solana/spl-governance";
 import {
-  EPOCH_DURATION,
   GOVERNANCE_ADDRESS,
-  REALM_ID,
   STAKING_ADDRESS,
   WALLET_TESTER_ADDRESS,
 } from "./constants";
