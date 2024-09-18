@@ -19,7 +19,6 @@ const provider = new AnchorProvider(
 )
 const stakingProgram = new Program<Staking>(
   idl as Staking,
-  STAKING_ADDRESS,
   provider
 )
 const tokenProgram = splTokenProgram({
