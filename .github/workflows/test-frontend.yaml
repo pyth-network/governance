@@ -11,7 +11,6 @@ jobs:
   Test_Lint:
     name: Test Lint
     runs-on: ubuntu-latest
-    working-directory: ./frontend
     steps:
       - name: Check out codebase
         uses: actions/checkout@v4
@@ -25,12 +24,11 @@ jobs:
         run: npm ci
 
       - name: Run lint tests
-        run: npm run test:lint
+        run: npm run -w frontend test:lint
 
   Test_Format:
     name: Test Format
     runs-on: ubuntu-latest
-    working-directory: ./frontend
     steps:
       - name: Check out codebase
         uses: actions/checkout@v4
@@ -44,7 +42,7 @@ jobs:
         run: npm ci
 
       - name: Run format checks
-        run: npm run test:format
+        run: npm run -w frontend test:format
 
   Check_Types:
     name: Check Types
@@ -64,12 +62,7 @@ jobs:
       - name: Build staking package
         run: npm run -w staking build
 
-      - name: Install node packages for frontend
-        working-directory: ./frontend
-        run: npm ci
-
       - name: Check typescript types
-        working-directory: ./frontend
         run: npm run -w frontend test:types
 
   Test_Nix:
