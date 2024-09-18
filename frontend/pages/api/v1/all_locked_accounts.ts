@@ -17,10 +17,7 @@ const provider = new AnchorProvider(
   new NodeWallet(new Keypair()),
   {}
 )
-const stakingProgram = new Program<Staking>(
-  idl as Staking,
-  provider
-)
+const stakingProgram = new Program<Staking>(idl as Staking, provider)
 const tokenProgram = splTokenProgram({
   programId: TOKEN_PROGRAM_ID,
   provider: provider as any,

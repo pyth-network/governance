@@ -31,10 +31,7 @@ const GLOBAL_VESTING_SCHEDULE: IdlTypes<Staking>['vestingSchedule'] = {
   },
 }
 
-const stakingProgram = new Program<Staking>(
-  idl as Staking,
-  provider
-)
+const stakingProgram = new Program<Staking>(idl as Staking, provider)
 const tokenProgram = splTokenProgram({
   programId: TOKEN_PROGRAM_ID,
   provider: provider as any,
