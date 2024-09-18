@@ -10,20 +10,23 @@ import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
 
 function formatLockSummary(lock: {
-  periodicVesting:
-  {
-    initialBalance: BN,
-    periodDuration: BN,
-    startDate: BN,
+  periodicVesting: {
+    initialBalance: BN
+    periodDuration: BN
+    startDate: BN
     numPeriods: BN
   }
 }): string[] {
-  const lockSummary = getLockSummary(lock, null);
+  const lockSummary = getLockSummary(lock, null)
   if (lockSummary.schedule) {
-    const rows = lockSummary.schedule.map((x) => ` - ${x.amount.toString()} on ${new Date(Number(x.date) * 1000).toDateString()}`)
+    const rows = lockSummary.schedule.map(
+      (x) =>
+        ` - ${x.amount.toString()} on ${new Date(
+          Number(x.date) * 1000
+        ).toDateString()}`
+    )
     return rows
-  }
-  else {
+  } else {
     return ['Invalid schedule']
   }
 }
@@ -35,14 +38,13 @@ const CreateLockedAccount: NextPage = () => {
   const [firstUnlock, setFirstUnlock] = useState<Date>()
   const [numPeriods, setNumPeriods] = useState<BN>()
   const [lock, setLock] = useState<{
-    periodicVesting:
-    {
-      initialBalance: BN,
-      periodDuration: BN,
-      startDate: BN,
+    periodicVesting: {
+      initialBalance: BN
+      periodDuration: BN
+      startDate: BN
       numPeriods: BN
     }
-  }>();
+  }>()
   const [hasTested, setHasTested] = useState<boolean>()
 
   useEffect(() => {
@@ -56,17 +58,24 @@ const CreateLockedAccount: NextPage = () => {
   }, [owner])
 
   useEffect(() => {
-    if (amount && startDate && firstUnlock && numPeriods && firstUnlock.getTime() > startDate.getTime()) {
+    if (
+      amount &&
+      startDate &&
+      firstUnlock &&
+      numPeriods &&
+      firstUnlock.getTime() > startDate.getTime()
+    ) {
       setLock({
         periodicVesting: {
           initialBalance: amount.toBN(),
-          periodDuration: new BN(firstUnlock.getTime() / 1000).sub(new BN(startDate.getTime() / 1000)),
+          periodDuration: new BN(firstUnlock.getTime() / 1000).sub(
+            new BN(startDate.getTime() / 1000)
+          ),
           startDate: new BN(startDate.getTime() / 1000),
-          numPeriods
-        }
+          numPeriods,
+        },
       })
-    }
-    else {
+    } else {
       setLock(undefined)
     }
   }, [amount, startDate, firstUnlock, numPeriods])
@@ -87,27 +96,25 @@ const CreateLockedAccount: NextPage = () => {
   }
 
   const handleSetStartDate = (event: any) => {
-      setStartDate(new Date(event.target.value))
+    setStartDate(new Date(event.target.value))
   }
 
   const handleSetFirstUnlock = (event: any) => {
-      setFirstUnlock(new Date(event.target.value))
+    setFirstUnlock(new Date(event.target.value))
   }
 
   const handleSetNumPeriods = (event: any) => {
     try {
       const numPeriods = new BN(event.target.value)
-      if (numPeriods.gte(new BN(1))){
+      if (numPeriods.gte(new BN(1))) {
         setNumPeriods(numPeriods)
-      } else{
+      } else {
         setNumPeriods(undefined)
       }
-
     } catch (e) {
       setNumPeriods(undefined)
     }
   }
-
 
   const { data: stakeConnection } = useStakeConnection()
   const [stakeAccounts, setStakeAccounts] = useState<StakeAccount[]>()
@@ -127,12 +134,7 @@ const CreateLockedAccount: NextPage = () => {
   const createLockedAccount = async () => {
     if (stakeConnection && owner && amount)
       try {
-        await stakeConnection.setupVestingAccount(
-          amount,
-          owner,
-          lock,
-          false
-        )
+        await stakeConnection.setupVestingAccount(amount, owner, lock, false)
         toast.success('Successfully created locked account')
       } catch (err) {
         toast.error(capitalizeFirstLetter(err.message))
@@ -142,9 +144,7 @@ const CreateLockedAccount: NextPage = () => {
   return (
     <Layout>
       <SEO title={'Create Locked Account'} />
-      <p className=" p-2 ">
-        Create a locked account with any unlock schedule
-      </p>
+      <p className=" p-2 ">Create a locked account with any unlock schedule</p>
       <p className=" text-sm ">Owner</p>
       <input
         type="text"
@@ -163,22 +163,26 @@ const CreateLockedAccount: NextPage = () => {
       <input
         type="date"
         style={{ color: 'black' }}
-        onChange={handleSetStartDate} />
+        onChange={handleSetStartDate}
+      />
       <p className=" text-sm ">First unlock date</p>
       <input
         type="date"
         style={{ color: 'black' }}
-        onChange={handleSetFirstUnlock} />
+        onChange={handleSetFirstUnlock}
+      />
       <p className=" text-sm ">Number of unlocks</p>
       <input
         type="number"
         style={{ color: 'black' }}
         value={numPeriods ? numPeriods.toString() : ''}
-        onChange={handleSetNumPeriods} />
+        onChange={handleSetNumPeriods}
+      />
       <p className=" text-sm ">
-        Schedule: {lock ? formatLockSummary(lock).map(
-          (x) => <p key="0">{x}</p>
-        ) : 'Invalid schedule'}
+        Schedule:{' '}
+        {lock
+          ? formatLockSummary(lock).map((x) => <p key="0">{x}</p>)
+          : 'Invalid schedule'}
       </p>
       {stakeAccounts && stakeAccounts.length > 0 && (
         <a
@@ -191,9 +195,7 @@ const CreateLockedAccount: NextPage = () => {
         </a>
       )}
       {owner && !hasTested && (
-          <p style={{ color: 'red' }}>
-          {`Warning, this owner hasn't tested`}
-        </p>
+        <p style={{ color: 'red' }}>{`Warning, this owner hasn't tested`}</p>
       )}
       {stakeConnection && owner && amount ? (
         <p>

@@ -49,10 +49,15 @@ const RequestSplit: NextPage = () => {
   useEffect(() => {
     const loadStakeAccounts = async () => {
       if (stakeConnection) {
-        const stakeAccounts = await getStakeAccountsPubkeys(stakeConnection.userPublicKey(), stakeConnection)
+        const stakeAccounts = await getStakeAccountsPubkeys(
+          stakeConnection.userPublicKey(),
+          stakeConnection
+        )
         setStakeAccounts(stakeAccounts)
-        if (stakeAccounts.length > 0){
-          setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccounts[0]))
+        if (stakeAccounts.length > 0) {
+          setSelectStakeAccount(
+            await stakeConnection.loadStakeAccount(stakeAccounts[0])
+          )
         } else {
           setSelectStakeAccount(undefined)
         }
@@ -65,12 +70,16 @@ const RequestSplit: NextPage = () => {
 
   const handleSelectStakeAccount = (event: any) => {
     const loadStakeAccount = async () => {
-    if (stakeAccounts && stakeConnection){
-      const stakeAccount = stakeAccounts.find(s => s.toString() === event.target.value)
-      if (stakeAccount) {
-        setSelectStakeAccount(await stakeConnection.loadStakeAccount(stakeAccount))
+      if (stakeAccounts && stakeConnection) {
+        const stakeAccount = stakeAccounts.find(
+          (s) => s.toString() === event.target.value
+        )
+        if (stakeAccount) {
+          setSelectStakeAccount(
+            await stakeConnection.loadStakeAccount(stakeAccount)
+          )
+        }
       }
-    }
     }
     loadStakeAccount()
   }
