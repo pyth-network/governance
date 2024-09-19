@@ -23,7 +23,7 @@ const provider = new AnchorProvider(
   {}
 )
 
-const GLOBAL_VESTING_SCHEDULE: IdlTypes<Staking>['VestingSchedule'] = {
+const GLOBAL_VESTING_SCHEDULE: IdlTypes<Staking>['vestingSchedule'] = {
   periodicVestingAfterListing: {
     initialBalance: PythBalance.fromString('8,500,000,000').toBN(),
     periodDuration: ONE_YEAR,
@@ -31,11 +31,7 @@ const GLOBAL_VESTING_SCHEDULE: IdlTypes<Staking>['VestingSchedule'] = {
   },
 }
 
-const stakingProgram = new Program<Staking>(
-  idl as Staking,
-  STAKING_ADDRESS,
-  provider
-)
+const stakingProgram = new Program<Staking>(idl as Staking, provider)
 const tokenProgram = splTokenProgram({
   programId: TOKEN_PROGRAM_ID,
   provider: provider as any,

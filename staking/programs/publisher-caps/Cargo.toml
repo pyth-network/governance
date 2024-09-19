@@ -15,4 +15,7 @@ name = "publisher_caps"
 
 [dependencies]
 anchor-lang = {workspace = true, features = ["init-if-needed"]}
+arrayref = "0.3.8"
 bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
+pythnet-sdk = {version = "2.3.0", features = ["solana-program"]}
+wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}

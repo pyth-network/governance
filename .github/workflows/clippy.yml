@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Install libudev-dev
+        run: sudo apt-get update && sudo apt-get install libudev-dev
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal

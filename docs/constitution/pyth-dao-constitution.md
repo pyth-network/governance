@@ -5,12 +5,16 @@
 - **Votable Token:** PYTH tokens staked in the staking contract at the following address: `pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ`
 - **PIP:** Pyth Improvement Proposal
 - **Pyth DAO Treasury:** all tokens held in the wallets at the following addresses: `Gx4MBPb1vqZLJajZmsKLg8fGw9ErhoKsR8LeKcCKFyak` for the native SOL token and `9HKkxg5dpqjUEW1U2r76SpQCH7uvDMciytNYxrpwMVNc` for the SPL Token, that is directly governed by the Pyth DAO via on-chain voting
-- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://discord.com/invite/pythnetwork](https://discord.com/invite/pythnetwork)
+- **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://forum.pyth.network/](https://forum.pyth.network/)
 - **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
 - **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
+- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
+- **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
+- **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
+- **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
 
@@ -18,7 +22,7 @@ This Constitution describes the decision-making framework for the Pyth DAO and t
 
 Rules and procedures in this Constitution will be generally enforced through on-chain contracts and the associated parameters, unless specified by the Pyth DAO for actuation off-chain.
 
-The Pyth DAO LLC, is legally structured as “a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC” (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://cloudflare-ipfs.com/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi)). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury and pay Pyth DAO related costs and expenses, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
+The Pyth DAO LLC, is legally structured as “a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC” (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://ipfs.io/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi)). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury and pay Pyth DAO related costs and expenses, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
 
 ![pyth_dao.light.png](diagrams/pyth_dao.light.png)
 
@@ -47,6 +51,14 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
         - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
+        - the upgrade of the ER program for each of the blockchains where ER is available
+        - the assignment of the relayer function and monitoring of the performance of such assignment
+        - the setting of the ER fee distribution
+        - the upgrade of the Entropy program for each of the blockchains where Entropy is available
+        - the setting of Entropy request fees for each of the blockchains where Entropy is available
+        - the setting of pool capacity parameters in OIS
+        - the setting of delegation fee for stake delegators in OIS
+        - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
@@ -79,8 +91,7 @@ The Pyth DAO is able to vote directly on-chain on the submitted PIP for 7 days. 
 
 3. **Implementation**
 
-The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other
-service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
+The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
 
 ## Council Election Process & Voting Procedures
 

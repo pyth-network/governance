@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - name: Install libudev-dev
+        run: sudo apt-get update && sudo apt-get install libudev-dev
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
@@ -22,10 +24,10 @@ jobs:
         run: |
           sh -c "$(curl -sSfL https://release.solana.com/v1.18.16/install)"
           echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-      - name: Install Anchor
-        working-directory: ./staking
-        run: npm i -g @coral-xyz/anchor-cli@0.30.1
-      - name: Anchor tests
+      - name: Install Solana Verify CLI
+        run: |
+          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 098551f
+      - name: Javascript tests
         working-directory: ./staking
         run: npm run test:ci
       # Remove debug folder to avoid hitting space limit in ci
@@ -35,7 +37,4 @@ jobs:
       # Anchor test will build the program, so we can run the tests here
       - name: Cargo tests
         working-directory: ./staking
-        run: RUST_MIN_STACK=10485760 cargo test
-      - name: Check commited idl is up to date
-        working-directory: ./staking
-        run: git diff -G".*" --exit-code target/*
+        run: RUST_MIN_STACK=33554432 cargo test

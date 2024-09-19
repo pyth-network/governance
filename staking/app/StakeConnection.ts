@@ -70,7 +70,7 @@ export type StakeAccountMetadata =
   IdlAccounts<Staking>["stakeAccountMetadataV2"];
 export type VestingSchedule = IdlTypes<Staking>["vestingSchedule"];
 export type VoterWeightAction = IdlTypes<Staking>["voterWeightAction"];
-export type Target = IdlTypes<Staking>["target"];
+export type Target = IdlTypes<Staking>["targetWithParameters"];
 export type Position = IdlTypes<Staking>["position"];
 export type TargetWithParameters = IdlTypes<Staking>["targetWithParameters"];
 
@@ -396,7 +396,6 @@ export class StakeConnection {
     stakeAccount: StakeAccount,
     amount: PythBalance
   ) {
-    const maxCapacity = stakeAccount.hasReachedMaxCapacity();
     const positions = stakeAccount.stakeAccountPositionsJs.positions;
 
     const time = await this.getTime();
@@ -419,8 +418,7 @@ export class StakeConnection {
           [wasm.PositionState.LOCKED, wasm.PositionState.LOCKING].includes(
             stakeAccount.stakeAccountPositionsWasm.getPositionState(
               el.index,
-              BigInt(currentEpoch.toString()),
-              this.config.unlockingDuration
+              BigInt(currentEpoch.toString())
             )
           )
       )
@@ -433,13 +431,11 @@ export class StakeConnection {
     const toClose: ClosingItem[] = [];
 
     while (amountBeforeFinishing.gt(new BN(0)) && i < sortPositions.length) {
-      if (sortPositions[i].value.amount.gt(amountBeforeFinishing)) {
-        if (!maxCapacity) {
-          toClose.push({
-            index: sortPositions[i].index,
-            amount: amountBeforeFinishing,
-          });
-        }
+      if (sortPositions[i].value.amount.gte(amountBeforeFinishing)) {
+        toClose.push({
+          index: sortPositions[i].index,
+          amount: amountBeforeFinishing,
+        });
         amountBeforeFinishing = new BN(0);
       } else {
         toClose.push({
@@ -453,20 +449,11 @@ export class StakeConnection {
       i++;
     }
 
-    if (toClose.length == 0 && maxCapacity) {
-      throw new Error(
-        `Your account has attained full capacity. The minimum amount you can unstake is: ${new PythBalance(
-          sortPositions[0].value.amount
-        ).toString()}`
-      );
-    }
-
     const instructions = await Promise.all(
       toClose.map((el) =>
         this.program.methods
           .closePosition(el.index, el.amount, this.votingProduct)
           .accounts({
-            targetAccount: this.votingProductMetadataAccount,
             stakeAccountPositions: stakeAccount.address,
           })
           .instruction()
@@ -583,7 +570,6 @@ export class StakeConnection {
     return await this.program.methods
       .closePosition(index, amount, this.votingProduct)
       .accounts({
-        targetAccount: this.votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsAddress,
       })
       .instruction();
@@ -675,16 +661,13 @@ export class StakeConnection {
       await this.withJoinDaoLlc(instructions, stakeAccount.address);
     }
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amountBN)
         .accounts({
           stakeAccountPositions: stakeAccount.address,
-          targetAccount: this.votingProductMetadataAccount,
         })
         .instruction()
     );
@@ -865,16 +848,14 @@ export class StakeConnection {
     );
 
     if (stakeAccount) {
-      instructions.push(
-        ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-      ); // Need to cleanup unlocked positions first
+      instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
     }
+
     instructions.push(
       await this.program.methods
         .createPosition(this.votingProduct, amount.toBN())
         .accounts({
           stakeAccountPositions: stakeAccountAddress,
-          targetAccount: this.votingProductMetadataAccount,
         })
         .instruction()
     );
@@ -884,42 +865,11 @@ export class StakeConnection {
 
   public async buildCleanupUnlockedPositions(
     stakeAccount: StakeAccount
-  ): Promise<TransactionInstruction[]> {
-    const time = await this.getTime();
-    const currentEpoch = time.div(this.config.epochDuration);
-
-    const unlockedPositions = stakeAccount.stakeAccountPositionsJs.positions
-      .map((value, index) => {
-        return { index, value };
-      })
-      .filter((el) => el.value) // position not null
-      .filter(
-        (
-          el // position is voting
-        ) => stakeAccount.stakeAccountPositionsWasm.isPositionVoting(el.index)
-      )
-      .filter(
-        (
-          el // position is unlocked
-        ) =>
-          stakeAccount.stakeAccountPositionsWasm.getPositionState(
-            el.index,
-            BigInt(currentEpoch.toString()),
-            this.config.unlockingDuration
-          ) === wasm.PositionState.UNLOCKED
-      )
-      .reverse(); // reverse so that earlier deletions don't affect later ones
-
-    // Each of these instructions is 27 bytes (<< 1232) so we don't cap how many of them we return
-    return await Promise.all(
-      unlockedPositions.map((position) =>
-        this.buildCloseInstruction(
-          stakeAccount.address,
-          position.index,
-          position.value.amount
-        )
-      )
-    );
+  ): Promise<TransactionInstruction> {
+    return this.program.methods
+      .mergeTargetPositions({ voting: {} })
+      .accounts({ stakeAccountPositions: stakeAccount.address })
+      .instruction();
   }
 
   //withdraw tokens
@@ -958,9 +908,7 @@ export class StakeConnection {
       );
     }
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    ); // Need to cleanup unlocked positions first
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount)); // Need to cleanup unlocked positions first
 
     instructions.push(
       await this.program.methods
@@ -982,9 +930,7 @@ export class StakeConnection {
   ) {
     const instructions = [];
 
-    instructions.push(
-      ...(await this.buildCleanupUnlockedPositions(stakeAccount))
-    );
+    instructions.push(await this.buildCleanupUnlockedPositions(stakeAccount));
 
     instructions.push(
       await this.program.methods
@@ -1113,13 +1059,10 @@ export class StakeConnection {
 
     const time = new BN(Date.now() / 1000);
     const currentEpoch = time.div(this.config.epochDuration);
-    const unlockingDuration = this.config.unlockingDuration;
     const currentEpochBI = BigInt(currentEpoch.toString());
 
-    const lockedBalanceSummary = positionAccountWasm.getLockedBalanceSummary(
-      currentEpochBI,
-      unlockingDuration
-    );
+    const lockedBalanceSummary =
+      positionAccountWasm.getLockedBalanceSummary(currentEpochBI);
 
     const epochOfFirstStake: BN = positionAccountJs.positions.reduce(
       (prev: BN | undefined, curr) => {
@@ -1303,15 +1246,11 @@ export class StakeAccount {
     );
 
     const currentEpoch = unixTime.div(this.config.epochDuration);
-    const unlockingDuration = this.config.unlockingDuration;
     const currentEpochBI = BigInt(currentEpoch.toString());
 
     const unvestedBN = new BN(unvestedBalance.toString());
     const lockedSummaryBI =
-      this.stakeAccountPositionsWasm.getLockedBalanceSummary(
-        currentEpochBI,
-        unlockingDuration
-      );
+      this.stakeAccountPositionsWasm.getLockedBalanceSummary(currentEpochBI);
 
     let lockingBN = new BN(lockedSummaryBI.locking.toString());
     let lockedBN = new BN(lockedSummaryBI.locked.toString());
@@ -1425,11 +1364,9 @@ export class StakeAccount {
 
   public getVoterWeight(unixTime: BN): PythBalance {
     let currentEpoch = unixTime.div(this.config.epochDuration);
-    let unlockingDuration = this.config.unlockingDuration;
 
     const voterWeightBI = this.stakeAccountPositionsWasm.getVoterWeight(
       BigInt(currentEpoch.toString()),
-      unlockingDuration,
       BigInt(
         this.votingAccountMetadataWasm.getCurrentAmountLocked(
           BigInt(currentEpoch.toString())
@@ -1483,11 +1420,7 @@ export class StakeAccount {
   }
 
   private addUnlockingPeriod(unixTime: BN) {
-    return unixTime.add(
-      this.config.epochDuration.mul(
-        new BN(this.config.unlockingDuration).add(new BN(1))
-      )
-    );
+    return unixTime.add(this.config.epochDuration.mul(new BN(2)));
   }
 
   public getNetExcessGovernanceAtVesting(unixTime: BN): BN {
@@ -1503,11 +1436,5 @@ export class StakeAccount {
 
     const balanceSummary = this.getBalanceSummary(timeOfEval).locked;
     return balanceSummary.locking.toBN().add(balanceSummary.locked.toBN());
-  }
-
-  public hasReachedMaxCapacity(): boolean {
-    return (
-      this.stakeAccountMetadata.nextIndex == wasm.Constants.MAX_POSITIONS()
-    );
   }
 }

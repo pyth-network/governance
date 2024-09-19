@@ -8,7 +8,7 @@ export type Staking = {
   "address": "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ",
   "metadata": {
     "name": "staking",
-    "version": "1.2.0",
+    "version": "2.0.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
@@ -344,6 +344,7 @@ export type Staking = {
       "accounts": [
         {
           "name": "owner",
+          "writable": true,
           "signer": true,
           "relations": [
             "stakeAccountMetadata"
@@ -460,6 +461,10 @@ export type Staking = {
           "name": "poolAuthority",
           "signer": true,
           "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -501,6 +506,7 @@ export type Staking = {
       "accounts": [
         {
           "name": "owner",
+          "writable": true,
           "signer": true,
           "relations": [
             "stakeAccountMetadata"
@@ -617,6 +623,10 @@ export type Staking = {
           "name": "poolAuthority",
           "signer": true,
           "optional": true
+        },
+        {
+          "name": "systemProgram",
+          "address": "11111111111111111111111111111111"
         }
       ],
       "args": [
@@ -1185,6 +1195,99 @@ export type Staking = {
       ]
     },
     {
+      "name": "mergeTargetPositions",
+      "discriminator": [
+        21,
+        136,
+        57,
+        2,
+        204,
+        219,
+        242,
+        141
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "docs": [
+            "CHECK : This AccountInfo is safe because it's checked against stake_account_metadata"
+          ],
+          "writable": true,
+          "relations": [
+            "stakeAccountMetadata"
+          ]
+        },
+        {
+          "name": "stakeAccountPositions",
+          "writable": true
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "poolAuthority",
+          "signer": true,
+          "optional": true
+        }
+      ],
+      "args": [
+        {
+          "name": "targetWithParameters",
+          "type": {
+            "defined": {
+              "name": "targetWithParameters"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "recoverAccount",
       "docs": [
         "Recovers a user's `stake account` ownership by transferring ownership\n     * from a token account to the `owner` of that token account.\n     *\n     * This functionality addresses the scenario where a user mistakenly\n     * created a stake account using their token account address as the owner."
@@ -1442,7 +1545,7 @@ export type Staking = {
         {
           "name": "publisher",
           "docs": [
-            "CHECK : This AccountInfo is safe because it's checked against target"
+            "CHECK : This AccountInfo is just used to construct the target that will get slashed"
           ]
         },
         {
@@ -2499,6 +2602,11 @@ export type Staking = {
     },
     {
       "code": 6039,
+      "name": "unexpectedTargetAccount",
+      "msg": "The target account is only expected when dealing with the governance target"
+    },
+    {
+      "code": 6040,
       "name": "other",
       "msg": "other"
     }
@@ -2526,7 +2634,7 @@ export type Staking = {
             "type": "pubkey"
           },
           {
-            "name": "unlockingDuration",
+            "name": "removedUnlockingDuration",
             "type": "u8"
           },
           {
@@ -2676,10 +2784,7 @@ export type Staking = {
     {
       "name": "positionData",
       "docs": [
-        "An array that contains all of a user's positions i.e. where are the staking and who are they",
-        "staking to.",
-        "The invariant we preserve is : For i < next_index, positions[i] == Some",
-        "For i >= next_index, positions[i] == None"
+        "The header of DynamicPositionArray"
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -2691,20 +2796,6 @@ export type Staking = {
           {
             "name": "owner",
             "type": "pubkey"
-          },
-          {
-            "name": "positions",
-            "type": {
-              "array": [
-                {
-                  "array": [
-                    "u8",
-                    200
-                  ]
-                },
-                20
-              ]
-            }
           }
         ]
       }
@@ -2768,7 +2859,7 @@ export type Staking = {
             "type": "u8"
           },
           {
-            "name": "transferEpoch",
+            "name": "deprecated",
             "type": {
               "option": "u64"
             }

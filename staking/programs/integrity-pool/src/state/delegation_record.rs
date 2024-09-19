@@ -7,11 +7,12 @@ use {
 #[account]
 #[derive(BorshSchema)]
 pub struct DelegationRecord {
-    pub last_epoch: u64,
+    pub last_epoch:             u64,
+    pub next_slash_event_index: u64,
 }
 
 impl DelegationRecord {
-    pub const LEN: usize = 8 + 8;
+    pub const LEN: usize = 128;
 }
 
 impl DelegationRecord {
@@ -41,22 +42,28 @@ mod tests {
     #[allow(deprecated)]
     fn test_delegation_record_len() {
         assert!(
-            solana_sdk::borsh0_10::get_packed_len::<DelegationRecord>()
+            anchor_lang::solana_program::borsh0_10::get_packed_len::<DelegationRecord>()
                 + DelegationRecord::discriminator().len()
-                == DelegationRecord::LEN
+                <= DelegationRecord::LEN
         );
     }
 
     #[test]
     fn test_advance() {
-        let mut record = DelegationRecord { last_epoch: 0 };
+        let mut record = DelegationRecord {
+            last_epoch:             0,
+            next_slash_event_index: 0,
+        };
         record.advance(1).unwrap();
         assert_eq!(record.last_epoch, 1);
     }
 
     #[test]
     fn test_assert_up_to_date() {
-        let record = DelegationRecord { last_epoch: 100 };
+        let record = DelegationRecord {
+            last_epoch:             100,
+            next_slash_event_index: 0,
+        };
         assert!(record.assert_up_to_date(100).is_ok());
         assert!(record.assert_up_to_date(101).is_err());
         assert!(record.assert_up_to_date(99).is_err());

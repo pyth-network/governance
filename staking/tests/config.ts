@@ -34,7 +34,6 @@ describe("config", async () => {
 
   let program: Program<Staking>;
   let controller: CustomAbortController;
-  let votingProductMetadataAccount: PublicKey;
   let configAccount: PublicKey;
   let bump: number;
 
@@ -53,8 +52,6 @@ describe("config", async () => {
       PYTH_DECIMALS,
       TOKEN_PROGRAM_ID
     );
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("initializes config", async () => {
@@ -69,7 +66,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -102,7 +99,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -129,7 +126,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -152,7 +149,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -179,7 +176,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -202,7 +199,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -227,7 +224,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -335,7 +332,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: program.provider.publicKey,
@@ -359,7 +356,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,
@@ -387,7 +384,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority,
@@ -410,7 +407,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority,
@@ -441,7 +438,7 @@ describe("config", async () => {
         governanceAuthority: program.provider.publicKey,
         pythTokenMint: pythMintAccount.publicKey,
         pythGovernanceRealm,
-        unlockingDuration: 2,
+        removedUnlockingDuration: 0,
         epochDuration: new BN(3600),
         freeze: false,
         pdaAuthority: pdaAuthority,

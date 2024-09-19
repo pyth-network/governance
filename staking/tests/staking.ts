@@ -34,7 +34,6 @@ describe("staking", async () => {
   let userAta: PublicKey;
   let controller: CustomAbortController;
   let stakeConnection: StakeConnection;
-  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
     await abortUnlessDetached(portNumber, controller);
@@ -51,8 +50,6 @@ describe("staking", async () => {
       provider.wallet.publicKey,
       true
     );
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
   });
 
   it("creates vested staking account", async () => {
@@ -128,7 +125,7 @@ describe("staking", async () => {
         owner,
         lock: { fullyVested: {} },
         nextIndex: 0,
-        transferEpoch: null,
+        deprecated: null,
         signedAgreementHash: null,
       })
     );
@@ -166,7 +163,6 @@ describe("staking", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "You need to be an LLC member to perform this action"
@@ -223,7 +219,6 @@ describe("staking", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("102").toBN())
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Too much exposure to governance"
@@ -234,7 +229,6 @@ describe("staking", async () => {
     await program.methods
       .createPosition(votingProduct, new BN(1))
       .accounts({
-        targetAccount: votingProductMetadataAccount,
         stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
       })
       .rpc();
@@ -264,7 +258,6 @@ describe("staking", async () => {
       program.methods
         .createPosition(votingProduct, PythBalance.fromString("0").toBN())
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "New position needs to have positive balance"
@@ -276,7 +269,6 @@ describe("staking", async () => {
       program.methods
         .closePosition(0, PythBalance.fromString("0").toBN(), votingProduct)
         .accounts({
-          targetAccount: votingProductMetadataAccount,
           stakeAccountPositions: stakeAccountPositionsSecret.publicKey,
         }),
       "Closing a position of 0 is not allowed"

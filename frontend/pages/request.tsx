@@ -7,8 +7,8 @@ import { PublicKey } from '@solana/web3.js'
 import toast from 'react-hot-toast'
 import { capitalizeFirstLetter } from 'utils/capitalizeFirstLetter'
 import { useStakeConnection } from 'hooks/useStakeConnection'
-import { useStakeAccounts } from 'hooks/useStakeAccounts'
 import { useSplitRequest } from 'hooks/useSplitRequest'
+import { getStakeAccountsPubkeys } from './approve'
 
 const RequestSplit: NextPage = () => {
   const [recipient, setRecipient] = useState<PublicKey>()
@@ -30,7 +30,7 @@ const RequestSplit: NextPage = () => {
   }
 
   const { data: stakeConnection } = useStakeConnection()
-  const { data: stakeAccounts } = useStakeAccounts()
+  const [stakeAccounts, setStakeAccounts] = useState<PublicKey[]>()
   const [selectedStakeAccount, setSelectStakeAccount] = useState<StakeAccount>()
   const { data: initialSplitRequest } = useSplitRequest(selectedStakeAccount)
 
@@ -46,13 +46,42 @@ const RequestSplit: NextPage = () => {
     loadWalletHasTested()
   }, [recipient])
 
-  const handleSelectStakeAccount = (event: any) => {
-    for (const stakeAccount of stakeAccounts!) {
-      if (stakeAccount.address.toString() === event.target.value) {
-        setSelectStakeAccount(stakeAccount)
-        break
+  useEffect(() => {
+    const loadStakeAccounts = async () => {
+      if (stakeConnection) {
+        const stakeAccounts = await getStakeAccountsPubkeys(
+          stakeConnection.userPublicKey(),
+          stakeConnection
+        )
+        setStakeAccounts(stakeAccounts)
+        if (stakeAccounts.length > 0) {
+          setSelectStakeAccount(
+            await stakeConnection.loadStakeAccount(stakeAccounts[0])
+          )
+        } else {
+          setSelectStakeAccount(undefined)
+        }
+      } else {
+        setStakeAccounts(undefined)
       }
     }
+    loadStakeAccounts()
+  }, [stakeConnection])
+
+  const handleSelectStakeAccount = (event: any) => {
+    const loadStakeAccount = async () => {
+      if (stakeAccounts && stakeConnection) {
+        const stakeAccount = stakeAccounts.find(
+          (s) => s.toString() === event.target.value
+        )
+        if (stakeAccount) {
+          setSelectStakeAccount(
+            await stakeConnection.loadStakeAccount(stakeAccount)
+          )
+        }
+      }
+    }
+    loadStakeAccount()
   }
 
   useEffect(() => {
@@ -64,11 +93,6 @@ const RequestSplit: NextPage = () => {
       setBalance(undefined)
     }
   }, [initialSplitRequest])
-
-  useEffect(() => {
-    if (stakeAccounts && stakeAccounts.length > 0)
-      setSelectStakeAccount(stakeAccounts[0])
-  }, [stakeAccounts])
 
   const requestSplit = async () => {
     if (stakeConnection && selectedStakeAccount && recipient && balance)
@@ -102,8 +126,8 @@ const RequestSplit: NextPage = () => {
               onChange={handleSelectStakeAccount}
             >
               {stakeAccounts!.map((option, index) => (
-                <option key={index} value={option.address.toBase58()}>
-                  {option.address.toString()}
+                <option key={index} value={option.toBase58()}>
+                  {option.toString()}
                 </option>
               ))}
             </select>

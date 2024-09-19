@@ -1,0 +1,26 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+solana-sdk = {workspace = true}
+pyth-staking-program = {path = "../programs/staking"}
+integrity-pool = {path = "../programs/integrity-pool"}
+publisher-caps = {path = "../programs/publisher-caps"}
+anchor-lang = {workspace = true}
+anchor-spl = {workspace = true}
+litesvm = "0.1.0"
+bytemuck = {version = "1.4.0", features = ["derive", "min_const_generics"]}
+byteorder = "1.4.3"
+wormhole-vaas-serde =  "0.1.0"
+wormhole-solana-vaas = {version="0.3.0-alpha.1", features = ["anchor", "encoded-vaa", "mainnet"]}
+serde_wormhole = "0.1.0"
+pythnet-sdk = {version = "2.3.0", features = ["test-utils"]}
+serde_json = "1.0.125"
+solana-cli-output = "1.18.16"
+spl-governance = { version = "4.0.0", features = ["no-entrypoint"] }
+
+[dev-dependencies]
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"

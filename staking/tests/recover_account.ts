@@ -38,12 +38,10 @@ describe("recover account", async () => {
   const config = readAnchorConfig(ANCHOR_CONFIG_PATH);
   const pdaAuthority = pdaAuthorityKeypair.publicKey;
   const governanceProgram = new PublicKey(config.programs.localnet.governance);
-  const votingProduct: Target = { voting: {} };
 
   let program: Program<Staking>;
   let provider: AnchorProvider;
   let controller: CustomAbortController;
-  let votingProductMetadataAccount: PublicKey;
 
   after(async () => {
     await abortUnlessDetached(portNumber, controller);
@@ -62,8 +60,6 @@ describe("recover account", async () => {
       PYTH_DECIMALS,
       TOKEN_PROGRAM_ID
     );
-
-    votingProductMetadataAccount = await getTargetAccount(program.programId);
 
     await program.methods
       .initConfig({
