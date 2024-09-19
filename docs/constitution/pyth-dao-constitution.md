@@ -11,7 +11,9 @@
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
-- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to liquidations
+- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
+- **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
+- **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
 - **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
@@ -49,9 +51,14 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
         - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
-        - the upgrade of the ER program for each of the blockchain where ER is available
+        - the upgrade of the ER program for each of the blockchains where ER is available
         - the assignment of the relayer function and monitoring of the performance of such assignment
         - the setting of the ER fee distribution
+        - the upgrade of the Entropy program for each of the blockchains where Entropy is available
+        - the setting of Entropy request fees for each of the blockchains where Entropy is available
+        - the setting of pool capacity parameters in OIS
+        - the setting of delegation fee for stake delegators in OIS
+        - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
   - Operational PIPs delegated to the Price Feed Council involve:
         - the management of the list of price feeds available through Pyth
         - the selection of publishers and the setting of the minimum number of such publishers per price feed
@@ -84,8 +91,7 @@ The Pyth DAO is able to vote directly on-chain on the submitted PIP for 7 days. 
 
 3. **Implementation**
 
-The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other
-service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
+The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
 
 ## Council Election Process & Voting Procedures
 
