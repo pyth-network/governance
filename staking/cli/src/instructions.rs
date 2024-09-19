@@ -24,12 +24,15 @@ use {
             get_target_address,
         },
     },
-    integrity_pool::state::{
-        delegation_record::DelegationRecord,
-        pool::{
-            PoolConfig,
-            PoolData,
+    integrity_pool::{
+        state::{
+            delegation_record::DelegationRecord,
+            pool::{
+                PoolConfig,
+                PoolData,
+            },
         },
+        utils::clock::EPOCH_DURATION,
     },
     publisher_caps::PublisherCaps,
     pythnet_sdk::wire::v1::{
@@ -49,14 +52,20 @@ use {
         instruction::Instruction,
         pubkey::Pubkey,
         rent::Rent,
-        signature::Keypair,
+        signature::{
+            Keypair,
+            Signature,
+        },
         signer::Signer,
         system_instruction::{
             self,
             create_account,
         },
         system_program,
-        transaction::Transaction,
+        transaction::{
+            Transaction,
+            TransactionError,
+        },
     },
     std::{
         cmp::min,
@@ -110,8 +119,8 @@ pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey
             ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
         ],
         &[payer, &publisher_caps],
-    );
-
+    )
+    .unwrap();
     publisher_caps.pubkey()
 }
 
@@ -138,7 +147,7 @@ pub fn write_publisher_caps(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]);
+    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
 }
 
 pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
@@ -155,7 +164,7 @@ pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer, publishe
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]);
+    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
 }
 
 
@@ -189,7 +198,8 @@ pub fn verify_publisher_caps(
             ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
         ],
         &[payer],
-    );
+    )
+    .unwrap();
 }
 
 pub fn deserialize_accumulator_update_data(
@@ -207,7 +217,7 @@ pub fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
-) {
+) -> Result<Signature, TransactionError> {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
     transaction.sign(signers, rpc_client.get_latest_blockhash().unwrap());
     let transaction_signature_res = rpc_client
@@ -216,15 +226,18 @@ pub fn process_transaction(
             CommitmentConfig::confirmed(),
             RpcSendTransactionConfig {
                 skip_preflight: true,
+                max_retries: Some(10),
                 ..Default::default()
             },
         );
     match transaction_signature_res {
         Ok(signature) => {
             println!("Transaction successful : {signature:?}");
+            Ok(signature)
         }
         Err(err) => {
             println!("transaction err: {err:?}");
+            Err(err.get_transaction_error().unwrap())
         }
     }
 }
@@ -261,7 +274,8 @@ pub fn process_write_encoded_vaa(
         rpc_client,
         &[create_encoded_vaa, init_encoded_vaa_instruction],
         &[payer, &encoded_vaa_keypair],
-    );
+    )
+    .unwrap();
 
     for i in (0..vaa.len()).step_by(1000) {
         let chunk = &vaa[i..min(i + 1000, vaa.len())];
@@ -302,7 +316,8 @@ pub fn process_write_encoded_vaa(
             request_compute_units_instruction,
         ],
         &[payer],
-    );
+    )
+    .unwrap();
 
 
     encoded_vaa_keypair.pubkey()
@@ -338,7 +353,8 @@ pub fn write_encoded_vaa(
         rpc_client,
         &[write_encoded_vaa_accounts_instruction],
         &[payer],
-    );
+    )
+    .unwrap();
 }
 
 pub fn close_encoded_vaa(
@@ -359,7 +375,7 @@ pub fn close_encoded_vaa(
         data:       wormhole_core_bridge_solana::instruction::CloseEncodedVaa {}.data(),
     };
 
-    process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer]);
+    process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer]).unwrap();
 }
 
 pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
@@ -382,7 +398,7 @@ pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
         &spl_token::ID,
     );
 
-    process_transaction(rpc_client, &[create_ata_ix], &[payer]);
+    process_transaction(rpc_client, &[create_ata_ix], &[payer]).unwrap();
 }
 
 pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
@@ -425,7 +441,8 @@ pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubke
             ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
         ],
         &[payer],
-    );
+    )
+    .unwrap();
 }
 
 pub fn initialize_pool(
@@ -478,7 +495,14 @@ pub fn initialize_pool(
         rpc_client,
         &[create_pool_data_acc_ix, initialize_pool_ix],
         &[payer, pool_data_keypair],
-    );
+    )
+    .unwrap();
+}
+
+pub fn get_current_epoch(rpc_client: &RpcClient) -> u64 {
+    let slot = rpc_client.get_slot().unwrap();
+    let blocktime = rpc_client.get_block_time(slot).unwrap();
+    blocktime as u64 / EPOCH_DURATION
 }
 
 pub fn fetch_publisher_caps_and_advance(
@@ -487,6 +511,30 @@ pub fn fetch_publisher_caps_and_advance(
     wormhole: Pubkey,
     hermes_url: String,
 ) {
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig {
+        pool_data: pool_data_address,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let pool_data = PoolData::try_deserialize(
+        &mut rpc_client.get_account_data(&pool_data_address).unwrap()[..8 + size_of::<PoolData>()]
+            .as_ref(),
+    )
+    .unwrap();
+
+    if pool_data.last_updated_epoch == get_current_epoch(rpc_client) {
+        println!("Pool data is already updated");
+        return;
+    }
+
     let client = Client::new();
     let response = client
         .get(format!(
@@ -569,7 +617,7 @@ pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &dyn Signer, delegat
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]);
+    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
 }
 
 pub fn set_publisher_stake_account(
@@ -605,7 +653,7 @@ pub fn set_publisher_stake_account(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]);
+    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
 }
 
 pub fn create_slash_event(
@@ -656,7 +704,7 @@ pub fn create_slash_event(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]);
+    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
 }
 
 pub fn update_reward_program_authority(
@@ -682,7 +730,7 @@ pub fn update_reward_program_authority(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]);
+    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
 }
 
 pub fn slash(
@@ -756,7 +804,7 @@ pub fn slash(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]);
+    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
 }
 
 pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
@@ -776,5 +824,5 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]);
+    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
 }
