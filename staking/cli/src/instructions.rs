@@ -226,7 +226,6 @@ pub fn process_transaction(
             CommitmentConfig::confirmed(),
             RpcSendTransactionConfig {
                 skip_preflight: true,
-                max_retries: Some(10),
                 ..Default::default()
             },
         );
