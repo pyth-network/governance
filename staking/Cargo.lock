@@ -5289,6 +5289,7 @@ dependencies = [
  "serde_json",
  "serde_wormhole",
  "shellexpand",
+ "solana-account-decoder",
  "solana-client",
  "solana-remote-wallet",
  "solana-sdk",

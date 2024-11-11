@@ -24,7 +24,7 @@ pub fn compute_voter_weight(
                     if position.is_voting() {
                         // position.amount is trusted, so I don't think this can overflow,
                         // but still probably better to use checked math
-                        raw_voter_weight = raw_voter_weight.checked_add(position.amount).unwrap();
+                        raw_voter_weight = raw_voter_weight + position.amount;
                     }
                 }
                 _ => {}

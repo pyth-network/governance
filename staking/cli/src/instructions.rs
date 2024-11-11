@@ -1,14 +1,22 @@
 use {
     anchor_lang::{
+        accounts::account,
         AccountDeserialize,
+        Discriminator,
         InstructionData,
         ToAccountMetas,
     },
     anchor_spl::{
         associated_token::spl_associated_token_account,
-        token::spl_token,
+        token::{
+            spl_token,
+            TokenAccount,
+        },
     },
-    base64::Engine,
+    base64::{
+        encode,
+        Engine,
+    },
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -42,9 +50,19 @@ use {
     },
     reqwest::blocking::Client,
     serde_wormhole::RawMessage,
+    solana_account_decoder::UiAccountEncoding,
     solana_client::{
         rpc_client::RpcClient,
-        rpc_config::RpcSendTransactionConfig,
+        rpc_config::{
+            RpcAccountInfoConfig,
+            RpcProgramAccountsConfig,
+            RpcSendTransactionConfig,
+        },
+        rpc_filter::{
+            Memcmp,
+            MemcmpEncodedBytes,
+            RpcFilterType,
+        },
     },
     solana_sdk::{
         commitment_config::CommitmentConfig,
@@ -67,10 +85,31 @@ use {
             TransactionError,
         },
     },
+    staking::{
+        state::{
+            global_config::GlobalConfig,
+            max_voter_weight_record::MAX_VOTER_WEIGHT,
+            positions::{
+                DynamicPositionArray,
+                DynamicPositionArrayAccount,
+                PositionData,
+                PositionState,
+            },
+            stake_account::StakeAccountMetadataV2,
+            vesting::VestingSchedule,
+        },
+        utils::voter_weight::compute_voter_weight,
+    },
     std::{
         cmp::min,
+        collections::{
+            HashMap,
+            HashSet,
+        },
         convert::TryInto,
         mem::size_of,
+        str::FromStr,
+        thread::current,
     },
     wormhole_core_bridge_solana::sdk::{
         WriteEncodedVaaArgs,
@@ -498,6 +537,12 @@ pub fn initialize_pool(
     .unwrap();
 }
 
+pub fn get_current_time(rpc_client: &RpcClient) -> i64 {
+    let slot = rpc_client.get_slot().unwrap();
+    let blocktime = rpc_client.get_block_time(slot).unwrap();
+    blocktime
+}
+
 pub fn get_current_epoch(rpc_client: &RpcClient) -> u64 {
     let slot = rpc_client.get_slot().unwrap();
     let blocktime = rpc_client.get_block_time(slot).unwrap();
@@ -824,4 +869,363 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
     };
 
     process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+}
+
+pub fn get_all_accounts(rpc_client: &RpcClient) {
+    let data: Vec<(Pubkey, DynamicPositionArrayAccount, Pubkey, Pubkey)> = rpc_client
+        .get_program_accounts_with_config(
+            &staking::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(PositionData::discriminator().to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .map(|(pubkey, account)| {
+            (
+                pubkey,
+                DynamicPositionArrayAccount {
+                    key:      pubkey,
+                    lamports: account.lamports,
+                    data:     account.data.clone(),
+                },
+                get_stake_account_metadata_address(pubkey),
+                get_stake_account_custody_address(pubkey),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    let metadata_accounts_data = rpc_client
+        .get_program_accounts_with_config(
+            &staking::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(StakeAccountMetadataV2::discriminator().to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .map(|(pubkey, account)| {
+            (
+                pubkey,
+                StakeAccountMetadataV2::try_deserialize(&mut account.data.as_slice()).unwrap(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    let config = GlobalConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&get_config_address())
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+    let current_time = get_current_time(rpc_client);
+
+    let locked_metadata_account_data: HashMap<Pubkey, u64> = metadata_accounts_data
+        .iter()
+        .map(|(pubkey, metadata)| {
+            (
+                *pubkey,
+                metadata
+                    .lock
+                    .get_unvested_balance(current_time, config.pyth_token_list_time)
+                    .unwrap(),
+            )
+        })
+        .collect::<HashMap<Pubkey, u64>>();
+
+    let data = data
+        .into_iter()
+        .map(|(pubkey, account, metadata_pubkey, custody_pubkey)| {
+            (
+                pubkey,
+                account,
+                metadata_pubkey,
+                custody_pubkey,
+                *locked_metadata_account_data.get(&custody_pubkey).unwrap(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+
+    let locked_token_accounts_pubkeys = data
+        .iter()
+        .filter(|(_, _, _, _, locked_amount)| *locked_amount > 0u64)
+        .map(|(_, _, _, token_account_pubkey, _)| *token_account_pubkey)
+        .collect::<Vec<_>>();
+
+    let mut actual_amounts: HashMap<Pubkey, u64> = HashMap::new();
+    for chunk in locked_token_accounts_pubkeys.chunks(100) {
+        rpc_client
+            .get_multiple_accounts(chunk)
+            .unwrap()
+            .into_iter()
+            .enumerate()
+            .for_each(|(index, account)| {
+                actual_amounts.insert(
+                    chunk[index],
+                    TokenAccount::try_deserialize(&mut account.unwrap().data.as_slice())
+                        .unwrap()
+                        .amount,
+                );
+            });
+    }
+
+    let data = data
+        .into_iter()
+        .map(
+            |(pubkey, account, metadata_pubkey, custody_pubkey, locked_amount)| {
+                (
+                    pubkey,
+                    account,
+                    metadata_pubkey,
+                    custody_pubkey,
+                    min(
+                        locked_amount,
+                        *actual_amounts.get(&custody_pubkey).unwrap_or(&0u64),
+                    ),
+                )
+            },
+        )
+        .collect::<Vec<_>>();
+
+    let current_epoch = get_current_epoch(rpc_client);
+    let data = data
+        .into_iter()
+        .map(
+            |(pubkey, mut account, metadata_pubkey, custody_pubkey, locked_amount)| {
+                let dynamic_position_array = account.to_dynamic_position_array();
+                let owner = dynamic_position_array.owner().unwrap();
+                let staked_in_governance = compute_voter_weight(
+                    &dynamic_position_array,
+                    current_epoch,
+                    MAX_VOTER_WEIGHT,
+                    MAX_VOTER_WEIGHT,
+                )
+                .unwrap();
+
+                let staked_in_ois = {
+                    let mut amount = 0u64;
+                    for i in 0..dynamic_position_array.get_position_capacity() {
+                        if let Some(position) = dynamic_position_array.read_position(i).unwrap() {
+                            match position.get_current_position(current_epoch).unwrap() {
+                                PositionState::LOCKED | PositionState::PREUNLOCKING => {
+                                    if !position.is_voting() {
+                                        amount += position.amount;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    amount
+                };
+                (
+                    pubkey,
+                    metadata_pubkey,
+                    custody_pubkey,
+                    owner,
+                    locked_amount,
+                    staked_in_governance,
+                    staked_in_ois,
+                )
+            },
+        )
+        .collect::<Vec<_>>();
+
+    use std::{
+        fs::File,
+        io::{
+            BufWriter,
+            Write,
+        },
+    };
+
+    let file = File::create("output.csv").unwrap();
+    let mut writer = BufWriter::new(file);
+
+    // Write the header
+    writeln!(writer, "pubkey,account,metadata_pubkey,custody_pubkey,owner,locked_amount,staked_in_governance,staked_in_ois").unwrap();
+    // Write the data
+    for (
+        pubkey,
+        metadata_pubkey,
+        custody_pubkey,
+        owner,
+        locked_amount,
+        staked_in_governance,
+        staked_in_ois,
+    ) in data
+    {
+        writeln!(
+            writer,
+            "{},{},{},{},{},{},{}",
+            pubkey,
+            metadata_pubkey,
+            custody_pubkey,
+            owner,
+            locked_amount,
+            staked_in_governance,
+            staked_in_ois
+        )
+        .unwrap();
+    }
+
+
+    // let current_epoch = get_current_epoch(rpc_client);
+
+    // let governance_stake_amounts = position_accounts.iter().enumerate().map(|(index, (pubkey,
+    // account))| {     let mut account =  DynamicPositionArrayAccount{
+    //         key: *pubkey,
+    //         lamports: account.lamports,
+    //         data: account.data.clone(),
+    //     };
+    //     let dynamic_position_array = account.to_dynamic_position_array();
+
+    //         println!("Account {}", index);
+
+
+    //     compute_voter_weight(
+    //         &dynamic_position_array,
+    //         current_epoch,
+    //         MAX_VOTER_WEIGHT,
+    //         MAX_VOTER_WEIGHT
+    //     ).unwrap()
+    // }).collect::<Vec<_>>();
+
+    // let ois_stake_amounts = position_accounts.iter().enumerate().map(|(index, (pubkey, account))|
+    // {     let mut account =  DynamicPositionArrayAccount{
+    //         key: *pubkey,
+    //         lamports: account.lamports,
+    //         data: account.data.clone(),
+    //     };
+    //     let dynamic_position_array = account.to_dynamic_position_array();
+
+    //     let mut raw_voter_weight = 0u64;
+    //     for i in 0..dynamic_position_array.get_position_capacity() {
+    //         if let Some(position) = dynamic_position_array.read_position(i).unwrap(){
+    //             match position.get_current_position(current_epoch).unwrap() {
+    //                 PositionState::LOCKED | PositionState::PREUNLOCKING => {
+    //                     if !position.is_voting() {
+    //                         // position.amount is trusted, so I don't think this can overflow,
+    //                         // but still probably better to use checked math
+    //                         raw_voter_weight = raw_voter_weight + position.amount;
+    //                     }
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //     }
+    //     raw_voter_weight
+    // }).collect::<Vec<_>>();
+
+    // let total_capacity: u64 = governance_stake_amounts.iter().sum();
+    // println!("Total capacity: {}", total_capacity);
+    // println!("Total OIS capacity: {}", ois_stake_amounts.iter().sum::<u64>());
+
+
+    // let mut frequencies = std::collections::HashMap::new();
+    // for capacity in &position_account_capacities {
+    //     *frequencies.entry(*capacity).or_insert(0) += 1;
+    // }
+
+    // let mut sorted_frequencies: Vec<_> = frequencies.iter().collect();
+    // sorted_frequencies.sort_by_key(|&(capacity, _)| capacity);
+    // for (capacity, count) in sorted_frequencies {
+    //     println!("{}: {}", capacity, count);
+    // }
+
+
+    let stake_account_metadata_accounts = rpc_client
+        .get_program_accounts_with_config(
+            &staking::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(StakeAccountMetadataV2::discriminator().to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .map(|(pubkey, account)| {
+            (
+                pubkey,
+                StakeAccountMetadataV2::try_deserialize(&mut account.data.as_slice()).unwrap(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    let stake_account_metadata_accounts = stake_account_metadata_accounts
+        .iter()
+        .filter(|(_, metadata)| !matches!(metadata.lock, VestingSchedule::FullyVested))
+        .collect::<Vec<_>>();
+    println!("{}", stake_account_metadata_accounts.len());
+
+    let mut custody_accounts: Vec<Pubkey> = stake_account_metadata_accounts
+        .iter()
+        .map(|(pubkey, _)| get_stake_account_custody_address(*pubkey))
+        .collect::<Vec<_>>();
+
+    let current_time = get_current_time(rpc_client);
+    let stake_account_locked_amount = stake_account_metadata_accounts
+        .iter()
+        .map(|(pubkey, metadata)| {
+            metadata
+                .lock
+                .get_unvested_balance(current_time, config.pyth_token_list_time)
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+
+    println!("{:?}", stake_account_locked_amount.iter().sum::<u64>());
+
+    let mut token_accounts: Vec<TokenAccount> = Vec::new();
+    for chunk in custody_accounts.chunks(100) {
+        let batch = rpc_client
+            .get_multiple_accounts(&chunk)
+            .unwrap()
+            .into_iter()
+            .map(|account| {
+                TokenAccount::try_deserialize(&mut account.unwrap().data.as_slice()).unwrap()
+            })
+            .collect::<Vec<_>>();
+        token_accounts.extend_from_slice(batch.as_slice());
+    }
+
+
+    let custody_accounts = rpc_client.get_token_largest_accounts(
+        &Pubkey::from_str("HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3").unwrap(),
+    );
+
+    // println!("{:?}", positio);
+    // println!("{:?}", stake_account_metadata_accounts.unwrap().len());
+    println!("{:?}", custody_accounts.unwrap().len());
 }

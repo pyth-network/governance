@@ -109,6 +109,7 @@ pub enum Action {
         #[clap(long, help = "Publisher caps")]
         publisher_caps: Pubkey,
     },
+    GetAllAccounts {},
 }
 
 pub enum SignerSource {

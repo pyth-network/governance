@@ -11,6 +11,7 @@ use {
         close_publisher_caps,
         create_slash_event,
         fetch_publisher_caps_and_advance,
+        get_all_accounts,
         initialize_pool,
         initialize_reward_custody,
         set_publisher_stake_account,
@@ -92,6 +93,9 @@ fn main() {
         Action::UpdateY { y } => update_y(&rpc_client, keypair.as_ref(), y),
         Action::ClosePublisherCaps { publisher_caps } => {
             close_publisher_caps(&rpc_client, keypair.as_ref(), publisher_caps)
+        }
+        Action::GetAllAccounts {} => {
+            get_all_accounts(&rpc_client);
         }
     }
 }
