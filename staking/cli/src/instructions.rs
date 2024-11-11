@@ -1,6 +1,5 @@
 use {
     anchor_lang::{
-        accounts::account,
         AccountDeserialize,
         Discriminator,
         InstructionData,
@@ -13,10 +12,7 @@ use {
             TokenAccount,
         },
     },
-    base64::{
-        encode,
-        Engine,
-    },
+    base64::Engine,
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -90,33 +86,24 @@ use {
             global_config::GlobalConfig,
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
-                DynamicPositionArray,
                 DynamicPositionArrayAccount,
                 PositionData,
                 PositionState,
             },
             stake_account::StakeAccountMetadataV2,
-            vesting::VestingSchedule,
         },
         utils::voter_weight::compute_voter_weight,
     },
     std::{
         cmp::min,
-        collections::{
-            HashMap,
-            HashSet,
-        },
+        collections::HashMap,
         convert::TryInto,
-        fmt::Debug,
         fs::File,
         io::{
             BufWriter,
             Write,
         },
         mem::size_of,
-        str::FromStr,
-        thread::current,
-        time::SystemTime,
     },
     wormhole_core_bridge_solana::sdk::{
         WriteEncodedVaaArgs,
@@ -546,8 +533,8 @@ pub fn initialize_pool(
 
 pub fn get_current_time(rpc_client: &RpcClient) -> i64 {
     let slot = rpc_client.get_slot().unwrap();
-    let blocktime = rpc_client.get_block_time(slot).unwrap();
-    blocktime
+
+    rpc_client.get_block_time(slot).unwrap()
 }
 
 pub fn get_current_epoch(rpc_client: &RpcClient) -> u64 {
