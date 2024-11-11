@@ -108,6 +108,11 @@ use {
         },
         convert::TryInto,
         fmt::Debug,
+        fs::File,
+        io::{
+            BufWriter,
+            Write,
+        },
         mem::size_of,
         str::FromStr,
         thread::current,
@@ -1054,14 +1059,6 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
             },
         )
         .collect::<Vec<_>>();
-
-    use std::{
-        fs::File,
-        io::{
-            BufWriter,
-            Write,
-        },
-    };
 
     let timestamp = chrono::Utc::now().format("%Y-%m-%d_%H:%M:%S").to_string();
     let file = File::create(format!("snapshots/snapshot-{}.csv", timestamp)).unwrap();
