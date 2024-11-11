@@ -533,7 +533,6 @@ pub fn initialize_pool(
 
 pub fn get_current_time(rpc_client: &RpcClient) -> i64 {
     let slot = rpc_client.get_slot().unwrap();
-
     rpc_client.get_block_time(slot).unwrap()
 }
 
@@ -935,7 +934,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     .unwrap();
     let current_time = get_current_time(rpc_client);
 
-    let locked_metadata_account_data: HashMap<Pubkey, u64> = metadata_accounts_data
+    let metadata_account_data_locked: HashMap<Pubkey, u64> = metadata_accounts_data
         .iter()
         .map(|(pubkey, metadata)| {
             (
@@ -956,19 +955,20 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                 account,
                 metadata_pubkey,
                 custody_pubkey,
-                *locked_metadata_account_data.get(&metadata_pubkey).unwrap(),
+                *metadata_account_data_locked.get(&metadata_pubkey).unwrap(),
             )
         })
         .collect::<Vec<_>>();
 
-
+    // We need to check the actual tokens accounts, since you can initialize a stake account with an
+    // arbitrary vesting schedule but 0 tokens
     let locked_token_accounts_pubkeys = data
         .iter()
         .filter(|(_, _, _, _, locked_amount)| *locked_amount > 0u64)
         .map(|(_, _, _, token_account_pubkey, _)| *token_account_pubkey)
         .collect::<Vec<_>>();
 
-    let mut actual_amounts: HashMap<Pubkey, u64> = HashMap::new();
+    let mut locked_token_accounts_actual_amounts: HashMap<Pubkey, u64> = HashMap::new();
     for chunk in locked_token_accounts_pubkeys.chunks(100) {
         rpc_client
             .get_multiple_accounts(chunk)
@@ -976,7 +976,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
             .into_iter()
             .enumerate()
             .for_each(|(index, account)| {
-                actual_amounts.insert(
+                locked_token_accounts_actual_amounts.insert(
                     chunk[index],
                     TokenAccount::try_deserialize(&mut account.unwrap().data.as_slice())
                         .unwrap()
@@ -996,7 +996,9 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                     custody_pubkey,
                     min(
                         locked_amount,
-                        *actual_amounts.get(&custody_pubkey).unwrap_or(&0u64),
+                        *locked_token_accounts_actual_amounts
+                            .get(&custody_pubkey)
+                            .unwrap_or(&0u64),
                     ),
                 )
             },
