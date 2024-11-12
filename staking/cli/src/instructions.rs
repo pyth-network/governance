@@ -865,7 +865,7 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
 }
 
 pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
-    let data: Vec<(Pubkey, DynamicPositionArrayAccount, Pubkey, Pubkey)> = rpc_client
+    let data: Vec<(Pubkey, DynamicPositionArrayAccount, Pubkey, Pubkey, Pubkey)> = rpc_client
         .get_program_accounts_with_config(
             &staking::ID,
             RpcProgramAccountsConfig {
@@ -894,6 +894,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                 },
                 get_stake_account_metadata_address(pubkey),
                 get_stake_account_custody_address(pubkey),
+                get_stake_account_custody_authority_address(pubkey),
             )
         })
         .collect::<Vec<_>>();
@@ -949,23 +950,26 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
 
     let data = data
         .into_iter()
-        .map(|(pubkey, account, metadata_pubkey, custody_pubkey)| {
-            (
-                pubkey,
-                account,
-                metadata_pubkey,
-                custody_pubkey,
-                *metadata_account_data_locked.get(&metadata_pubkey).unwrap(),
-            )
-        })
+        .map(
+            |(pubkey, account, metadata_pubkey, custody_pubkey, custody_authority_pubkey)| {
+                (
+                    pubkey,
+                    account,
+                    metadata_pubkey,
+                    custody_pubkey,
+                    custody_authority_pubkey,
+                    *metadata_account_data_locked.get(&metadata_pubkey).unwrap(),
+                )
+            },
+        )
         .collect::<Vec<_>>();
 
     // We need to check the actual tokens accounts, since you can initialize a stake account with an
     // arbitrary vesting schedule but 0 tokens
     let locked_token_accounts_pubkeys = data
         .iter()
-        .filter(|(_, _, _, _, locked_amount)| *locked_amount > 0u64)
-        .map(|(_, _, _, token_account_pubkey, _)| *token_account_pubkey)
+        .filter(|(_, _, _, _, _, locked_amount)| *locked_amount > 0u64)
+        .map(|(_, _, _, token_account_pubkey, _, _)| *token_account_pubkey)
         .collect::<Vec<_>>();
 
     let mut locked_token_accounts_actual_amounts: HashMap<Pubkey, u64> = HashMap::new();
@@ -988,12 +992,20 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     let data = data
         .into_iter()
         .map(
-            |(pubkey, account, metadata_pubkey, custody_pubkey, locked_amount)| {
+            |(
+                pubkey,
+                account,
+                metadata_pubkey,
+                custody_pubkey,
+                custody_authority_pubkey,
+                locked_amount,
+            )| {
                 (
                     pubkey,
                     account,
                     metadata_pubkey,
                     custody_pubkey,
+                    custody_authority_pubkey,
                     min(
                         locked_amount,
                         *locked_token_accounts_actual_amounts
@@ -1009,7 +1021,14 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     let data = data
         .into_iter()
         .map(
-            |(pubkey, mut account, metadata_pubkey, custody_pubkey, locked_amount)| {
+            |(
+                pubkey,
+                mut account,
+                metadata_pubkey,
+                custody_pubkey,
+                custody_authority_pubkey,
+                locked_amount,
+            )| {
                 let dynamic_position_array = account.to_dynamic_position_array();
                 let owner = dynamic_position_array.owner().unwrap();
                 let staked_in_governance = compute_voter_weight(
@@ -1040,6 +1059,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                     pubkey,
                     metadata_pubkey,
                     custody_pubkey,
+                    custody_authority_pubkey,
                     owner,
                     locked_amount,
                     staked_in_governance,
@@ -1054,12 +1074,13 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     let mut writer = BufWriter::new(file);
 
     // Write the header
-    writeln!(writer, "pubkey,metadata_pubkey,custody_pubkey,owner,locked_amount,staked_in_governance,staked_in_ois").unwrap();
+    writeln!(writer, "positions_pubkey,metadata_pubkey,custody_pubkey,custody_authority_pubkey,owner,locked_amount,staked_in_governance,staked_in_ois").unwrap();
     // Write the data
     for (
         pubkey,
         metadata_pubkey,
         custody_pubkey,
+        custody_authority_pubkey,
         owner,
         locked_amount,
         staked_in_governance,
@@ -1068,10 +1089,11 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     {
         writeln!(
             writer,
-            "{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{}",
             pubkey,
             metadata_pubkey,
             custody_pubkey,
+            custody_authority_pubkey,
             owner,
             locked_amount,
             staked_in_governance,
