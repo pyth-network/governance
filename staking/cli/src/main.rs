@@ -13,6 +13,7 @@ use {
         fetch_publisher_caps_and_advance,
         initialize_pool,
         initialize_reward_custody,
+        save_stake_accounts_snapshot,
         set_publisher_stake_account,
         slash,
         update_delegation_fee,
@@ -92,6 +93,9 @@ fn main() {
         Action::UpdateY { y } => update_y(&rpc_client, keypair.as_ref(), y),
         Action::ClosePublisherCaps { publisher_caps } => {
             close_publisher_caps(&rpc_client, keypair.as_ref(), publisher_caps)
+        }
+        Action::SaveStakeAccountsSnapshot {} => {
+            save_stake_accounts_snapshot(&rpc_client);
         }
     }
 }

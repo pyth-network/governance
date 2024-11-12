@@ -41,7 +41,7 @@ use {
 pub mod context;
 pub mod error;
 pub mod state;
-mod utils;
+pub mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
