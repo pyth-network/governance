@@ -252,7 +252,13 @@ pub fn process_transaction(
     signers: &[&dyn Signer],
 ) -> Result<Signature, TransactionError> {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
-    transaction.sign(signers, rpc_client.get_latest_blockhash().unwrap());
+    transaction.sign(
+        signers,
+        rpc_client
+            .get_latest_blockhash_with_commitment(CommitmentConfig::finalized())
+            .unwrap()
+            .0,
+    );
     let transaction_signature_res = rpc_client
         .send_and_confirm_transaction_with_spinner_and_config(
             &transaction,
