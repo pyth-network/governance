@@ -34,7 +34,7 @@ interface ToPairAccountInterface {
 // Matches each metadata account to the position account that it corresponds to. This is optimized to avoid RPC calls
 // and reduce the number of findProgramAddress calls.
 // Assumes each metadata account maps to one position account but there might be position accounts without a metadata
-// account (if they've already been upgraded). If this assumption is not true, you can rewite this to use only the
+// account (if they've already been upgraded). If this assumption is not true, you can rewrite this to use only the
 // second pass.
 async function pairAccounts<
   P extends ToPairAccountInterface,
