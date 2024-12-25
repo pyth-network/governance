@@ -46,7 +46,7 @@ const Test: NextPage = () => {
           <p>
             {hasTested ? (
               <Description>
-                Your wallet has already been tested succesfully.
+                Your wallet has already been tested successfully.
               </Description>
             ) : (
               <Description>
