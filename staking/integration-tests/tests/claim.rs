@@ -148,7 +148,7 @@ fn test_claim() {
     let pool_data: PoolData = fetch_account_data_bytemuck(&mut svm, &pool_data_pubkey);
     assert_eq!(pool_data.claimable_rewards, 0);
 
-    // duting epoch x + 2, the reward for epoch x + 1 can be claimed
+    // during epoch x + 2, the reward for epoch x + 1 can be claimed
     // y = YIELD, cap = 0.5 PYTH, delegated = 1 PYTH
     // reward = cap * YIELD
     assert_eq!(custody_data.amount, STAKED_TOKENS + YIELD * 1 / 2);
