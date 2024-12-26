@@ -12,7 +12,10 @@ use {
             TokenAccount,
         },
     },
-    base64::Engine,
+    base64::{
+        prelude::BASE64_STANDARD,
+        Engine,
+    },
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -86,9 +89,11 @@ use {
             global_config::GlobalConfig,
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
+                DynamicPositionArray,
                 DynamicPositionArrayAccount,
                 PositionData,
                 PositionState,
+                Target,
             },
             stake_account::StakeAccountMetadataV2,
         },
@@ -105,9 +110,12 @@ use {
         },
         mem::size_of,
     },
-    wormhole_core_bridge_solana::sdk::{
-        WriteEncodedVaaArgs,
-        VAA_START,
+    wormhole_core_bridge_solana::{
+        sdk::{
+            WriteEncodedVaaArgs,
+            VAA_START,
+        },
+        state::EncodedVaa,
     },
     wormhole_sdk::vaa::{
         Body,
@@ -868,6 +876,191 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
     };
 
     process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+}
+
+pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
+    let mut data = EncodedVaa::DISCRIMINATOR.to_vec();
+    data.extend_from_slice(&[1]);
+    data.extend_from_slice(&signer.pubkey().to_bytes());
+
+    rpc_client
+        .get_program_accounts_with_config(
+            &publisher_caps::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(PublisherCaps::DISCRIMINATOR.to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .for_each(|(pubkey, _account)| close_publisher_caps(rpc_client, signer, pubkey));
+}
+
+pub fn advance_delegation_record(
+    rpc_client: &RpcClient,
+    signer: &dyn Signer,
+    positions: &Pubkey,
+    min_reward: u64,
+) {
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig {
+        pool_data: pool_data_address,
+        pyth_token_mint,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let pool_data = PoolData::try_deserialize(
+        &mut rpc_client.get_account_data(&pool_data_address).unwrap()[..8 + size_of::<PoolData>()]
+            .as_ref(),
+    )
+    .unwrap();
+
+    pool_data
+        .publishers
+        .iter()
+        .enumerate()
+        .for_each(|(publisher_index, publisher)| {
+            if *publisher == Pubkey::default() {
+                return;
+            }
+            let publisher_stake_account_positions =
+                if pool_data.publisher_stake_accounts[publisher_index] == Pubkey::default() {
+                    None
+                } else {
+                    Some(pool_data.publisher_stake_accounts[publisher_index])
+                };
+
+            let publisher_stake_account_custody =
+                publisher_stake_account_positions.map(get_stake_account_custody_address);
+
+            let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
+                delegation_record: get_delegation_record_address(*publisher, *positions),
+                payer: signer.pubkey(),
+                pool_config,
+                pool_data: pool_data_address,
+                pool_reward_custody: get_pool_reward_custody_address(pyth_token_mint),
+                publisher: *publisher,
+                publisher_stake_account_positions,
+                publisher_stake_account_custody,
+                stake_account_positions: *positions,
+                stake_account_custody: get_stake_account_custody_address(*positions),
+                system_program: system_program::ID,
+                token_program: spl_token::ID,
+            };
+
+            let data = integrity_pool::instruction::AdvanceDelegationRecord {};
+
+            let ix = Instruction {
+                program_id: integrity_pool::ID,
+                accounts:   accounts.to_account_metas(None),
+                data:       data.data(),
+            };
+
+
+            let mut transaction =
+                Transaction::new_with_payer(&[ix.clone()], Some(&signer.pubkey()));
+            transaction.sign(
+                &[signer],
+                rpc_client
+                    .get_latest_blockhash_with_commitment(CommitmentConfig::finalized())
+                    .unwrap()
+                    .0,
+            );
+            let res = rpc_client.simulate_transaction(&transaction).unwrap();
+            let reward_amount: u64 = u64::from_le_bytes(
+                BASE64_STANDARD
+                    .decode(res.value.return_data.unwrap().data.0)
+                    .unwrap()[..8]
+                    .try_into()
+                    .unwrap(),
+            );
+
+            if reward_amount < min_reward {
+                return;
+            }
+
+            println!(
+                "Advance delegation record for pubkey: {:?} publisher: {:?} with reward: {:?}",
+                positions.to_string(),
+                publisher,
+                reward_amount,
+            );
+
+            process_transaction(rpc_client, &[ix], &[signer]).unwrap();
+        });
+}
+
+pub fn claim_rewards(
+    rpc_client: &RpcClient,
+    signer: &dyn Signer,
+    min_staked: u64,
+    min_reward: u64,
+) {
+    let mut data: Vec<DynamicPositionArrayAccount> = rpc_client
+        .get_program_accounts_with_config(
+            &staking::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(PositionData::discriminator().to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .map(|(pubkey, account)| DynamicPositionArrayAccount {
+            key:      pubkey,
+            lamports: account.lamports,
+            data:     account.data.clone(),
+        })
+        .collect::<Vec<_>>();
+
+    let current_epoch = get_current_epoch(rpc_client);
+
+    let data: Vec<DynamicPositionArray> = data
+        .iter_mut()
+        .filter_map(|positions| {
+            let acc = positions.to_dynamic_position_array();
+            let valid = acc
+                .get_target_exposure(&Target::IntegrityPool, current_epoch)
+                .unwrap()
+                >= min_staked;
+            if valid {
+                Some(acc)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+
+    data.iter().enumerate().for_each(|(i, positions)| {
+        println!("Claiming rewards for account {} / {}", i, data.len());
+        advance_delegation_record(rpc_client, signer, positions.acc_info.key, min_reward);
+    });
 }
 
 pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {

@@ -71,7 +71,7 @@ pub enum Action {
         )]
         hermes_url: String,
 
-        #[clap(long, default_value = "3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5")]
+        #[clap(long, default_value = "HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ")]
         wormhole: Pubkey,
     },
     InitializePoolRewardCustody {},
@@ -110,6 +110,13 @@ pub enum Action {
         publisher_caps: Pubkey,
     },
     SaveStakeAccountsSnapshot {},
+    ClaimRewards {
+        #[clap(long, help = "Minimum staked tokens")]
+        min_staked: u64,
+        #[clap(long, help = "Minimum reward tokens per publisher")]
+        min_reward: u64,
+    },
+    CloseAllPublisherCaps {},
 }
 
 pub enum SignerSource {
