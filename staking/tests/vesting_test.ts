@@ -734,7 +734,7 @@ describe("vesting", async () => {
     );
   });
 
-  it("create acccount that does not opt into governance", async () => {
+  it("create account that does not opt into governance", async () => {
     await aliceConnection.provider.connection.requestAirdrop(
       alice.publicKey,
       1_000_000_000_000
