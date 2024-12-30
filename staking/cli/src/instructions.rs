@@ -12,10 +12,7 @@ use {
             TokenAccount,
         },
     },
-    base64::{
-        prelude::BASE64_STANDARD,
-        Engine,
-    },
+    base64::Engine,
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -258,7 +255,7 @@ pub fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
-) -> Result<Signature, TransactionError> {
+) -> Result<Signature, Option<TransactionError>> {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
     transaction.sign(
         signers,
@@ -283,7 +280,7 @@ pub fn process_transaction(
         }
         Err(err) => {
             println!("transaction err: {err:?}");
-            Err(err.get_transaction_error().unwrap())
+            Err(err.get_transaction_error())
         }
     }
 }
@@ -905,12 +902,31 @@ pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
         .for_each(|(pubkey, _account)| close_publisher_caps(rpc_client, signer, pubkey));
 }
 
+pub struct FetchError {}
+
+pub fn fetch_delegation_record(
+    rpc_client: &RpcClient,
+    key: &Pubkey,
+) -> Result<DelegationRecord, FetchError> {
+    let delegation_record = DelegationRecord::try_deserialize(
+        &mut (rpc_client
+            .get_account_data(key)
+            .map_err(|_| FetchError {})?
+            .as_slice()),
+    )
+    .map_err(|_| FetchError {})?;
+
+    Ok(delegation_record)
+}
+
 pub fn advance_delegation_record(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
-    positions: &Pubkey,
+    positions: &DynamicPositionArray,
     min_reward: u64,
+    current_epoch: u64,
 ) {
+    let positions_pubkey = positions.acc_info.key;
     let pool_config = get_pool_config_address();
 
     let PoolConfig {
@@ -949,8 +965,24 @@ pub fn advance_delegation_record(
             let publisher_stake_account_custody =
                 publisher_stake_account_positions.map(get_stake_account_custody_address);
 
+            let delegation_record_pubkey =
+                get_delegation_record_address(*publisher, *positions_pubkey);
+
+            let delegation_record = fetch_delegation_record(rpc_client, &delegation_record_pubkey);
+
+            match delegation_record {
+                Ok(delegation_record) => {
+                    if delegation_record.last_epoch == current_epoch {
+                        return;
+                    }
+                }
+                Err(_) => {
+                    return;
+                }
+            }
+
             let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
-                delegation_record: get_delegation_record_address(*publisher, *positions),
+                delegation_record: get_delegation_record_address(*publisher, *positions_pubkey),
                 payer: signer.pubkey(),
                 pool_config,
                 pool_data: pool_data_address,
@@ -958,8 +990,8 @@ pub fn advance_delegation_record(
                 publisher: *publisher,
                 publisher_stake_account_positions,
                 publisher_stake_account_custody,
-                stake_account_positions: *positions,
-                stake_account_custody: get_stake_account_custody_address(*positions),
+                stake_account_positions: *positions_pubkey,
+                stake_account_custody: get_stake_account_custody_address(*positions_pubkey),
                 system_program: system_program::ID,
                 token_program: spl_token::ID,
             };
@@ -973,36 +1005,16 @@ pub fn advance_delegation_record(
             };
 
 
-            let mut transaction =
-                Transaction::new_with_payer(&[ix.clone()], Some(&signer.pubkey()));
-            transaction.sign(
-                &[signer],
-                rpc_client
-                    .get_latest_blockhash_with_commitment(CommitmentConfig::finalized())
-                    .unwrap()
-                    .0,
-            );
-            let res = rpc_client.simulate_transaction(&transaction).unwrap();
-            let reward_amount: u64 = u64::from_le_bytes(
-                BASE64_STANDARD
-                    .decode(res.value.return_data.unwrap().data.0)
-                    .unwrap()[..8]
-                    .try_into()
-                    .unwrap(),
-            );
-
-            if reward_amount < min_reward {
-                return;
-            }
-
             println!(
-                "Advance delegation record for pubkey: {:?} publisher: {:?} with reward: {:?}",
-                positions.to_string(),
+                "Advance delegation record for pubkey: {:?} publisher: {:?}",
+                positions_pubkey.to_string(),
                 publisher,
-                reward_amount,
             );
-
-            process_transaction(rpc_client, &[ix], &[signer]).unwrap();
+            for _ in 0..10 {
+                if process_transaction(rpc_client, &[ix.clone()], &[signer]).is_ok() {
+                    break;
+                }
+            }
         });
 }
 
@@ -1040,27 +1052,38 @@ pub fn claim_rewards(
 
     let current_epoch = get_current_epoch(rpc_client);
 
-    let data: Vec<DynamicPositionArray> = data
+    let mut data: Vec<(u64, DynamicPositionArray)> = data
         .iter_mut()
         .filter_map(|positions| {
             let acc = positions.to_dynamic_position_array();
-            let valid = acc
+            let exposure = acc
                 .get_target_exposure(&Target::IntegrityPool, current_epoch)
-                .unwrap()
-                >= min_staked;
-            if valid {
-                Some(acc)
+                .unwrap();
+            if exposure >= min_staked {
+                Some((exposure, acc))
             } else {
                 None
             }
         })
         .collect();
 
+    data.sort_by_key(|(exposure, _)| *exposure);
+    data.reverse();
 
-    data.iter().enumerate().for_each(|(i, positions)| {
-        println!("Claiming rewards for account {} / {}", i, data.len());
-        advance_delegation_record(rpc_client, signer, positions.acc_info.key, min_reward);
-    });
+
+    data.iter()
+        .enumerate()
+        // .skip(120)
+        .for_each(|(i, (exposure, positions))| {
+            println!(
+                "Claiming rewards for account ({} / {}). exposure: {}. pubkey: {:?}",
+                i,
+                data.len(),
+                exposure,
+                positions.acc_info.key
+            );
+            advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch);
+        });
 }
 
 pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
