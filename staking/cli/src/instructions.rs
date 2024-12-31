@@ -13,6 +13,7 @@ use {
         },
     },
     base64::Engine,
+    futures::future::join_all,
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -179,11 +180,11 @@ pub struct FetchError {}
 
 pub async fn fetch_delegation_record(
     rpc_client: &RpcClient,
-    key: &Pubkey,
+    key: Pubkey,
 ) -> Result<DelegationRecord, FetchError> {
     let delegation_record = DelegationRecord::try_deserialize(
         &mut (rpc_client
-            .get_account_data(key)
+            .get_account_data(&key)
             .await
             .map_err(|_| FetchError {})?
             .as_slice()),
@@ -225,8 +226,8 @@ pub async fn advance_delegation_record<'a>(
     )
     .unwrap();
 
-    // Collect all valid instructions
-    let instructions: Vec<Instruction> = pool_data
+    // First collect all potential instruction data
+    let potential_instructions: Vec<_> = pool_data
         .publishers
         .iter()
         .enumerate()
@@ -265,48 +266,63 @@ pub async fn advance_delegation_record<'a>(
             let publisher_stake_account_custody =
                 publisher_stake_account_positions.map(get_stake_account_custody_address);
 
-            let delegation_record_pubkey =
-                get_delegation_record_address(*publisher, *positions_pubkey);
-
-            let delegation_record =
-                fetch_delegation_record(rpc_client, &delegation_record_pubkey).await;
-
-            match delegation_record {
-                Ok(delegation_record) => {
-                    if delegation_record.last_epoch == current_epoch {
-                        return None;
-                    }
-                }
-                Err(_) => {
-                    return None;
-                }
-            }
-
-            let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
-                delegation_record: get_delegation_record_address(*publisher, *positions_pubkey),
-                payer: signer.pubkey(),
-                pool_config,
-                pool_data: pool_data_address,
-                pool_reward_custody: get_pool_reward_custody_address(pyth_token_mint),
-                publisher: *publisher,
+            Some((
+                *publisher,
                 publisher_stake_account_positions,
                 publisher_stake_account_custody,
-                stake_account_positions: *positions_pubkey,
-                stake_account_custody: get_stake_account_custody_address(*positions_pubkey),
-                system_program: system_program::ID,
-                token_program: spl_token::ID,
-            };
-
-            let data = integrity_pool::instruction::AdvanceDelegationRecord {};
-
-
-            Some(Instruction {
-                program_id: integrity_pool::ID,
-                accounts:   accounts.to_account_metas(None),
-                data:       data.data(),
-            })
+            ))
         })
         .collect();
+
+    // Fetch all delegation records concurrently
+    let delegation_records = join_all(potential_instructions.iter().map(|(publisher, _, _)| {
+        let delegation_record_pubkey = get_delegation_record_address(*publisher, *positions_pubkey);
+        fetch_delegation_record(rpc_client, delegation_record_pubkey)
+    }))
+    .await;
+
+    // Process results and create instructions
+    let mut instructions = Vec::new();
+    for (
+        (publisher, publisher_stake_account_positions, publisher_stake_account_custody),
+        delegation_record,
+    ) in potential_instructions.into_iter().zip(delegation_records)
+    {
+        // Skip if we couldn't fetch the record or if it's already processed for current epoch
+        match delegation_record {
+            Ok(delegation_record) => {
+                if delegation_record.last_epoch == current_epoch {
+                    continue;
+                }
+            }
+            Err(_) => {
+                continue;
+            }
+        }
+
+        let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
+            delegation_record: get_delegation_record_address(publisher, *positions_pubkey),
+            payer: signer.pubkey(),
+            pool_config,
+            pool_data: pool_data_address,
+            pool_reward_custody: get_pool_reward_custody_address(pyth_token_mint),
+            publisher,
+            publisher_stake_account_positions,
+            publisher_stake_account_custody,
+            stake_account_positions: *positions_pubkey,
+            stake_account_custody: get_stake_account_custody_address(*positions_pubkey),
+            system_program: system_program::ID,
+            token_program: spl_token::ID,
+        };
+
+        let data = integrity_pool::instruction::AdvanceDelegationRecord {};
+
+        instructions.push(Instruction {
+            program_id: integrity_pool::ID,
+            accounts:   accounts.to_account_metas(None),
+            data:       data.data(),
+        });
+    }
 
     // Process all instructions in one transaction if there are any
     if !instructions.is_empty() {
@@ -316,14 +332,14 @@ pub async fn advance_delegation_record<'a>(
             instructions.len(),
         );
 
-        for _ in 0..10 {
-            if process_transaction(rpc_client, &instructions, &[signer])
-                .await
-                .is_ok()
-            {
-                break;
-            }
-        }
+        // for _ in 0..10 {
+        //     // if process_transaction(rpc_client, &instructions, &[signer])
+        //     //     .await
+        //     //     .is_ok()
+        //     // {
+        //     //     break;
+        //     // }
+        // }
     }
 }
 
@@ -384,14 +400,24 @@ pub async fn claim_rewards(
     data.iter()
         .enumerate()
         .skip(96)
-        .for_each(|(i, (exposure, positions))| {
-            println!(
-                "Claiming rewards for account ({} / {}). exposure: {}. pubkey: {:?}",
-                i,
-                data.len(),
-                exposure,
-                positions.acc_info.key
-            );
-            advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch);
+        .collect::<Vec<_>>() // Collect into Vec first
+        .chunks(10) // Process in chunks of 10
+        .for_each(|chunk| {
+            println!("Processing batch of up to 10 accounts...");
+
+            // Create a future for each account in the chunk
+            let futures = chunk.iter().map(|(i, (exposure, positions))| {
+                println!(
+                    "Claiming rewards for account ({} / {}). exposure: {}. pubkey: {:?}",
+                    i,
+                    data.len(),
+                    exposure,
+                    positions.acc_info.key
+                );
+                advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch)
+            });
+
+            // Execute up to 10 futures concurrently
+            futures::executor::block_on(join_all(futures));
         });
 }

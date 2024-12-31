@@ -12,8 +12,8 @@ use {
     solana_sdk::commitment_config::CommitmentConfig,
 };
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let Cli {
         keypair,
         rpc_url,
@@ -25,11 +25,6 @@ fn main() {
         Action::ClaimRewards {
             min_staked,
             min_reward,
-        } => futures::executor::block_on(claim_rewards(
-            &rpc_client,
-            keypair.as_ref(),
-            min_staked,
-            min_reward,
-        )),
+        } => claim_rewards(&rpc_client, keypair.as_ref(), min_staked, min_reward).await,
     }
 }
