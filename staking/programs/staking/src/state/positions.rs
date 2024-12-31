@@ -566,7 +566,7 @@ impl Position {
 
     /**
      * Two positions are equivalent if they have the same state for the current and previous
-     * epoch. This is because we never check the state of a position for epochs futher in
+     * epoch. This is because we never check the state of a position for epochs further in
      * the past than 1 epoch. An exception to this rule is claimimng rewards in integrity
      * pool, therefore `pool_authority` should ensure rewards have been claimed before
      * allowing merging positions.
