@@ -8,6 +8,7 @@ use {
         Cli,
     },
     instructions::{
+        close_all_publisher_caps,
         close_publisher_caps,
         create_slash_event,
         fetch_publisher_caps_and_advance,
@@ -96,6 +97,9 @@ fn main() {
         }
         Action::SaveStakeAccountsSnapshot {} => {
             save_stake_accounts_snapshot(&rpc_client);
+        }
+        Action::CloseAllPublisherCaps {} => {
+            close_all_publisher_caps(&rpc_client, keypair.as_ref());
         }
     }
 }

@@ -250,7 +250,7 @@ pub fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
-) -> Result<Signature, TransactionError> {
+) -> Result<Signature, Option<TransactionError>> {
     let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
     transaction.sign(
         signers,
@@ -275,7 +275,7 @@ pub fn process_transaction(
         }
         Err(err) => {
             println!("transaction err: {err:?}");
-            Err(err.get_transaction_error().unwrap())
+            Err(err.get_transaction_error())
         }
     }
 }
@@ -868,6 +868,29 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
     };
 
     process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+}
+
+pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
+    rpc_client
+        .get_program_accounts_with_config(
+            &publisher_caps::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(PublisherCaps::DISCRIMINATOR.to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .unwrap()
+        .into_iter()
+        .for_each(|(pubkey, _account)| close_publisher_caps(rpc_client, signer, pubkey));
 }
 
 pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
