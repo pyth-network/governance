@@ -950,13 +950,14 @@ pub fn advance_delegation_record(
     )
     .unwrap();
 
-    pool_data
+    // Collect all valid instructions
+    let instructions: Vec<Instruction> = pool_data
         .publishers
         .iter()
         .enumerate()
-        .for_each(|(publisher_index, publisher)| {
+        .filter_map(|(publisher_index, publisher)| {
             if *publisher == Pubkey::default() {
-                return;
+                return None;
             }
 
             let publisher_exposure = {
@@ -976,7 +977,7 @@ pub fn advance_delegation_record(
             };
 
             if publisher_exposure == 0 {
-                return;
+                return None;
             }
 
             let publisher_stake_account_positions =
@@ -997,11 +998,11 @@ pub fn advance_delegation_record(
             match delegation_record {
                 Ok(delegation_record) => {
                     if delegation_record.last_epoch == current_epoch {
-                        return;
+                        return None;
                     }
                 }
                 Err(_) => {
-                    return;
+                    return None;
                 }
             }
 
@@ -1022,24 +1023,29 @@ pub fn advance_delegation_record(
 
             let data = integrity_pool::instruction::AdvanceDelegationRecord {};
 
-            let ix = Instruction {
+
+            Some(Instruction {
                 program_id: integrity_pool::ID,
                 accounts:   accounts.to_account_metas(None),
                 data:       data.data(),
-            };
+            })
+        })
+        .collect();
 
+    // Process all instructions in one transaction if there are any
+    if !instructions.is_empty() {
+        println!(
+            "Advancing delegation record for pubkey: {:?}, number of instructions: {}",
+            positions_pubkey.to_string(),
+            instructions.len(),
+        );
 
-            println!(
-                "Advance delegation record for pubkey: {:?} publisher: {:?}",
-                positions_pubkey.to_string(),
-                publisher,
-            );
-            for _ in 0..10 {
-                if process_transaction(rpc_client, &[ix.clone()], &[signer]).is_ok() {
-                    break;
-                }
+        for _ in 0..10 {
+            if process_transaction(rpc_client, &instructions, &[signer]).is_ok() {
+                break;
             }
-        });
+        }
+    }
 }
 
 pub fn claim_rewards(
@@ -1097,7 +1103,7 @@ pub fn claim_rewards(
 
     data.iter()
         .enumerate()
-        // .skip(120)
+        .skip(96)
         .for_each(|(i, (exposure, positions))| {
             println!(
                 "Claiming rewards for account ({} / {}). exposure: {}. pubkey: {:?}",
