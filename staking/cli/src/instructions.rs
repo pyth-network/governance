@@ -135,9 +135,9 @@ pub async fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
-) -> Result<Signature, Option<TransactionError>> {
+) -> Result<(), Option<TransactionError>> {
     let mut instructions = instructions.to_vec();
-    instructions.push(ComputeBudgetInstruction::set_compute_unit_price(1));
+    instructions.push(ComputeBudgetInstruction::set_compute_unit_price(1000));
     let mut transaction = Transaction::new_with_payer(&instructions, Some(&signers[0].pubkey()));
     transaction.sign(
         signers,
@@ -147,25 +147,23 @@ pub async fn process_transaction(
             .unwrap()
             .0,
     );
-    let transaction_signature_res = rpc_client
-        .send_and_confirm_transaction_with_spinner_and_config(
-            &transaction,
-            CommitmentConfig::processed(),
-            RpcSendTransactionConfig {
-                skip_preflight: true,
-                ..Default::default()
-            },
-        );
-    match transaction_signature_res.await {
-        Ok(signature) => {
-            println!("Transaction successful : {signature:?}");
-            Ok(signature)
-        }
-        Err(err) => {
-            println!("transaction err: {err:?}");
-            Err(err.get_transaction_error())
-        }
+    for _ in 0..10 {
+        rpc_client
+            .send_transaction_with_config(
+                &transaction,
+                RpcSendTransactionConfig {
+                    skip_preflight: true,
+                    max_retries: Some(0),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
     }
+
+    Ok(())
 }
 
 pub async fn get_current_time(rpc_client: &RpcClient) -> i64 {
@@ -316,7 +314,7 @@ pub async fn advance_delegation_record<'a>(
         });
     }
 
-    // Process all instructions in one transaction if there are any
+    // Process instructions in chunks of 5
     if !instructions.is_empty() {
         println!(
             "Advancing delegation record for pubkey: {:?}, number of instructions: {}",
@@ -324,13 +322,10 @@ pub async fn advance_delegation_record<'a>(
             instructions.len(),
         );
 
-        for _ in 0..10 {
-            if process_transaction(rpc_client, &instructions, &[signer])
+        for chunk in instructions.chunks(5) {
+            process_transaction(rpc_client, chunk, &[signer])
                 .await
-                .is_ok()
-            {
-                break;
-            }
+                .unwrap();
         }
     }
 }
@@ -413,7 +408,6 @@ pub async fn claim_rewards(
     )
     .unwrap();
 
-
     // advance_delegation_record(rpc_client, signer, &data.first().unwrap().1, min_reward,
     // current_epoch, &pool_data, &pool_data_address, &pyth_token_mint, &pool_config).await;
     let futures = data
@@ -436,6 +430,6 @@ pub async fn claim_rewards(
         .collect::<Vec<_>>();
 
     let futures = tokio_stream::iter(futures);
-    let result = futures.buffer_unordered(2).collect::<Vec<_>>().await;
+    let result = futures.buffer_unordered(20).collect::<Vec<_>>().await;
     // println!("There are {} futures", futures.len());
 }
