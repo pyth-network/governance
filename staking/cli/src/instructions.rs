@@ -206,7 +206,7 @@ pub async fn advance_delegation_record<'a>(
     pyth_token_mint: &Pubkey,
     pool_config: &Pubkey,
     index: usize,
-) {
+) -> bool {
     let positions_pubkey = positions.acc_info.key;
 
     // First collect all potential instruction data
@@ -327,7 +327,9 @@ pub async fn advance_delegation_record<'a>(
                 .await
                 .unwrap();
         }
+        return true; // Instructions were processed
     }
+    false // No instructions were processed
 }
 
 pub async fn claim_rewards(
@@ -408,28 +410,36 @@ pub async fn claim_rewards(
     )
     .unwrap();
 
-    // advance_delegation_record(rpc_client, signer, &data.first().unwrap().1, min_reward,
-    // current_epoch, &pool_data, &pool_data_address, &pyth_token_mint, &pool_config).await;
-    let futures = data
-        .iter()
-        .enumerate()
-        .map(|(i, (exposure, positions))| {
-            advance_delegation_record(
-                rpc_client,
-                signer,
-                positions,
-                min_reward,
-                current_epoch,
-                &pool_data,
-                &pool_data_address,
-                &pyth_token_mint,
-                &pool_config,
-                i,
-            )
-        })
-        .collect::<Vec<_>>();
+    loop {
+        let futures = data
+            .iter()
+            .enumerate()
+            .map(|(i, (exposure, positions))| {
+                advance_delegation_record(
+                    rpc_client,
+                    signer,
+                    positions,
+                    min_reward,
+                    current_epoch,
+                    &pool_data,
+                    &pool_data_address,
+                    &pyth_token_mint,
+                    &pool_config,
+                    i,
+                )
+            })
+            .collect::<Vec<_>>();
 
-    let futures = tokio_stream::iter(futures);
-    let result = futures.buffer_unordered(20).collect::<Vec<_>>().await;
-    // println!("There are {} futures", futures.len());
+        let futures = tokio_stream::iter(futures);
+        let results = futures.buffer_unordered(20).collect::<Vec<_>>().await;
+
+        // Check if any delegations were advanced
+        if !results.iter().any(|&processed| processed) {
+            break;
+        }
+
+
+        println!("We will retry after 5 seconds!");
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    }
 }
