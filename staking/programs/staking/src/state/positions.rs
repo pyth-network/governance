@@ -216,9 +216,7 @@ impl<'a> DynamicPositionArray<'a> {
         let mut exposure: u64 = 0;
         for i in 0..self.get_position_capacity() {
             if let Some(position) = self.read_position(i)? {
-                if position.target_with_parameters.get_target() == *target
-                    && position.get_current_position(current_epoch)? != PositionState::UNLOCKED
-                {
+                if position.target_with_parameters.get_target() == *target {
                     exposure = exposure
                         .checked_add(position.amount)
                         .ok_or_else(|| error!(ErrorCode::GenericOverflow))?;

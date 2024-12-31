@@ -91,6 +91,7 @@ use {
                 PositionData,
                 PositionState,
                 Target,
+                TargetWithParameters,
             },
             stake_account::StakeAccountMetadataV2,
         },
@@ -256,7 +257,9 @@ pub fn process_transaction(
     instructions: &[Instruction],
     signers: &[&dyn Signer],
 ) -> Result<Signature, Option<TransactionError>> {
-    let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
+    let mut instructions = instructions.to_vec();
+    instructions.push(ComputeBudgetInstruction::set_compute_unit_price(1));
+    let mut transaction = Transaction::new_with_payer(&instructions, Some(&signers[0].pubkey()));
     transaction.sign(
         signers,
         rpc_client
@@ -267,7 +270,7 @@ pub fn process_transaction(
     let transaction_signature_res = rpc_client
         .send_and_confirm_transaction_with_spinner_and_config(
             &transaction,
-            CommitmentConfig::confirmed(),
+            CommitmentConfig::processed(),
             RpcSendTransactionConfig {
                 skip_preflight: true,
                 ..Default::default()
@@ -955,6 +958,27 @@ pub fn advance_delegation_record(
             if *publisher == Pubkey::default() {
                 return;
             }
+
+            let publisher_exposure = {
+                let mut publisher_exposure = 0;
+                for i in 0..positions.get_position_capacity() {
+                    if let Some(position) = positions.read_position(i).unwrap() {
+                        if (position.target_with_parameters
+                            == TargetWithParameters::IntegrityPool {
+                                publisher: *publisher,
+                            })
+                        {
+                            publisher_exposure += position.amount;
+                        }
+                    }
+                }
+                publisher_exposure
+            };
+
+            if publisher_exposure == 0 {
+                return;
+            }
+
             let publisher_stake_account_positions =
                 if pool_data.publisher_stake_accounts[publisher_index] == Pubkey::default() {
                     None
