@@ -203,31 +203,13 @@ pub async fn advance_delegation_record<'a>(
     positions: &DynamicPositionArray<'a>,
     min_reward: u64,
     current_epoch: u64,
+    pool_data: &PoolData,
+    pool_data_address: &Pubkey,
+    pyth_token_mint: &Pubkey,
+    pool_config: &Pubkey,
+    index: usize,
 ) {
     let positions_pubkey = positions.acc_info.key;
-    let pool_config = get_pool_config_address();
-
-    let PoolConfig {
-        pool_data: pool_data_address,
-        pyth_token_mint,
-        ..
-    } = PoolConfig::try_deserialize(
-        &mut rpc_client
-            .get_account_data(&pool_config)
-            .await
-            .unwrap()
-            .as_slice(),
-    )
-    .unwrap();
-
-    let pool_data = PoolData::try_deserialize(
-        &mut &rpc_client
-            .get_account_data(&pool_data_address)
-            .await
-            .unwrap()
-            .as_slice()[..8 + size_of::<PoolData>()],
-    )
-    .unwrap();
 
     // First collect all potential instruction data
     let potential_instructions: Vec<_> = pool_data
@@ -278,7 +260,9 @@ pub async fn advance_delegation_record<'a>(
         .collect();
 
     println!(
-        "There are {} potential instructions",
+        "Position {:?} with index {} has {} potential instructions",
+        positions_pubkey,
+        index,
         potential_instructions.len()
     );
 
@@ -311,9 +295,9 @@ pub async fn advance_delegation_record<'a>(
         let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
             delegation_record: get_delegation_record_address(publisher, *positions_pubkey),
             payer: signer.pubkey(),
-            pool_config,
-            pool_data: pool_data_address,
-            pool_reward_custody: get_pool_reward_custody_address(pyth_token_mint),
+            pool_config: *pool_config,
+            pool_data: *pool_data_address,
+            pool_reward_custody: get_pool_reward_custody_address(*pyth_token_mint),
             publisher,
             publisher_stake_account_positions,
             publisher_stake_account_custody,
@@ -340,14 +324,14 @@ pub async fn advance_delegation_record<'a>(
             instructions.len(),
         );
 
-        // for _ in 0..10 {
-        //     // if process_transaction(rpc_client, &instructions, &[signer])
-        //     //     .await
-        //     //     .is_ok()
-        //     // {
-        //     //     break;
-        //     // }
-        // }
+        for _ in 0..10 {
+            if process_transaction(rpc_client, &instructions, &[signer])
+                .await
+                .is_ok()
+            {
+                break;
+            }
+        }
     }
 }
 
@@ -405,17 +389,53 @@ pub async fn claim_rewards(
     data.reverse();
 
 
+    let pool_config = get_pool_config_address();
+
+    let PoolConfig {
+        pool_data: pool_data_address,
+        pyth_token_mint,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config)
+            .await
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let pool_data = PoolData::try_deserialize(
+        &mut &rpc_client
+            .get_account_data(&pool_data_address)
+            .await
+            .unwrap()
+            .as_slice()[..8 + size_of::<PoolData>()],
+    )
+    .unwrap();
+
+
+    // advance_delegation_record(rpc_client, signer, &data.first().unwrap().1, min_reward,
+    // current_epoch, &pool_data, &pool_data_address, &pyth_token_mint, &pool_config).await;
     let futures = data
         .iter()
         .enumerate()
-        .collect::<Vec<_>>() // Collect into Vec first
-        .iter()
         .map(|(i, (exposure, positions))| {
-            advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch)
+            advance_delegation_record(
+                rpc_client,
+                signer,
+                positions,
+                min_reward,
+                current_epoch,
+                &pool_data,
+                &pool_data_address,
+                &pyth_token_mint,
+                &pool_config,
+                i,
+            )
         })
         .collect::<Vec<_>>();
 
     let futures = tokio_stream::iter(futures);
-    let result = futures.buffer_unordered(1).collect::<Vec<_>>().await;
+    let result = futures.buffer_unordered(2).collect::<Vec<_>>().await;
     // println!("There are {} futures", futures.len());
 }
