@@ -13,7 +13,10 @@ use {
         },
     },
     base64::Engine,
-    futures::future::join_all,
+    futures::{
+        future::join_all,
+        StreamExt,
+    },
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -274,6 +277,11 @@ pub async fn advance_delegation_record<'a>(
         })
         .collect();
 
+    println!(
+        "There are {} potential instructions",
+        potential_instructions.len()
+    );
+
     // Fetch all delegation records concurrently
     let delegation_records = join_all(potential_instructions.iter().map(|(publisher, _, _)| {
         let delegation_record_pubkey = get_delegation_record_address(*publisher, *positions_pubkey);
@@ -397,27 +405,17 @@ pub async fn claim_rewards(
     data.reverse();
 
 
-    data.iter()
+    let futures = data
+        .iter()
         .enumerate()
-        .skip(96)
         .collect::<Vec<_>>() // Collect into Vec first
-        .chunks(10) // Process in chunks of 10
-        .for_each(|chunk| {
-            println!("Processing batch of up to 10 accounts...");
+        .iter()
+        .map(|(i, (exposure, positions))| {
+            advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch)
+        })
+        .collect::<Vec<_>>();
 
-            // Create a future for each account in the chunk
-            let futures = chunk.iter().map(|(i, (exposure, positions))| {
-                println!(
-                    "Claiming rewards for account ({} / {}). exposure: {}. pubkey: {:?}",
-                    i,
-                    data.len(),
-                    exposure,
-                    positions.acc_info.key
-                );
-                advance_delegation_record(rpc_client, signer, positions, min_reward, current_epoch)
-            });
-
-            // Execute up to 10 futures concurrently
-            futures::executor::block_on(join_all(futures));
-        });
+    let futures = tokio_stream::iter(futures);
+    let result = futures.buffer_unordered(1).collect::<Vec<_>>().await;
+    // println!("There are {} futures", futures.len());
 }
