@@ -48,7 +48,8 @@ use {
     serde_wormhole::RawMessage,
     solana_account_decoder::UiAccountEncoding,
     solana_client::{
-        rpc_client::RpcClient,
+        nonblocking::rpc_client::RpcClient,
+        // rpc_client::RpcClient,
         rpc_config::{
             RpcAccountInfoConfig,
             RpcProgramAccountsConfig,
@@ -124,6 +125,7 @@ use {
         GuardianSet,
     },
 };
+
 
 pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey {
     let publisher_caps = Keypair::new();
@@ -252,7 +254,7 @@ pub fn deserialize_accumulator_update_data(
     }
 }
 
-pub fn process_transaction(
+pub async fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
@@ -264,6 +266,7 @@ pub fn process_transaction(
         signers,
         rpc_client
             .get_latest_blockhash_with_commitment(CommitmentConfig::finalized())
+            .await
             .unwrap()
             .0,
     );
@@ -276,7 +279,7 @@ pub fn process_transaction(
                 ..Default::default()
             },
         );
-    match transaction_signature_res {
+    match transaction_signature_res.await {
         Ok(signature) => {
             println!("Transaction successful : {signature:?}");
             Ok(signature)
