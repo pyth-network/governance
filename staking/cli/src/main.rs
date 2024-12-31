@@ -25,8 +25,11 @@ fn main() {
         Action::ClaimRewards {
             min_staked,
             min_reward,
-        } => {
-            claim_rewards(&rpc_client, keypair.as_ref(), min_staked, min_reward);
-        }
+        } => futures::executor::block_on(claim_rewards(
+            &rpc_client,
+            keypair.as_ref(),
+            min_staked,
+            min_reward,
+        )),
     }
 }
