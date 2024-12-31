@@ -48,68 +48,12 @@ fn get_keypair_from_file(path: &str) -> Result<Keypair, String> {
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 pub enum Action {
-    #[clap(about = "Initialize pool")]
-    InitializePool {
-        #[clap(
-            long,
-            help = "Keypair pool data account",
-            parse(try_from_str = get_keypair_from_file)
-        )]
-        pool_data_keypair:        Keypair,
-        #[clap(long, help = "Y parameter")]
-        y:                        u64,
-        #[clap(long, help = "Reward program authority parameter")]
-        reward_program_authority: Pubkey,
-        #[clap(long, help = "Slash custody parameter")]
-        slash_custody:            Pubkey,
+    ClaimRewards {
+        #[clap(long, help = "Minimum staked tokens")]
+        min_staked: u64,
+        #[clap(long, help = "Minimum reward tokens per publisher")]
+        min_reward: u64,
     },
-    Advance {
-        #[clap(
-            long,
-            help = "Url of hermes to fetch publisher caps",
-            default_value = "https://hermes-beta.pyth.network/"
-        )]
-        hermes_url: String,
-
-        #[clap(long, default_value = "3u8hJUVTA4jH1wYAyUur7FFZVQ8H635K3tSHHF4ssjQ5")]
-        wormhole: Pubkey,
-    },
-    InitializePoolRewardCustody {},
-    UpdateDelegationFee {
-        #[clap(long, help = "New fee")]
-        delegation_fee: u64,
-    },
-    SetPublisherStakeAccount {
-        #[clap(long, help = "Publisher")]
-        publisher:               Pubkey,
-        #[clap(long, help = "Stake account positions")]
-        stake_account_positions: Pubkey,
-    },
-    CreateSlashEvent {
-        #[clap(long, help = "Publisher")]
-        publisher:   Pubkey,
-        #[clap(long, help = "Amount")]
-        slash_ratio: u64,
-    },
-    UpdateRewardProgramAuthority {
-        #[clap(long, help = "New reward program authority")]
-        new_reward_program_authority: Pubkey,
-    },
-    Slash {
-        #[clap(long, help = "Publisher")]
-        publisher:               Pubkey,
-        #[clap(long, help = "Stake account positions")]
-        stake_account_positions: Pubkey,
-    },
-    UpdateY {
-        #[clap(long, help = "New Y")]
-        y: u64,
-    },
-    ClosePublisherCaps {
-        #[clap(long, help = "Publisher caps")]
-        publisher_caps: Pubkey,
-    },
-    SaveStakeAccountsSnapshot {},
 }
 
 pub enum SignerSource {
