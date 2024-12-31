@@ -105,12 +105,9 @@ use {
         },
         mem::size_of,
     },
-    wormhole_core_bridge_solana::{
-        sdk::{
-            WriteEncodedVaaArgs,
-            VAA_START,
-        },
-        state::EncodedVaa,
+    wormhole_core_bridge_solana::sdk::{
+        WriteEncodedVaaArgs,
+        VAA_START,
     },
     wormhole_sdk::vaa::{
         Body,
@@ -874,10 +871,6 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
 }
 
 pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
-    let mut data = EncodedVaa::DISCRIMINATOR.to_vec();
-    data.extend_from_slice(&[1]);
-    data.extend_from_slice(&signer.pubkey().to_bytes());
-
     rpc_client
         .get_program_accounts_with_config(
             &publisher_caps::ID,
