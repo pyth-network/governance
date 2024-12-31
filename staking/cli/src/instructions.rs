@@ -410,11 +410,16 @@ pub async fn claim_rewards(
     )
     .unwrap();
 
+    println!("Processing {} accounts", data.len());
+    // Initialize results vector with true to process all indexes in first round
+    let mut active_positions = vec![true; data.len()];
+
     loop {
         let futures = data
             .iter()
             .enumerate()
-            .map(|(i, (exposure, positions))| {
+            .filter(|(i, _)| active_positions[*i])
+            .map(|(i, (_, positions))| {
                 advance_delegation_record(
                     rpc_client,
                     signer,
@@ -431,15 +436,25 @@ pub async fn claim_rewards(
             .collect::<Vec<_>>();
 
         let futures = tokio_stream::iter(futures);
-        let results = futures.buffer_unordered(20).collect::<Vec<_>>().await;
+        let results = futures.buffered(20).collect::<Vec<_>>().await;
 
-        // Check if any delegations were advanced
-        if !results.iter().any(|&processed| processed) {
+        println!("Finished processing {} accounts", results.len());
+        // Update active_positions based on results
+        let mut result_index = 0;
+        for i in 0..active_positions.len() {
+            if active_positions[i] {
+                active_positions[i] = results[result_index];
+                result_index += 1;
+            }
+        }
+
+        // If no delegations were advanced, we're done
+        if !results.iter().any(|&active| active) {
             break;
         }
 
 
-        println!("We will retry after 5 seconds!");
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        println!("We will retry after 10 seconds!");
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     }
 }
