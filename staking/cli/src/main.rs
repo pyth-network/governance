@@ -8,7 +8,6 @@ use {
         Cli,
     },
     instructions::{
-        claim_rewards,
         close_all_publisher_caps,
         close_publisher_caps,
         create_slash_event,
@@ -98,12 +97,6 @@ fn main() {
         }
         Action::SaveStakeAccountsSnapshot {} => {
             save_stake_accounts_snapshot(&rpc_client);
-        }
-        Action::ClaimRewards {
-            min_staked,
-            min_reward,
-        } => {
-            claim_rewards(&rpc_client, keypair.as_ref(), min_staked, min_reward);
         }
         Action::CloseAllPublisherCaps {} => {
             close_all_publisher_caps(&rpc_client, keypair.as_ref());
