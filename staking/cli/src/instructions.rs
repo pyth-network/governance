@@ -1,5 +1,6 @@
 use {
     anchor_lang::{
+        pubkey,
         AccountDeserialize,
         Discriminator,
         InstructionData,
@@ -137,7 +138,7 @@ pub async fn process_transaction(
     signers: &[&dyn Signer],
 ) -> Result<(), Option<TransactionError>> {
     let mut instructions = instructions.to_vec();
-    instructions.push(ComputeBudgetInstruction::set_compute_unit_price(1000));
+    instructions.push(ComputeBudgetInstruction::set_compute_unit_price(10000));
     let mut transaction = Transaction::new_with_payer(&instructions, Some(&signers[0].pubkey()));
     transaction.sign(
         signers,
@@ -285,9 +286,7 @@ pub async fn advance_delegation_record<'a>(
                     continue;
                 }
             }
-            Err(_) => {
-                continue;
-            }
+            Err(_) => {}
         }
 
         let accounts = integrity_pool::accounts::AdvanceDelegationRecord {

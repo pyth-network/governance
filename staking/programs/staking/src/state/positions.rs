@@ -226,6 +226,7 @@ impl<'a> DynamicPositionArray<'a> {
         Ok(exposure)
     }
 
+
     /// This function is used to reduce the number of positions in the array by merging equivalent
     /// positions. Sometimes some positions have the same `target_with_parameters`,
     /// `activation_epoch` and `unlocking_start`. These can obviously be merged, but this is not
