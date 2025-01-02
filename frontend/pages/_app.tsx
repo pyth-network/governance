@@ -6,6 +6,7 @@ import {
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import {
   BackpackWalletAdapter,
+  CoinbaseWalletAdapter,
   GlowWalletAdapter,
   LedgerWalletAdapter,
   PhantomWalletAdapter,
@@ -75,6 +76,7 @@ const App: FC<AppProps> = ({ Component, pageProps }: AppProps) => {
       new SolletWalletAdapter(),
       new SolletExtensionWalletAdapter(),
       new WalletConnectWalletAdapter(walletConnectConfig),
+      new CoinbaseWalletAdapter(),
     ],
     []
   )
