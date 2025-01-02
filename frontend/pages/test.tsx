@@ -39,14 +39,14 @@ const Test: NextPage = () => {
 
   return (
     <Layout>
-      <SEO title={'Wallet Compatiblity Test'} />
+      <SEO title={'Wallet Compatibility Test'} />
 
       <PanelLayout>
         {stakeConnection ? (
           <p>
             {hasTested ? (
               <Description>
-                Your wallet has already been tested succesfully.
+                Your wallet has already been tested successfully.
               </Description>
             ) : (
               <Description>
