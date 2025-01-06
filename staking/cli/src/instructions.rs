@@ -119,13 +119,14 @@ use {
     },
 };
 
-pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey {
+pub async fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey {
     let publisher_caps = Keypair::new();
     let create_account_ix = create_account(
         &payer.pubkey(),
         &publisher_caps.pubkey(),
         rpc_client
             .get_minimum_balance_for_rent_exemption(PublisherCaps::LEN)
+            .await
             .unwrap(),
         PublisherCaps::LEN.try_into().unwrap(),
         &publisher_caps::ID,
@@ -153,11 +154,12 @@ pub fn init_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer) -> Pubkey
         ],
         &[payer, &publisher_caps],
     )
+    .await
     .unwrap();
     publisher_caps.pubkey()
 }
 
-pub fn write_publisher_caps(
+pub async fn write_publisher_caps(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     publisher_caps: Pubkey,
@@ -180,10 +182,16 @@ pub fn write_publisher_caps(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[payer])
+        .await
+        .unwrap();
 }
 
-pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
+pub async fn close_publisher_caps(
+    rpc_client: &RpcClient,
+    payer: &dyn Signer,
+    publisher_caps: Pubkey,
+) {
     let accounts = publisher_caps::accounts::ClosePublisherCaps {
         write_authority: payer.pubkey(),
         publisher_caps,
@@ -197,11 +205,12 @@ pub fn close_publisher_caps(rpc_client: &RpcClient, payer: &dyn Signer, publishe
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[payer])
+        .await
+        .unwrap();
 }
 
-
-pub fn verify_publisher_caps(
+pub async fn verify_publisher_caps(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     publisher_caps: Pubkey,
@@ -232,6 +241,7 @@ pub fn verify_publisher_caps(
         ],
         &[payer],
     )
+    .await
     .unwrap();
 }
 
@@ -246,7 +256,7 @@ pub fn deserialize_accumulator_update_data(
     }
 }
 
-pub fn process_transaction(
+pub async fn process_transaction(
     rpc_client: &RpcClient,
     instructions: &[Instruction],
     signers: &[&dyn Signer],
@@ -256,6 +266,7 @@ pub fn process_transaction(
         signers,
         rpc_client
             .get_latest_blockhash_with_commitment(CommitmentConfig::finalized())
+            .await
             .unwrap()
             .0,
     );
@@ -267,7 +278,8 @@ pub fn process_transaction(
                 skip_preflight: true,
                 ..Default::default()
             },
-        );
+        )
+        .await;
     match transaction_signature_res {
         Ok(signature) => {
             println!("Transaction successful : {signature:?}");
@@ -280,7 +292,7 @@ pub fn process_transaction(
     }
 }
 
-pub fn process_write_encoded_vaa(
+pub async fn process_write_encoded_vaa(
     rpc_client: &RpcClient,
     vaa: &[u8],
     wormhole: Pubkey,
@@ -313,6 +325,7 @@ pub fn process_write_encoded_vaa(
         &[create_encoded_vaa, init_encoded_vaa_instruction],
         &[payer, &encoded_vaa_keypair],
     )
+    .await
     .unwrap();
 
     for i in (0..vaa.len()).step_by(1000) {
@@ -325,7 +338,8 @@ pub fn process_write_encoded_vaa(
             &wormhole,
             i,
             chunk,
-        );
+        )
+        .await;
     }
 
     let (header, _): (Header, Body<&RawMessage>) = serde_wormhole::from_slice(vaa).unwrap();
@@ -355,13 +369,14 @@ pub fn process_write_encoded_vaa(
         ],
         &[payer],
     )
+    .await
     .unwrap();
 
 
     encoded_vaa_keypair.pubkey()
 }
 
-pub fn write_encoded_vaa(
+pub async fn write_encoded_vaa(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     encoded_vaa: &Pubkey,
@@ -392,10 +407,11 @@ pub fn write_encoded_vaa(
         &[write_encoded_vaa_accounts_instruction],
         &[payer],
     )
+    .await
     .unwrap();
 }
 
-pub fn close_encoded_vaa(
+pub async fn close_encoded_vaa(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     encoded_vaa: Pubkey,
@@ -413,10 +429,12 @@ pub fn close_encoded_vaa(
         data:       wormhole_core_bridge_solana::instruction::CloseEncodedVaa {}.data(),
     };
 
-    process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer]).unwrap();
+    process_transaction(rpc_client, &[close_encoded_vaa_instruction], &[payer])
+        .await
+        .unwrap();
 }
 
-pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
+pub async fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig {
@@ -424,6 +442,7 @@ pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
     } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
@@ -436,10 +455,12 @@ pub fn initialize_reward_custody(rpc_client: &RpcClient, payer: &dyn Signer) {
         &spl_token::ID,
     );
 
-    process_transaction(rpc_client, &[create_ata_ix], &[payer]).unwrap();
+    process_transaction(rpc_client, &[create_ata_ix], &[payer])
+        .await
+        .unwrap();
 }
 
-pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
+pub async fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubkey) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig {
@@ -449,6 +470,7 @@ pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubke
     } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
@@ -480,10 +502,11 @@ pub fn advance(rpc_client: &RpcClient, payer: &dyn Signer, publisher_caps: Pubke
         ],
         &[payer],
     )
+    .await
     .unwrap();
 }
 
-pub fn initialize_pool(
+pub async fn initialize_pool(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     pool_data_keypair: &Keypair,
@@ -496,6 +519,7 @@ pub fn initialize_pool(
 
     let rent = rpc_client
         .get_minimum_balance_for_rent_exemption(pool_data_space.try_into().unwrap())
+        .await
         .unwrap();
 
     let create_pool_data_acc_ix = create_account(
@@ -534,21 +558,22 @@ pub fn initialize_pool(
         &[create_pool_data_acc_ix, initialize_pool_ix],
         &[payer, pool_data_keypair],
     )
+    .await
     .unwrap();
 }
 
-pub fn get_current_time(rpc_client: &RpcClient) -> i64 {
-    let slot = rpc_client.get_slot().unwrap();
-    rpc_client.get_block_time(slot).unwrap()
+pub async fn get_current_time(rpc_client: &RpcClient) -> i64 {
+    let slot = rpc_client.get_slot().await.unwrap();
+    rpc_client.get_block_time(slot).await.unwrap()
 }
 
-pub fn get_current_epoch(rpc_client: &RpcClient) -> u64 {
-    let slot = rpc_client.get_slot().unwrap();
-    let blocktime = rpc_client.get_block_time(slot).unwrap();
+pub async fn get_current_epoch(rpc_client: &RpcClient) -> u64 {
+    let slot = rpc_client.get_slot().await.unwrap();
+    let blocktime = rpc_client.get_block_time(slot).await.unwrap();
     blocktime as u64 / EPOCH_DURATION
 }
 
-pub fn fetch_publisher_caps_and_advance(
+pub async fn fetch_publisher_caps_and_advance(
     rpc_client: &RpcClient,
     payer: &dyn Signer,
     wormhole: Pubkey,
@@ -562,18 +587,22 @@ pub fn fetch_publisher_caps_and_advance(
     } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
     .unwrap();
 
     let pool_data = PoolData::try_deserialize(
-        &mut rpc_client.get_account_data(&pool_data_address).unwrap()[..8 + size_of::<PoolData>()]
+        &mut rpc_client
+            .get_account_data(&pool_data_address)
+            .await
+            .unwrap()[..8 + size_of::<PoolData>()]
             .as_ref(),
     )
     .unwrap();
 
-    if pool_data.last_updated_epoch == get_current_epoch(rpc_client) {
+    if pool_data.last_updated_epoch == get_current_epoch(rpc_client).await {
         println!("Pool data is already updated");
         return;
     }
@@ -597,12 +626,9 @@ pub fn fetch_publisher_caps_and_advance(
 
     let (vaa, merkle_proofs) = deserialize_accumulator_update_data(message);
 
+    let encoded_vaa = process_write_encoded_vaa(rpc_client, vaa.as_slice(), wormhole, payer).await;
 
-    let encoded_vaa = process_write_encoded_vaa(rpc_client, vaa.as_slice(), wormhole, payer);
-
-
-    let publisher_caps = init_publisher_caps(rpc_client, payer);
-
+    let publisher_caps = init_publisher_caps(rpc_client, payer).await;
 
     let publisher_caps_message_bytes =
         Vec::<u8>::from(merkle_proofs.first().unwrap().message.clone());
@@ -612,7 +638,7 @@ pub fn fetch_publisher_caps_and_advance(
         let chunk =
             &publisher_caps_message_bytes[i..min(i + 1000, publisher_caps_message_bytes.len())];
 
-        write_publisher_caps(rpc_client, payer, publisher_caps, i, chunk);
+        write_publisher_caps(rpc_client, payer, publisher_caps, i, chunk).await;
     }
 
     verify_publisher_caps(
@@ -621,25 +647,30 @@ pub fn fetch_publisher_caps_and_advance(
         publisher_caps,
         encoded_vaa,
         merkle_proofs,
-    );
-
+    )
+    .await;
 
     println!(
         "Initialized publisher caps with pubkey : {:?}",
         publisher_caps
     );
 
-    advance(rpc_client, payer, publisher_caps);
-    close_publisher_caps(rpc_client, payer, publisher_caps);
-    close_encoded_vaa(rpc_client, payer, encoded_vaa, &wormhole);
+    advance(rpc_client, payer, publisher_caps).await;
+    close_publisher_caps(rpc_client, payer, publisher_caps).await;
+    close_encoded_vaa(rpc_client, payer, encoded_vaa, &wormhole).await;
 }
 
-pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &dyn Signer, delegation_fee: u64) {
+pub async fn update_delegation_fee(
+    rpc_client: &RpcClient,
+    payer: &dyn Signer,
+    delegation_fee: u64,
+) {
     let pool_config = get_pool_config_address();
 
     let PoolConfig { pool_data, .. } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
@@ -660,10 +691,12 @@ pub fn update_delegation_fee(rpc_client: &RpcClient, payer: &dyn Signer, delegat
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[payer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[payer])
+        .await
+        .unwrap();
 }
 
-pub fn set_publisher_stake_account(
+pub async fn set_publisher_stake_account(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     publisher: &Pubkey,
@@ -674,6 +707,7 @@ pub fn set_publisher_stake_account(
     let PoolConfig { pool_data, .. } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
@@ -696,10 +730,12 @@ pub fn set_publisher_stake_account(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[signer])
+        .await
+        .unwrap();
 }
 
-pub fn create_slash_event(
+pub async fn create_slash_event(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     publisher: &Pubkey,
@@ -714,13 +750,17 @@ pub fn create_slash_event(
     } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
     .unwrap();
 
     let pool_data = PoolData::try_deserialize(
-        &mut rpc_client.get_account_data(&pool_data_address).unwrap()[..8 + size_of::<PoolData>()]
+        &mut rpc_client
+            .get_account_data(&pool_data_address)
+            .await
+            .unwrap()[..8 + size_of::<PoolData>()]
             .as_ref(),
     )
     .unwrap();
@@ -747,10 +787,12 @@ pub fn create_slash_event(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[signer])
+        .await
+        .unwrap();
 }
 
-pub fn update_reward_program_authority(
+pub async fn update_reward_program_authority(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     new_reward_program_authority: &Pubkey,
@@ -773,10 +815,12 @@ pub fn update_reward_program_authority(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[signer])
+        .await
+        .unwrap();
 }
 
-pub fn slash(
+pub async fn slash(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     publisher: &Pubkey,
@@ -790,6 +834,7 @@ pub fn slash(
     } = PoolConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&pool_config)
+            .await
             .unwrap()
             .as_slice(),
     )
@@ -800,7 +845,7 @@ pub fn slash(
         next_slash_event_index,
         ..
     } = {
-        let delegation_record_account_data = rpc_client.get_account_data(&delegation_record);
+        let delegation_record_account_data = rpc_client.get_account_data(&delegation_record).await;
         if let Ok(data) = delegation_record_account_data {
             DelegationRecord::try_deserialize(&mut data.as_slice()).unwrap()
         } else {
@@ -847,10 +892,12 @@ pub fn slash(
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[signer])
+        .await
+        .unwrap();
 }
 
-pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
+pub async fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
     let pool_config = get_pool_config_address();
 
     let accounts = integrity_pool::accounts::UpdateY {
@@ -867,11 +914,13 @@ pub fn update_y(rpc_client: &RpcClient, signer: &dyn Signer, y: u64) {
         data:       instruction_data.data(),
     };
 
-    process_transaction(rpc_client, &[instruction], &[signer]).unwrap();
+    process_transaction(rpc_client, &[instruction], &[signer])
+        .await
+        .unwrap();
 }
 
-pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
-    rpc_client
+pub async fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
+    let accounts = rpc_client
         .get_program_accounts_with_config(
             &publisher_caps::ID,
             RpcProgramAccountsConfig {
@@ -888,12 +937,15 @@ pub fn close_all_publisher_caps(rpc_client: &RpcClient, signer: &dyn Signer) {
                 with_context:   None,
             },
         )
-        .unwrap()
-        .into_iter()
-        .for_each(|(pubkey, _account)| close_publisher_caps(rpc_client, signer, pubkey));
+        .await
+        .unwrap();
+
+    for (pubkey, _account) in accounts {
+        close_publisher_caps(rpc_client, signer, pubkey).await;
+    }
 }
 
-pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
+pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     let data: Vec<(Pubkey, DynamicPositionArrayAccount, Pubkey, Pubkey, Pubkey)> = rpc_client
         .get_program_accounts_with_config(
             &staking::ID,
@@ -911,6 +963,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                 with_context:   None,
             },
         )
+        .await
         .unwrap()
         .into_iter()
         .map(|(pubkey, account)| {
@@ -945,6 +998,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
                 with_context:   None,
             },
         )
+        .await
         .unwrap()
         .into_iter()
         .map(|(pubkey, account)| {
@@ -958,11 +1012,12 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     let config = GlobalConfig::try_deserialize(
         &mut rpc_client
             .get_account_data(&get_config_address())
+            .await
             .unwrap()
             .as_slice(),
     )
     .unwrap();
-    let current_time = get_current_time(rpc_client);
+    let current_time = get_current_time(rpc_client).await;
 
     let metadata_account_data_locked: HashMap<Pubkey, u64> = metadata_accounts_data
         .iter()
@@ -1005,6 +1060,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     for chunk in locked_token_accounts_pubkeys.chunks(100) {
         rpc_client
             .get_multiple_accounts(chunk)
+            .await
             .unwrap()
             .into_iter()
             .enumerate()
@@ -1046,7 +1102,7 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
         )
         .collect::<Vec<_>>();
 
-    let current_epoch = get_current_epoch(rpc_client);
+    let current_epoch = get_current_epoch(rpc_client).await;
     let data = data
         .into_iter()
         .map(
