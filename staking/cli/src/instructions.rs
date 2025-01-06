@@ -1098,6 +1098,10 @@ pub fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
         )
         .collect::<Vec<_>>();
 
+    if !std::path::Path::new("snapshots").exists() {
+        std::fs::create_dir_all("snapshots").unwrap();
+    }
+
     let timestamp = chrono::Utc::now().format("%Y-%m-%d_%H:%M:%S").to_string();
     let file = File::create(format!("snapshots/snapshot-{}.csv", timestamp)).unwrap();
     let mut writer = BufWriter::new(file);
