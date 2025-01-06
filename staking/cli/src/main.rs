@@ -21,12 +21,12 @@ use {
         update_reward_program_authority,
         update_y,
     },
-    solana_client::rpc_client::RpcClient,
+    solana_client::nonblocking::rpc_client::RpcClient,
     solana_sdk::commitment_config::CommitmentConfig,
 };
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
     let Cli {
         keypair,
         rpc_url,

@@ -48,7 +48,7 @@ use {
     serde_wormhole::RawMessage,
     solana_account_decoder::UiAccountEncoding,
     solana_client::{
-        rpc_client::RpcClient,
+        nonblocking::rpc_client::RpcClient,
         rpc_config::{
             RpcAccountInfoConfig,
             RpcProgramAccountsConfig,
