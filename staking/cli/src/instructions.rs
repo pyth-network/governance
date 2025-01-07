@@ -1217,7 +1217,7 @@ pub async fn fetch_delegation_record(
     Ok(delegation_record)
 }
 
-pub async fn advance_delegation_record<'a>(
+pub async fn advance_delegation_records<'a>(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     positions: &DynamicPositionArray<'a>,
@@ -1412,7 +1412,7 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
     position_accounts_with_sufficient_amount_staked.reverse();
 
 
-    let pool_config = get_pool_config_address();
+    let pool_config_address = get_pool_config_address();
 
     let PoolConfig {
         pool_data: pool_data_address,
@@ -1420,7 +1420,7 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
         ..
     } = PoolConfig::try_deserialize(
         &mut rpc_client
-            .get_account_data(&pool_config)
+            .get_account_data(&pool_config_address)
             .await
             .unwrap()
             .as_slice(),
@@ -1437,19 +1437,21 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
     .unwrap();
 
     println!(
-        "Processing {} accounts",
+        "Processing {} stake accounts...",
         position_accounts_with_sufficient_amount_staked.len()
     );
-    // Initialize results vector with true to process all indexes in first round
-    let mut active_positions = vec![true; position_accounts_with_sufficient_amount_staked.len()];
+
+    // This vector is used to keep track of which stake accounts have all rewards claimed
+    let mut has_claimed_all_rewards =
+        vec![false; position_accounts_with_sufficient_amount_staked.len()];
 
     loop {
         let futures = position_accounts_with_sufficient_amount_staked
             .iter()
             .enumerate()
-            .filter(|(i, _)| active_positions[*i])
+            .filter(|(i, _)| has_claimed_all_rewards[*i])
             .map(|(i, (_, positions))| {
-                advance_delegation_record(
+                advance_delegation_records(
                     rpc_client,
                     signer,
                     positions,
@@ -1457,28 +1459,30 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
                     &pool_data,
                     &pool_data_address,
                     &pyth_token_mint,
-                    &pool_config,
+                    &pool_config_address,
                     i,
                 )
             })
             .collect::<Vec<_>>();
 
-        let futures = tokio_stream::iter(futures);
-        let results = futures.buffered(20).collect::<Vec<_>>().await;
+        // Process at most 20 stake accounts concurrently
+        let succesful_claims = tokio_stream::iter(futures)
+            .buffered(20)
+            .collect::<Vec<_>>()
+            .await;
 
-        println!("Finished processing {} accounts", results.len());
-        // Update active_positions based on results
-        let mut result_index = 0;
-        for i in 0..active_positions.len() {
-            if active_positions[i] {
-                active_positions[i] = results[result_index];
-                result_index += 1;
-            }
-        }
-
-        // If no delegations were advanced, we're done
-        if !results.iter().any(|&active| active) {
+        // If all stake account have all rewards claimed, we're done
+        if succesful_claims.iter().all(|&claimed| claimed) {
             break;
+        };
+
+        // Update has_all_rewards_claimed based on results
+        let mut succesful_claim_index = 0;
+        for i in 0..has_claimed_all_rewards.len() {
+            if has_claimed_all_rewards[i] {
+                has_claimed_all_rewards[i] = succesful_claims[succesful_claim_index];
+                succesful_claim_index += 1;
+            }
         }
 
 
