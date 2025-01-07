@@ -1228,10 +1228,10 @@ pub async fn advance_delegation_records<'a>(
     pool_config: &Pubkey,
     index: usize,
 ) -> bool {
-    let positions_pubkey = positions.acc_info.key;
+    let positions_address = positions.acc_info.key;
 
-    // First collect all potential instruction data
-    let potential_instructions: Vec<_> = pool_data
+    // Find all publishers the stake account has exposure to
+    let position_account_delegates: Vec<_> = pool_data
         .publishers
         .iter()
         .enumerate()
@@ -1278,26 +1278,23 @@ pub async fn advance_delegation_records<'a>(
         })
         .collect();
 
-    println!(
-        "Position {:?} with index {} has {} potential instructions",
-        positions_pubkey,
-        index,
-        potential_instructions.len()
-    );
-
     // Fetch all delegation records concurrently
-    let delegation_records = join_all(potential_instructions.iter().map(|(publisher, _, _)| {
-        let delegation_record_pubkey = get_delegation_record_address(*publisher, *positions_pubkey);
-        fetch_delegation_record(rpc_client, delegation_record_pubkey)
-    }))
-    .await;
+    let delegation_records =
+        join_all(position_account_delegates.iter().map(|(publisher, _, _)| {
+            let delegation_record_pubkey =
+                get_delegation_record_address(*publisher, *positions_address);
+            fetch_delegation_record(rpc_client, delegation_record_pubkey)
+        }))
+        .await;
 
     // Process results and create instructions
     let mut instructions = Vec::new();
     for (
         (publisher, publisher_stake_account_positions, publisher_stake_account_custody),
         delegation_record,
-    ) in potential_instructions.into_iter().zip(delegation_records)
+    ) in position_account_delegates
+        .into_iter()
+        .zip(delegation_records)
     {
         // Skip if we couldn't fetch the record or if it's already processed for current epoch
         match delegation_record {
@@ -1312,7 +1309,7 @@ pub async fn advance_delegation_records<'a>(
         }
 
         let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
-            delegation_record: get_delegation_record_address(publisher, *positions_pubkey),
+            delegation_record: get_delegation_record_address(publisher, *positions_address),
             payer: signer.pubkey(),
             pool_config: *pool_config,
             pool_data: *pool_data_address,
@@ -1320,8 +1317,8 @@ pub async fn advance_delegation_records<'a>(
             publisher,
             publisher_stake_account_positions,
             publisher_stake_account_custody,
-            stake_account_positions: *positions_pubkey,
-            stake_account_custody: get_stake_account_custody_address(*positions_pubkey),
+            stake_account_positions: *positions_address,
+            stake_account_custody: get_stake_account_custody_address(*positions_address),
             system_program: system_program::ID,
             token_program: spl_token::ID,
         };
@@ -1339,7 +1336,7 @@ pub async fn advance_delegation_records<'a>(
     if !instructions.is_empty() {
         println!(
             "Advancing delegation record for pubkey: {:?}, number of instructions: {}",
-            positions_pubkey.to_string(),
+            positions_address.to_string(),
             instructions.len(),
         );
 
@@ -1478,15 +1475,22 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
 
         // Update has_all_rewards_claimed based on results
         let mut succesful_claim_index = 0;
-        for i in 0..has_claimed_all_rewards.len() {
-            if has_claimed_all_rewards[i] {
-                has_claimed_all_rewards[i] = succesful_claims[succesful_claim_index];
+        has_claimed_all_rewards
+            .iter_mut()
+            .filter(|claimed| !**claimed)
+            .for_each(|claimed| {
+                *claimed = succesful_claims[succesful_claim_index];
                 succesful_claim_index += 1;
-            }
-        }
+            });
 
-
-        println!("We will retry after 10 seconds!");
+        let remaining_accounts = has_claimed_all_rewards
+            .iter()
+            .filter(|claimed| !**claimed)
+            .count();
+        println!(
+            "We will retry after 10 seconds! {} accounts remaining",
+            remaining_accounts
+        );
         tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     }
 }
