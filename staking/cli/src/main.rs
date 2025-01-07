@@ -50,14 +50,14 @@ async fn main() {
                 y,
                 slash_custody,
             )
-            .await;
+            .await
         }
         Action::Advance {
             hermes_url,
             wormhole,
         } => {
             fetch_publisher_caps_and_advance(&rpc_client, keypair.as_ref(), wormhole, hermes_url)
-                .await;
+                .await
         }
         Action::InitializePoolRewardCustody {} => {
             initialize_reward_custody(&rpc_client, keypair.as_ref()).await;
