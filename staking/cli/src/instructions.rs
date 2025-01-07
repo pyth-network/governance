@@ -13,6 +13,10 @@ use {
         },
     },
     base64::Engine,
+    futures::{
+        future::join_all,
+        StreamExt,
+    },
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -86,9 +90,12 @@ use {
             global_config::GlobalConfig,
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
+                DynamicPositionArray,
                 DynamicPositionArrayAccount,
                 PositionData,
                 PositionState,
+                Target,
+                TargetWithParameters,
             },
             stake_account::StakeAccountMetadataV2,
         },
@@ -1190,6 +1197,24 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
         )
         .unwrap();
     }
+}
+
+pub struct FetchError {}
+
+pub async fn fetch_delegation_record(
+    rpc_client: &RpcClient,
+    key: Pubkey,
+) -> Result<DelegationRecord, FetchError> {
+    let delegation_record = DelegationRecord::try_deserialize(
+        &mut (rpc_client
+            .get_account_data(&key)
+            .await
+            .map_err(|_| FetchError {})?
+            .as_slice()),
+    )
+    .map_err(|_| FetchError {})?;
+
+    Ok(delegation_record)
 }
 
 pub async fn advance_delegation_record<'a>(
