@@ -1206,15 +1206,21 @@ pub async fn fetch_delegation_record(
     publisher: &Pubkey,
 ) -> Option<DelegationRecord> {
     let delegation_record_key = get_delegation_record_address(*publisher, *positions_address);
-    DelegationRecord::try_deserialize(
-        &mut (rpc_client
-            .get_account_data(&delegation_record_key)
-            .await
-            .unwrap()
-            .as_slice()),
-    )
-    .ok()
+
+    let response = rpc_client.get_account_data(&delegation_record_key).await;
+
+    match response {
+        Ok(data) => Some(DelegationRecord::try_deserialize(&mut data.as_slice()).unwrap()),
+        Err(err) => {
+            if err.to_string().contains("AccountNotFound") {
+                None
+            } else {
+                panic!("Error fetching delegation record: {:?}", err);
+            }
+        }
+    }
 }
+
 
 pub async fn advance_delegation_records<'a>(
     rpc_client: &RpcClient,
@@ -1225,7 +1231,6 @@ pub async fn advance_delegation_records<'a>(
     pool_data_address: &Pubkey,
     pyth_token_mint: &Pubkey,
     pool_config: &Pubkey,
-    index: usize,
 ) -> bool {
     let positions_address = positions.acc_info.key;
 
@@ -1293,13 +1298,11 @@ pub async fn advance_delegation_records<'a>(
         .into_iter()
         .zip(delegation_records)
     {
-        // Skip if we couldn't fetch the record or if it's already processed for current epoch
+        // Skip if the delegation record is already up to date
         if let Some(delegation_record) = delegation_record {
             if delegation_record.last_epoch == current_epoch {
                 continue;
             }
-        } else {
-            continue;
         }
 
         let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
@@ -1329,9 +1332,9 @@ pub async fn advance_delegation_records<'a>(
     // Process instructions in chunks of 5
     if !instructions.is_empty() {
         println!(
-            "Advancing delegation record for pubkey: {:?}, number of instructions: {}",
-            positions_address.to_string(),
+            "Advancing {} delegation records for stake account {}",
             instructions.len(),
+            positions_address,
         );
 
         for chunk in instructions.chunks(5) {
@@ -1343,6 +1346,7 @@ pub async fn advance_delegation_records<'a>(
                               // pending
             }
         }
+        return false;
     }
     true // No instruction were needed, this stake account is already done
 }
@@ -1443,8 +1447,8 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
         let futures = position_accounts_with_sufficient_amount_staked
             .iter()
             .enumerate()
-            .filter(|(i, _)| has_claimed_all_rewards[*i])
-            .map(|(i, (_, positions))| {
+            .filter(|(i, _)| !has_claimed_all_rewards[*i])
+            .map(|(_, (_, positions))| {
                 advance_delegation_records(
                     rpc_client,
                     signer,
@@ -1454,7 +1458,6 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
                     &pool_data_address,
                     &pyth_token_mint,
                     &pool_config_address,
-                    i,
                 )
             })
             .collect::<Vec<_>>();
