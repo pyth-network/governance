@@ -1221,7 +1221,6 @@ pub async fn advance_delegation_record<'a>(
     rpc_client: &RpcClient,
     signer: &dyn Signer,
     positions: &DynamicPositionArray<'a>,
-    min_reward: u64,
     current_epoch: u64,
     pool_data: &PoolData,
     pool_data_address: &Pubkey,
@@ -1354,13 +1353,8 @@ pub async fn advance_delegation_record<'a>(
     false // No instructions were processed
 }
 
-pub async fn claim_rewards(
-    rpc_client: &RpcClient,
-    signer: &dyn Signer,
-    min_staked: u64,
-    min_reward: u64,
-) {
-    let mut data: Vec<DynamicPositionArrayAccount> = rpc_client
+pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_staked: u64) {
+    let mut position_accounts: Vec<DynamicPositionArrayAccount> = rpc_client
         .get_program_accounts_with_config(
             &staking::ID,
             RpcProgramAccountsConfig {
@@ -1389,23 +1383,33 @@ pub async fn claim_rewards(
 
     let current_epoch = get_current_epoch(rpc_client).await;
 
-    let mut data: Vec<(u64, DynamicPositionArray)> = data
-        .iter_mut()
-        .filter_map(|positions| {
-            let acc = positions.to_dynamic_position_array();
-            let exposure = acc
-                .get_target_exposure(&Target::IntegrityPool, current_epoch)
-                .unwrap();
-            if exposure >= min_staked {
-                Some((exposure, acc))
-            } else {
-                None
-            }
-        })
-        .collect();
+    let mut position_accounts_with_sufficient_amount_staked: Vec<(u64, DynamicPositionArray)> =
+        position_accounts
+            .iter_mut()
+            .filter_map(|positions| {
+                let positions = positions.to_dynamic_position_array();
+                let exposure = {
+                    let mut exposure = 0;
+                    for i in 0..positions.get_position_capacity() {
+                        if let Some(position) = positions.read_position(i).unwrap() {
+                            if position.target_with_parameters.get_target() == Target::IntegrityPool
+                            {
+                                exposure += position.amount;
+                            }
+                        }
+                    }
+                    exposure
+                };
+                if exposure >= min_staked {
+                    Some((exposure, positions))
+                } else {
+                    None
+                }
+            })
+            .collect();
 
-    data.sort_by_key(|(exposure, _)| *exposure);
-    data.reverse();
+    position_accounts_with_sufficient_amount_staked.sort_by_key(|(exposure, _)| *exposure);
+    position_accounts_with_sufficient_amount_staked.reverse();
 
 
     let pool_config = get_pool_config_address();
@@ -1432,12 +1436,15 @@ pub async fn claim_rewards(
     )
     .unwrap();
 
-    println!("Processing {} accounts", data.len());
+    println!(
+        "Processing {} accounts",
+        position_accounts_with_sufficient_amount_staked.len()
+    );
     // Initialize results vector with true to process all indexes in first round
-    let mut active_positions = vec![true; data.len()];
+    let mut active_positions = vec![true; position_accounts_with_sufficient_amount_staked.len()];
 
     loop {
-        let futures = data
+        let futures = position_accounts_with_sufficient_amount_staked
             .iter()
             .enumerate()
             .filter(|(i, _)| active_positions[*i])
@@ -1446,7 +1453,6 @@ pub async fn claim_rewards(
                     rpc_client,
                     signer,
                     positions,
-                    min_reward,
                     current_epoch,
                     &pool_data,
                     &pool_data_address,
