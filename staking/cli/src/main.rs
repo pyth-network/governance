@@ -33,6 +33,12 @@ async fn main() {
         rpc_url,
         action,
     } = Cli::parse();
+
+    if cfg!(debug_assertions) {
+        panic!("These are issues with running the CLI in debug mode, and it might lead to segmentation fault, please use cargo run --release");
+    }
+
+
     let rpc_client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
 
     match action {
