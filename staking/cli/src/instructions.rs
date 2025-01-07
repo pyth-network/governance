@@ -1335,13 +1335,16 @@ pub async fn advance_delegation_records<'a>(
         );
 
         for chunk in instructions.chunks(5) {
-            process_transaction(rpc_client, chunk, &[signer])
+            if process_transaction(rpc_client, chunk, &[signer])
                 .await
-                .unwrap();
+                .is_err()
+            {
+                return false; // Return false if any transaction fails, this account is still
+                              // pending
+            }
         }
-        return true; // Instructions were processed
     }
-    false // No instructions were processed
+    true // No instruction were needed, this stake account is already done
 }
 
 pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_staked: u64) {
