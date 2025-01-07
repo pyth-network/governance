@@ -1199,22 +1199,21 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     }
 }
 
-pub struct FetchError {}
 
 pub async fn fetch_delegation_record(
     rpc_client: &RpcClient,
-    key: Pubkey,
-) -> Result<DelegationRecord, FetchError> {
-    let delegation_record = DelegationRecord::try_deserialize(
+    positions_address: &Pubkey,
+    publisher: &Pubkey,
+) -> Option<DelegationRecord> {
+    let delegation_record_key = get_delegation_record_address(*publisher, *positions_address);
+    DelegationRecord::try_deserialize(
         &mut (rpc_client
-            .get_account_data(&key)
+            .get_account_data(&delegation_record_key)
             .await
-            .map_err(|_| FetchError {})?
+            .unwrap()
             .as_slice()),
     )
-    .map_err(|_| FetchError {})?;
-
-    Ok(delegation_record)
+    .ok()
 }
 
 pub async fn advance_delegation_records<'a>(
@@ -1281,9 +1280,7 @@ pub async fn advance_delegation_records<'a>(
     // Fetch all delegation records concurrently
     let delegation_records =
         join_all(position_account_delegates.iter().map(|(publisher, _, _)| {
-            let delegation_record_pubkey =
-                get_delegation_record_address(*publisher, *positions_address);
-            fetch_delegation_record(rpc_client, delegation_record_pubkey)
+            fetch_delegation_record(rpc_client, positions_address, publisher)
         }))
         .await;
 
@@ -1297,15 +1294,12 @@ pub async fn advance_delegation_records<'a>(
         .zip(delegation_records)
     {
         // Skip if we couldn't fetch the record or if it's already processed for current epoch
-        match delegation_record {
-            Ok(delegation_record) => {
-                if delegation_record.last_epoch == current_epoch {
-                    continue;
-                }
-            }
-            Err(_) => {
+        if let Some(delegation_record) = delegation_record {
+            if delegation_record.last_epoch == current_epoch {
                 continue;
             }
+        } else {
+            continue;
         }
 
         let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
