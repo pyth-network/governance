@@ -112,5 +112,9 @@ async fn main() {
         Action::CloseAllPublisherCaps {} => {
             close_all_publisher_caps(&rpc_client, keypair.as_ref()).await;
         }
+        Action::ClaimRewards {
+            min_staked,
+            min_reward,
+        } => claim_rewards(&rpc_client, keypair.as_ref(), min_staked, min_reward).await;
     }
 }
