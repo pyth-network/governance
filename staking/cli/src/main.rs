@@ -35,7 +35,7 @@ async fn main() {
     } = Cli::parse();
 
     if cfg!(debug_assertions) {
-        panic!("These are issues with running the CLI in debug mode, and it might lead to segmentation fault, please use cargo run --release");
+        panic!("There are issues with running the CLI in debug mode, and it might lead to segmentation fault, please use cargo run --release");
     }
 
 

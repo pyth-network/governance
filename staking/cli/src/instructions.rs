@@ -1393,6 +1393,8 @@ pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_stak
             .iter_mut()
             .filter_map(|positions| {
                 let positions = positions.to_dynamic_position_array();
+                // We can't use `get_target_exposure` because it ignores UNLOCKED positions but they
+                // might have rewards
                 let exposure = {
                     let mut exposure = 0;
                     for i in 0..positions.get_position_capacity() {
