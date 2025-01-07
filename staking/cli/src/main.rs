@@ -58,7 +58,6 @@ async fn main() {
             )
             .await
         }
-
         Action::Advance {
             hermes_url,
             wormhole,
@@ -66,15 +65,12 @@ async fn main() {
             fetch_publisher_caps_and_advance(&rpc_client, keypair.as_ref(), wormhole, hermes_url)
                 .await
         }
-
         Action::InitializePoolRewardCustody {} => {
             initialize_reward_custody(&rpc_client, keypair.as_ref()).await
         }
-
         Action::UpdateDelegationFee { delegation_fee } => {
             update_delegation_fee(&rpc_client, keypair.as_ref(), delegation_fee).await
         }
-
         Action::SetPublisherStakeAccount {
             publisher,
             stake_account_positions,
@@ -87,7 +83,6 @@ async fn main() {
             )
             .await
         }
-
         Action::CreateSlashEvent {
             publisher,
             slash_ratio,
@@ -102,7 +97,6 @@ async fn main() {
             )
             .await
         }
-
         Action::Slash {
             publisher,
             stake_account_positions,
@@ -115,17 +109,14 @@ async fn main() {
             )
             .await
         }
-
         Action::UpdateY { y } => update_y(&rpc_client, keypair.as_ref(), y).await,
         Action::ClosePublisherCaps { publisher_caps } => {
             close_publisher_caps(&rpc_client, keypair.as_ref(), publisher_caps).await
         }
         Action::SaveStakeAccountsSnapshot {} => save_stake_accounts_snapshot(&rpc_client).await,
-
         Action::CloseAllPublisherCaps {} => {
             close_all_publisher_caps(&rpc_client, keypair.as_ref()).await
         }
-
         Action::ClaimRewards { min_staked } => {
             claim_rewards(&rpc_client, keypair.as_ref(), min_staked).await
         }
