@@ -268,7 +268,13 @@ pub async fn process_transaction(
     instructions: &[Instruction],
     signers: &[&dyn Signer],
 ) -> Result<Signature, Option<TransactionError>> {
-    let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
+    // TODO: Improve this to handle retries
+    let mut instructions_with_compute_budget = instructions.to_vec();
+    instructions_with_compute_budget.push(ComputeBudgetInstruction::set_compute_unit_price(1));
+    let mut transaction = Transaction::new_with_payer(
+        &instructions_with_compute_budget,
+        Some(&signers[0].pubkey()),
+    );
     transaction.sign(
         signers,
         rpc_client
@@ -283,6 +289,7 @@ pub async fn process_transaction(
             CommitmentConfig::confirmed(),
             RpcSendTransactionConfig {
                 skip_preflight: true,
+                max_retries: Some(0),
                 ..Default::default()
             },
         )
@@ -1327,6 +1334,7 @@ pub async fn advance_delegation_records<'a>(
             accounts:   accounts.to_account_metas(None),
             data:       data.data(),
         });
+        // TODO: Add merge positions instruction
     }
 
     // Process instructions in chunks of 5
@@ -1346,7 +1354,6 @@ pub async fn advance_delegation_records<'a>(
                               // pending
             }
         }
-        return false;
     }
     true // No instruction were needed, this stake account is already done
 }
