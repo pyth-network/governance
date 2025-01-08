@@ -13,6 +13,10 @@ use {
         },
     },
     base64::Engine,
+    futures::{
+        future::join_all,
+        StreamExt,
+    },
     integration_tests::{
         integrity_pool::pda::{
             get_delegation_record_address,
@@ -86,9 +90,12 @@ use {
             global_config::GlobalConfig,
             max_voter_weight_record::MAX_VOTER_WEIGHT,
             positions::{
+                DynamicPositionArray,
                 DynamicPositionArrayAccount,
                 PositionData,
                 PositionState,
+                Target,
+                TargetWithParameters,
             },
             stake_account::StakeAccountMetadataV2,
         },
@@ -261,7 +268,13 @@ pub async fn process_transaction(
     instructions: &[Instruction],
     signers: &[&dyn Signer],
 ) -> Result<Signature, Option<TransactionError>> {
-    let mut transaction = Transaction::new_with_payer(instructions, Some(&signers[0].pubkey()));
+    // TODO: Improve this to handle retries
+    let mut instructions_with_compute_budget = instructions.to_vec();
+    instructions_with_compute_budget.push(ComputeBudgetInstruction::set_compute_unit_price(1));
+    let mut transaction = Transaction::new_with_payer(
+        &instructions_with_compute_budget,
+        Some(&signers[0].pubkey()),
+    );
     transaction.sign(
         signers,
         rpc_client
@@ -276,6 +289,7 @@ pub async fn process_transaction(
             CommitmentConfig::confirmed(),
             RpcSendTransactionConfig {
                 skip_preflight: true,
+                max_retries: Some(0),
                 ..Default::default()
             },
         )
@@ -1189,5 +1203,303 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
             staked_in_ois
         )
         .unwrap();
+    }
+}
+
+
+pub async fn fetch_delegation_record(
+    rpc_client: &RpcClient,
+    positions_address: &Pubkey,
+    publisher: &Pubkey,
+) -> Option<DelegationRecord> {
+    let delegation_record_key = get_delegation_record_address(*publisher, *positions_address);
+
+    let response = rpc_client.get_account_data(&delegation_record_key).await;
+
+    match response {
+        Ok(data) => Some(DelegationRecord::try_deserialize(&mut data.as_slice()).unwrap()),
+        Err(err) => {
+            if err.to_string().contains("AccountNotFound") {
+                None
+            } else {
+                panic!("Error fetching delegation record: {:?}", err);
+            }
+        }
+    }
+}
+
+
+pub async fn advance_delegation_records<'a>(
+    rpc_client: &RpcClient,
+    signer: &dyn Signer,
+    positions: &DynamicPositionArray<'a>,
+    current_epoch: u64,
+    pool_data: &PoolData,
+    pool_data_address: &Pubkey,
+    pyth_token_mint: &Pubkey,
+    pool_config: &Pubkey,
+) -> bool {
+    let positions_address = positions.acc_info.key;
+
+    // Find all publishers the stake account has exposure to
+    let position_account_delegates: Vec<_> = pool_data
+        .publishers
+        .iter()
+        .enumerate()
+        .filter_map(|(publisher_index, publisher)| {
+            if *publisher == Pubkey::default() {
+                return None;
+            }
+
+            let publisher_exposure = {
+                let mut publisher_exposure = 0;
+                for i in 0..positions.get_position_capacity() {
+                    if let Some(position) = positions.read_position(i).unwrap() {
+                        if (position.target_with_parameters
+                            == TargetWithParameters::IntegrityPool {
+                                publisher: *publisher,
+                            })
+                        {
+                            publisher_exposure += position.amount;
+                        }
+                    }
+                }
+                publisher_exposure
+            };
+
+            if publisher_exposure == 0 {
+                return None;
+            }
+
+            let publisher_stake_account_positions =
+                if pool_data.publisher_stake_accounts[publisher_index] == Pubkey::default() {
+                    None
+                } else {
+                    Some(pool_data.publisher_stake_accounts[publisher_index])
+                };
+
+            let publisher_stake_account_custody =
+                publisher_stake_account_positions.map(get_stake_account_custody_address);
+
+            Some((
+                *publisher,
+                publisher_stake_account_positions,
+                publisher_stake_account_custody,
+            ))
+        })
+        .collect();
+
+    // Fetch all delegation records concurrently
+    let delegation_records =
+        join_all(position_account_delegates.iter().map(|(publisher, _, _)| {
+            fetch_delegation_record(rpc_client, positions_address, publisher)
+        }))
+        .await;
+
+    // Process results and create instructions
+    let mut instructions = Vec::new();
+    for (
+        (publisher, publisher_stake_account_positions, publisher_stake_account_custody),
+        delegation_record,
+    ) in position_account_delegates
+        .into_iter()
+        .zip(delegation_records)
+    {
+        // Skip if the delegation record is already up to date
+        if let Some(delegation_record) = delegation_record {
+            if delegation_record.last_epoch == current_epoch {
+                continue;
+            }
+        }
+
+        let accounts = integrity_pool::accounts::AdvanceDelegationRecord {
+            delegation_record: get_delegation_record_address(publisher, *positions_address),
+            payer: signer.pubkey(),
+            pool_config: *pool_config,
+            pool_data: *pool_data_address,
+            pool_reward_custody: get_pool_reward_custody_address(*pyth_token_mint),
+            publisher,
+            publisher_stake_account_positions,
+            publisher_stake_account_custody,
+            stake_account_positions: *positions_address,
+            stake_account_custody: get_stake_account_custody_address(*positions_address),
+            system_program: system_program::ID,
+            token_program: spl_token::ID,
+        };
+
+        let data = integrity_pool::instruction::AdvanceDelegationRecord {};
+
+        instructions.push(Instruction {
+            program_id: integrity_pool::ID,
+            accounts:   accounts.to_account_metas(None),
+            data:       data.data(),
+        });
+        // TODO: Add merge positions instruction
+    }
+
+    // Process instructions in chunks of 5
+    if !instructions.is_empty() {
+        println!(
+            "Advancing {} delegation records for stake account {}",
+            instructions.len(),
+            positions_address,
+        );
+
+        for chunk in instructions.chunks(5) {
+            if process_transaction(rpc_client, chunk, &[signer])
+                .await
+                .is_err()
+            {
+                return false; // Return false if any transaction fails, this account is still
+                              // pending
+            }
+        }
+    }
+    true // No instruction were needed, this stake account is already done
+}
+
+pub async fn claim_rewards(rpc_client: &RpcClient, signer: &dyn Signer, min_staked: u64) {
+    let mut position_accounts: Vec<DynamicPositionArrayAccount> = rpc_client
+        .get_program_accounts_with_config(
+            &staking::ID,
+            RpcProgramAccountsConfig {
+                filters:        Some(vec![RpcFilterType::Memcmp(Memcmp::new(
+                    0,
+                    MemcmpEncodedBytes::Bytes(PositionData::discriminator().to_vec()),
+                ))]),
+                account_config: RpcAccountInfoConfig {
+                    encoding:         Some(UiAccountEncoding::Base64Zstd),
+                    data_slice:       None,
+                    commitment:       None,
+                    min_context_slot: None,
+                },
+                with_context:   None,
+            },
+        )
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|(pubkey, account)| DynamicPositionArrayAccount {
+            key:      pubkey,
+            lamports: account.lamports,
+            data:     account.data.clone(),
+        })
+        .collect::<Vec<_>>();
+
+    let current_epoch = get_current_epoch(rpc_client).await;
+
+    let mut position_accounts_with_sufficient_amount_staked: Vec<(u64, DynamicPositionArray)> =
+        position_accounts
+            .iter_mut()
+            .filter_map(|positions| {
+                let positions = positions.to_dynamic_position_array();
+                // We can't use `get_target_exposure` because it ignores UNLOCKED positions but they
+                // might have rewards
+                let exposure = {
+                    let mut exposure = 0;
+                    for i in 0..positions.get_position_capacity() {
+                        if let Some(position) = positions.read_position(i).unwrap() {
+                            if position.target_with_parameters.get_target() == Target::IntegrityPool
+                            {
+                                exposure += position.amount;
+                            }
+                        }
+                    }
+                    exposure
+                };
+                if exposure >= min_staked {
+                    Some((exposure, positions))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+    position_accounts_with_sufficient_amount_staked.sort_by_key(|(exposure, _)| *exposure);
+    position_accounts_with_sufficient_amount_staked.reverse();
+
+
+    let pool_config_address = get_pool_config_address();
+
+    let PoolConfig {
+        pool_data: pool_data_address,
+        pyth_token_mint,
+        ..
+    } = PoolConfig::try_deserialize(
+        &mut rpc_client
+            .get_account_data(&pool_config_address)
+            .await
+            .unwrap()
+            .as_slice(),
+    )
+    .unwrap();
+
+    let pool_data = PoolData::try_deserialize(
+        &mut &rpc_client
+            .get_account_data(&pool_data_address)
+            .await
+            .unwrap()
+            .as_slice()[..8 + size_of::<PoolData>()],
+    )
+    .unwrap();
+
+    println!(
+        "Processing {} stake accounts...",
+        position_accounts_with_sufficient_amount_staked.len()
+    );
+
+    // This vector is used to keep track of which stake accounts have all rewards claimed
+    let mut has_claimed_all_rewards =
+        vec![false; position_accounts_with_sufficient_amount_staked.len()];
+
+    loop {
+        let futures = position_accounts_with_sufficient_amount_staked
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !has_claimed_all_rewards[*i])
+            .map(|(_, (_, positions))| {
+                advance_delegation_records(
+                    rpc_client,
+                    signer,
+                    positions,
+                    current_epoch,
+                    &pool_data,
+                    &pool_data_address,
+                    &pyth_token_mint,
+                    &pool_config_address,
+                )
+            })
+            .collect::<Vec<_>>();
+
+        // Process at most 20 stake accounts concurrently
+        let succesful_claims = tokio_stream::iter(futures)
+            .buffered(20)
+            .collect::<Vec<_>>()
+            .await;
+
+        // If all stake account have all rewards claimed, we're done
+        if succesful_claims.iter().all(|&claimed| claimed) {
+            break;
+        };
+
+        // Update has_all_rewards_claimed based on results
+        let mut succesful_claim_index = 0;
+        has_claimed_all_rewards
+            .iter_mut()
+            .filter(|claimed| !**claimed)
+            .for_each(|claimed| {
+                *claimed = succesful_claims[succesful_claim_index];
+                succesful_claim_index += 1;
+            });
+
+        let remaining_accounts = has_claimed_all_rewards
+            .iter()
+            .filter(|claimed| !**claimed)
+            .count();
+        println!(
+            "We will retry after 10 seconds! {} accounts remaining",
+            remaining_accounts
+        );
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
     }
 }

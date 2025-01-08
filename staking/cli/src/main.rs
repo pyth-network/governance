@@ -8,6 +8,7 @@ use {
         Cli,
     },
     instructions::{
+        claim_rewards,
         close_all_publisher_caps,
         close_publisher_caps,
         create_slash_event,
@@ -32,6 +33,12 @@ async fn main() {
         rpc_url,
         action,
     } = Cli::parse();
+
+    if cfg!(debug_assertions) {
+        panic!("There are issues with running the CLI in debug mode, and it might lead to segmentation fault, please use cargo run --release");
+    }
+
+
     let rpc_client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
 
     match action {
@@ -49,17 +56,17 @@ async fn main() {
                 y,
                 slash_custody,
             )
-            .await;
+            .await
         }
         Action::Advance {
             hermes_url,
             wormhole,
         } => {
             fetch_publisher_caps_and_advance(&rpc_client, keypair.as_ref(), wormhole, hermes_url)
-                .await;
+                .await
         }
         Action::InitializePoolRewardCustody {} => {
-            initialize_reward_custody(&rpc_client, keypair.as_ref()).await;
+            initialize_reward_custody(&rpc_client, keypair.as_ref()).await
         }
         Action::UpdateDelegationFee { delegation_fee } => {
             update_delegation_fee(&rpc_client, keypair.as_ref(), delegation_fee).await
@@ -106,11 +113,12 @@ async fn main() {
         Action::ClosePublisherCaps { publisher_caps } => {
             close_publisher_caps(&rpc_client, keypair.as_ref(), publisher_caps).await
         }
-        Action::SaveStakeAccountsSnapshot {} => {
-            save_stake_accounts_snapshot(&rpc_client).await;
-        }
+        Action::SaveStakeAccountsSnapshot {} => save_stake_accounts_snapshot(&rpc_client).await,
         Action::CloseAllPublisherCaps {} => {
-            close_all_publisher_caps(&rpc_client, keypair.as_ref()).await;
+            close_all_publisher_caps(&rpc_client, keypair.as_ref()).await
+        }
+        Action::ClaimRewards { min_staked } => {
+            claim_rewards(&rpc_client, keypair.as_ref(), min_staked).await
         }
     }
 }
