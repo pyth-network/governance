@@ -648,9 +648,9 @@ pub async fn fetch_publisher_caps_and_advance(
         Vec::<u8>::from(merkle_proofs.first().unwrap().message.clone());
 
 
-    for i in (0..publisher_caps_message_bytes.len()).step_by(1000) {
+    for i in (0..publisher_caps_message_bytes.len()).step_by(950) {
         let chunk =
-            &publisher_caps_message_bytes[i..min(i + 1000, publisher_caps_message_bytes.len())];
+            &publisher_caps_message_bytes[i..min(i + 950, publisher_caps_message_bytes.len())];
 
         write_publisher_caps(rpc_client, payer, publisher_caps, i, chunk).await;
     }
