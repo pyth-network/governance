@@ -10,7 +10,8 @@
 - **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy`, that are used by the Pythian Council and the Price Feed Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
-- **Pythnet Appchain:** blockchain instance dedicated to the production of the pyth data, governed by the Pyth DAO
+- **Pythnet Appchain:** blockchain instance dedicated to the production of the Pyth data, governed by the Pyth DAO
+- **Pyth Lazer:** system dedicated to the production of the Lazer data, governed by the Pyth DAO
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
@@ -48,11 +49,11 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
         - the exceptional removal and replacement of a council member
   - Operational PIPs delegated to the Pythian Council involve:
         - the upgrade of the oracle program
-        - the upgrade of the verification program for each of the blockchains where Pyth data is accessible
+        - the upgrade of the verification program for each of the blockchains where Pyth data or Lazer data are accessible
         - the setting of data request fees per blockchain, as well as other protocol or network fees
         - the management of PGAS allocation and delegation to validators
         - the upgrade of the ER program for each of the blockchains where ER is available
-        - the assignment of the relayer function and monitoring of the performance of such assignment
+        - the assignment of the relayer function for ER and monitoring of the performance of such assignment
         - the setting of the ER fee distribution
         - the upgrade of the Entropy program for each of the blockchains where Entropy is available
         - the setting of Entropy request fees for each of the blockchains where Entropy is available
