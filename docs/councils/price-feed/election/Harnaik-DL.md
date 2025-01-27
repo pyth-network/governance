@@ -18,11 +18,11 @@ Hardware wallet
   - Continent: Europe
 
 - Motivations to participate in the Price Feed Council
-  - To ensure robustness and reliability of new and existing price feeds on the oracle
-  - Ensure price feeds have passed the relative conformance tests within Pythtest before going live in Pythnet. This is to prevent the risk of price deviation and correlated errors within Pythnet
-  - To support the oracle's expansion into additional markets and diverse asset classes
+  - As a previous council member with experience in raising key proposals, significant contributions have been made toward optimizing the network's performance and launching new price feeds. The aim is to continue deliver new price feeds onto the network, ensuring they meet the highest standards of reliability in terms of accuracy, uptime, and quality.
+  - Committed to supporting the oracle's expansion into new markets and diverse asset classes, enabling the network to benefit from a broader range of assets.
+  - Focused on onboarding new data providers and accelerating the deployment of reliable price feeds. Ensuring all new price feeds undergo rigorous conformance testing, preventing price deviations and correlated errors, thereby enhancing the robustness of the network.
 
 - Relevant Experience
-  - 2+ Years worth experience as a key contributor to Pyth within the price feed process and technical integration of new publishers
-  - 10+ Years experience working across multiple tradfi and crypto native firms, offering trade and technical support across all asset classes
-  - Effectively managed global teams, ensuring alignment of price feed strategies with respect to volumes and liquidity across multiple venues
+  - Over 3 years as a key contributor to Pyth, specialising in the price feed process, Pythnet validator management and the technical integration of new data publishers.
+  - More than 10 years of experience across both traditional finance (TradFi) and crypto-native firms, providing expert trade desk and technical support across a wide range of asset classes.
+  - Effectively led global teams to achieve seamless integration of price feeds and publishers, ensuring optimal alignment of price feed strategies with trading volumes and liquidity across various venues.
