@@ -111,6 +111,10 @@ pub enum Action {
     },
     SaveStakeAccountsSnapshot {},
     CloseAllPublisherCaps {},
+    ClaimRewards {
+        #[clap(long, help = "Minimum staked tokens")]
+        min_staked: u64,
+    },
 }
 
 pub enum SignerSource {
