@@ -151,9 +151,9 @@ In the event of a member needing to be exceptionally replaced outside of schedul
 
 The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [LINK]
 
-The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 3 members of its cohort of 7 members.
+The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 12 months after the previous election has started and it will replace 2 members of its cohort of 7 members.
 
-The 4 members to remain are selected given the following cascading criteria:
+The 5 members to remain are selected given the following cascading criteria:
 
 - the shorter tenure till the date of the election;
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
