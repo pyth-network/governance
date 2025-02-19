@@ -8,7 +8,7 @@
 - **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://forum.pyth.network/](https://forum.pyth.network/)
 - **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
 - **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
-- **Community Multisig Wallet:** smart contract wallet, at the following address `community-council-wallet` signed by the elected members of the Community Council. The Community Council is described in further detail below.
+- **Community Multisig Wallet:** smart contract wallet, at the following address `DXf94qPHKbpx3KJ275ns4kBndaHTf4BMtC8GDUvBXM7j` signed by the elected members of the Community Council. The Community Council is described in further detail below.
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7`, `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy` and `Ef7AjJzDXK6Tn2gYuMvL9YdXATV29b8PwpsT1yoPokTC`, that are used by the Pythian Council, the Price Feed Council and the Community Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the Pyth data, governed by the Pyth DAO
@@ -149,7 +149,7 @@ In the event of a member needing to be exceptionally replaced outside of schedul
 
 3. **The Community Council**
 
-The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [LINK]
+The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [pyth-dao-code-of-conduct-for-the-community-council-v1.2.pdf](https://ipfs.io/ipfs/bafybeicijbpwxw553ax4kxmal6b7zg3qboclvw4omw5jhf7u3jagv3pxlu/pyth-dao-code-of-conduct-for-the-community-council-v1.2.pdf)
 
 The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 12 months after the previous election has started and it will replace 2 members of its cohort of 7 members.
 
