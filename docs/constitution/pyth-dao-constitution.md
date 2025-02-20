@@ -151,9 +151,9 @@ In the event of a member needing to be exceptionally replaced outside of schedul
 
 The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [pyth-dao-code-of-conduct-for-the-community-council-v1.2.pdf](https://ipfs.io/ipfs/bafybeicijbpwxw553ax4kxmal6b7zg3qboclvw4omw5jhf7u3jagv3pxlu/pyth-dao-code-of-conduct-for-the-community-council-v1.2.pdf)
 
-The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 12 months after the previous election has started and it will replace 2 members of its cohort of 7 members.
+The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started. At least 1 member of the Community Council has to be replaced every 12 months.
 
-The 5 members to remain are selected given the following cascading criteria:
+The 6 members to remain at each election are selected given the following cascading criteria:
 
 - the shorter tenure till the date of the election;
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
@@ -168,7 +168,7 @@ The following process governs the election that starts at time T:
 - Nomination (T until T+2 days): Any DAO member can be nominated or nominate himself or herself for candidacy to the Council. Each candidate sponsor, a person nominating a candidate or the candidate himself or herself, must hold at least 0.5 basis points of the current Votable Tokens
 - Member Election (T+2 days until T+7 days): Each token may be cast for one candidate.
 
-In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Price Feed Council will be offered membership in the Price Feed Council.
+In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Community Council will be offered membership in the Community Council.
 
 ## Community Values
 
