@@ -153,7 +153,7 @@ The Community Council is made of 7 members who are signers of the Community Mult
 
 The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started. At least 1 member of the Community Council has to be replaced every 12 months.
 
-The 6 members to remain at each election are selected given the following cascading criteria:
+The members to remain at each election are selected given the following cascading criteria:
 
 - the shorter tenure till the date of the election;
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
