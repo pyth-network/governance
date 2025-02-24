@@ -1,0 +1,30 @@
+name: Staking Snapshot
+
+on:
+  schedule:
+    - cron: "0 6 * * 5" # Every Friday at 6:00 UTC
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18.19.1"
+      - name: Install Solana Verify CLI
+        run: |
+          cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 098551f
+      - name: Build
+        working-directory: ./staking
+        run: solana-verify build
+      - name: Generate Staking Snapshot
+        working-directory: ./staking
+        run: |
+          solana-keygen new --outfile ~/.config/solana/id.json && \
+          cargo build --release && \
+          target/release/staking-cli --rpc-url ${{ secrets.RPC_URL }}  save-stake-accounts-snapshot && \
+          ls -lah snapshots && \ 
+          node scripts/staking_snapshot.js
