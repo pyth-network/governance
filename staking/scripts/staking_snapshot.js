@@ -22,7 +22,7 @@ const ois_staking_records = data
   .filter((entry) => entry.staked_in_ois > 0)
   .map((entry) => ({
     address: entry.owner,
-    amount: parseFloat(entry.staked_in_ois / 1000_000).toFixed(2),
+    amount: parseFloat((entry.staked_in_ois / 1000_000).toFixed(2)),
   }));
 
 // TODO: insert ois_staking_records into database
