@@ -1173,11 +1173,18 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     }
 
     let timestamp = chrono::Utc::now().format("%Y-%m-%d_%H:%M:%S").to_string();
-    let file = File::create(format!("snapshots/snapshot-{}.csv", timestamp)).unwrap();
-    let mut writer = BufWriter::new(file);
-
+    
+    // Create CSV file
+    let csv_file = File::create(format!("snapshots/snapshot-{}.csv", timestamp)).unwrap();
+    let mut csv_writer = BufWriter::new(csv_file);
     // Write the header
-    writeln!(writer, "positions_pubkey,metadata_pubkey,custody_pubkey,custody_authority_pubkey,owner,locked_amount,staked_in_governance,staked_in_ois").unwrap();
+    writeln!(csv_writer, "positions_pubkey,metadata_pubkey,custody_pubkey,custody_authority_pubkey,owner,locked_amount,staked_in_governance,staked_in_ois").unwrap();
+
+    // Create JSON file
+    let json_file = File::create(format!("snapshots/snapshot-{}.json", timestamp)).unwrap();
+    let mut json_writer = BufWriter::new(json_file);
+    let mut json_data = Vec::new();
+
     // Write the data
     for (
         pubkey,
@@ -1190,8 +1197,9 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
         staked_in_ois,
     ) in data
     {
+        // Write the data to the CSV file
         writeln!(
-            writer,
+            csv_writer,
             "{},{},{},{},{},{},{},{}",
             pubkey,
             metadata_pubkey,
@@ -1203,7 +1211,22 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
             staked_in_ois
         )
         .unwrap();
+
+        // append the data to the JSON file
+        json_data.push(serde_json::json!({
+            "positions_pubkey": pubkey.to_string(),
+            "metadata_pubkey": metadata_pubkey.to_string(),
+            "custody_pubkey": custody_pubkey.to_string(),
+            "custody_authority_pubkey": custody_authority_pubkey.to_string(),
+            "owner": owner.to_string(),
+            "locked_amount": locked_amount,
+            "staked_in_governance": staked_in_governance,
+            "staked_in_ois": staked_in_ois
+        }));
     }
+
+    // Write JSON array to file
+    serde_json::to_writer_pretty(&mut json_writer, &json_data).unwrap();
 }
 
 
