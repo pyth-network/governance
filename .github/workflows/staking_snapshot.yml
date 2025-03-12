@@ -25,7 +25,8 @@ jobs:
           toolchain: 1.75.0
       - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)"
+          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \ 
+          export PATH="/Users/test/.local/share/solana/install/active_release/bin:$PATH"
       - name: Generate Staking Snapshot
         working-directory: ./staking
         run: |
