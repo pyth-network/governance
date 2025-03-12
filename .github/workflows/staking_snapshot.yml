@@ -29,6 +29,6 @@ jobs:
         run: |
           solana-keygen new --outfile ~/.config/solana/id.json && \
           cargo build --release && \
-          target/release/staking-cli --rpc-url=${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
+          target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
           ls -lah snapshots && \
           node scripts/staking_snapshot.js
