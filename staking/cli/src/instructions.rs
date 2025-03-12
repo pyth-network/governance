@@ -1173,7 +1173,7 @@ pub async fn save_stake_accounts_snapshot(rpc_client: &RpcClient) {
     }
 
     let timestamp = chrono::Utc::now().format("%Y-%m-%d_%H:%M:%S").to_string();
-    
+
     // Create CSV file
     let csv_file = File::create(format!("snapshots/snapshot-{}.csv", timestamp)).unwrap();
     let mut csv_writer = BufWriter::new(csv_file);
