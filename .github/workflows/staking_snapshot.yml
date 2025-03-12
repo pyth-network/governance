@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "22"
+
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -28,10 +29,12 @@ jobs:
         run: |
           sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
       - name: Generate Staking Snapshot
         working-directory: ./staking
         run: |
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH" && \
+          export PATH="$HOME/.cargo/bin:$PATH" && \
           solana --version && \
           solana-keygen new --outfile ~/.config/solana/id.json && \
           cargo build --release --manifest-path=./Cargo.toml && \
