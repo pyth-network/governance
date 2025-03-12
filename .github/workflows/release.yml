@@ -10,10 +10,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "18.19.1"
       - name: Install Solana Verify CLI
         run: |
           cargo install solana-verify --git https://github.com/Ellipsis-Labs/solana-verifiable-build --rev 098551f
