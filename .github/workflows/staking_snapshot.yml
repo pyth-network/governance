@@ -31,14 +31,25 @@ jobs:
           sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
+      - name: Debug Solana Keygen Environment
+        run: |
+          echo "Home directory: $HOME"
+          ls -ld ~/
+          mkdir -p ~/.config/solana
+          chmod 755 ~/.config/solana
+          ls -ld ~/.config/solana
+          pwd
+          whoami
+
+      - name: Generate Solana Keypair
+        run: |
+          solana-keygen new --no-bip39-passphrase --force --silent --outfile ~/.config/solana/id.json || echo "Keygen failed: $?"
+          ls -l ~/.config/solana/id.json || echo "File not created"
+
       - name: Generate Staking Snapshot
         run: |
-          solana --version && \
-          mkdir -p ~/.config/solana && \
-          chmod 755 ~/.config/solana && \
-          solana-keygen new --outfile ~/.config/solana/id.json && \
-          cd ./staking && \
-          cargo build --release && \
-          target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
-          ls -lah snapshots && \
+          cd ./staking
+          cargo build --release
+          target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }} save-stake-accounts-snapshot
+          ls -lah snapshots
           node scripts/staking_snapshot.js
