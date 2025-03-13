@@ -33,11 +33,12 @@ jobs:
       - name: Generate Staking Snapshot
         working-directory: ./staking
         run: |
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH" && \
           export PATH="$HOME/.cargo/bin:$PATH" && \
           solana --version && \
           solana-keygen new --outfile ~/.config/solana/id.json && \
-          cargo build --release --manifest-path=./Cargo.toml && \
+          mkdir -p ~/.config/solana && \
+          chmod 755 ~/.config/solana && \
+          cargo build --release && \
           target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
           ls -lah snapshots && \
           node scripts/staking_snapshot.js
