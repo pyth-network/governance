@@ -1,0 +1,58 @@
+name: Staking Snapshot
+
+on:
+  schedule:
+    - cron: "0 6 * * 5" # Every Friday at 6:00 UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      STAKING_DATA_API_URL: ${{ secrets.STAKING_DATA_API_URL }}
+      STAKING_DATA_API_KEY: ${{ secrets.STAKING_DATA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "22"
+
+      - name: Install Rust directly
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75.0
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+      - name: Debug Solana Keygen Environment
+        run: |
+          echo "Home directory: $HOME"
+          ls -ld ~/
+          mkdir -p ~/.config/solana
+          chmod 755 ~/.config/solana
+          ls -ld ~/.config/solana
+          pwd
+          whoami
+
+      - name: Generate Solana Keypair
+        run: |
+          solana-keygen new --no-bip39-passphrase --force --silent --outfile ~/.config/solana/id.json || echo "Keygen failed: $?"
+          ls -l ~/.config/solana/id.json || echo "File not created"
+
+      - name: Install required packages for cargo build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
+
+      - name: Generate Staking Snapshot
+        run: |
+          cd ./staking
+          cargo build --release
+          target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }} save-stake-accounts-snapshot
+          ls -lah snapshots
+          node scripts/staking_snapshot.js
