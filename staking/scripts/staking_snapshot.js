@@ -25,20 +25,18 @@ const ois_staking_records = data
     amount: parseFloat((entry.staked_in_ois / 1000_000).toFixed(2)),
   }));
 
-console.log("ois_staking_records", ois_staking_records);
-
-// fetch(process.env.STAKING_DATA_API_URL, {
-//   method: "POST",
-//   headers: {
-//     "Content-Type": "application/json",
-//     Authorization: `Bearer ${process.env.STAKING_DATA_API_KEY}`,
-//   },
-//   body: JSON.stringify(ois_staking_records),
-// })
-//   .then((res) => res.json())
-//   .then((data) => {
-//     console.log(data);
-//   })
-//   .catch((err) => {
-//     console.error(err);
-//   });
+fetch(process.env.STAKING_DATA_API_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.STAKING_DATA_API_KEY}`,
+  },
+  body: JSON.stringify(ois_staking_records),
+})
+  .then((res) => res.json())
+  .then((data) => {
+    console.log(data);
+  })
+  .catch((err) => {
+    console.error(err);
+  });
