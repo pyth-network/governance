@@ -35,9 +35,9 @@ jobs:
         run: |
           export PATH="$HOME/.cargo/bin:$PATH" && \
           solana --version && \
-          solana-keygen new --outfile ~/.config/solana/id.json && \
           mkdir -p ~/.config/solana && \
           chmod 755 ~/.config/solana && \
+          solana-keygen new --outfile ~/.config/solana/id.json && \
           cargo build --release && \
           target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
           ls -lah snapshots && \
