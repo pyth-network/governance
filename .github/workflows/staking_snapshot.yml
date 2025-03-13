@@ -46,6 +46,11 @@ jobs:
           solana-keygen new --no-bip39-passphrase --force --silent --outfile ~/.config/solana/id.json || echo "Keygen failed: $?"
           ls -l ~/.config/solana/id.json || echo "File not created"
 
+      - name: Install required packages for cargo build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
+
       - name: Generate Staking Snapshot
         run: |
           cd ./staking
