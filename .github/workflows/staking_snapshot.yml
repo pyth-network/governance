@@ -31,13 +31,13 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
       - name: Generate Staking Snapshot
-        working-directory: ./staking
         run: |
           export PATH="$HOME/.cargo/bin:$PATH" && \
           solana --version && \
           mkdir -p ~/.config/solana && \
           chmod 755 ~/.config/solana && \
           solana-keygen new --outfile ~/.config/solana/id.json && \
+          cd ./staking && \
           cargo build --release && \
           target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }}  save-stake-accounts-snapshot && \
           ls -lah snapshots && \
