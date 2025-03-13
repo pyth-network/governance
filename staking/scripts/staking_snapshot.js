@@ -29,7 +29,7 @@ fetch(process.env.STAKING_DATA_API_URL, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.STAKING_DATA_API_KEY}`,
+    "X-FOGO-Auth": `Bearer ${process.env.STAKING_DATA_API_KEY}`,
   },
   body: JSON.stringify(ois_staking_records),
 })
