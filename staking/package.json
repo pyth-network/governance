@@ -21,8 +21,7 @@
     "encoding": "^0.1.13",
     "ethers": "^6.10.0",
     "ts-node": "^10.7.0",
-    "typescript": "^4.3.5",
-    "axios": "^1.6.7"
+    "typescript": "^4.3.5"
   },
   "devDependencies": {
     "@ledgerhq/hw-transport": "^6.27.2",
@@ -34,6 +33,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.34",
     "@types/shelljs": "^0.8.11",
+    "axios": "^1.6.7",
     "chai": "^4.3.4",
     "dotenv": "^16.4.1",
     "mocha": "^9.2.2",
