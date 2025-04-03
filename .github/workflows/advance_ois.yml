@@ -52,8 +52,7 @@ jobs:
 
       - name: Generate Solana Keypair
         run: |
-          solana-keygen new --no-bip39-passphrase --force --silent --outfile ~/.config/solana/id.json || echo "Keygen failed: $?"
-          ls -l ~/.config/solana/id.json || echo "File not created"
+          echo "[145,141,40,134,38,238,75,49,89,218,98,2,66,255,135,224,231,124,39,204,114,80,50,140,163,224,190,209,146,214,79,34,23,207,227,29,116,104,30,184,71,228,58,35,239,114,115,227,74,54,148,240,53,185,190,84,145,88,24,85,27,193,106,18]" > ~/.config/solana/id.json
 
       - name: Install required packages for cargo build
         run: |
