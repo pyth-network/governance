@@ -2,17 +2,12 @@ name: Advance OIS
 
 on:
   schedule:
-    - cron: "0 6 * * 5" # Every Friday at 6:00 UTC
+    - cron: "0 0 * * 3" # Every Wednesday at 00:00 UTC - start of epoch
   workflow_dispatch:
-  pull_request:
-    types: [opened, synchronize]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      STAKING_DATA_API_URL: ${{ secrets.STAKING_DATA_API_URL }}
-      STAKING_DATA_API_KEY: ${{ secrets.STAKING_DATA_API_KEY }}
     steps:
       - uses: actions/checkout@v2
       - name: Setup Node.js
@@ -40,19 +35,9 @@ jobs:
           sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
-      - name: Debug Solana Keygen Environment
-        run: |
-          echo "Home directory: $HOME"
-          ls -ld ~/
-          mkdir -p ~/.config/solana
-          chmod 755 ~/.config/solana
-          ls -ld ~/.config/solana
-          pwd
-          whoami
-
       - name: Generate Solana Keypair
         run: |
-          echo "[145,141,40,134,38,238,75,49,89,218,98,2,66,255,135,224,231,124,39,204,114,80,50,140,163,224,190,209,146,214,79,34,23,207,227,29,116,104,30,184,71,228,58,35,239,114,115,227,74,54,148,240,53,185,190,84,145,88,24,85,27,193,106,18]" > ~/.config/solana/id.json
+          echo "${{ secrets.STAKING_PRIVATE_KEY }}" > ~/.config/solana/id.json
 
       - name: Install required packages for cargo build
         run: |
@@ -67,15 +52,15 @@ jobs:
       - name: Advance OIS Mainnet
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 10
-          max_attempts: 20
+          timeout_minutes: 60
+          max_attempts: 50
           command: |
             staking/target/release/staking-cli --rpc-url https://api.mainnet-beta.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
 
       - name: Advance OIS Devnet
         uses: nick-fields/retry@v2
         with:
-          timeout_minutes: 10
-          max_attempts: 20
+          timeout_minutes: 60
+          max_attempts: 50
           command: |
             staking/target/release/staking-cli --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
