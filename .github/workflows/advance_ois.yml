@@ -51,8 +51,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libudev-dev
 
-      - name: Advance OIS Devnet
+      - name: Build
         run: |
           cd ./staking
           cargo build --release
-          target/release/staking-cli --rpc-url ${{ secrets.STAKING_CLI_RPC_URL }} advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+
+      - name: Advance OIS Mainnet
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 20
+          command: |
+            target/release/staking-cli --rpc-url https://api.mainnet-beta.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+
+      - name: Advance OIS Devnet
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 10
+          max_attempts: 20
+          command: |
+            target/release/staking-cli --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
