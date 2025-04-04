@@ -19,6 +19,8 @@ jobs:
             ~/.cargo/git
             staking/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install Rust directly
         run: |
@@ -38,7 +40,7 @@ jobs:
       - name: Build
         run: |
           cd ./staking
-          cargo build --release
+          cargo build --release --locked
 
       - name: Advance OIS Mainnet
         uses: nick-fields/retry@v2
