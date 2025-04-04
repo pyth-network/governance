@@ -24,6 +24,7 @@ jobs:
 
       - name: Install Rust directly
         run: |
+          fail
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75.0
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           source "$HOME/.cargo/env"
