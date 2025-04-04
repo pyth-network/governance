@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: "0 0 * * 3" # Every Wednesday at 00:00 UTC - start of epoch
   workflow_dispatch:
+  pull_request:
 
 jobs:
   build:
@@ -24,11 +25,6 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75.0
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           source "$HOME/.cargo/env"
-
-      - name: Install Solana CLI
-        run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.16/install)" && \
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
       - name: Generate Solana Keypair
         run: |
