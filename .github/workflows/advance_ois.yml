@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate Solana Keypair
         run: |
-          echo "${{ secrets.STAKING_PRIVATE_KEY }}" > ~/.config/solana/id.json
+          echo "${{ secrets.STAKING_PRIVATE_KEY }}" > key.json
 
       - name: Install required packages for cargo build
         run: |
@@ -46,7 +46,7 @@ jobs:
           timeout_minutes: 60
           max_attempts: 50
           command: |
-            staking/target/release/staking-cli --rpc-url https://api.mainnet-beta.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+            staking/target/release/staking-cli --keypair key.json --rpc-url https://api.mainnet-beta.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
 
       - name: Advance OIS Devnet
         uses: nick-fields/retry@v2
@@ -54,4 +54,4 @@ jobs:
           timeout_minutes: 60
           max_attempts: 50
           command: |
-            staking/target/release/staking-cli --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+            staking/target/release/staking-cli --keypair key.json --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
