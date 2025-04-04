@@ -1,0 +1,58 @@
+name: Advance OIS
+
+on:
+  schedule:
+    - cron: "0 0 * * 3" # Every Wednesday at 00:00 UTC - start of epoch
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: ⚡ Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            staking/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install Rust directly
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.75.0
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+
+      - name: Generate Solana Keypair
+        run: |
+          echo "${{ secrets.STAKING_PRIVATE_KEY }}" > key.json
+
+      - name: Install required packages for cargo build
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
+
+      - name: Build
+        run: |
+          cd ./staking
+          cargo build --release --locked
+
+      - name: Advance OIS Mainnet
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 60
+          max_attempts: 50
+          command: |
+            staking/target/release/staking-cli --keypair key.json --rpc-url https://api.mainnet-beta.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+
+      - name: Advance OIS Devnet
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 60
+          max_attempts: 50
+          command: |
+            staking/target/release/staking-cli --keypair key.json --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
