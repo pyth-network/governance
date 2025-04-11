@@ -2,7 +2,7 @@ name: Advance OIS
 
 on:
   schedule:
-    - cron: "0 0 * * 3" # Every Wednesday at 00:00 UTC - start of epoch
+    - cron: "0 0 * * 4" # Every Thursday at 00:00 UTC - start of epoch
   workflow_dispatch:
 
 jobs:
