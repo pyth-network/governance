@@ -1,6 +1,6 @@
 [package]
 name = "staking-cli"
-version = "0.1.1"
+version = "0.1.0"
 edition = "2018"
 
 [dependencies]
@@ -22,7 +22,6 @@ wormhole-core-bridge-solana = {git = "https://github.com/guibescos/wormhole", re
 wormhole-solana = { git = "https://github.com/guibescos/wormhole", branch = "reisen/sdk-solana"}
 base64 = "0.22.1"
 reqwest = "0.11"
-serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.128"
 uriparse = "0.6.4"
 solana-remote-wallet = "1.18.16"

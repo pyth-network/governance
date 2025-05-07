@@ -5273,7 +5273,7 @@ dependencies = [
 
 [[package]]
 name = "staking-cli"
-version = "0.1.1"
+version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -5288,7 +5288,6 @@ dependencies = [
  "pyth-staking-program",
  "pythnet-sdk",
  "reqwest",
- "serde",
  "serde_json",
  "serde_wormhole",
  "shellexpand",
