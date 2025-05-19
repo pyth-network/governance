@@ -794,6 +794,30 @@ pub mod staking {
         Ok(())
     }
 
+    /** Recovers a user's `stake account` ownership by transferring ownership
+     * from a token account to the `owner` of that token account.
+     *
+     * This functionality addresses the scenario where a user mistakenly
+     * created a stake account using their token account address as the owner.
+     */
+    pub fn recover_account_2(ctx: Context<RecoverAccount2>) -> Result<()> {
+        // Check that there aren't any positions (i.e., staked tokens) in the account.
+        // Transferring accounts with staked tokens might lead to double voting
+        require!(
+            ctx.accounts.stake_account_metadata.next_index == 0,
+            ErrorCode::RecoverWithStake
+        );
+
+        let new_owner = ctx.accounts.new_owner.key();
+        ctx.accounts.stake_account_metadata.owner = new_owner;
+        let stake_account_positions =
+            &mut DynamicPositionArray::load_mut(&ctx.accounts.stake_account_positions)?;
+        stake_account_positions.set_owner(&new_owner)?;
+        ctx.accounts.voter_record.governing_token_owner = new_owner;
+
+        Ok(())
+    }
+
     pub fn slash_account(
         ctx: Context<SlashAccount>,
         // a number between 0 and 1 with 6 decimals of precision

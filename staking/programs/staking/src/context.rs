@@ -413,11 +413,46 @@ pub struct AdvanceClock<'info> {
 
 #[derive(Accounts)]
 pub struct RecoverAccount<'info> {
-    // Native payer:
     pub governance_authority: Signer<'info>,
 
     // Token account:
     pub owner: Account<'info, TokenAccount>,
+
+    // Stake program accounts:
+    #[account(mut)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [
+            STAKE_ACCOUNT_METADATA_SEED.as_bytes(),
+            stake_account_positions.key().as_ref()
+        ],
+        bump = stake_account_metadata.metadata_bump,
+        has_one = owner
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
+
+    #[account(
+        mut,
+        seeds = [VOTER_RECORD_SEED.as_bytes(), stake_account_positions.key().as_ref()],
+        bump = stake_account_metadata.voter_bump
+    )]
+    pub voter_record: Account<'info, voter_weight_record::VoterWeightRecord>,
+
+    #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
+    pub config: Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+pub struct RecoverAccount2<'info> {
+    pub governance_authority: Signer<'info>,
+
+    /// CHECK : This AccountInfo is safe because it's checked against stake_account_metadata
+    pub owner:                   AccountInfo<'info>,
+
+    /// CHECK : A new owner is provided by the governance_authority
+    pub new_owner:                 AccountInfo<'info>,
 
     // Stake program accounts:
     #[account(mut)]

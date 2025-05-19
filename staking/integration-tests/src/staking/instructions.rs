@@ -15,7 +15,7 @@ use {
             MAINNET_REALM_ID,
         },
         integrity_pool::pda::get_pool_config_address,
-        solana::utils::fetch_account_data,
+        solana::utils::{fetch_account_data, fetch_positions_account},
     },
     anchor_lang::{
         prelude::AccountMeta,
@@ -38,11 +38,11 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::state::{
+    staking::{instruction, state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,
         voter_weight_record::VoterWeightAction,
-    },
+    }},
 };
 
 pub fn init_config_account(svm: &mut litesvm::LiteSVM, payer: &Keypair, pyth_token_mint: Pubkey) {
@@ -505,6 +505,33 @@ pub fn merge_target_positions(
         &[ix],
         Some(&payer.pubkey()),
         &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
+}
+
+pub fn recover_account_2(svm: &mut litesvm::LiteSVM, governance_authority: &Keypair, stake_account_positions: Pubkey, new_owner: Pubkey) -> TransactionResult {
+    let config = get_config_address();
+    let owner = fetch_positions_account(svm, &stake_account_positions).to_dynamic_position_array().owner().unwrap();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let voter_record = get_voter_record_address(stake_account_positions);
+
+    let accs = staking::accounts::RecoverAccount2 {
+        governance_authority: governance_authority.pubkey(),
+        owner,
+        config,
+        stake_account_metadata,
+        stake_account_positions,
+        voter_record,
+        new_owner,
+    };
+
+    let ix = Instruction::new_with_bytes(staking::ID, &staking::instruction::RecoverAccount2{}.data(), accs.to_account_metas(None));
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&governance_authority.pubkey()),
+        &[&governance_authority],
         svm.latest_blockhash(),
     );
 
