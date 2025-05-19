@@ -449,10 +449,10 @@ pub struct RecoverAccount2<'info> {
     pub governance_authority: Signer<'info>,
 
     /// CHECK : This AccountInfo is safe because it's checked against stake_account_metadata
-    pub owner:                   AccountInfo<'info>,
+    pub owner: AccountInfo<'info>,
 
     /// CHECK : A new owner is provided by the governance_authority
-    pub new_owner:                 AccountInfo<'info>,
+    pub new_owner: AccountInfo<'info>,
 
     // Stake program accounts:
     #[account(mut)]
