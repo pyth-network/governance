@@ -67,12 +67,12 @@ fn test_recover2() {
     let stake_account_positions =
         initialize_new_stake_account(&mut svm, &owner, &pyth_token_mint, true, true);
     // make sure voter record can be created permissionlessly if it doesn't exist
-    create_voter_record(&mut svm, &governance_authority, stake_account_positions).unwrap();
+    create_voter_record(&mut svm, &new_owner, stake_account_positions).unwrap();
 
     assert_anchor_program_error!(
         recover_account_2(
             &mut svm,
-            &owner,
+            &owner, // governance_authority has to sign
             stake_account_positions,
             new_owner.pubkey()
         ),
@@ -100,7 +100,7 @@ fn test_recover2() {
 
     let voter_record: VoterWeightRecord =
         fetch_account_data(&mut svm, &get_voter_record_address(stake_account_positions));
-    assert_eq!(voter_record.voter_weight, 0);
+    assert_eq!(voter_record.governing_token_owner, new_owner.pubkey());
 
     // new_owner creates a new position
     create_position(
