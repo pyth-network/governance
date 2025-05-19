@@ -524,16 +524,11 @@ pub fn recover_account_2(
     new_owner: Pubkey,
 ) -> TransactionResult {
     let config = get_config_address();
-    let owner = fetch_positions_account(svm, &stake_account_positions)
-        .to_dynamic_position_array()
-        .owner()
-        .unwrap();
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let voter_record = get_voter_record_address(stake_account_positions);
 
     let accs = staking::accounts::RecoverAccount2 {
         governance_authority: governance_authority.pubkey(),
-        owner,
         config,
         stake_account_metadata,
         stake_account_positions,

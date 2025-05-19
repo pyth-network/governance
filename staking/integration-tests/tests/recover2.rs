@@ -151,6 +151,7 @@ fn test_recover2() {
     )
     .unwrap();
 
+    svm.expire_blockhash();
     // now the account can't be recovered
     assert_anchor_program_error!(
         recover_account_2(

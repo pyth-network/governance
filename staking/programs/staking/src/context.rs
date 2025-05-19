@@ -448,10 +448,7 @@ pub struct RecoverAccount<'info> {
 pub struct RecoverAccount2<'info> {
     pub governance_authority: Signer<'info>,
 
-    /// CHECK : This AccountInfo is safe because it's checked against stake_account_metadata
-    pub owner: AccountInfo<'info>,
-
-    /// CHECK : A new owner is provided by the governance_authority
+    /// CHECK : A new arbitrary owner provided by the governance_authority
     pub new_owner: AccountInfo<'info>,
 
     // Stake program accounts:
@@ -465,7 +462,6 @@ pub struct RecoverAccount2<'info> {
             stake_account_positions.key().as_ref()
         ],
         bump = stake_account_metadata.metadata_bump,
-        has_one = owner
     )]
     pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
 

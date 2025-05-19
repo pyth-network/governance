@@ -795,10 +795,10 @@ pub mod staking {
     }
 
     /** Recovers a user's `stake account` ownership by transferring ownership
-     * from a token account to the `owner` of that token account.
+     * to a new owner provided by the governance_authority.
      *
-     * This functionality addresses the scenario where a user mistakenly
-     * created a stake account using their token account address as the owner.
+     * This functionality addresses the scenario where a user doesn't have access to their owner
+     * key. Only accounts with staked tokens can be recovered.
      */
     pub fn recover_account_2(ctx: Context<RecoverAccount2>) -> Result<()> {
         // Check that there aren't any positions (i.e., staked tokens) in the account.
