@@ -72,9 +72,6 @@ use {
     },
 };
 
-const MAINNET_TOKENS_LIST_TIME: i64 = 1684591200;
-const MAINNET_ELAPSED_EPOCHS: u64 = 2850;
-
 #[test]
 /// This test has two purposes:
 /// 1) to test the voting functionality against the deployed governance program and configuration
