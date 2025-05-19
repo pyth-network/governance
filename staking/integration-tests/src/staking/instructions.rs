@@ -15,10 +15,7 @@ use {
             MAINNET_REALM_ID,
         },
         integrity_pool::pda::get_pool_config_address,
-        solana::utils::{
-            fetch_account_data,
-            fetch_positions_account,
-        },
+        solana::utils::fetch_account_data,
     },
     anchor_lang::{
         prelude::AccountMeta,
@@ -41,13 +38,10 @@ use {
         signer::Signer,
         transaction::Transaction,
     },
-    staking::{
-        instruction,
-        state::{
-            global_config::GlobalConfig,
-            positions::TargetWithParameters,
-            voter_weight_record::VoterWeightAction,
-        },
+    staking::state::{
+        global_config::GlobalConfig,
+        positions::TargetWithParameters,
+        voter_weight_record::VoterWeightAction,
     },
 };
 
