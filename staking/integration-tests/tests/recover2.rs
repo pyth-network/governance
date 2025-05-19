@@ -1,20 +1,11 @@
 use {
-    anchor_lang::error::{
-        AnchorError,
-        ErrorCode,
-    },
+    anchor_lang::error::ErrorCode,
     integration_tests::{
         assert_anchor_program_error,
-        governance::{
-            addresses::MAINNET_GOVERNANCE_PROGRAM_ID,
-            helper_functions::create_proposal_and_vote,
-            instructions::create_token_owner_record,
-        },
         setup::{
             setup,
             SetupProps,
             SetupResult,
-            STARTING_EPOCH,
         },
         solana::utils::{
             fetch_account_data,
@@ -24,60 +15,31 @@ use {
             helper_functions::initialize_new_stake_account,
             instructions::{
                 create_position,
-                create_stake_account,
                 create_voter_record,
-                join_dao_llc,
-                merge_target_positions,
                 recover_account_2,
-                update_token_list_time,
-                update_voter_weight,
             },
             pda::{
                 get_stake_account_metadata_address,
-                get_target_address,
                 get_voter_record_address,
             },
         },
-        utils::clock::advance_n_epochs,
     },
-    litesvm::LiteSVM,
-    solana_cli_output::CliAccount,
     solana_sdk::{
-        account::{
-            AccountSharedData,
-            WritableAccount,
-        },
         native_token::LAMPORTS_PER_SOL,
-        pubkey::Pubkey,
         signature::Keypair,
         signer::Signer,
     },
     staking::{
         error::ErrorCode as StakingError,
         state::{
-            max_voter_weight_record::MAX_VOTER_WEIGHT,
-            positions::{
-                TargetWithParameters,
-                POSITION_BUFFER_SIZE,
-            },
+            positions::TargetWithParameters,
             stake_account::StakeAccountMetadataV2,
-            target::TargetMetadata,
             voter_weight_record::VoterWeightRecord,
         },
-    },
-    std::{
-        fs::File,
-        io::Read,
-        str::FromStr,
     },
 };
 
 #[test]
-/// This test has two purposes:
-/// 1) to test the voting functionality against the deployed governance program and configuration
-/// 2) to test that the new staking account is compatible with stake account positions with the old
-///    fixed sized position array and such accounts can be turned into the new version by calling
-///    merge_target_positions and nothing breaks
 fn test_recover2() {
     let SetupResult {
         mut svm,
