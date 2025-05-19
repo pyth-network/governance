@@ -794,11 +794,11 @@ pub mod staking {
         Ok(())
     }
 
-    /** Recovers a user's `stake account` ownership by transferring ownership
-     * to a new owner provided by the governance_authority.
+    /** Recovers a user's stake account by transferring ownership
+     * to a new owner provided by the `governance_authority`.
      *
      * This functionality addresses the scenario where a user doesn't have access to their owner
-     * key. Only accounts with staked tokens can be recovered.
+     * key. Only accounts without any staked tokens can be recovered.
      */
     pub fn recover_account_2(ctx: Context<RecoverAccount2>) -> Result<()> {
         // Check that there aren't any positions (i.e., staked tokens) in the account.
