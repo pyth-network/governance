@@ -40,7 +40,7 @@ use {
 };
 
 #[test]
-fn test_recover2() {
+fn test_transfer_account() {
     let SetupResult {
         mut svm,
         payer: governance_authority,
