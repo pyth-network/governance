@@ -159,7 +159,7 @@ The members to remain at each election are selected given the following cascadin
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
 - in the case of equal tenure and equal amounts of votes, the member with the higher count of multisig participations
 
-unless such member decides to step down from the Pythian Council.
+unless such member decides to step down from the Community Council.
 
 Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
