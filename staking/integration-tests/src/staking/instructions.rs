@@ -510,3 +510,70 @@ pub fn merge_target_positions(
 
     svm.send_transaction(tx)
 }
+
+pub fn transfer_account(
+    svm: &mut litesvm::LiteSVM,
+    governance_authority: &Keypair,
+    stake_account_positions: Pubkey,
+    new_owner: Pubkey,
+) -> TransactionResult {
+    let config = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let voter_record = get_voter_record_address(stake_account_positions);
+
+    let accs = staking::accounts::TransferAccount {
+        governance_authority: governance_authority.pubkey(),
+        config,
+        stake_account_metadata,
+        stake_account_positions,
+        voter_record,
+        new_owner,
+    };
+
+    let ix = Instruction::new_with_bytes(
+        staking::ID,
+        &staking::instruction::TransferAccount {}.data(),
+        accs.to_account_metas(None),
+    );
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&governance_authority.pubkey()),
+        &[&governance_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
+}
+
+pub fn create_voter_record(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+) -> TransactionResult {
+    let config_account = get_config_address();
+    let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
+    let voter_record = get_voter_record_address(stake_account_positions);
+
+    let accs = staking::accounts::CreateVoterRecord {
+        payer: payer.pubkey(),
+        stake_account_positions,
+        stake_account_metadata,
+        voter_record,
+        config: config_account,
+        system_program: system_program::ID,
+    };
+
+    let ix = Instruction::new_with_bytes(
+        staking::ID,
+        &staking::instruction::CreateVoterRecord {}.data(),
+        accs.to_account_metas(None),
+    );
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
+}
