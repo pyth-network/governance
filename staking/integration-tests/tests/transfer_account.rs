@@ -16,7 +16,7 @@ use {
             instructions::{
                 create_position,
                 create_voter_record,
-                recover_account_2,
+                transfer_account,
             },
             pda::{
                 get_stake_account_metadata_address,
@@ -70,7 +70,7 @@ fn test_recover2() {
     create_voter_record(&mut svm, &new_owner, stake_account_positions).unwrap();
 
     assert_anchor_program_error!(
-        recover_account_2(
+        transfer_account(
             &mut svm,
             &owner, // governance_authority has to sign
             stake_account_positions,
@@ -80,7 +80,7 @@ fn test_recover2() {
         0
     );
 
-    recover_account_2(
+    transfer_account(
         &mut svm,
         &governance_authority,
         stake_account_positions,
@@ -116,7 +116,7 @@ fn test_recover2() {
     svm.expire_blockhash();
     // now the account can't be recovered
     assert_anchor_program_error!(
-        recover_account_2(
+        transfer_account(
             &mut svm,
             &governance_authority,
             stake_account_positions,

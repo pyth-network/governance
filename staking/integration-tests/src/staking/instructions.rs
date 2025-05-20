@@ -511,7 +511,7 @@ pub fn merge_target_positions(
     svm.send_transaction(tx)
 }
 
-pub fn recover_account_2(
+pub fn transfer_account(
     svm: &mut litesvm::LiteSVM,
     governance_authority: &Keypair,
     stake_account_positions: Pubkey,
@@ -521,7 +521,7 @@ pub fn recover_account_2(
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let voter_record = get_voter_record_address(stake_account_positions);
 
-    let accs = staking::accounts::RecoverAccount2 {
+    let accs = staking::accounts::TransferAccount {
         governance_authority: governance_authority.pubkey(),
         config,
         stake_account_metadata,
@@ -532,7 +532,7 @@ pub fn recover_account_2(
 
     let ix = Instruction::new_with_bytes(
         staking::ID,
-        &staking::instruction::RecoverAccount2 {}.data(),
+        &staking::instruction::TransferAccount {}.data(),
         accs.to_account_metas(None),
     );
     let tx = Transaction::new_signed_with_payer(

@@ -445,7 +445,7 @@ pub struct RecoverAccount<'info> {
 }
 
 #[derive(Accounts)]
-pub struct RecoverAccount2<'info> {
+pub struct TransferAccount<'info> {
     pub governance_authority: Signer<'info>,
 
     /// CHECK : A new arbitrary owner provided by the governance_authority
