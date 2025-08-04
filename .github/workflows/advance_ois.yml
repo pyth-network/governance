@@ -56,3 +56,8 @@ jobs:
           max_attempts: 50
           command: |
             staking/target/release/staking-cli --keypair key.json --rpc-url https://api.devnet.solana.com/ advance --hermes-url https://hermes.pyth.network/ --wormhole HDwcJBJXjL9FpJ7UBsYBtaDjsBUhuLCUYoz3zr8SWWaQ
+
+      # This is to prevent disabling the workflow after 60 days
+      - name: Keep Alive
+        run: |
+          git commit --allow-empty -m "Successfully advanced OIS on $(date)"
