@@ -10,7 +10,7 @@ The previous implementation would mark callbacks as failed based on the return v
 
 ## Description
 
-The bug fix modifies the Entropy contract's callback handling logic to remove the dependency on the revert return data (`ret.length`). Instead, it relies solely on whether sufficient gas was provided to the callback execution. 
+The bug fix modifies the Entropy contract's callback handling logic to remove the dependency on the revert return data (`ret.length`). Instead, it relies solely on whether sufficient gas was provided to the callback execution.
 
 **Key changes:**
 - Removed the `ret.length > 0` condition from the callback failure check
