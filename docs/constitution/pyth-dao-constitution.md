@@ -51,7 +51,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
     - the election of members of the Community Council
     - the management of the Pyth DAO Treasury
     - the exceptional removal and replacement of a council member
-    - the formal objection to a Pyth Data Marketplace partner onboarding pursuant to the Marketplace Governance Process
+    - the formal objection to a publisher to the Pyth Data Markeplace onboarding pursuant to the Marketplace Governance Process
   - Operational PIPs delegated to the Pythian Council involve:
     - the upgrade of the oracle program
     - the upgrade of the verification program for each of the blockchains where Pyth data or Lazer data are accessible
@@ -65,7 +65,7 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
     - the setting of pool capacity parameters in OIS
     - the setting of delegation fee for stake delegators in OIS
     - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
-    - the formal objection to a Pyth Data Marketplace partner onboarding pursuant to the Marketplace Governance Process
+    - the formal objection to a publisher to the Pyth Data Markeplace onboarding pursuant to the Marketplace Governance Process
   - Operational PIPs delegated to the Price Feed Council involve:
     - the management of the list of price feeds available through Pyth
     - the selection of publishers and the setting of the minimum number of such publishers per price feed
@@ -109,8 +109,8 @@ The PIP is then fully executed and implemented. Any on-chain actions in the impl
 
 Douro Labs is assigned as operator of the Pyth Data Marketplace on behalf of the Pyth DAO. This assignment includes:
 
-- **Partner Management:** Selection, onboarding, and removal of Marketplace partners
-- **Commercial Terms:** Negotiation of partnership agreements
+- **Publisher Management:** Selection, onboarding, and removal of Marketplace publishers
+- **Commercial Terms:** Negotiation of agreements
 - **Infrastructure & Delivery:** Technical infrastructure for data normalization and distribution
 - **Billing & Entitlements:** Where applicable, handling of billing and customer contracts
 
@@ -127,13 +127,13 @@ Payments shall be made monthly.
 
 ### Marketplace Governance Process (Optimistic Approval)
 
-Partner onboardings follow an optimistic approval process — onboardings proceed unless formally objected to and blocked.
+Publisher onboardings follow an optimistic approval process — onboardings proceed unless formally objected to and blocked.
 
 **Step 1: Onboarding Notice**
 
-Douro Labs posts all new partner onboardings in a dedicated "Marketplace Onboardings" forum section. Each notice must include:
+Douro Labs posts all new publisher onboardings in a dedicated "Marketplace Onboardings" forum section. Each notice must include:
 
-- Partner name
+- Publisher name
 - Dataset category
 - Commercial model
 - Overlap assessment (potential conflicts with Pyth's core feeds)
@@ -178,16 +178,16 @@ Douro Labs shall provide monthly reports on Pyth Data Marketplace operations, al
 
 - Total Marketplace revenue for the period
 - DAO share paid
-- Number of active Marketplace partners
+- Number of active Marketplace publishers
 - Number of active datasets
-- New partners onboarded during the period
+- New publishers onboarded during the period
 - Revenue breakdown by category
 
 Reports shall be published in the Reports forum section and visualized on the Pyth Insights Hub.
 
 ### Conflict of Interest
 
-Douro Labs shall disclose any material financial relationship with Marketplace partners, including equity ownership, revenue guarantees, or preferential terms to related parties. Where material conflicts exist, disclosure must be included in the onboarding notice and monthly reporting.
+Douro Labs shall disclose any material financial relationship with Marketplace publishers, including equity ownership, revenue guarantees, or preferential terms to related parties. Where material conflicts exist, disclosure must be included in the onboarding notice and monthly reporting.
 
 ### Termination
 
