@@ -8,11 +8,13 @@
 - **Pyth Forum:** the system adopted by the Pyth DAO to manage PIPs, organize the voting process and provide connectivity to the governance contract on the Solana Blockchain, located here: [https://forum.pyth.network/](https://forum.pyth.network/)
 - **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below.
 - **Price Feed Multisig Wallet:** smart contract wallet, at the following address `CPUZ9njbfxjqrsx713gEk8KYatvoz1Y4hvs4a5UQKEiu` signed by the elected members of the Price Feed Council. The Price Feed Council is described in further detail below.
-- **Community Multisig Wallet:** smart contract wallet, at the following address `GKuPcXtNRJwZGrJ8tV25jSbLHZe71BUdUXVzjGLXkSt9 ` signed by the elected members of the Community Council. The Community Council is described in further detail below.
+- **Community Multisig Wallet:** smart contract wallet, at the following address `GKuPcXtNRJwZGrJ8tV25jSbLHZe71BUdUXVzjGLXkSt9` signed by the elected members of the Community Council. The Community Council is described in further detail below.
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7`, `ACzP6RC98vcBk9oTeAwcH1o5HJvtBzU59b5nqdwc7Cxy` and `Ef7AjJzDXK6Tn2gYuMvL9YdXATV29b8PwpsT1yoPokTC`, that are used by the Pythian Council, the Price Feed Council and the Community Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures.
 - **PGAS:** utility token native to the Pythnet Appchain, governed by the Pyth DAO
 - **Pythnet Appchain:** blockchain instance dedicated to the production of the Pyth data, governed by the Pyth DAO
 - **Pyth Lazer:** system dedicated to the production of the Lazer data, governed by the Pyth DAO
+- **Pyth Pro:** subscription service for off-chain access to Pyth data, administered by Douro Labs on behalf of the Pyth DAO pursuant to CO-PIP-9
+- **Pyth Data Marketplace (Marketplace):** distribution platform for third-party institutional datasets, operated by Douro Labs on behalf of the Pyth DAO pursuant to CO-PIP-10. The Pyth Data Marketplace datasets is independent of Pyth Pro and thus not covered by Oracle Integrity Staking
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
@@ -24,7 +26,7 @@ This Constitution describes the decision-making framework for the Pyth DAO and t
 
 Rules and procedures in this Constitution will be generally enforced through on-chain contracts and the associated parameters, unless specified by the Pyth DAO for actuation off-chain.
 
-The Pyth DAO LLC, is legally structured as “a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC” (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://ipfs.io/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury and pay Pyth DAO related costs and expenses, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
+The Pyth DAO LLC, is legally structured as "a non-profit DAO LLC formed under the laws of the Republic of Marshall Islands, formed to serve the Pyth DAO LLC" (of which the OPERATING AGREEMENT OF PYTH DAO LLC is available at: [ipfs://QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi](https://ipfs.io/ipfs/QmP2GmL1n2WbHd7AtHqyXVWFyyHH36aZLfVZbNoqhommJi)). The Pyth DAO LLC is algorithmically managed, such that actions taken by the Pyth DAO via the governance contract on the Solana Blockchain are deemed to be actions of the Pyth DAO LLC. The legal entity enables the Pyth DAO LLC to hold the treasury and pay Pyth DAO related costs and expenses, protect Pyth DAO members from unlimited liability, and allow Pyth DAO members to take part in governance by providing a clear framework in respect of the rights and duties of Pyth tokenholders that hold Votable Tokens.
 
 ![pyth_dao.light.png](diagrams/pyth_dao.light.png)
 
@@ -44,30 +46,32 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
   - the creation of Pyth DAO councils and sub-committees
 - Operational PIPs that are either voted on by the Pyth DAO or delegated to one of the three Councils.
   - Operational PIPs that are voted on by the Pyth DAO:
-        - the election of members of the Pythian Council
-        - the election of members of the Price Feed Council
-        - the election of members of the Community Council
-        - the management of the Pyth DAO Treasury
-        - the exceptional removal and replacement of a council member
+    - the election of members of the Pythian Council
+    - the election of members of the Price Feed Council
+    - the election of members of the Community Council
+    - the management of the Pyth DAO Treasury
+    - the exceptional removal and replacement of a council member
+    - the formal objection to a publisher to the Pyth Data Markeplace onboarding pursuant to the Marketplace Governance Process
   - Operational PIPs delegated to the Pythian Council involve:
-        - the upgrade of the oracle program
-        - the upgrade of the verification program for each of the blockchains where Pyth data or Lazer data are accessible
-        - the setting of data request fees per blockchain, as well as other protocol or network fees
-        - the management of PGAS allocation and delegation to validators
-        - the upgrade of the ER program for each of the blockchains where ER is available
-        - the assignment of the relayer function for ER and monitoring of the performance of such assignment
-        - the setting of the ER fee distribution
-        - the upgrade of the Entropy program for each of the blockchains where Entropy is available
-        - the setting of Entropy request fees for each of the blockchains where Entropy is available
-        - the setting of pool capacity parameters in OIS
-        - the setting of delegation fee for stake delegators in OIS
-        - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
+    - the upgrade of the oracle program
+    - the upgrade of the verification program for each of the blockchains where Pyth data or Lazer data are accessible
+    - the setting of data request fees per blockchain, as well as other protocol or network fees
+    - the management of PGAS allocation and delegation to validators
+    - the upgrade of the ER program for each of the blockchains where ER is available
+    - the assignment of the relayer function for ER and monitoring of the performance of such assignment
+    - the setting of the ER fee distribution
+    - the upgrade of the Entropy program for each of the blockchains where Entropy is available
+    - the setting of Entropy request fees for each of the blockchains where Entropy is available
+    - the setting of pool capacity parameters in OIS
+    - the setting of delegation fee for stake delegators in OIS
+    - the determination of slashing amounts from the amount staked in OIS in compliance with the slashing rules and procedures defined by the DAO in [https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook](https://docs.pyth.network/home/oracle-integrity-staking/slashing-rulebook)
+    - the formal objection to a publisher to the Pyth Data Markeplace onboarding pursuant to the Marketplace Governance Process
   - Operational PIPs delegated to the Price Feed Council involve:
-        - the management of the list of price feeds available through Pyth
-        - the selection of publishers and the setting of the minimum number of such publishers per price feed
+    - the management of the list of price feeds available through Pyth
+    - the selection of publishers and the setting of the minimum number of such publishers per price feed
   - Operational PIPs delegated to the Community Council:
-        - the management of community platforms, initiatives, campaigns and programs with the aim to foster, develop and grow community engagement and expand the community's reach
-        - the administration of the community budget assigned by the DAO to enable activities of the community
+    - the management of community platforms, initiatives, campaigns and programs with the aim to foster, develop and grow community engagement and expand the community's reach
+    - the administration of the community budget assigned by the DAO to enable activities of the community
 
 ### PIP Process
 
@@ -80,7 +84,7 @@ The end-to-end process length is 7 days.
 A PIP is submitted through a structured process via the **Pyth Forum** (e.g. GitHub), marking the initiation of the formal review process. Each PIP needs to include:
 
 - Abstract - that summarizes the PIP
-- Rationale - that explains why the Pyth community should implement the PIP and how it aligns with community’s mission and values
+- Rationale - that explains why the Pyth community should implement the PIP and how it aligns with community's mission and values
 - Key Terms - technical and/or commercial associated with the PIP
 - Implementation Plan - steps envisioned to implement the PIP, including resources needed for each step and timelines. The implementation plan may include binding on-chain actions that will automatically execute when the PIP passes.
 
@@ -99,11 +103,101 @@ The Pyth DAO is able to vote directly on-chain on the submitted PIP for 7 days. 
 
 The PIP is then fully executed and implemented. Any on-chain actions in the implementation plan will execute automatically in this step. The Pyth DAO LLC, council members and other service providers of the Pyth DAO LLC will take any necessary off-chain actions to implement PIPs which have passed.
 
+## Pyth Data Marketplace Governance
+
+### Operator
+
+Douro Labs is assigned as operator of the Pyth Data Marketplace on behalf of the Pyth DAO. This assignment includes:
+
+- **Publisher Management:** Selection, onboarding, and removal of Marketplace publishers
+- **Commercial Terms:** Negotiation of agreements
+- **Infrastructure & Delivery:** Technical infrastructure for data normalization and distribution
+- **Billing & Entitlements:** Where applicable, handling of billing and customer contracts
+
+### Revenue Distribution
+
+Of all proceeds generated by Douro Labs from Marketplace operations:
+
+| Recipient | Share |
+|-----------|-------|
+| Pyth DAO Treasury | 60% |
+| Douro Labs | 40% |
+
+Payments shall be made monthly.
+
+### Marketplace Governance Process (Optimistic Approval)
+
+Publisher onboardings follow an optimistic approval process — onboardings proceed unless formally objected to and blocked.
+
+**Step 1: Onboarding Notice**
+
+Douro Labs posts all new publisher onboardings in a dedicated "Marketplace Onboardings" forum section. Each notice must include:
+
+- Publisher name
+- Dataset category
+- Commercial model
+- Overlap assessment (potential conflicts with Pyth's core feeds)
+- Projected annual value tier
+
+Posting starts a 30-day window.
+
+**Step 2: Informal Q&A Period (Days 1-30)**
+
+Anyone — Council members, token holders, community — may ask questions on the forum post. Douro Labs responds and clarifies. Most onboardings resolve here with no objection.
+
+**Step 3: Formal Objection**
+
+If concerns are not resolved through Q&A, two objection paths exist:
+
+| Who | Mechanism | Threshold to Pause Onboarding |
+|-----|-----------|-------------------------------|
+| Pythian Council | Council resolution | Super Majority (6/9) votes to object |
+| Token Holders | Operational PIP | Standard quorum + majority votes to object |
+
+The objection must pass — reach quorum and achieve majority — to pause the onboarding. A failed objection vote = onboarding proceeds as planned.
+
+**Step 4: Resolution Process**
+
+If an objection passes:
+
+1. Douro Labs has 14 days to present a structured response addressing concerns
+2. The same body that objected votes on the resolution:
+   - Council objected → Council votes
+   - DAO objected via OP-PIP → DAO votes via follow-up OP-PIP
+
+Possible outcomes:
+- **Approve anyway** — Concerns addressed, onboarding proceeds
+- **Reject** — Onboarding blocked
+- **Renegotiate** — Sent back with specific conditions
+
+If no resolution vote occurs within 30 days of Douro's response, the objection lapses and onboarding proceeds.
+
+### Reporting
+
+Douro Labs shall provide monthly reports on Pyth Data Marketplace operations, aligned with Pyth Pro reporting cadence. Reports shall include:
+
+- Total Marketplace revenue for the period
+- DAO share paid
+- Number of active Marketplace publishers
+- Number of active datasets
+- New publishers onboarded during the period
+- Revenue breakdown by category
+
+Reports shall be published in the Reports forum section and visualized on the Pyth Insights Hub.
+
+### Conflict of Interest
+
+Douro Labs shall disclose any material financial relationship with Marketplace publishers, including equity ownership, revenue guarantees, or preferential terms to related parties. Where material conflicts exist, disclosure must be included in the onboarding notice and monthly reporting.
+
+### Termination
+
+The Pyth DAO may revoke Douro Labs' mandate to operate the Pyth Data Marketplace via a subsequent Constitutional PIP.
+
 ## Council Election Process & Voting Procedures
 
-1. **The Pythian Council**
+### 1. The Pythian Council
 
-The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet.  The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The composition of the Pythian Council should be geographically diverse in furtherance of the ethos, mission and guiding values of the Pyth DAO. The execution of such actions by the Pythian Council requires 7-of-9 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
+The Pythian Council is made of 8 members who are signers of the Pythian Multisig Wallet. The Pythian Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The composition of the Pythian Council should be geographically diverse in furtherance of the ethos, mission and guiding values of the Pyth DAO. The execution of such actions by the Pythian Council requires 7-of-9 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
 The first election of the Pythian Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started and it will replace 4 members of its cohort of 8 members.
 
@@ -124,7 +218,7 @@ The following process governs the election that starts at time T:
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Pythian Council will be offered membership in the Pythian Council, subject to the Election Criteria as set forth above.
 
-2. **The Price Feed Council**
+### 2. The Price Feed Council
 
 The Price Feed Council is made of 7 members who are signers of the Price Feed Multisig Wallet. The Price Feed Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Price Feed Council requires 5-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The on-chain submission of a PIP using the Operations Wallet carries one vote in favour of the PIP.
 
@@ -136,7 +230,7 @@ The 4 members to remain are selected given the following cascading criteria:
 - in the case of equal tenure, the member with the higher amount of votes in the last election;
 - in the case of equal tenure and equal amounts of votes, the member with the higher count of multisig participations
 
-unless such member decides to step down from the Pythian Council.
+unless such member decides to step down from the Price Feed Council.
 
 Any Council member who has voted less than 1/3 of the proposals during the term will be excluded from re-election.
 
@@ -147,9 +241,9 @@ The following process governs the election that starts at time T:
 
 In the event of a member needing to be exceptionally replaced outside of scheduled elections, the non-elected candidate with the highest amount of votes from the last election of the Price Feed Council will be offered membership in the Price Feed Council.
 
-3. **The Community Council**
+### 3. The Community Council
 
-The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [ipfs://bafkreic5zi6bultebtn45h6i7joeympc4k5rt437ele54krcuf7s4cpv4i](https://ipfs.io/ipfs/bafkreic5zi6bultebtn45h6i7joeympc4k5rt437ele54krcuf7s4cpv4i))
+The Community Council is made of 7 members who are signers of the Community Multisig Wallet. The Community Multisig Wallet has powers to perform actions that are delegated to it by the Pyth DAO. The execution of such actions by the Community Council requires 6-of-8 approval (with one of the default multisig holders being the Operations Wallet itself). The members of the Community Council must adhere to all elements of the "Code of Conduct for the Community Council" available at: [ipfs://bafkreic5zi6bultebtn45h6i7joeympc4k5rt437ele54krcuf7s4cpv4i](https://ipfs.io/ipfs/bafkreic5zi6bultebtn45h6i7joeympc4k5rt437ele54krcuf7s4cpv4i)
 
 The first election of the Community Council will be conducted via on-chain voting. The date chosen for the first election will form the basis for all future elections. Every election should begin 6 months after the previous election has started. At least 1 member of the Community Council has to be replaced every 12 months.
 
