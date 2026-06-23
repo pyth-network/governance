@@ -94,6 +94,43 @@ pub fn advance(svm: &mut LiteSVM, payer: &Keypair, publisher_caps: Pubkey) -> Tr
     svm.send_transaction(transaction)
 }
 
+pub fn withdraw(
+    svm: &mut LiteSVM,
+    payer: &Keypair,
+    reward_program_authority: &Keypair,
+    pyth_token_mint: Pubkey,
+    destination: Pubkey,
+    amount: u64,
+) -> TransactionResult {
+    let pool_config = get_pool_config_address();
+    let pool_reward_custody = get_pool_reward_custody_address(pyth_token_mint);
+
+    let accounts = integrity_pool::accounts::Withdraw {
+        reward_program_authority: reward_program_authority.pubkey(),
+        pool_config,
+        pool_reward_custody,
+        destination,
+        token_program: spl_token::ID,
+    };
+
+    let instruction_data = integrity_pool::instruction::Withdraw { amount };
+
+    let instruction = Instruction {
+        program_id: integrity_pool::ID,
+        accounts:   accounts.to_account_metas(None),
+        data:       instruction_data.data(),
+    };
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction],
+        Some(&payer.pubkey()),
+        &[payer, reward_program_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(transaction)
+}
+
 pub fn create_pool_data_account(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,

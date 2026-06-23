@@ -377,6 +377,28 @@ pub mod integrity_pool {
         Ok(delegator_reward)
     }
 
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        let pool_config = &ctx.accounts.pool_config;
+        let pool_reward_custody = &ctx.accounts.pool_reward_custody;
+        let destination = &ctx.accounts.destination;
+        let token_program = &ctx.accounts.token_program;
+
+        // transfer tokens from pool_reward_custody to destination, signed by the
+        // pool_config PDA (whose authority is gated by reward_program_authority above)
+        let cpi_accounts = anchor_spl::token::Transfer {
+            from:      pool_reward_custody.to_account_info(),
+            to:        destination.to_account_info(),
+            authority: pool_config.to_account_info(),
+        };
+        let signer_seeds: &[&[&[u8]]] = &[&[POOL_CONFIG.as_bytes(), &[ctx.bumps.pool_config]]];
+
+        let transfer_ctx = CpiContext::new(token_program.to_account_info(), cpi_accounts)
+            .with_signer(signer_seeds);
+        anchor_spl::token::transfer(transfer_ctx, amount)?;
+
+        Ok(())
+    }
+
     pub fn create_slash_event(
         ctx: Context<CreateSlashEvent>,
         index: u64,
