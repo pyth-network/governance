@@ -343,6 +343,33 @@ pub struct AdvanceDelegationRecord<'info> {
 }
 
 #[derive(Accounts)]
+pub struct Withdraw<'info> {
+    pub reward_program_authority: Signer<'info>,
+
+    #[account(
+        seeds = [POOL_CONFIG.as_bytes()],
+        bump,
+        has_one = reward_program_authority @ IntegrityPoolError::InvalidRewardProgramAuthority,
+    )]
+    pub pool_config: Account<'info, PoolConfig>,
+
+    #[account(
+        mut,
+        associated_token::mint = pool_config.pyth_token_mint,
+        associated_token::authority = pool_config.key(),
+    )]
+    pub pool_reward_custody: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        token::mint = pool_config.pyth_token_mint,
+    )]
+    pub destination: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
 #[instruction(index: u64, slash_ratio: u64)]
 pub struct CreateSlashEvent<'info> {
     #[account(mut)]
