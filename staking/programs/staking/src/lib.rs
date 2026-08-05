@@ -44,7 +44,7 @@ pub mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
 
-const ADDRESSES_TO_SHORTEN_VESTING_SCHEDULE: [Pubkey; 33] = [
+pub const ADDRESSES_TO_SHORTEN_VESTING_SCHEDULE: [Pubkey; 33] = [
     pubkey!("AunhvBL2HQE4rG59prhTYLrigZC5XTJk4Qtmd6X4Djfq"),
     pubkey!("2JiezfC6KDNJQuYnHTUjkqEtuLYANc6CQJojDqxJUFec"),
     pubkey!("3n6KpqyC165khFA7qLfCoTKdpoaSDiN45c9VxA3f7xGm"),

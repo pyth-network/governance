@@ -41,6 +41,7 @@ use {
     staking::state::{
         global_config::GlobalConfig,
         positions::TargetWithParameters,
+        vesting::VestingSchedule,
         voter_weight_record::VoterWeightAction,
     },
 };
@@ -257,6 +258,7 @@ pub fn create_stake_account(
     payer: &Keypair,
     pyth_token_mint: &Keypair,
     stake_account_positions: Pubkey,
+    lock: VestingSchedule,
 ) -> TransactionResult {
     let stake_account_metadata = get_stake_account_metadata_address(stake_account_positions);
     let stake_account_custody = get_stake_account_custody_address(stake_account_positions);
@@ -265,7 +267,7 @@ pub fn create_stake_account(
 
     let create_stake_account_data = staking::instruction::CreateStakeAccount {
         owner: payer.pubkey(),
-        lock:  staking::state::vesting::VestingSchedule::FullyVested,
+        lock,
     };
     let create_stake_account_accs = staking::accounts::CreateStakeAccount {
         payer: payer.pubkey(),
@@ -539,6 +541,38 @@ pub fn transfer_account(
         &[ix],
         Some(&governance_authority.pubkey()),
         &[&governance_authority],
+        svm.latest_blockhash(),
+    );
+
+    svm.send_transaction(tx)
+}
+
+/// The instruction is permissionless, `payer` only pays the fee.
+/// `stake_account_metadata_override` lets a test pass a metadata account that doesn't belong to
+/// `stake_account_positions`; when `None` the correct PDA is derived.
+pub fn shorten_vesting_schedule(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    stake_account_positions: Pubkey,
+    stake_account_metadata_override: Option<Pubkey>,
+) -> TransactionResult {
+    let stake_account_metadata = stake_account_metadata_override
+        .unwrap_or_else(|| get_stake_account_metadata_address(stake_account_positions));
+
+    let accs = staking::accounts::ShortenVestingSchedule {
+        stake_account_positions,
+        stake_account_metadata,
+    };
+
+    let ix = Instruction::new_with_bytes(
+        staking::ID,
+        &staking::instruction::ShortenVestingSchedule {}.data(),
+        accs.to_account_metas(None),
+    );
+    let tx = Transaction::new_signed_with_payer(
+        &[ix],
+        Some(&payer.pubkey()),
+        &[&payer],
         svm.latest_blockhash(),
     );
 

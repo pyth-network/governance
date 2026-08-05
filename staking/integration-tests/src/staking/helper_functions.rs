@@ -10,6 +10,7 @@ use {
         solana::instructions::{
             airdrop_spl,
             create_account,
+            create_account_at,
         },
         utils::constants::STAKED_TOKENS,
     },
@@ -17,6 +18,7 @@ use {
         pubkey::Pubkey,
         signature::Keypair,
     },
+    staking::state::vesting::VestingSchedule,
 };
 
 
@@ -34,7 +36,56 @@ pub fn initialize_new_stake_account(
         staking::ID,
     );
 
-    create_stake_account(svm, payer, pyth_token_mint, stake_account_positions).unwrap();
+    initialize_stake_account(
+        svm,
+        payer,
+        pyth_token_mint,
+        join_dao,
+        airdrop,
+        stake_account_positions,
+        VestingSchedule::FullyVested,
+    )
+}
+
+/// Same as `initialize_new_stake_account`, but the positions account is placed at
+/// `stake_account_positions` instead of at a fresh keypair, and the lock is configurable.
+pub fn initialize_new_stake_account_at(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    pyth_token_mint: &Keypair,
+    join_dao: bool,
+    airdrop: bool,
+    stake_account_positions: Pubkey,
+    lock: VestingSchedule,
+) -> Pubkey {
+    create_account_at(
+        svm,
+        stake_account_positions,
+        staking::state::positions::PositionData::LEN,
+        staking::ID,
+    );
+
+    initialize_stake_account(
+        svm,
+        payer,
+        pyth_token_mint,
+        join_dao,
+        airdrop,
+        stake_account_positions,
+        lock,
+    )
+}
+
+fn initialize_stake_account(
+    svm: &mut litesvm::LiteSVM,
+    payer: &Keypair,
+    pyth_token_mint: &Keypair,
+    join_dao: bool,
+    airdrop: bool,
+    stake_account_positions: Pubkey,
+    lock: VestingSchedule,
+) -> Pubkey {
+    create_stake_account(svm, payer, pyth_token_mint, stake_account_positions, lock).unwrap();
 
     if join_dao {
         join_dao_llc(svm, payer, stake_account_positions).unwrap();

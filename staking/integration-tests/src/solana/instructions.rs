@@ -46,6 +46,34 @@ pub fn create_account(
     account.pubkey()
 }
 
+/// Creates an empty, program owned, rent exempt account at `address`.
+///
+/// Unlike `create_account` this doesn't go through the system program, so it works for addresses
+/// whose keypair we don't have. This is needed to test instructions that only accept a hardcoded
+/// set of stake accounts.
+pub fn create_account_at(
+    svm: &mut litesvm::LiteSVM,
+    address: Pubkey,
+    size: usize,
+    owner: Pubkey,
+) -> Pubkey {
+    let lamports = svm.minimum_balance_for_rent_exemption(size);
+
+    svm.set_account(
+        address,
+        solana_sdk::account::Account {
+            lamports,
+            data: vec![0; size],
+            owner,
+            executable: false,
+            rent_epoch: 0,
+        },
+    )
+    .unwrap();
+
+    address
+}
+
 pub fn create_token_account(
     svm: &mut litesvm::LiteSVM,
     payer: &Keypair,
