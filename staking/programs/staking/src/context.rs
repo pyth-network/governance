@@ -2,6 +2,7 @@ use {
     crate::{
         error::ErrorCode,
         state::*,
+        ADDRESSES_TO_SHORTEN_VESTING_SCHEDULE,
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{
@@ -288,7 +289,6 @@ pub struct UpdateMaxVoterWeight<'info> {
     pub system_program:   Program<'info, System>,
 }
 
-
 #[derive(Accounts)]
 pub struct CreateTarget<'info> {
     #[account(mut)]
@@ -474,6 +474,22 @@ pub struct TransferAccount<'info> {
 
     #[account(seeds = [CONFIG_SEED.as_bytes()], bump = config.bump, has_one = governance_authority)]
     pub config: Account<'info, global_config::GlobalConfig>,
+}
+
+#[derive(Accounts)]
+pub struct ShortenVestingSchedule<'info> {
+    #[account(constraint = ADDRESSES_TO_SHORTEN_VESTING_SCHEDULE.contains(&stake_account_positions.key()) @ ErrorCode::UnauthorizedVestingScheduleShortening)]
+    pub stake_account_positions: AccountLoader<'info, positions::PositionData>,
+
+    #[account(
+        mut,
+        seeds = [
+            STAKE_ACCOUNT_METADATA_SEED.as_bytes(),
+            stake_account_positions.key().as_ref()
+        ],
+        bump = stake_account_metadata.metadata_bump,
+    )]
+    pub stake_account_metadata: Account<'info, stake_account::StakeAccountMetadataV2>,
 }
 
 #[derive(Accounts)]

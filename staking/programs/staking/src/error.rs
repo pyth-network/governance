@@ -84,6 +84,10 @@ pub enum ErrorCode {
     InvalidSlashRatio,
     #[msg("The target account is only expected when dealing with the governance target")] // 6039
     UnexpectedTargetAccount,
+    #[msg(
+        "The vesting schedule associated with this stake account is not eligible for shortening"
+    )] // 6040
+    UnauthorizedVestingScheduleShortening,
     #[msg("Other")] //6040
     Other,
 }
