@@ -2,7 +2,7 @@
   "address": "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ",
   "metadata": {
     "name": "staking",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
@@ -1517,6 +1517,56 @@
       ]
     },
     {
+      "name": "shorten_vesting_schedule",
+      "discriminator": [
+        15,
+        10,
+        44,
+        24,
+        77,
+        125,
+        58,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "stake_account_positions"
+        },
+        {
+          "name": "stake_account_metadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stake_account_positions"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "slash_account",
       "discriminator": [
         185,
@@ -2715,6 +2765,11 @@
     },
     {
       "code": 6040,
+      "name": "UnauthorizedVestingScheduleShortening",
+      "msg": "The vesting schedule associated with this stake account is not eligible for shortening"
+    },
+    {
+      "code": 6041,
       "name": "Other",
       "msg": "Other"
     }

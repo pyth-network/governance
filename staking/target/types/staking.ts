@@ -8,7 +8,7 @@ export type Staking = {
   "address": "pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ",
   "metadata": {
     "name": "staking",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "spec": "0.1.0",
     "description": "Created with Anchor"
   },
@@ -1523,6 +1523,56 @@ export type Staking = {
       ]
     },
     {
+      "name": "shortenVestingSchedule",
+      "discriminator": [
+        15,
+        10,
+        44,
+        24,
+        77,
+        125,
+        58,
+        186
+      ],
+      "accounts": [
+        {
+          "name": "stakeAccountPositions"
+        },
+        {
+          "name": "stakeAccountMetadata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101,
+                  95,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "stakeAccountPositions"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "slashAccount",
       "discriminator": [
         185,
@@ -2721,6 +2771,11 @@ export type Staking = {
     },
     {
       "code": 6040,
+      "name": "unauthorizedVestingScheduleShortening",
+      "msg": "The vesting schedule associated with this stake account is not eligible for shortening"
+    },
+    {
+      "code": 6041,
       "name": "other",
       "msg": "other"
     }
