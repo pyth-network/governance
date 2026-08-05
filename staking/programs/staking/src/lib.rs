@@ -37,13 +37,48 @@ use {
     },
 };
 
-
 pub mod context;
 pub mod error;
 pub mod state;
 pub mod utils;
 #[cfg(feature = "wasm")]
 pub mod wasm;
+
+const ADDRESSES_TO_SHORTEN_VESTING_SCHEDULE: [Pubkey; 33] = [
+    pubkey!("AunhvBL2HQE4rG59prhTYLrigZC5XTJk4Qtmd6X4Djfq"),
+    pubkey!("2JiezfC6KDNJQuYnHTUjkqEtuLYANc6CQJojDqxJUFec"),
+    pubkey!("3n6KpqyC165khFA7qLfCoTKdpoaSDiN45c9VxA3f7xGm"),
+    pubkey!("GGcmnU9Gt26zM6RwbqSKp1K1zxAj31BX9yE3WTdqhtC6"),
+    pubkey!("5qtUb3iTNJHqnLFGgUEZHfDejADXM2qeEMsWEVJBcXDR"),
+    pubkey!("C2CPuMSitGsvpC2GjtqdEuytuufreaSUXGswGe928BrX"),
+    pubkey!("DPC1Gs7uwg2p6frBfTbmNGEnf2kiNxLG6CK9iV8kZy9k"),
+    pubkey!("FeGPVVmGSUorESTUh9Vadf7X4c8R47scQAZRzbKGxCSS"),
+    pubkey!("D6Qy7iBy9W5cVseeGViV27riU8qHQ1NRF2gT3ak3atcs"),
+    pubkey!("aUFNWZoy9hiGC1yNMZk2yKDaJ2cwwpB2sHdj1cnRMx5"),
+    pubkey!("CjMkdx5d2tcCNCLap3K1rMfyLp5798him48UeXH8K5k7"),
+    pubkey!("CBE6bipgEKAE8JYqGVZWuysE64MqWjbDevraJcXBSYog"),
+    pubkey!("8kdnTR2MW2KUBrzHyybfGNyw9H1Lu4Zg57utGyDossD1"),
+    pubkey!("JvCmc172ZMXHVysoX1qWaZjXJrc4kCjY4nLCQ5WSXYa"),
+    pubkey!("2Xa18G2nFfGcU5PcJsaBV2jthDZKY1orLCyHdBmu3uNo"),
+    pubkey!("8RrU678P2Es35dfpGhkzdVXq87tJsgqF3CjTbWtCq7G9"),
+    pubkey!("Gezp6sKA4XSvUcevL6RuUEZmvmkTDN9RpesPz3BPJZ3k"),
+    pubkey!("J88qzDXKfNqw8qDz6GdmonJKKinPcMNqm5qYZQti7e7a"),
+    pubkey!("8xFfHTJZufRWyFTpeLaZ97TaKpxqBNim1NP69kyjxtsd"),
+    pubkey!("F5gijHK2GQ3XyUrr64czr4TuQnVCHWiT7me1EQXP4W6J"),
+    pubkey!("2MsHhVogEwhSbaxjGgMFGesrn4eSExhHHKLGrbscnu5N"),
+    pubkey!("AVa4Z24MGc5vTEJXhAybd5of41pyrzsK7jVVWLkA3PPg"),
+    pubkey!("9aqPksdfu6Kv6LRE9Rt1gmeuSdsbuwKf5BESeBvaZYiA"),
+    pubkey!("5gfYrp8cWTbUsjSobUiUMwWjUCGd5CGeqfmQ6Cgop8J6"),
+    pubkey!("GGxD85ccf1QqyGBkC8BVD9fX3se5336UYXcKY6o1n4nA"),
+    pubkey!("9vLKNQPNysVpKiD5QqmJvCRb8b9mFuMZjZJa6KYYTEJo"),
+    pubkey!("GAXNojYYCTF78MdTGtNaJNoTY1Wuc85BXTZG9bFR8Z9n"),
+    pubkey!("XjRuaPsf6vtrptXJSAEaH1FfvR9qFbPo7C1VL9JsK4y"),
+    pubkey!("ByhczXw53TArwfSZySU5Uv4Y78Hx9SRbhmr6ZWE6xhvE"),
+    pubkey!("HQqMNPzJGv8zpigwMygoUhqjjUawCQ8ZC783MVqA31hK"),
+    pubkey!("8XEZpXQYRVyjk2inGhR3zHVM7mawm7TtrUNJjWvG4JvW"),
+    pubkey!("E5X7cQLtq1RdzdttiKt93FoD8A7qoFNhmQzRzquKvg9s"),
+    pubkey!("B6SzhpQhLnty2JjBGubvyvqmrqq9wzsuAYGNSJuTgvME"),
+];
 
 declare_id!("pytS9TjG1qyAZypk7n8rw8gfW9sUaqqYyMhJQ4E7JCQ");
 #[program]
@@ -250,7 +285,6 @@ pub mod staking {
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
 
-
         if let TargetWithParameters::IntegrityPool { .. } = target_with_parameters {
             require!(
                 ctx.accounts
@@ -282,7 +316,6 @@ pub mod staking {
         if amount == 0 {
             return Err(error!(ErrorCode::ClosePositionWithZero));
         }
-
 
         let i: usize = index.into();
         let stake_account_positions =
@@ -412,7 +445,6 @@ pub mod staking {
         let signer = &ctx.accounts.owner;
         let config = &ctx.accounts.config;
         let current_epoch = get_current_epoch(config)?;
-
 
         let unvested_balance = ctx
             .accounts
@@ -632,7 +664,6 @@ pub mod staking {
         Ok(())
     }
 
-
     /**
      * A split request can only be accepted by the `pda_authority` from
      * the config account. If accepted, `amount` tokens are transferred to a new stake account
@@ -710,7 +741,6 @@ pub mod staking {
             .new_stake_account_metadata
             .set_lock(new_vesting_schedule);
 
-
         transfer(
             CpiContext::from(&*ctx.accounts).with_signer(&[&[
                 AUTHORITY_SEED.as_bytes(),
@@ -722,7 +752,6 @@ pub mod staking {
 
         ctx.accounts.source_stake_account_custody.reload()?;
         ctx.accounts.new_stake_account_custody.reload()?;
-
 
         // Post-check
         utils::risk::validate(
@@ -814,6 +843,26 @@ pub mod staking {
         stake_account_positions.set_owner(&new_owner)?;
         ctx.accounts.voter_record.governing_token_owner = new_owner;
 
+        Ok(())
+    }
+
+    pub fn shorten_vesting_schedule(ctx: Context<ShortenVestingSchedule>) -> Result<()> {
+        let stake_account_metadata = &mut ctx.accounts.stake_account_metadata;
+
+        if let VestingSchedule::PeriodicVesting {
+            initial_balance,
+            start_date,
+            period_duration,
+            num_periods: _,
+        } = stake_account_metadata.lock
+        {
+            stake_account_metadata.lock = VestingSchedule::PeriodicVesting {
+                initial_balance,
+                start_date,
+                period_duration,
+                num_periods: 1,
+            };
+        }
         Ok(())
     }
 
