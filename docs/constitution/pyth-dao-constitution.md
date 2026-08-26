@@ -15,7 +15,6 @@
 - **Pyth Lazer:** system dedicated to the production of the Lazer data, governed by the Pyth DAO
 - **Pyth Pro:** subscription service for off-chain access to Pyth data, administered by Douro Labs on behalf of the Pyth DAO pursuant to CO-PIP-9
 - **Pyth Data Marketplace (Marketplace):** distribution platform for third-party institutional datasets, operated by Douro Labs on behalf of the Pyth DAO pursuant to CO-PIP-10. The Pyth Data Marketplace datasets is independent of Pyth Pro and thus not covered by Oracle Integrity Staking
-- **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **Oracle Integrity Staking (OIS):** protocol that leverages PYTH tokens specifically staked for the purpose of improving the integrity of the pyth data
 - **DeFi:** decentralized finance applications running on blockchain
@@ -57,9 +56,6 @@ Each PIP must be labeled as Constitutional PIPs or Operational PIPs as described
     - the upgrade of the verification program for each of the blockchains where Pyth data or Lazer data are accessible
     - the setting of data request fees per blockchain, as well as other protocol or network fees
     - the management of PGAS allocation and delegation to validators
-    - the upgrade of the ER program for each of the blockchains where ER is available
-    - the assignment of the relayer function for ER and monitoring of the performance of such assignment
-    - the setting of the ER fee distribution
     - the upgrade of the Entropy program for each of the blockchains where Entropy is available
     - the setting of Entropy request fees for each of the blockchains where Entropy is available
     - the setting of pool capacity parameters in OIS
