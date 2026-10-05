@@ -14,6 +14,7 @@
 - **Pyth Data Marketplace (Marketplace):** distribution platform for third-party institutional datasets, operated by Douro Labs on behalf of the Pyth DAO pursuant to the Pyth Data Marketplace Governance section of this Constitution. Marketplace datasets are independent of Pyth Pro
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
+- **Oracle Integrity Staking (OIS):** legacy Pythnet staking mechanism in unstake-only mode
 - **DeFi:** decentralized finance applications running on blockchain
 
 ## Introduction
