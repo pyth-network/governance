@@ -9,9 +9,9 @@
 - **Pythian Multisig Wallet:** smart contract wallet, at the following address `6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT`, signed by the elected members of the Pythian Council. The Pythian Council is described in further detail below
 - **Community Multisig Wallet:** smart contract wallet, at the following address `GKuPcXtNRJwZGrJ8tV25jSbLHZe71BUdUXVzjGLXkSt9` signed by the elected members of the Community Council. The Community Council is described in further detail below
 - **Operations Wallets:** wallets, at the following addresses `opsLibxVY7Vz5eYMmSfX8cLFCFVYTtH6fr6MiifMpA7` and `Ef7AjJzDXK6Tn2gYuMvL9YdXATV29b8PwpsT1yoPokTC`, that are used by the Pythian Council and the Community Council respectively to submit PIPs on-chain. These wallets can be used by automated processes to make proposals or by council members to propose large proposals that would otherwise require many hardware wallet signatures
-- **Pyth Lazer:** system dedicated to the production of Pyth Pro data, operated by Douro Labs on behalf of the Pyth DAO pursuant to the Pyth Pro Governance section of this Constitution
-- **Pyth Pro:** subscription service for off-chain access to Pyth data, operated by Douro Labs on behalf of the Pyth DAO pursuant to the Pyth Pro Governance section of this Constitution
-- **Pyth Data Marketplace (Marketplace):** distribution platform for third-party institutional datasets, operated by Douro Labs on behalf of the Pyth DAO pursuant to the Pyth Data Marketplace Governance section of this Constitution. Marketplace datasets are independent of Pyth Pro
+- **Pyth Lazer:** system dedicated to the production of Pyth Pro data, operated on behalf of the Pyth DAO by the entity appointed from time to time by the Pyth DAO through a Constitutional PIP, pursuant to the Pyth Pro Governance section of this Constitution
+- **Pyth Pro:** subscription service for off-chain access to Pyth data, operated on behalf of the Pyth DAO by the entity appointed from time to time by the Pyth DAO through a Constitutional PIP, pursuant to the Pyth Pro Governance section of this Constitution
+- **Pyth Data Marketplace (Marketplace):** distribution platform for third-party institutional datasets, operated on behalf of the Pyth DAO by the entity appointed from time to time by the Pyth DAO through a Constitutional PIP, pursuant to the Pyth Data Marketplace Governance section of this Constitution. Marketplace datasets are independent of Pyth Pro
 - **Pyth Express Relay (ER):** protocol instance that enables DeFi applications to auction off the rights to swap tokens
 - **Pyth Entropy (Entropy):** protocol instance that provides applications with provably random numbers
 - **Oracle Integrity Staking (OIS):** legacy Pythnet staking mechanism in unstake-only mode
@@ -97,9 +97,9 @@ The PIP is then fully executed and implemented. Any on-chain actions in the impl
 
 ### Operator
 
-Douro Labs is assigned as operator of Pyth Pro on behalf of the Pyth DAO. This assignment includes commercial operations, infrastructure, customer support, and related services for Pyth Pro subscriptions.
+The entity appointed from time to time by the Pyth DAO through a Constitutional PIP is assigned as operator of Pyth Pro on behalf of the Pyth DAO. This assignment includes commercial operations, infrastructure, customer support, and related services for Pyth Pro subscriptions.
 
-**Listing as a Service (LaaS):** Douro Labs is authorized to offer Listing as a Service as a commercial model for listing feeds requested by protocols and token issuers pursuant to OP-PIP-98.
+**Listing as a Service (LaaS):** The Pyth Pro operator is authorized to offer Listing as a Service as a commercial model for listing feeds requested by protocols and token issuers pursuant to OP-PIP-98.
 
 ### Revenue Distribution
 
@@ -122,17 +122,17 @@ Payments may be made in USDC, PYTH tokens, or a combination thereof, at the Oper
 
 ### Reporting
 
-Douro Labs shall provide monthly reports including gross revenue, DAO share calculation, and payment currency breakdown. Reports shall be published in the Pyth Pro forum section.
+The Pyth Pro operator shall provide monthly reports including gross revenue, DAO share calculation, and payment currency breakdown. Reports shall be published in the Pyth Pro forum section.
 
 ### Termination
 
-The Pyth DAO may revoke Douro Labs' mandate to operate Pyth Pro via a subsequent Constitutional PIP.
+The Pyth DAO may revoke the Pyth Pro operator's mandate via a subsequent Constitutional PIP.
 
 ## Pyth Data Marketplace Governance
 
 ### Operator
 
-Douro Labs is assigned as operator of the Pyth Data Marketplace on behalf of the Pyth DAO. This assignment includes:
+The entity appointed from time to time by the Pyth DAO through a Constitutional PIP is assigned as operator of the Pyth Data Marketplace on behalf of the Pyth DAO. This assignment includes:
 
 - **Publisher Management:** Selection, onboarding, and removal of Marketplace publishers
 - **Commercial Terms:** Negotiation of agreements
@@ -141,11 +141,11 @@ Douro Labs is assigned as operator of the Pyth Data Marketplace on behalf of the
 
 ### Revenue Distribution
 
-Of all proceeds generated by Douro Labs from Marketplace operations:
+Of all proceeds generated by the Marketplace operator from Marketplace operations:
 | Recipient | Share |
 |-----------|-------|
 | Pyth DAO Treasury | 60% |
-| Douro Labs | 40% |
+| Marketplace Operator | 40% |
 
 ### Payment Terms
 
@@ -157,7 +157,7 @@ Publisher onboardings follow an optimistic approval process - onboardings procee
 
 **Step 1: Onboarding Notice**
 
-Douro Labs posts all new publisher onboardings in a dedicated forum section "Marketplace Onboardings". Each notice must include:
+The Marketplace operator posts all new publisher onboardings in a dedicated forum section "Marketplace Onboardings". Each notice must include:
 
 - Publisher name
 - Dataset category
@@ -186,7 +186,7 @@ The objection must pass - reach quorum and achieve majority - to pause the onboa
 
 If an objection passes:
 
-1. Douro Labs has 14 days to present a structured response addressing concerns
+1. The Marketplace operator has 14 days to present a structured response addressing concerns
 2. The same body that objected votes on the resolution:
    - Council objected -  Council votes
    - DAO objected via OP-PIP -  DAO votes via follow-up OP-PIP
@@ -196,11 +196,11 @@ Possible outcomes:
 - **Reject** - Onboarding blocked
 - **Renegotiate** - Sent back with specific conditions
 
-If no resolution vote occurs within 30 days of Douro's response, the objection lapses and onboarding proceeds.
+If no resolution vote occurs within 30 days of the operator's response, the objection lapses and onboarding proceeds.
 
 ### Reporting
 
-Douro Labs shall provide monthly reports on Marketplace operations, aligned with Pyth Pro reporting cadence. Reports shall include:
+The Marketplace operator shall provide monthly reports on Marketplace operations, aligned with Pyth Pro reporting cadence. Reports shall include:
 
 - Total Marketplace revenue for the period
 - DAO share paid
@@ -213,11 +213,11 @@ Reports shall be published in the Reports forum section and visualized on the Py
 
 ### Conflict of Interest
 
-Douro Labs shall disclose any material financial relationship with Marketplace publishers, including equity ownership, revenue guarantees, or preferential terms to related parties. Where material conflicts exist, disclosure must be included in the onboarding notice and monthly reporting.
+The Marketplace operator shall disclose any material financial relationship with Marketplace publishers, including equity ownership, revenue guarantees, or preferential terms to related parties. Where material conflicts exist, disclosure must be included in the onboarding notice and monthly reporting.
 
 ### Termination
 
-The Pyth DAO may revoke Douro Labs' mandate to operate the Marketplace via a subsequent Constitutional PIP.
+The Pyth DAO may revoke the Marketplace operator's mandate via a subsequent Constitutional PIP.
 
 ## Council Election Process & Voting Procedures
 
